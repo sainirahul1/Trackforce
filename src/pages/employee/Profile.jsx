@@ -103,7 +103,7 @@ const PersonalInfoSection = ({ employee }) => {
       title: 'Identification',
       icon: User,
       items: [
-        { label: 'Full Name', value: 'Abhiram Rangoon', icon: User },
+        { label: 'Full Name', value: 'Naresh yadav', icon: User },
         { label: 'Gender', value: 'Male', icon: User },
         { label: 'Nationality', value: 'Indian', icon: User },
       ]
