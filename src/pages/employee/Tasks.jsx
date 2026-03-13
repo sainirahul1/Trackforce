@@ -1,3 +1,4 @@
+// modification of the code
 import React, { useState } from 'react';
 import {
   CheckCircle2,
@@ -279,7 +280,7 @@ const DailyTargetProgress = () => {
 // --- Main Component ---
 
 const EmployeeTasks = () => {
-  const [view, setView] = useState('grid'); 
+  const [view, setView] = useState('grid');
   const [activeTab, setActiveTab] = useState('hub');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterPriority, setFilterPriority] = useState('all');
