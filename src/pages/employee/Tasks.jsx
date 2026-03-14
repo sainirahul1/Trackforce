@@ -1004,7 +1004,7 @@ const EmployeeTasks = () => {
           <div className="bg-white dark:bg-gray-900 rounded-[3rem] p-8 md:p-14 border border-gray-100 dark:border-gray-800 shadow-xl space-y-12 animate-in slide-in-from-right-4 duration-500">
             <div className="flex flex-col lg:flex-row lg:items-center gap-8">
               <div className="flex-1">
-                <h2 className="text-4xl font-black text-gray-900 dark:text-white tracking-widest uppercase mb-2">Assignment Hub</h2>
+                <h2 className="text-4xl font-black text-gray-900 dark:text-white tracking-widest uppercase mb-2">Tasks </h2>
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-tighter">Queue filtered by <span className="text-indigo-600 font-black">{sortBy.replace('_', ' ')}</span></p>
               </div>
 
