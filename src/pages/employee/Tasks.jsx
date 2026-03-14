@@ -11,6 +11,7 @@ import {
   Filter,
   Search,
   LayoutGrid,
+  Shield,
   List as ListIcon,
   Map as MapIcon,
   Zap,
@@ -26,13 +27,16 @@ import {
   Power,
   ChevronUp,
   X,
+  User,
   Send,
   Camera,
+  Check,
   ShoppingBag,
+  Upload,
+  Image as ImageIcon,
   FileText,
   Bell,
   Settings,
-  User,
   HelpCircle,
   TrendingUp as TrendingUpIcon,
   TrendingDown as TrendingDownIcon
@@ -151,58 +155,58 @@ const StatCard = ({ icon: Icon, label, value, trend, trendType, color, bg, spark
   );
 };
 
-const PerformanceStatsOverview = () => {
-  const stats = [
-    {
-      label: 'Visits Completed',
-      value: '08',
-      trend: '+15%',
-      trendType: 'up',
-      color: 'text-blue-500',
-      bg: 'bg-blue-50 dark:bg-blue-950/30',
-      icon: MapPin,
-      sparklinePath: "M0 30 Q 20 15, 40 25 T 80 10 T 100 20 V 40 H 0 Z"
-    },
-    {
-      label: 'Distance Covered',
-      value: '42 km',
-      trend: '+8%',
-      trendType: 'up',
-      color: 'text-indigo-500',
-      bg: 'bg-indigo-50 dark:bg-indigo-950/30',
-      icon: Zap,
-      sparklinePath: "M0 25 Q 15 35, 30 20 T 60 25 T 100 15 V 40 H 0 Z"
-    },
-    {
-      label: 'Orders Processed',
-      value: '05',
-      trend: '+2%',
-      trendType: 'up',
-      color: 'text-pink-500',
-      bg: 'bg-pink-50 dark:bg-pink-950/30',
-      icon: ShoppingBag,
-      sparklinePath: "M0 35 Q 25 30, 50 35 T 100 25 V 40 H 0 Z"
-    },
-    {
-      label: 'Daily Revenue',
-      value: '₹42K',
-      trend: '+12%',
-      trendType: 'up',
-      color: 'text-amber-500',
-      bg: 'bg-amber-50 dark:bg-amber-950/30',
-      icon: TrendingUpIcon,
-      sparklinePath: "M0 35 Q 30 20, 60 30 T 100 10 V 40 H 0 Z"
-    },
-  ];
+// const PerformanceStatsOverview = () => {
+//   const stats = [
+//     {
+//       label: 'Visits Completed',
+//       value: '08',
+//       trend: '+15%',
+//       trendType: 'up',
+//       color: 'text-blue-500',
+//       bg: 'bg-blue-50 dark:bg-blue-950/30',
+//       icon: MapPin,
+//       sparklinePath: "M0 30 Q 20 15, 40 25 T 80 10 T 100 20 V 40 H 0 Z"
+//     },
+//     {
+//       label: 'Distance Covered',
+//       value: '42 km',
+//       trend: '+8%',
+//       trendType: 'up',
+//       color: 'text-indigo-500',
+//       bg: 'bg-indigo-50 dark:bg-indigo-950/30',
+//       icon: Zap,
+//       sparklinePath: "M0 25 Q 15 35, 30 20 T 60 25 T 100 15 V 40 H 0 Z"
+//     },
+//     {
+//       label: 'Orders Processed',
+//       value: '05',
+//       trend: '+2%',
+//       trendType: 'up',
+//       color: 'text-pink-500',
+//       bg: 'bg-pink-50 dark:bg-pink-950/30',
+//       icon: ShoppingBag,
+//       sparklinePath: "M0 35 Q 25 30, 50 35 T 100 25 V 40 H 0 Z"
+//     },
+//     {
+//       label: 'Daily Revenue',
+//       value: '₹42K',
+//       trend: '+12%',
+//       trendType: 'up',
+//       color: 'text-amber-500',
+//       bg: 'bg-amber-50 dark:bg-amber-950/30',
+//       icon: TrendingUpIcon,
+//       sparklinePath: "M0 35 Q 30 20, 60 30 T 100 10 V 40 H 0 Z"
+//     },
+//   ];
 
-  return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-      {stats.map((stat, i) => (
-        <StatCard key={i} {...stat} />
-      ))}
-    </div>
-  );
-};
+//   return (
+//     <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+//       {stats.map((stat, i) => (
+//         <StatCard key={i} {...stat} />
+//       ))}
+//     </div>
+//   );
+// };
 
 const ProgressCircle = ({ label, current, target, unit = '', color }) => {
   const percentage = Math.min(Math.round((current / target) * 100), 100);
@@ -246,46 +250,249 @@ const ProgressCircle = ({ label, current, target, unit = '', color }) => {
   );
 };
 
-const DailyTargetProgress = () => {
+// const DailyTargetProgress = () => {
+//   return (
+//     <div className="bg-white dark:bg-gray-900 p-4 rounded-[1.5rem] border border-gray-100 dark:border-gray-800 shadow-sm relative overflow-hidden h-full group">
+//       <div className="flex items-center justify-between mb-4 relative z-10">
+//         <div>
+//           <h3 className="text-[10px] font-black text-gray-900 dark:text-white tracking-widest uppercase">Performance Goals</h3>
+//           <p className="text-[8px] font-bold text-gray-400 mt-0.5 uppercase tracking-tighter">Due <span className="text-indigo-600">05:40 PM</span></p>
+//         </div>
+//         <div className="p-1.5 bg-amber-50 dark:bg-amber-950/30 rounded-lg">
+//           <Trophy size={14} className="text-amber-500" />
+//         </div>
+//       </div>
+
+//       <div className="grid grid-cols-3 gap-1 mb-2 relative z-10">
+//         <ProgressCircle label="Visits" current={8} target={12} color="text-indigo-600" />
+//         <ProgressCircle label="Orders" current={5} target={8} color="text-pink-600" />
+//         <ProgressCircle label="Revenue" current={42} target={60} unit="K" color="text-amber-600" />
+//       </div>
+
+
+
+//       {/* Background Accent */}
+//       <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-amber-500/5 rounded-full blur-2xl pointer-events-none group-hover:bg-amber-500/10 transition-all duration-700" />
+//     </div>
+//   );
+// };
+
+
+
+
+
+const TaskDetailOverlay = ({ task, onClose, onUpdateOperationalData, onStartTask, onFileUpload }) => {
+  if (!task) return null;
+
+  const handleOpenMaps = () => {
+    if (!task.address) return;
+    const encodedAddress = encodeURIComponent(`${task.store}, ${task.address}`);
+    window.open(`https://www.google.com/maps/search/?api=1&query=${encodedAddress}`, '_blank');
+  };
+
   return (
-    <div className="bg-white dark:bg-gray-900 p-4 rounded-[1.5rem] border border-gray-100 dark:border-gray-800 shadow-sm relative overflow-hidden h-full group">
-      <div className="flex items-center justify-between mb-4 relative z-10">
-        <div>
-          <h3 className="text-[10px] font-black text-gray-900 dark:text-white tracking-widest uppercase">Performance Goals</h3>
-          <p className="text-[8px] font-bold text-gray-400 mt-0.5 uppercase tracking-tighter">Due <span className="text-indigo-600">05:40 PM</span></p>
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8 animate-in fade-in duration-300">
+      <div
+        className="absolute inset-0 bg-gray-900/60 backdrop-blur-md"
+        onClick={onClose}
+      />
+
+      <div className="relative bg-white dark:bg-gray-900 w-full max-w-4xl max-h-[90vh] rounded-[2.5rem] border border-gray-100 dark:border-gray-800 shadow-2xl overflow-hidden flex flex-col md:flex-row animate-in zoom-in-95 slide-in-from-bottom-10 duration-500">
+        {/* Left Side: Map & Info */}
+        <div className="md:w-5/12 bg-gray-50 dark:bg-gray-950 relative overflow-hidden group">
+          <div className="absolute inset-0 opacity-20 pointer-events-none" style={{ backgroundImage: 'radial-gradient(#6366F1 1.5px, transparent 1.5px)', backgroundSize: '30px 30px' }} />
+          <div className="h-full w-full flex flex-col p-8 relative z-10">
+            <div className="flex items-center gap-3 mb-8">
+              <div className="p-3 bg-white dark:bg-gray-800 rounded-2xl shadow-sm">
+                <MapPin className="text-indigo-600" size={24} />
+              </div>
+              <div>
+                <p className="text-[10px] font-black uppercase text-gray-400 tracking-widest leading-none mb-1">Operational Site</p>
+                <h4 className="text-lg font-black text-gray-900 dark:text-white leading-tight">{task.store}</h4>
+              </div>
+            </div>
+
+            <div className="flex-1 bg-white/50 dark:bg-gray-800/30 backdrop-blur-sm rounded-[2rem] border border-gray-100 dark:border-gray-800/50 p-6 flex flex-col items-center justify-center text-center">
+              <div className="w-16 h-16 rounded-full bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center mb-4">
+                <Navigation className="text-indigo-600 animate-pulse" size={32} />
+              </div>
+              <p className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-tight">Navigation Active</p>
+              <p className="text-[10px] font-bold text-gray-400 mt-1 uppercase">{task.distance} Away • {task.eta} Est.</p>
+              <button
+                onClick={handleOpenMaps}
+                className="mt-6 px-6 py-3 bg-indigo-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-indigo-100 dark:shadow-none hover:scale-105 transition-all"
+              >
+                Open Maps
+              </button>
+            </div>
+
+            <div className="mt-8 space-y-4">
+              <div className="p-5 bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm">
+                <p className="text-[10px] font-black uppercase text-indigo-600 dark:text-indigo-400 tracking-widest mb-3">Client Profile</p>
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="w-10 h-10 rounded-xl bg-gray-50 dark:bg-gray-950 flex items-center justify-center border border-gray-100 dark:border-gray-800">
+                    <User size={20} className="text-gray-400" />
+                  </div>
+                  <div>
+                    <h5 className="text-xs font-black text-gray-900 dark:text-white leading-tight">{task.companyName}</h5>
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">{task.companyInsight}</p>
+                  </div>
+                </div>
+                <div className="space-y-2 border-t border-gray-50 dark:border-gray-800 pt-3">
+                  <div className="flex items-center justify-between text-[10px]">
+                    <span className="font-bold text-gray-400 uppercase">POC</span>
+                    <span className="font-black text-gray-700 dark:text-gray-300">{task.companyContact}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-[10px]">
+                    <span className="font-bold text-gray-400 uppercase">Email</span>
+                    <span className="font-black text-indigo-500">{task.companyEmail}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-5 bg-emerald-50 dark:bg-emerald-950/30 rounded-2xl border border-emerald-100/50 dark:border-emerald-900/30">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-white dark:bg-gray-800 flex items-center justify-center shadow-sm">
+                    <Zap size={14} className="text-emerald-600" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black text-emerald-900 dark:text-emerald-400 uppercase tracking-tight">Incentive</p>
+                    <p className="text-sm font-black text-emerald-600 leading-none">{task.incentive} Pay</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-        <div className="p-1.5 bg-amber-50 dark:bg-amber-950/30 rounded-lg">
-          <Trophy size={14} className="text-amber-500" />
+
+        {/* Right Side: Operational Workflow */}
+        <div className="md:w-7/12 p-8 md:p-12 overflow-y-auto bg-white dark:bg-gray-900">
+          <div className="flex items-center justify-end mb-10">
+            <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-all text-gray-400 hover:text-gray-900 dark:hover:text-white">
+              <X size={24} />
+            </button>
+          </div>
+
+          <p className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-[0.3em] leading-none mb-3">{task.type}</p>
+          <h2 className="text-3xl font-black text-gray-900 dark:text-white tracking-tighter leading-tight mb-4">
+            {task.title}
+          </h2>
+          <p className="text-sm font-medium text-gray-500 leading-relaxed mb-8">
+            {task.description || `Complete a thorough ${task.type.toLowerCase()} of ${task.store}'s inventory. Ensure all field protocols are followed and evidence is recorded accurately.`}
+          </p>
+
+          {!task.isTaskStarted ? (
+            <div className="py-12 flex flex-col items-center justify-center border-2 border-dashed border-gray-100 dark:border-gray-800 rounded-[2rem] bg-gray-50/50 dark:bg-gray-950/30">
+              <div className="w-20 h-20 bg-white dark:bg-gray-800 rounded-full flex items-center justify-center shadow-xl mb-6">
+                <Play className="text-indigo-600 fill-indigo-600 ml-1" size={32} />
+              </div>
+              <h3 className="text-lg font-black text-gray-900 dark:text-white mb-2">Ready to Start Operation?</h3>
+              <p className="text-xs text-gray-500 mb-8">Click below to unlock the operational checklist and status updates.</p>
+              <button
+                onClick={() => onStartTask(task.id)}
+                className="px-12 py-4 bg-indigo-600 text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-indigo-100 dark:shadow-none hover:scale-105 transition-all"
+              >
+                Start Task Now
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-8 animate-in slide-in-from-bottom-5 duration-500">
+              {/* Dual Dropdowns */}
+              <div className={`grid grid-cols-1 ${task.visitStatus !== 'Unavailable' ? 'sm:grid-cols-2' : ''} gap-4`}>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest ml-1">Visit Status</label>
+                  <select
+                    value={task.visitStatus}
+                    onChange={(e) => onUpdateOperationalData(task.id, { visitStatus: e.target.value })}
+                    className="w-full bg-gray-50 dark:bg-gray-800 border border-transparent dark:border-gray-700 rounded-2xl px-5 py-4 text-xs font-black uppercase tracking-widest focus:ring-2 focus:ring-indigo-500 transition-all outline-none"
+                  >
+                    <option>Reached Client</option>
+                    <option>Unavailable</option>
+                    <option>Discussing</option>
+                    <option>Delayed</option>
+                  </select>
+                </div>
+                {task.visitStatus !== 'Unavailable' && (
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest ml-1">Mission Update</label>
+                    <select
+                      value={task.missionStatus}
+                      onChange={(e) => onUpdateOperationalData(task.id, { missionStatus: e.target.value })}
+                      className="w-full bg-gray-50 dark:bg-gray-800 border border-transparent dark:border-gray-700 rounded-2xl px-5 py-4 text-xs font-black uppercase tracking-widest focus:ring-2 focus:ring-indigo-500 transition-all outline-none"
+                    >
+                      <option>In Progress</option>
+                      <option>Complete</option>
+                      <option>Rejected</option>
+                      <option>Follow Up</option>
+                    </select>
+                  </div>
+                )}
+              </div>
+
+              {/* Evidence Grid */}
+              <div className="space-y-4">
+                <h5 className="text-[10px] font-black text-gray-900 dark:text-white uppercase tracking-widest border-b border-gray-100 dark:border-gray-800 pb-3">Evidence Collection</h5>
+                <div className="grid grid-cols-2 gap-4">
+                  {[
+                    { label: 'Store Front', key: 'storeFront', icon: <ImageIcon size={18} /> },
+                    { label: 'Selfie at Visit', key: 'selfie', icon: <User size={18} /> },
+                    { label: 'Product Display', key: 'productDisplay', icon: <Zap size={18} /> },
+                    { label: 'Official Doc', key: 'officialDoc', icon: <FileText size={18} /> }
+                  ].map((item, idx) => {
+                    const isUploaded = task.evidence?.[item.key];
+                    return (
+                      <div
+                        key={idx}
+                        onClick={() => document.getElementById(`upload-${item.key}`).click()}
+                        className={`group/upload relative p-4 bg-gray-50 dark:bg-gray-800 border-2 border-dashed ${isUploaded ? 'border-emerald-500 bg-emerald-50/30' : 'border-gray-100 dark:border-gray-700 hover:border-indigo-400'} rounded-2xl flex flex-col items-center justify-center text-center transition-all cursor-pointer`}
+                      >
+                        <input
+                          id={`upload-${item.key}`}
+                          type="file"
+                          className="hidden"
+                          onChange={(e) => onFileUpload(task.id, item.key, e.target.files[0])}
+                        />
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-3 transition-colors shadow-sm ${isUploaded ? 'bg-emerald-500 text-white' : 'bg-white dark:bg-gray-700 text-gray-400 group-hover/upload:text-indigo-600'}`}>
+                          {isUploaded ? <Check size={18} strokeWidth={3} /> : item.icon}
+                        </div>
+                        <p className={`text-[10px] font-black uppercase ${isUploaded ? 'text-emerald-700' : 'text-gray-500 dark:text-gray-400'}`}>
+                          {isUploaded ? 'Verified' : item.label}
+                        </p>
+                        <div className="absolute top-2 right-2">
+                          {isUploaded ? <Check size={10} className="text-emerald-500" /> : <Upload size={12} className="text-gray-300" />}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="pt-4">
+                <button
+                  onClick={onClose}
+                  className="w-full py-5 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl hover:scale-[1.01] active:scale-95 transition-all"
+                >
+                  Done & Update Mission
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
-
-      <div className="grid grid-cols-3 gap-1 mb-2 relative z-10">
-        <ProgressCircle label="Visits" current={8} target={12} color="text-indigo-600" />
-        <ProgressCircle label="Orders" current={5} target={8} color="text-pink-600" />
-        <ProgressCircle label="Revenue" current={42} target={60} unit="K" color="text-amber-600" />
-      </div>
-
-
-
-      {/* Background Accent */}
-      <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-amber-500/5 rounded-full blur-2xl pointer-events-none group-hover:bg-amber-500/10 transition-all duration-700" />
     </div>
   );
 };
 
-
-
-
-
 // --- Main Component ---
-
 const EmployeeTasks = () => {
   const [view, setView] = useState('grid');
   const [activeTab, setActiveTab] = useState('hub');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterPriority, setFilterPriority] = useState('all');
+  const [filterDate, setFilterDate] = useState('all');
   const [sortBy, setSortBy] = useState('nearest');
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [selectedTask, setSelectedTask] = useState(null);
 
   const context = useOutletContext() || {};
   const { workStatus = 'Offline', setWorkStatus = () => { } } = context;
@@ -303,83 +510,267 @@ const EmployeeTasks = () => {
     }
   };
 
-  const tasks = [
+  const initialTasks = [
     {
       id: 1,
       title: 'Store Inventory Audit',
       store: 'Big Bazaar Central',
+      companyName: 'Future Group Retail',
+      companyContact: 'Rajesh Kumar',
+      companyEmail: 'ops@futuregroup.in',
+      companyInsight: 'Premium Partner • 12 Months',
       address: 'MG Road, Bengaluru',
       distance: '1.2 km',
       distanceVal: 1.2,
       eta: '20 mins',
       priority: 'high',
       status: 'pending',
+      visitStatus: 'Reached Client',
+      missionStatus: 'Pending',
+      isTaskStarted: false,
       dueDate: 'Today, 05:00 PM',
+      date: new Date(), // Today
       type: 'Audit',
       incentive: '₹250',
       incentiveVal: 250,
       difficulty: 'Medium',
-      coords: { x: 45, y: 30 }
+      coords: { x: 45, y: 30 },
+      evidence: { storeFront: null, selfie: null, productDisplay: null, officialDoc: null },
+      checklist: [
+        { id: 1, text: 'Verify store check-in with GPS verification', completed: false },
+        { id: 2, text: 'Upload 4 photos of main aisle displays', completed: false },
+        { id: 3, text: 'Log stock count for Tier 1 SKUs', completed: false },
+        { id: 4, text: 'Collect manager digital signature', completed: false }
+      ]
     },
     {
       id: 2,
       title: 'Merchandise Display',
       store: 'Reliance Fresh',
+      companyName: 'Reliance Retail Ltd',
+      companyContact: 'Anjali Sharma',
+      companyEmail: 'store.support@reliance.com',
+      companyInsight: 'Top Tier Client • High Volume',
       address: 'Indiranagar, Bengaluru',
       distance: '3.4 km',
       distanceVal: 3.4,
       eta: '25 mins',
       priority: 'medium',
       status: 'in-progress',
+      visitStatus: 'Discussing',
+      missionStatus: 'In Progress',
+      isTaskStarted: true,
       dueDate: 'Today, 07:00 PM',
+      date: new Date(), // Today
       type: 'Retail',
       incentive: '₹150',
       incentiveVal: 150,
       difficulty: 'Hard',
-      coords: { x: 70, y: 50 }
+      coords: { x: 70, y: 50 },
+      evidence: { storeFront: 'mock-file.jpg', selfie: null, productDisplay: null, officialDoc: null },
+      checklist: [
+        { id: 1, text: 'Clean primary display shelf', completed: true },
+        { id: 2, text: 'Arrange promotional banners', completed: false },
+        { id: 3, text: 'Verify price tag accuracy', completed: false }
+      ]
     },
     {
       id: 3,
       title: 'Payment Collection',
       store: 'More Megamart',
+      companyName: 'Aditya Birla Fashion',
+      companyContact: 'Suresh Raina',
+      companyEmail: 'finance@adityabirla.com',
+      companyInsight: 'Enterprise Account • Active',
       address: 'Koramangala, Bengaluru',
       distance: '0.8 km',
       distanceVal: 0.8,
       eta: '10 mins',
       priority: 'low',
       status: 'delayed',
+      visitStatus: 'Delayed',
+      missionStatus: 'Pending',
+      isTaskStarted: false,
       dueDate: 'Yesterday',
+      date: new Date(Date.now() - 86400000), // Yesterday
       type: 'Finance',
       incentive: '₹100',
       incentiveVal: 100,
       difficulty: 'Easy',
-      coords: { x: 30, y: 80 }
+      coords: { x: 30, y: 80 },
+      evidence: { storeFront: null, selfie: null, productDisplay: null, officialDoc: null },
+      checklist: [
+        { id: 1, text: 'Collect signed invoice copy', completed: false },
+        { id: 2, text: 'Verify payment mode (Cheque/NEFT)', completed: false }
+      ]
     },
     {
       id: 4,
       title: 'Feedback Survey',
       store: 'Spar Hyper',
+      companyName: 'Spar International',
+      companyContact: 'Vikram Singh',
+      companyEmail: 'quality@spar.com',
+      companyInsight: 'New Client • Pilot Phase',
       address: 'Bannerghatta, Bengaluru',
       distance: '5.6 km',
       distanceVal: 5.6,
       eta: '45 mins',
       priority: 'medium',
       status: 'pending',
+      visitStatus: 'Reached Client',
+      missionStatus: 'Pending',
+      isTaskStarted: false,
       dueDate: 'Today, 10:00 AM',
+      date: new Date(), // Today
       type: 'Survey',
       incentive: '₹50',
       incentiveVal: 50,
       difficulty: 'Easy',
-      coords: { x: 20, y: 40 }
+      coords: { x: 20, y: 40 },
+      evidence: { storeFront: null, selfie: null, productDisplay: null, officialDoc: null },
+      checklist: [
+        { id: 1, text: 'Interview 5 random customers', completed: false },
+        { id: 2, text: 'Score customer service level', completed: false },
+        { id: 3, text: 'Submit final report draft', completed: false }
+      ]
+    },
+    {
+      id: 5,
+      title: 'Display Unit Setup',
+      store: 'Nike Factory Store',
+      companyName: 'Nike India',
+      companyContact: 'Rahul Dravid',
+      companyEmail: 'rahul@nike.com',
+      companyInsight: 'Premium Partner',
+      address: 'Whitefield, Bengaluru',
+      distance: '8.2 km',
+      distanceVal: 8.2,
+      eta: '50 mins',
+      priority: 'high',
+      status: 'pending',
+      visitStatus: 'Reached Client',
+      missionStatus: 'Pending',
+      isTaskStarted: false,
+      dueDate: 'This Week',
+      date: new Date(Date.now() + 3 * 86400000), // This Week
+      type: 'Retail',
+      incentive: '₹300',
+      incentiveVal: 300,
+      difficulty: 'Hard',
+      coords: { x: 85, y: 20 },
+      evidence: { storeFront: null, selfie: null, productDisplay: null, officialDoc: null },
+      checklist: []
+    },
+    {
+      id: 6,
+      title: 'Audit Report Filing',
+      store: 'Zudio Indiranagar',
+      companyName: 'Tata Retail',
+      companyContact: 'Mahesh Babu',
+      companyEmail: 'mahesh@tata.com',
+      companyInsight: 'Key Account',
+      address: 'Indiranagar, Bengaluru',
+      distance: '2.8 km',
+      distanceVal: 2.8,
+      eta: '15 mins',
+      priority: 'low',
+      status: 'pending',
+      visitStatus: 'Reached Client',
+      missionStatus: 'Pending',
+      isTaskStarted: false,
+      dueDate: 'This Month',
+      date: new Date(Date.now() + 20 * 86400000), // This Month
+      type: 'Audit',
+      incentive: '₹120',
+      incentiveVal: 120,
+      difficulty: 'Easy',
+      coords: { x: 65, y: 45 },
+      evidence: { storeFront: null, selfie: null, productDisplay: null, officialDoc: null },
+      checklist: []
     }
   ];
 
-  const filteredTasks = tasks
+  const [taskList, setTaskList] = useState(initialTasks);
+
+  const updateTaskStatus = (taskId, newStatus) => {
+    setTaskList(prev => prev.map(t => t.id === taskId ? { ...t, status: newStatus } : t));
+    // Also update selected task if it's open to reflect change immediately
+    if (selectedTask && selectedTask.id === taskId) {
+      setSelectedTask(prev => ({ ...prev, status: newStatus }));
+    }
+  };
+
+  const updateTaskOperationalData = (taskId, data) => {
+    setTaskList(prev => prev.map(t => t.id === taskId ? { ...t, ...data } : t));
+    if (selectedTask && selectedTask.id === taskId) {
+      setSelectedTask(prev => ({ ...prev, ...data }));
+    }
+  };
+
+  const handleStartTask = (taskId) => {
+    updateTaskOperationalData(taskId, { isTaskStarted: true, status: 'in-progress' });
+  };
+
+  const handleFileUpload = (taskId, evidenceType, file) => {
+    // In a real app, you'd upload the file here. 
+    // For now, we'll store the filename or a dummy value.
+    if (file) {
+      updateTaskOperationalData(taskId, {
+        evidence: {
+          ...taskList.find(t => t.id === taskId).evidence,
+          [evidenceType]: file.name
+        }
+      });
+    }
+  };
+
+  const toggleChecklistItem = (taskId, itemId) => {
+    setTaskList(prev => prev.map(t =>
+      t.id === taskId
+        ? { ...t, checklist: t.checklist.map(item => item.id === itemId ? { ...item, completed: !item.completed } : item) }
+        : t
+    ));
+    // Update selectedTask as well
+    if (selectedTask && selectedTask.id === taskId) {
+      setSelectedTask(prev => ({
+        ...prev,
+        checklist: prev.checklist.map(item => item.id === itemId ? { ...item, completed: !item.completed } : item)
+      }));
+    }
+  };
+
+  const filteredTasks = taskList
     .filter(task => {
       const matchesSearch = task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         task.store.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesPriority = filterPriority === 'all' || task.priority === filterPriority;
-      return matchesSearch && matchesPriority;
+
+      // Date Filtering Logic
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+      const endOfWeek = new Date(today);
+      endOfWeek.setDate(endOfWeek.getDate() + 7);
+      const endOfMonth = new Date(today);
+      endOfMonth.setDate(endOfMonth.getDate() + 30);
+
+      const taskDate = new Date(task.date);
+      const taskDay = new Date(taskDate.getFullYear(), taskDate.getMonth(), taskDate.getDate());
+
+      let matchesDate = true;
+      if (filterDate === 'today') {
+        matchesDate = taskDay.getTime() === today.getTime();
+      } else if (filterDate === 'yesterday') {
+        matchesDate = taskDay.getTime() === yesterday.getTime();
+      } else if (filterDate === 'this_week') {
+        matchesDate = taskDay > today && taskDay <= endOfWeek;
+      } else if (filterDate === 'this_month') {
+        matchesDate = taskDay > today && taskDay <= endOfMonth;
+      }
+
+      return matchesSearch && matchesPriority && matchesDate;
     })
     .sort((a, b) => {
       if (sortBy === 'nearest') return a.distanceVal - b.distanceVal;
@@ -390,6 +781,43 @@ const EmployeeTasks = () => {
       }
       return 0;
     });
+
+  const groupTasksByDate = (tasks) => {
+    const groups = {
+      'Today': [],
+      'Yesterday': [],
+      'This Week': [],
+      'This Month': []
+    };
+
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const endOfWeek = new Date(today);
+    endOfWeek.setDate(endOfWeek.getDate() + 7);
+    const endOfMonth = new Date(today);
+    endOfMonth.setDate(endOfMonth.getDate() + 30);
+
+    tasks.forEach(task => {
+      const taskDate = new Date(task.date);
+      const taskDay = new Date(taskDate.getFullYear(), taskDate.getMonth(), taskDate.getDate());
+
+      if (taskDay.getTime() === today.getTime()) {
+        groups['Today'].push(task);
+      } else if (taskDay.getTime() === yesterday.getTime()) {
+        groups['Yesterday'].push(task);
+      } else if (taskDay > today && taskDay <= endOfWeek) {
+        groups['This Week'].push(task);
+      } else if (taskDay > today && taskDay <= endOfMonth) {
+        groups['This Month'].push(task);
+      }
+    });
+
+    return groups;
+  };
+
+  const groupedTasks = groupTasksByDate(filteredTasks);
 
   const nearbyStores = [
     { name: 'Spar Hypermarket', distance: '1.2 km', category: 'Retail' },
@@ -426,8 +854,8 @@ const EmployeeTasks = () => {
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-10 pb-40 px-4 md:px-0">
-      <PerformanceStatsOverview />
+    <div className="max-w-5xl mx-auto space-y-6 pb-40 px-4 md:px-0">
+      {/* <PerformanceStatsOverview /> */}
       <style>{`
         @keyframes dash {
           to { stroke-dashoffset: -20; }
@@ -445,88 +873,13 @@ const EmployeeTasks = () => {
         }
       `}</style>
 
-      {/* Top Row: Dashboard & Goals Split */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
-        {/* Compressed Operations Header Hub */}
-        <div className="lg:col-span-8 relative group">
-          <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-2xl p-4 md:p-5 rounded-[1.5rem] border border-white/20 dark:border-gray-800/50 shadow-[0_8px_32px_rgba(0,0,0,0.05)] flex flex-col justify-center gap-4 relative overflow-hidden h-full">
-            <div className="relative z-10 flex flex-col md:flex-row md:items-center gap-4">
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-[9px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-[0.2em]">Operations Center</span>
-                  <span className="w-1 h-1 rounded-full bg-gray-300" />
-                  <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">{new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</span>
-                </div>
-                <h1 className="text-2xl md:text-3xl font-black text-gray-900 dark:text-white tracking-tighter leading-tight">
-                  Good Morning, {user.name}
-                </h1>
-                <div className="flex items-center gap-3 mt-2">
-                  <div className="flex items-center gap-2 px-2.5 py-1 bg-gray-50 dark:bg-gray-800 rounded-full border border-gray-100 dark:border-gray-700">
-                    <MapPin size={10} className="text-indigo-500" />
-                    <span className="text-[9px] font-black uppercase text-gray-600 dark:text-gray-400">Bengaluru</span>
-                  </div>
-                  <div className={`flex items-center gap-2 px-2.5 py-1 rounded-full border ${isOnline ? 'bg-emerald-50 border-emerald-100 text-emerald-600' : 'bg-red-50 border-red-100 text-red-600'}`}>
-                    <div className={`w-1 h-1 rounded-full ${isOnline ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}`} />
-                    <span className="text-[9px] font-black uppercase tracking-widest">{isOnline ? 'Live' : 'Offline'}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="h-10 w-px bg-gray-100 dark:bg-gray-800 hidden md:block" />
-
-              {/* Attendance Quick Action */}
-              <div className="flex items-center gap-4">
-                {workStatus === 'Offline' ? (
-                  <button
-                    onClick={() => setWorkStatus('Active')}
-                    className="group/btn relative flex items-center gap-3 px-6 py-3.5 bg-indigo-600 text-white rounded-[1rem] font-black text-[10px] uppercase tracking-widest transition-all hover:scale-105 active:scale-95 shadow-xl shadow-indigo-100 dark:shadow-none overflow-hidden"
-                  >
-                    <div className="absolute inset-0 bg-white/20 -translate-x-full group-hover/btn:translate-x-full transition-transform duration-700" />
-                    <Play size={10} fill="currentColor" />
-                    Start Day
-                  </button>
-                ) : (
-                  <div className="flex items-center bg-gray-50/50 dark:bg-gray-800/50 p-1.5 rounded-xl border border-gray-100 dark:border-gray-700">
-                    <div className="px-3 border-r border-gray-200 dark:border-gray-700 mr-2">
-                      <p className="text-[7px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Shift</p>
-                      <p className="text-xs font-black text-gray-900 dark:text-white tabular-nums leading-none">04:22:15</p>
-                    </div>
-                    <div className="flex gap-1.5">
-                      <button
-                        onClick={() => setWorkStatus(workStatus === 'Active' ? 'Paused' : 'Active')}
-                        className={`p-2 rounded-lg transition-all ${workStatus === 'Active' ? 'bg-orange-100 text-orange-600' : 'bg-emerald-100 text-emerald-600'}`}
-                      >
-                        {workStatus === 'Active' ? <Pause size={14} fill="currentColor" /> : <Play size={14} fill="currentColor" />}
-                      </button>
-                      <button
-                        onClick={() => setWorkStatus('Offline')}
-                        className="p-2 bg-gray-900 text-white rounded-lg hover:bg-black transition-all"
-                      >
-                        <Power size={14} />
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Decorative Accents */}
-            <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-600/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-[80px] pointer-events-none group-hover:bg-indigo-600/10 transition-all duration-1000" />
-          </div>
-        </div>
-
-        {/* Performance Goals Integrated Beside */}
-        <div className="lg:col-span-4 h-full">
-          <DailyTargetProgress />
-        </div>
-      </div>
 
       <div className="space-y-10">
         {/* Tab Navigation Switcher */}
         <div className="flex bg-gray-50 dark:bg-gray-900/50 p-2 rounded-[2rem] border border-gray-100 dark:border-gray-800 shadow-inner w-full">
           <button
             onClick={() => setActiveTab('hub')}
-            className={`flex-1 flex items-center justify-center gap-3 py-4 rounded-[1.5rem] font-black text-xs uppercase tracking-widest transition-all ${activeTab === 'hub'
+            className={`flex-1 flex items-center justify-center gap-3 py-3 rounded-[1.5rem] font-black text-xs uppercase tracking-widest transition-all ${activeTab === 'hub'
               ? 'bg-white dark:bg-gray-800 text-indigo-600 shadow-xl'
               : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'
               }`}
@@ -536,7 +889,7 @@ const EmployeeTasks = () => {
           </button>
           <button
             onClick={() => setActiveTab('map')}
-            className={`flex-1 flex items-center justify-center gap-3 py-4 rounded-[1.5rem] font-black text-xs uppercase tracking-widest transition-all ${activeTab === 'map'
+            className={`flex-1 flex items-center justify-center gap-3 py-3 rounded-[1.5rem] font-black text-xs uppercase tracking-widest transition-all ${activeTab === 'map'
               ? 'bg-white dark:bg-gray-800 text-indigo-600 shadow-xl'
               : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'
               }`}
@@ -588,7 +941,7 @@ const EmployeeTasks = () => {
 
               <div className="absolute inset-0 opacity-20 pointer-events-none" style={{ backgroundImage: 'radial-gradient(#6366F1 1.5px, transparent 1.5px)', backgroundSize: '40px 40px' }} />
 
-              {tasks.map((task) => (
+              {taskList.map((task) => (
                 <div key={task.id} className="absolute transition-all hover:scale-110 cursor-pointer z-10 group/marker" style={{ left: `${task.coords.x}%`, top: `${task.coords.y}%` }}>
                   <div className="relative">
                     {/* Ripple Effect */}
@@ -632,7 +985,7 @@ const EmployeeTasks = () => {
                   </div>
                   <div>
                     <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Next Best Step</p>
-                    <p className="text-xs font-black text-gray-900 dark:text-white leading-none">Head to {tasks[0].store}</p>
+                    <p className="text-xs font-black text-gray-900 dark:text-white leading-none">Head to {taskList[0]?.store}</p>
                   </div>
                 </div>
                 <div className="w-px h-10 bg-gray-200 dark:bg-gray-700" />
@@ -648,41 +1001,53 @@ const EmployeeTasks = () => {
           </div>
         ) : (
           /* Task Hub Grid - Ultra-Compact High-Density */
-          <div className="bg-white dark:bg-gray-900 rounded-[2.5rem] p-6 md:p-8 border border-gray-100 dark:border-gray-800 shadow-sm space-y-8 animate-in slide-in-from-right-4 duration-500">
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-              <div>
-                <h2 className="text-xl font-black text-gray-900 dark:text-white tracking-widest uppercase">Assignment Hub</h2>
-                <p className="text-[9px] font-bold text-gray-400 mt-0.5 uppercase tracking-tighter">Queue filtered by <span className="text-indigo-600">{sortBy.replace('_', ' ')}</span></p>
+          <div className="bg-white dark:bg-gray-900 rounded-[3rem] p-8 md:p-14 border border-gray-100 dark:border-gray-800 shadow-xl space-y-12 animate-in slide-in-from-right-4 duration-500">
+            <div className="flex flex-col lg:flex-row lg:items-center gap-8">
+              <div className="flex-1">
+                <h2 className="text-4xl font-black text-gray-900 dark:text-white tracking-widest uppercase mb-2">Assignment Hub</h2>
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-tighter">Queue filtered by <span className="text-indigo-600 font-black">{sortBy.replace('_', ' ')}</span></p>
               </div>
 
-              <div className="flex flex-wrap items-center gap-3">
+              <div className="flex flex-wrap items-center justify-end gap-4 ml-auto">
                 <div className="relative group/search">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within/search:text-indigo-600 transition-colors" size={16} />
+                  <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within/search:text-indigo-600 transition-colors" size={20} />
                   <input
                     type="text"
-                    placeholder="Search tasks..."
+                    placeholder="Search mission queue..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 pr-4 py-2 bg-gray-50 dark:bg-gray-800 rounded-xl text-[10px] font-bold outline-none border border-transparent focus:border-indigo-100 dark:focus:border-indigo-900/30 w-full md:w-48 lg:w-64 transition-all"
+                    className="pl-12 pr-6 py-4 bg-gray-50 dark:bg-gray-800 rounded-2xl text-xs font-bold outline-none border border-transparent focus:border-indigo-100 dark:focus:border-indigo-900/30 w-full md:w-64 lg:w-96 transition-all shadow-inner"
                   />
                 </div>
 
-                <div className="flex bg-gray-50 dark:bg-gray-800 p-1 rounded-xl border border-gray-100 dark:border-gray-700">
+                <div className="flex bg-gray-50 dark:bg-gray-800 p-2 rounded-2xl border border-gray-100 dark:border-gray-700">
                   <select
                     value={filterPriority}
                     onChange={(e) => setFilterPriority(e.target.value)}
-                    className="bg-transparent text-[9px] font-black uppercase tracking-widest px-3 py-1 outline-none border-none cursor-pointer text-gray-600 dark:text-gray-400"
+                    className="bg-transparent text-xs font-black uppercase tracking-widest px-4 py-2 outline-none border-none cursor-pointer text-gray-600 dark:text-gray-400"
                   >
                     <option value="all">Priority: All</option>
                     <option value="high">High</option>
                     <option value="medium">Medium</option>
                     <option value="low">Low</option>
                   </select>
-                  <div className="w-px h-4 bg-gray-200 dark:bg-gray-700 self-center" />
+                  <div className="w-px h-6 bg-gray-200 dark:bg-gray-700 self-center" />
+                  <select
+                    value={filterDate}
+                    onChange={(e) => setFilterDate(e.target.value)}
+                    className="bg-transparent text-xs font-black uppercase tracking-widest px-4 py-2 outline-none border-none cursor-pointer text-gray-600 dark:text-gray-400"
+                  >
+                    <option value="all">Time: All</option>
+                    <option value="today">Today</option>
+                    <option value="yesterday">Yesterday</option>
+                    <option value="this_week">This Week</option>
+                    <option value="this_month">This Month</option>
+                  </select>
+                  <div className="w-px h-6 bg-gray-200 dark:bg-gray-700 self-center" />
                   <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value)}
-                    className="bg-transparent text-[9px] font-black uppercase tracking-widest px-3 py-1 outline-none border-none cursor-pointer text-gray-600 dark:text-gray-400"
+                    className="bg-transparent text-xs font-black uppercase tracking-widest px-4 py-2 outline-none border-none cursor-pointer text-gray-600 dark:text-gray-400"
                   >
                     <option value="nearest">Sort: Nearest</option>
                     <option value="highest_pay">Payout</option>
@@ -690,104 +1055,123 @@ const EmployeeTasks = () => {
                   </select>
                 </div>
 
-                <button className="p-2.5 bg-gray-50 dark:bg-gray-800 rounded-xl text-gray-400 hover:text-indigo-600 border border-gray-100 dark:border-gray-700 transition-all shadow-sm">
-                  <Filter size={14} />
+                <button className="p-4 bg-gray-50 dark:bg-gray-800 rounded-2xl text-gray-400 hover:text-indigo-600 border border-gray-100 dark:border-gray-700 transition-all shadow-md">
+                  <Filter size={18} />
                 </button>
               </div>
             </div>
 
-            <div className={view === 'list' ? "space-y-4" : "grid grid-cols-1 lg:grid-cols-2 gap-5"}>
-              {filteredTasks.map((task) => (
-                <div key={task.id} className="group relative bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl overflow-hidden transition-all hover:shadow-2xl hover:border-indigo-100 dark:hover:border-indigo-900/40 flex flex-col">
-                  {/* Left Priority Strip */}
-                  <div className={`absolute left-0 top-0 bottom-0 w-1 ${task.priority === 'high' ? 'bg-red-500' :
-                    task.priority === 'medium' ? 'bg-orange-500' : 'bg-emerald-500'
-                    }`} />
-
-                  <div className="p-5 flex-1">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center gap-2">
-                        <div className={`p-2 rounded-lg ${getPriorityColor(task.priority)}`}>
-                          {getCategoryIcon(task.type)}
-                        </div>
-                        <div>
-                          <p className="text-[10px] font-black uppercase text-gray-400 leading-none">{task.type}</p>
-                          <p className={`text-[8px] font-bold uppercase tracking-widest mt-1 ${task.status === 'in-progress' ? 'text-orange-500 animate-pulse' :
-                            task.status === 'delayed' ? 'text-red-500' : 'text-gray-500'
-                            }`}>
-                            {task.status.replace('-', ' ')}
-                          </p>
-                        </div>
+            <div className="space-y-12">
+              {Object.entries(groupedTasks).map(([category, tasks]) => (
+                tasks.length > 0 && (
+                  <div key={category} className="space-y-6">
+                    <div className="flex items-center gap-4 border-b border-gray-100 dark:border-gray-800 pb-4">
+                      <div className="w-10 h-10 rounded-xl bg-gray-50 dark:bg-gray-800 flex items-center justify-center text-gray-400">
+                        {category === 'Today' ? <Clock size={18} className="text-indigo-600" /> :
+                          category === 'Yesterday' ? <Calendar size={18} /> :
+                            category === 'This Week' ? <LayoutGrid size={18} /> :
+                              <TrendingUpIcon size={18} />}
                       </div>
-                      <button className="p-2 text-gray-300 hover:text-gray-600 dark:hover:text-gray-400 transition-colors">
-                        <MoreVertical size={16} />
-                      </button>
-                    </div>
-
-                    <h3 className="text-base font-black text-gray-900 dark:text-white mb-2 leading-tight group-hover:text-indigo-600 transition-colors">
-                      {task.title}
-                    </h3>
-
-                    <div className="space-y-2.5">
-                      <div className="flex items-start gap-2">
-                        <MapPin size={14} className="text-gray-400 shrink-0 mt-0.5" />
-                        <div>
-                          <p className="text-[11px] font-bold text-gray-600 dark:text-gray-400 leading-snug">
-                            {task.store} • <span className="text-gray-400 font-medium">{task.address}</span>
-                          </p>
-                          <p className="text-[9px] font-bold text-indigo-500/80 mt-1 uppercase tracking-tighter">
-                            Due {task.dueDate}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-4 bg-gray-50 dark:bg-gray-800/50 p-2.5 rounded-xl border border-gray-100 dark:border-gray-700/50">
-                        <div className="flex items-center gap-1.5 flex-1">
-                          <Navigation size={12} className="text-indigo-500" />
-                          <div>
-                            <p className="text-[8px] font-black text-gray-400 uppercase tracking-tighter">Distance</p>
-                            <p className="text-[10px] font-black text-gray-900 dark:text-white leading-none">{task.distance}</p>
-                          </div>
-                        </div>
-                        <div className="w-px h-6 bg-gray-200 dark:bg-gray-700" />
-                        <div className="flex items-center gap-1.5 flex-1">
-                          <Clock size={12} className="text-pink-500" />
-                          <div>
-                            <p className="text-[8px] font-black text-gray-400 uppercase tracking-tighter">Est. Time</p>
-                            <p className="text-[10px] font-black text-gray-900 dark:text-white leading-none">{task.eta}</p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="p-5 pt-0 mt-auto">
-                    <div className="flex items-center justify-between mb-4">
                       <div>
-                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Incentive</p>
-                        <p className="text-xl font-black text-emerald-600 tabular-nums leading-none tracking-tight">{task.incentive}</p>
-                      </div>
-                      <div className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest ${getPriorityColor(task.priority)}`}>
-                        {task.priority} Priority
+                        <h3 className="text-lg font-black text-gray-900 dark:text-white uppercase tracking-widest">{category}'s Missions</h3>
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">{tasks.length} Operational Targets</p>
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
-                      <button className="flex items-center justify-center gap-2 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg shadow-indigo-200 dark:shadow-none">
-                        Start Task
-                      </button>
-                      <button className="flex items-center justify-center gap-2 py-3 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 text-gray-600 dark:text-gray-300 rounded-xl font-black text-[10px] uppercase tracking-widest hover:border-indigo-200 transition-all">
-                        <Navigation size={12} />
-                        Navigate
-                      </button>
+                    <div className={view === 'list' ? "space-y-6" : "grid grid-cols-1 gap-6"}>
+                      {tasks.map((task) => (
+                        <div
+                          key={task.id}
+                          onClick={() => setSelectedTask(task)}
+                          className="group relative bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-[2.5rem] overflow-hidden transition-all hover:shadow-3xl hover:border-indigo-100 dark:hover:border-indigo-900/40 flex flex-col md:flex-row md:items-center cursor-pointer min-h-[180px]"
+                        >
+                          {/* Left Priority Strip */}
+                          <div className={`absolute left-0 top-0 bottom-0 w-2 ${task.priority === 'high' ? 'bg-red-500' :
+                            task.priority === 'medium' ? 'bg-orange-500' : 'bg-emerald-500'
+                            }`} />
+
+                          {/* Info Section - Left */}
+                          <div className="p-8 flex-1 flex items-start gap-6">
+                            <div className={`p-4 rounded-2xl shrink-0 ${getPriorityColor(task.priority)} shadow-sm group-hover:scale-110 transition-transform`}>
+                              {getCategoryIcon(task.type)}
+                            </div>
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-3 mb-2">
+                                <p className="text-xs font-black uppercase text-gray-400 tracking-wider leading-none">{task.type}</p>
+                                <span className="w-1.5 h-1.5 rounded-full bg-gray-200" />
+                                <p className={`text-xs font-bold uppercase tracking-widest ${task.status === 'in-progress' ? 'text-orange-500 animate-pulse' :
+                                  task.status === 'delayed' ? 'text-red-500' : 'text-gray-500'
+                                  }`}>
+                                  {task.status.replace('-', ' ')}
+                                </p>
+                                <span className="w-1.5 h-1.5 rounded-full bg-gray-200" />
+                                <span className={`text-xs font-black uppercase px-3 py-1 rounded-full border ${task.priority === 'high' ? 'bg-red-50 text-red-600 border-red-100' :
+                                  task.priority === 'medium' ? 'bg-orange-50 text-orange-600 border-orange-100' :
+                                    'bg-emerald-50 text-emerald-600 border-emerald-100'
+                                  }`}>
+                                  {task.priority}
+                                </span>
+                              </div>
+                              <h3 className="text-2xl font-black text-gray-900 dark:text-white mb-3 tracking-tighter leading-tight group-hover:text-indigo-600 transition-colors truncate">
+                                {task.title}
+                              </h3>
+                              <div className="flex items-center gap-3">
+                                <MapPin size={16} className="text-gray-400 shrink-0" />
+                                <p className="text-xs font-bold text-gray-600 dark:text-gray-400 truncate">
+                                  {task.store} • <span className="text-gray-400 font-medium">{task.address}</span>
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Action Section - Right */}
+                          <div className="p-8 md:w-[400px] flex flex-col justify-center items-end gap-6 bg-gray-50/30 dark:bg-gray-800/20 md:border-l md:border-gray-50 md:dark:border-gray-800/50">
+                            <div className="flex items-center gap-8 w-full justify-end mb-2">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center shadow-inner">
+                                  <Navigation size={18} className="text-indigo-600" />
+                                </div>
+                                <div>
+                                  <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Distance</p>
+                                  <p className="text-sm font-black text-gray-900 dark:text-white leading-none">{task.distance}</p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-pink-50 dark:bg-pink-900/30 flex items-center justify-center shadow-inner">
+                                  <Clock size={18} className="text-pink-600" />
+                                </div>
+                                <div>
+                                  <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Arrival</p>
+                                  <p className="text-sm font-black text-gray-900 dark:text-white leading-none">{task.eta}</p>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-3 w-full justify-end">
+                              <button className="w-auto flex items-center justify-center gap-3 px-10 py-5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] transition-all shadow-xl shadow-indigo-100 dark:shadow-none whitespace-nowrap hover:scale-[1.02] active:scale-95">
+                                Start Task
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
-                </div>
+                )
               ))}
             </div>
           </div>
         )}
       </div>
+
+      {/* Task Detail Overlay */}
+      <TaskDetailOverlay
+        task={selectedTask}
+        onClose={() => setSelectedTask(null)}
+        onUpdateOperationalData={updateTaskOperationalData}
+        onStartTask={handleStartTask}
+        onFileUpload={handleFileUpload}
+      />
     </div>
   );
 };
