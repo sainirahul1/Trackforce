@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 
 // =============================================================================
-// STYLE TOKENS & CONSTANTS
+// STYLE TOKENS & CONSTANTSAB
 // Shared styling strings to ensure consistency and easier maintenance.
 // =============================================================================
 
@@ -91,11 +91,10 @@ const ActivityItem = ({ activity, isLast }) => (
 
     {/* Activity Icon */}
     <div className="relative">
-      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 z-10 transition-transform duration-500 group-hover/item:scale-110 group-hover/item:rotate-3 relative shadow-lg border border-white/50 dark:border-white/5 ${
-        activity.type === 'success' ? 'bg-gradient-to-br from-emerald-100 to-emerald-50 text-emerald-600 dark:from-emerald-900/40 dark:to-emerald-800/20 dark:text-emerald-400' :
+      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 z-10 transition-transform duration-500 group-hover/item:scale-110 group-hover/item:rotate-3 relative shadow-lg border border-white/50 dark:border-white/5 ${activity.type === 'success' ? 'bg-gradient-to-br from-emerald-100 to-emerald-50 text-emerald-600 dark:from-emerald-900/40 dark:to-emerald-800/20 dark:text-emerald-400' :
         activity.type === 'info' ? 'bg-gradient-to-br from-blue-100 to-blue-50 text-blue-600 dark:from-blue-900/40 dark:to-blue-800/20 dark:text-blue-400' :
-        'bg-gradient-to-br from-gray-100 to-gray-50 text-gray-600 dark:from-gray-800 dark:to-gray-900 dark:text-gray-400'
-      }`}>
+          'bg-gradient-to-br from-gray-100 to-gray-50 text-gray-600 dark:from-gray-800 dark:to-gray-900 dark:text-gray-400'
+        }`}>
         {activity.type === 'success' ? <CheckCircle2 size={22} className="drop-shadow-sm" /> :
           activity.type === 'info' ? <ShoppingBag size={22} className="drop-shadow-sm" /> :
             <Activity size={22} className="drop-shadow-sm" />}
@@ -168,7 +167,7 @@ const EmployeeDashboard = () => {
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-10 px-4 md:px-0">
-      
+
       {/* 1. Header Section: Greeting & Profile/Shift Control */}
       <header className="relative overflow-hidden rounded-[2.5rem] p-8 md:p-12 shadow-2xl bg-gradient-to-br from-slate-700 via-slate-800 to-slate-900 shadow-slate-900/40 transition-all duration-700">
         {/* Background Decorative Shapes */}
@@ -186,7 +185,7 @@ const EmployeeDashboard = () => {
             </div>
             <h1 className="text-4xl md:text-6xl font-black text-white tracking-tight leading-tight">
               {getGreeting()}, <br className="hidden md:block" />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-200 to-indigo-100 drop-shadow-sm">Abhiram</span>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-200 to-indigo-100 drop-shadow-sm">Rahul</span>
             </h1>
             <p className="flex items-center text-indigo-100/90 font-medium text-lg md:text-xl mt-4">
               <span className="bg-white/20 px-3 py-1 rounded-lg mr-3 text-sm font-bold backdrop-blur-sm border border-white/10 shadow-sm">#TX402</span>
@@ -240,7 +239,7 @@ const EmployeeDashboard = () => {
       {/* 3. Metrics Row: Combination of Stats and Daily Progress */}
       <section className="space-y-6 md:space-y-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
-          
+
           {/* Stats Sub-grid (Left 2 Columns on Desktop) */}
           <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-6">
             {stats.map((stat, i) => (
@@ -284,7 +283,7 @@ const EmployeeDashboard = () => {
 
         {/* 4. Operations Row: Next Target and Activity Timeline */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 items-start">
-          
+
           {/* Next Target Destination Card */}
           <div className={`${UI_TOKENS.cardBase} p-6 md:p-8 rounded-[2rem]`}>
             <div className="absolute top-0 right-0 w-80 h-80 bg-indigo-50 dark:bg-indigo-900/20 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none transition-transform duration-700 group-hover:scale-110" />
@@ -341,10 +340,10 @@ const EmployeeDashboard = () => {
             {/* Timeline List */}
             <div className="space-y-6 relative z-10">
               {recentActivities.map((activity, i) => (
-                <ActivityItem 
-                  key={i} 
-                  activity={activity} 
-                  isLast={i === recentActivities.length - 1} 
+                <ActivityItem
+                  key={i}
+                  activity={activity}
+                  isLast={i === recentActivities.length - 1}
                 />
               ))}
             </div>
