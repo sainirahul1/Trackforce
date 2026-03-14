@@ -26,9 +26,10 @@ import {
   Pause,
   Power,
   ChevronUp,
+  ChevronDown,
   X,
   User,
-  Send,
+  LogOut,
   Camera,
   Check,
   ShoppingBag,
@@ -493,6 +494,11 @@ const EmployeeTasks = () => {
   const [sortBy, setSortBy] = useState('nearest');
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
+  const [collapsedCategories, setCollapsedCategories] = useState({});
+
+  const toggleCategory = (category) => {
+    setCollapsedCategories(prev => ({ ...prev, [category]: !prev[category] }));
+  };
 
   const context = useOutletContext() || {};
   const { workStatus = 'Offline', setWorkStatus = () => { } } = context;
@@ -604,6 +610,67 @@ const EmployeeTasks = () => {
         { id: 2, text: 'Verify payment mode (Cheque/NEFT)', completed: false }
       ]
     },
+    // --- Additional Yesterday Tasks ---
+    {
+      id: 11,
+      title: 'Store Inspection Audit',
+      store: 'Reliance Digital',
+      companyName: 'Reliance Retail Ltd',
+      companyContact: 'Kavita Reddy',
+      companyEmail: 'kavita@reliance.com',
+      companyInsight: 'Key Electronics Partner',
+      address: 'Jayanagar, Bengaluru',
+      distance: '4.2 km',
+      distanceVal: 4.2,
+      eta: '30 mins',
+      priority: 'high',
+      status: 'pending',
+      visitStatus: 'Delayed',
+      missionStatus: 'Pending',
+      isTaskStarted: false,
+      dueDate: 'Yesterday, 02:00 PM',
+      date: new Date(Date.now() - 86400000), // Yesterday
+      type: 'Audit',
+      incentive: '₹200',
+      incentiveVal: 200,
+      difficulty: 'Medium',
+      coords: { x: 35, y: 45 },
+      evidence: { storeFront: null, selfie: null, productDisplay: null, officialDoc: null },
+      checklist: [
+        { id: 1, text: 'Check electronic displays for defects', completed: false },
+        { id: 2, text: 'Verify staff uniform compliance', completed: false }
+      ]
+    },
+    {
+      id: 12,
+      title: 'Hardware Maintenance',
+      store: 'Star Bazaar',
+      companyName: 'Trent Hypermarket',
+      companyContact: 'Anil Kumar',
+      companyEmail: 'anil@trent.in',
+      companyInsight: 'Standard Account',
+      address: 'Hebbal, Bengaluru',
+      distance: '9.5 km',
+      distanceVal: 9.5,
+      eta: '45 mins',
+      priority: 'medium',
+      status: 'delayed',
+      visitStatus: 'Missed',
+      missionStatus: 'Overdue',
+      isTaskStarted: false,
+      dueDate: 'Yesterday, 11:30 AM',
+      date: new Date(Date.now() - 86400000), // Yesterday
+      type: 'Retail',
+      incentive: '₹150',
+      incentiveVal: 150,
+      difficulty: 'Hard',
+      coords: { x: 45, y: 75 },
+      evidence: { storeFront: null, selfie: null, productDisplay: null, officialDoc: null },
+      checklist: [
+        { id: 1, text: 'Fix POS barcode scanner', completed: false },
+        { id: 2, text: 'Update firmware on backend terminal', completed: false }
+      ]
+    },
     {
       id: 4,
       title: 'Feedback Survey',
@@ -635,6 +702,7 @@ const EmployeeTasks = () => {
         { id: 3, text: 'Submit final report draft', completed: false }
       ]
     },
+    // --- This Week Tasks ---
     {
       id: 5,
       title: 'Display Unit Setup',
@@ -653,7 +721,7 @@ const EmployeeTasks = () => {
       missionStatus: 'Pending',
       isTaskStarted: false,
       dueDate: 'This Week',
-      date: new Date(Date.now() + 3 * 86400000), // This Week
+      date: new Date(Date.now() + 3 * 86400000),
       type: 'Retail',
       incentive: '₹300',
       incentiveVal: 300,
@@ -662,6 +730,68 @@ const EmployeeTasks = () => {
       evidence: { storeFront: null, selfie: null, productDisplay: null, officialDoc: null },
       checklist: []
     },
+    {
+      id: 7,
+      title: 'Market Competitor Analysis',
+      store: 'D-Mart Sarjapur',
+      companyName: 'Avenue Supermarts',
+      companyContact: 'Priya Patel',
+      companyEmail: 'priya@dmart.in',
+      companyInsight: 'Tier 1 Account • High Frequency',
+      address: 'Sarjapur Road, Bengaluru',
+      distance: '6.1 km',
+      distanceVal: 6.1,
+      eta: '35 mins',
+      priority: 'medium',
+      status: 'pending',
+      visitStatus: 'Reached Client',
+      missionStatus: 'Pending',
+      isTaskStarted: false,
+      dueDate: 'This Week',
+      date: new Date(Date.now() + 2 * 86400000),
+      type: 'Survey',
+      incentive: '₹180',
+      incentiveVal: 180,
+      difficulty: 'Medium',
+      coords: { x: 55, y: 65 },
+      evidence: { storeFront: null, selfie: null, productDisplay: null, officialDoc: null },
+      checklist: [
+        { id: 1, text: 'Visit 3 competitor outlets', completed: false },
+        { id: 2, text: 'Record pricing data for key SKUs', completed: false },
+        { id: 3, text: 'Photograph competitor display setups', completed: false },
+      ]
+    },
+    {
+      id: 8,
+      title: 'Promotional Campaign Setup',
+      store: 'Lifestyle Store',
+      companyName: 'Landmark Group',
+      companyContact: 'Sumanth Rao',
+      companyEmail: 's.rao@landmark.in',
+      companyInsight: 'Premium Partner • Event Client',
+      address: 'Orion Mall, Bengaluru',
+      distance: '10.3 km',
+      distanceVal: 10.3,
+      eta: '55 mins',
+      priority: 'high',
+      status: 'pending',
+      visitStatus: 'Reached Client',
+      missionStatus: 'Pending',
+      isTaskStarted: false,
+      dueDate: 'This Week',
+      date: new Date(Date.now() + 4 * 86400000),
+      type: 'Retail',
+      incentive: '₹350',
+      incentiveVal: 350,
+      difficulty: 'Hard',
+      coords: { x: 25, y: 70 },
+      evidence: { storeFront: null, selfie: null, productDisplay: null, officialDoc: null },
+      checklist: [
+        { id: 1, text: 'Set up 2 promotional kiosks', completed: false },
+        { id: 2, text: 'Brief store staff on campaign rules', completed: false },
+      ]
+    },
+    // --- This Month Tasks ---
     {
       id: 6,
       title: 'Audit Report Filing',
@@ -680,7 +810,7 @@ const EmployeeTasks = () => {
       missionStatus: 'Pending',
       isTaskStarted: false,
       dueDate: 'This Month',
-      date: new Date(Date.now() + 20 * 86400000), // This Month
+      date: new Date(Date.now() + 20 * 86400000),
       type: 'Audit',
       incentive: '₹120',
       incentiveVal: 120,
@@ -688,6 +818,67 @@ const EmployeeTasks = () => {
       coords: { x: 65, y: 45 },
       evidence: { storeFront: null, selfie: null, productDisplay: null, officialDoc: null },
       checklist: []
+    },
+    {
+      id: 9,
+      title: 'Annual Stock Reconciliation',
+      store: 'Croma Electronics',
+      companyName: 'Infiniti Retail',
+      companyContact: 'Deepak Menon',
+      companyEmail: 'deepak@croma.com',
+      companyInsight: 'Enterprise Account • 3 Years',
+      address: 'Phoenix Marketcity, Bengaluru',
+      distance: '7.5 km',
+      distanceVal: 7.5,
+      eta: '40 mins',
+      priority: 'high',
+      status: 'pending',
+      visitStatus: 'Reached Client',
+      missionStatus: 'Pending',
+      isTaskStarted: false,
+      dueDate: 'This Month',
+      date: new Date(Date.now() + 12 * 86400000),
+      type: 'Finance',
+      incentive: '₹400',
+      incentiveVal: 400,
+      difficulty: 'Hard',
+      coords: { x: 40, y: 55 },
+      evidence: { storeFront: null, selfie: null, productDisplay: null, officialDoc: null },
+      checklist: [
+        { id: 1, text: 'Cross-check invoices with physical stock', completed: false },
+        { id: 2, text: 'Flag discrepancies in ERP system', completed: false },
+        { id: 3, text: 'Submit signed reconciliation sheet', completed: false },
+      ]
+    },
+    {
+      id: 10,
+      title: 'Customer Loyalty Drive',
+      store: 'Shoppers Stop',
+      companyName: 'K Raheja Corp',
+      companyContact: 'Meena Iyer',
+      companyEmail: 'm.iyer@shoppersstop.com',
+      companyInsight: 'Long-term Partner • High Footfall',
+      address: 'Koramangala, Bengaluru',
+      distance: '3.9 km',
+      distanceVal: 3.9,
+      eta: '25 mins',
+      priority: 'medium',
+      status: 'pending',
+      visitStatus: 'Reached Client',
+      missionStatus: 'Pending',
+      isTaskStarted: false,
+      dueDate: 'This Month',
+      date: new Date(Date.now() + 18 * 86400000),
+      type: 'Survey',
+      incentive: '₹200',
+      incentiveVal: 200,
+      difficulty: 'Medium',
+      coords: { x: 60, y: 30 },
+      evidence: { storeFront: null, selfie: null, productDisplay: null, officialDoc: null },
+      checklist: [
+        { id: 1, text: 'Enrol 20 customers in loyalty programme', completed: false },
+        { id: 2, text: 'Distribute welcome kit packs', completed: false },
+      ]
     }
   ];
 
@@ -1061,29 +1252,36 @@ const EmployeeTasks = () => {
               </div>
             </div>
 
-            <div className="space-y-12">
+            <div className="space-y-6">
               {Object.entries(groupedTasks).map(([category, tasks]) => (
                 tasks.length > 0 && (
-                  <div key={category} className="space-y-6">
-                    <div className="flex items-center gap-4 border-b border-gray-100 dark:border-gray-800 pb-4">
+                  <div key={category} className="space-y-3">
+                    <div
+                      className="flex items-center gap-4 border-b border-gray-100 dark:border-gray-800 pb-4 cursor-pointer select-none"
+                      onClick={() => toggleCategory(category)}
+                    >
                       <div className="w-10 h-10 rounded-xl bg-gray-50 dark:bg-gray-800 flex items-center justify-center text-gray-400">
                         {category === 'Today' ? <Clock size={18} className="text-indigo-600" /> :
                           category === 'Yesterday' ? <Calendar size={18} /> :
                             category === 'This Week' ? <LayoutGrid size={18} /> :
                               <TrendingUpIcon size={18} />}
                       </div>
-                      <div>
+                      <div className="flex-1">
                         <h3 className="text-lg font-black text-gray-900 dark:text-white uppercase tracking-widest">{category}'s Missions</h3>
                         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">{tasks.length} Operational Targets</p>
                       </div>
+                      <div className={`p-2 rounded-xl text-gray-400 transition-transform duration-300 ${collapsedCategories[category] ? 'rotate-180' : ''}`}>
+                        <ChevronDown size={18} />
+                      </div>
                     </div>
 
-                    <div className={view === 'list' ? "space-y-6" : "grid grid-cols-1 gap-6"}>
+                    {!collapsedCategories[category] && (
+                    <div className={view === 'list' ? "space-y-3" : "grid grid-cols-1 gap-3"}>
                       {tasks.map((task) => (
                         <div
                           key={task.id}
                           onClick={() => setSelectedTask(task)}
-                          className="group relative bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-[2.5rem] overflow-hidden transition-all hover:shadow-3xl hover:border-indigo-100 dark:hover:border-indigo-900/40 flex flex-col md:flex-row md:items-center cursor-pointer min-h-[180px]"
+                          className="group relative bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-[2rem] overflow-hidden transition-all hover:shadow-3xl hover:border-indigo-100 dark:hover:border-indigo-900/40 flex flex-col md:flex-row md:items-center cursor-pointer"
                         >
                           {/* Left Priority Strip */}
                           <div className={`absolute left-0 top-0 bottom-0 w-2 ${task.priority === 'high' ? 'bg-red-500' :
@@ -1091,8 +1289,8 @@ const EmployeeTasks = () => {
                             }`} />
 
                           {/* Info Section - Left */}
-                          <div className="p-8 flex-1 flex items-start gap-6">
-                            <div className={`p-4 rounded-2xl shrink-0 ${getPriorityColor(task.priority)} shadow-sm group-hover:scale-110 transition-transform`}>
+                           <div className="p-5 flex-1 flex items-start gap-4">
+                             <div className={`p-3 rounded-xl shrink-0 ${getPriorityColor(task.priority)} shadow-sm group-hover:scale-110 transition-transform`}>
                               {getCategoryIcon(task.type)}
                             </div>
                             <div className="min-w-0">
@@ -1112,7 +1310,7 @@ const EmployeeTasks = () => {
                                   {task.priority}
                                 </span>
                               </div>
-                              <h3 className="text-2xl font-black text-gray-900 dark:text-white mb-3 tracking-tighter leading-tight group-hover:text-indigo-600 transition-colors truncate">
+                               <h3 className="text-lg font-black text-gray-900 dark:text-white mb-1 tracking-tighter leading-tight group-hover:text-indigo-600 transition-colors truncate">
                                 {task.title}
                               </h3>
                               <div className="flex items-center gap-3">
@@ -1125,7 +1323,7 @@ const EmployeeTasks = () => {
                           </div>
 
                           {/* Action Section - Right */}
-                          <div className="p-8 md:w-[400px] flex flex-col justify-center items-end gap-6 bg-gray-50/30 dark:bg-gray-800/20 md:border-l md:border-gray-50 md:dark:border-gray-800/50">
+                           <div className="p-5 pl-5 md:w-[360px] flex flex-col justify-center items-end gap-3 bg-gray-50/30 dark:bg-gray-800/20 md:border-l md:border-gray-50 md:dark:border-gray-800/50">
                             <div className="flex items-center gap-8 w-full justify-end mb-2">
                               <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center shadow-inner">
@@ -1148,7 +1346,7 @@ const EmployeeTasks = () => {
                             </div>
 
                             <div className="flex items-center gap-3 w-full justify-end">
-                              <button className="w-auto flex items-center justify-center gap-3 px-10 py-5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] transition-all shadow-xl shadow-indigo-100 dark:shadow-none whitespace-nowrap hover:scale-[1.02] active:scale-95">
+                              <button className="w-auto flex items-center justify-center gap-3 px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] transition-all shadow-xl shadow-indigo-100 dark:shadow-none whitespace-nowrap hover:scale-[1.02] active:scale-95">
                                 Start Task
                               </button>
                             </div>
@@ -1156,6 +1354,7 @@ const EmployeeTasks = () => {
                         </div>
                       ))}
                     </div>
+                    )}
                   </div>
                 )
               ))}

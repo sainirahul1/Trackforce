@@ -22,7 +22,7 @@ const TenantDashboard = () => {
           <h1 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">Executive Overview</h1>
           <p className="text-gray-500 dark:text-gray-400 font-medium mt-1">Real-time operational intelligence and fleet performance</p>
         </div>
-        <div className="hidden md:flex items-center space-x-2 bg-white dark:bg-gray-900 px-4 py-2 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm">
+        <div className="hidden md:flex items-center space-x-2 bg-white dark:bg-gray-800 px-4 py-2 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm">
           <Calendar size={16} className="text-gray-400 dark:text-gray-500" />
           <span className="text-sm font-bold text-gray-700 dark:text-gray-300">
             {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
@@ -38,10 +38,10 @@ const TenantDashboard = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Visit Velocity Chart */}
-        <div className="bg-white dark:bg-gray-900 rounded-[2rem] border border-gray-100 dark:border-gray-800 p-8 shadow-sm">
+        <div className="bg-white dark:bg-gray-800 rounded-[2rem] border border-gray-100 dark:border-gray-700 p-8 shadow-sm">
           <div className="flex items-center justify-between mb-8">
             <h2 className="text-xl font-black text-gray-900 dark:text-white">Visit Velocity</h2>
-            <select className="bg-gray-50 dark:bg-gray-800 border-none rounded-xl text-xs font-bold px-3 py-2 outline-none dark:text-gray-300">
+            <select className="bg-gray-50 dark:bg-gray-700 border-none rounded-xl text-xs font-bold px-3 py-2 outline-none dark:text-gray-300">
               <option>Last 7 Days</option>
               <option>Last 30 Days</option>
             </select>
@@ -64,7 +64,7 @@ const TenantDashboard = () => {
         </div>
 
         {/* Live Activity Feed */}
-        <div className="bg-white dark:bg-gray-900 rounded-[2rem] border border-gray-100 dark:border-gray-800 p-8 shadow-sm">
+        <div className="bg-white dark:bg-gray-800 rounded-[2rem] border border-gray-100 dark:border-gray-700 p-8 shadow-sm">
           <h2 className="text-xl font-black text-gray-900 dark:text-white mb-8">Live Activity Feed</h2>
           <div className="space-y-6">
             {recentActivities.map((activity) => (
@@ -84,7 +84,7 @@ const TenantDashboard = () => {
               </div>
             ))}
           </div>
-          <button className="w-full mt-8 py-3 rounded-2xl bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-sm font-bold hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+          <button className="w-full mt-8 py-3 rounded-2xl bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-sm font-bold hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
             View All Operations
           </button>
         </div>

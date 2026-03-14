@@ -2,10 +2,21 @@ import { Bell, Search, User, Calendar, CheckCircle2, Info, ChevronRight, AlertCi
 import ThemeToggle from './ThemeToggle';
 import { useNotifications } from '../context/NotificationContext';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const Navbar = ({ user }) => {
   const [showNotifications, setShowNotifications] = useState(false);
   const { unreadCount, allNotifications, markAsRead, markAllAsRead } = useNotifications();
+  const navigate = useNavigate();
+
+  const handleViewAll = () => {
+    setShowNotifications(false);
+    navigate('/employee/profile');
+    setTimeout(() => {
+      const el = document.getElementById('notifications');
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 300);
+  };
 
   return (
     <nav className="h-20 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-100 dark:border-gray-800 flex items-center justify-between px-8 sticky top-0 z-[100] transition-colors duration-300">
@@ -76,7 +87,7 @@ const Navbar = ({ user }) => {
                     </div>
                     <div className="p-4 bg-gray-50 dark:bg-gray-800/50 text-center">
                         <button 
-                            onClick={() => { window.location.href = '/employee/notifications'; setShowNotifications(false); }}
+                            onClick={handleViewAll}
                             className="text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-primary-main transition-colors"
                         >
                             View All Notifications

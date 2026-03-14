@@ -2,11 +2,11 @@ import React from 'react';
 
 const DashboardCard = ({ title, value, icon: Icon, trend, trendValue, colorClass = "text-primary-main" }) => {
   return (
-    <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-md transition-all group duration-300">
+    <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-all group duration-300">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-gray-400 dark:text-gray-500 text-xs font-bold uppercase tracking-widest">{title}</h3>
         {Icon && (
-          <div className={`p-2.5 rounded-xl bg-gray-50 dark:bg-gray-800 ${colorClass} group-hover:scale-110 transition-transform`}>
+          <div className={`p-2.5 rounded-xl bg-gray-50 dark:bg-gray-700 ${colorClass} group-hover:scale-110 transition-transform`}>
             <Icon size={20} />
           </div>
         )}

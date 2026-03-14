@@ -26,7 +26,6 @@ const Sidebar = ({ role, user, isCollapsed, onToggle }) => {
       { name: 'My Visits', icon: Map, path: '/employee/visits' },
       { name: 'My Orders', icon: ShoppingBag, path: '/employee/orders' },
       { name: 'Activity', icon: Clock, path: '/employee/activity' },
-      { name: 'Notifications', icon: Bell, path: '/employee/notifications' },
       { name: 'My Profile', icon: Users, path: '/employee/profile' },
     ],
   };
