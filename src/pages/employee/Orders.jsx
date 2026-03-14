@@ -490,33 +490,34 @@ const EmployeeOrders = () => {
   return (
 
     // Main container with background and padding
-    <div className={`${isDarkMode ? "bg-gray-900" : "bg-slate-100"} min-h-screen p-8`}>
+    <div className={`${isDarkMode ? "bg-[#0f172a] text-white" : "bg-slate-50 text-slate-800"} min-h-screen p-4 sm:p-8 font-sans transition-colors duration-300`}>
       
       {/* Success Message - shows when order is created or updated successfully */}
       {success && (
-        <div className="fixed top-6 right-6 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-pulse">
-          {lastAction === "update" ? "Order Updated Successfully" : "Order Created Successfully"}
+        <div className="fixed top-6 right-6 bg-emerald-500/90 backdrop-blur-md text-white px-6 py-4 rounded-xl shadow-2xl z-50 animate-bounce flex items-center gap-3 border border-emerald-400/20">
+          <div className="bg-white/20 p-1.5 rounded-full"><TrendingUp size={16} /></div>
+          <span className="font-medium">{lastAction === "update" ? "Order Updated Successfully" : "Order Created Successfully"}</span>
         </div>
       )}
 
       {/* Validation Error Message - shows when validation fails */}
       {validationError && (
-        <div className="fixed top-6 right-6 bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-pulse">
-          {validationError}
-          ⚠️ {validationError}
+        <div className="fixed top-6 right-6 bg-rose-500/90 backdrop-blur-md text-white px-6 py-4 rounded-xl shadow-2xl z-50 animate-bounce flex items-center gap-3 border border-rose-400/20">
+          <span className="text-xl">⚠️</span>
+          <span className="font-medium">{validationError}</span>
         </div>
       )}
 
       {/* Header Section */}
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-10 gap-4">
 
         {/* Title and Description */}
         <div>
-          <h1 className={`text-3xl font-black ${isDarkMode ? "text-white" : "text-slate-800"}`}>
+          <h1 className="text-3xl sm:text-4xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 tracking-tight mb-2">
             Orders Dashboard
           </h1>
-          <p className={isDarkMode ? "text-gray-300" : "text-slate-500"}>
-            Manage store orders and revenue
+          <p className={`${isDarkMode ? "text-slate-400" : "text-slate-500"} font-medium`}>
+            Manage store orders and monitor your revenue streams
           </p>
         </div>
 
@@ -543,9 +544,9 @@ const EmployeeOrders = () => {
               });
               setValidationError(false);
             }}
-            className="flex items-center bg-blue-600 text-white px-5 py-3 rounded-xl shadow hover:bg-blue-700"
+            className="flex items-center bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3.5 rounded-xl shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:-translate-y-0.5 transition-all duration-300 font-semibold tracking-wide w-full sm:w-auto justify-center"
           >
-            <PlusCircle size={18} className="mr-2"/>
+            <PlusCircle size={20} className="mr-2"/>
             Create Order
           </button>
         </div>
@@ -553,108 +554,130 @@ const EmployeeOrders = () => {
       </div>
 
       {/* Statistics Cards Section */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-5 mb-10">
 
         {/* Revenue Card */}
-        <div className={`${isDarkMode ? "bg-gray-800" : "bg-white"} p-4 rounded-xl shadow`}>
-          <ShoppingBag className="text-blue-600 mb-2"/>
-          <p className={`text-xs uppercase ${isDarkMode ? "text-gray-400" : "text-slate-400"}`}>
+        <div className={`${isDarkMode ? "bg-[#1e293b]/80 border-slate-700" : "bg-white border-slate-100"} p-5 rounded-3xl shadow-sm border backdrop-blur-xl hover:-translate-y-1 hover:shadow-lg transition-all duration-300 group`}>
+          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-4 ${isDarkMode ? "bg-blue-500/20 text-blue-400" : "bg-blue-100 text-blue-600"} group-hover:scale-110 transition-transform duration-300`}>
+            <ShoppingBag size={24} className="stroke-[2.5]" />
+          </div>
+          <p className={`text-xs font-bold tracking-wider uppercase mb-1 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
             Revenue
           </p>
-          <h2 className={`text-2xl font-bold ${isDarkMode ? "text-white" : "text-slate-800"}`}>
-            ₹{totalSales}
+          <h2 className={`text-3xl font-black tracking-tight ${isDarkMode ? "text-white" : "text-slate-800"}`}>
+            ₹{totalSales.toLocaleString()}
           </h2>
         </div>
 
         {/* Total Orders Card */}
-        <div className={`${isDarkMode ? "bg-gray-800" : "bg-white"} p-4 rounded-xl shadow`}>
-          <ShoppingBag className="text-green-600 mb-2"/>
-          <p className={`text-xs uppercase ${isDarkMode ? "text-gray-400" : "text-slate-400"}`}>
+        <div className={`${isDarkMode ? "bg-[#1e293b]/80 border-slate-700" : "bg-white border-slate-100"} p-5 rounded-3xl shadow-sm border backdrop-blur-xl hover:-translate-y-1 hover:shadow-lg transition-all duration-300 group`}>
+          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-4 ${isDarkMode ? "bg-emerald-500/20 text-emerald-400" : "bg-emerald-100 text-emerald-600"} group-hover:scale-110 transition-transform duration-300`}>
+            <ShoppingBag size={24} className="stroke-[2.5]" />
+          </div>
+          <p className={`text-xs font-bold tracking-wider uppercase mb-1 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
             Total Orders
           </p>
-          <h2 className={`text-2xl font-bold ${isDarkMode ? "text-white" : "text-slate-800"}`}>
+          <h2 className={`text-3xl font-black tracking-tight ${isDarkMode ? "text-white" : "text-slate-800"}`}>
             {orders.length}
           </h2>
         </div>
 
         {/* Today's Orders Card */}
-        <div className={`${isDarkMode ? "bg-gray-800" : "bg-white"} p-4 rounded-xl shadow`}>
-          <Calendar className="text-purple-600 mb-2"/>
-          <p className={`text-xs uppercase ${isDarkMode ? "text-gray-400" : "text-slate-400"}`}>
+        <div className={`${isDarkMode ? "bg-[#1e293b]/80 border-slate-700" : "bg-white border-slate-100"} p-5 rounded-3xl shadow-sm border backdrop-blur-xl hover:-translate-y-1 hover:shadow-lg transition-all duration-300 group`}>
+          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-4 ${isDarkMode ? "bg-purple-500/20 text-purple-400" : "bg-purple-100 text-purple-600"} group-hover:scale-110 transition-transform duration-300`}>
+            <Calendar size={24} className="stroke-[2.5]" />
+          </div>
+          <p className={`text-xs font-bold tracking-wider uppercase mb-1 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
             Today's Orders
           </p>
-          <h2 className={`text-2xl font-bold ${isDarkMode ? "text-white" : "text-slate-800"}`}>
+          <h2 className={`text-3xl font-black tracking-tight ${isDarkMode ? "text-white" : "text-slate-800"}`}>
             {orders.filter(o => o.date === new Date().toISOString().split('T')[0]).length}
           </h2>
         </div>
 
         {/* Pending Orders Card */}
-        <div className={`${isDarkMode ? "bg-gray-800" : "bg-white"} p-4 rounded-xl shadow`}>
-          <ShoppingBag className="text-orange-600 mb-2"/>
-          <p className={`text-xs uppercase ${isDarkMode ? "text-gray-400" : "text-slate-400"}`}>
+        <div className={`${isDarkMode ? "bg-[#1e293b]/80 border-slate-700" : "bg-white border-slate-100"} p-5 rounded-3xl shadow-sm border backdrop-blur-xl hover:-translate-y-1 hover:shadow-lg transition-all duration-300 group`}>
+          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-4 ${isDarkMode ? "bg-orange-500/20 text-orange-400" : "bg-orange-100 text-orange-600"} group-hover:scale-110 transition-transform duration-300`}>
+            <ShoppingBag size={24} className="stroke-[2.5]" />
+          </div>
+          <p className={`text-xs font-bold tracking-wider uppercase mb-1 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
             Pending Orders
           </p>
-          <h2 className={`text-2xl font-bold ${isDarkMode ? "text-white" : "text-slate-800"}`}>
+          <h2 className={`text-3xl font-black tracking-tight ${isDarkMode ? "text-white" : "text-slate-800"}`}>
             {orders.filter(o => o.status === "Pending").length}
           </h2>
         </div>
 
         {/* Completed Orders Card */}
-        <div className={`${isDarkMode ? "bg-gray-800" : "bg-white"} p-4 rounded-xl shadow`}>
-          <ShoppingBag className="text-teal-600 mb-2"/>
-          <p className={`text-xs uppercase ${isDarkMode ? "text-gray-400" : "text-slate-400"}`}>
+        <div className={`${isDarkMode ? "bg-[#1e293b]/80 border-slate-700" : "bg-white border-slate-100"} p-5 rounded-3xl shadow-sm border backdrop-blur-xl hover:-translate-y-1 hover:shadow-lg transition-all duration-300 group`}>
+          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-4 ${isDarkMode ? "bg-teal-500/20 text-teal-400" : "bg-teal-100 text-teal-600"} group-hover:scale-110 transition-transform duration-300`}>
+            <ShoppingBag size={24} className="stroke-[2.5]" />
+          </div>
+          <p className={`text-xs font-bold tracking-wider uppercase mb-1 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
             Completed Orders
           </p>
-          <h2 className={`text-2xl font-bold ${isDarkMode ? "text-white" : "text-slate-800"}`}>
+          <h2 className={`text-3xl font-black tracking-tight ${isDarkMode ? "text-white" : "text-slate-800"}`}>
             {orders.filter(o => o.status === "Confirmed").length}
           </h2>
         </div>
 
         {/* Average Order Value Card */}
-        <div className={`${isDarkMode ? "bg-gray-800" : "bg-white"} p-4 rounded-xl shadow`}>
-          <IndianRupee className="text-indigo-600 mb-2"/>
-          <p className={`text-xs uppercase ${isDarkMode ? "text-gray-400" : "text-slate-400"}`}>
+        <div className={`${isDarkMode ? "bg-[#1e293b]/80 border-slate-700" : "bg-white border-slate-100"} p-5 rounded-3xl shadow-sm border backdrop-blur-xl hover:-translate-y-1 hover:shadow-lg transition-all duration-300 group`}>
+          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-4 ${isDarkMode ? "bg-indigo-500/20 text-indigo-400" : "bg-indigo-100 text-indigo-600"} group-hover:scale-110 transition-transform duration-300`}>
+            <IndianRupee size={24} className="stroke-[2.5]" />
+          </div>
+          <p className={`text-xs font-bold tracking-wider uppercase mb-1 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
             Average Order Value
           </p>
-          <h2 className={`text-2xl font-bold ${isDarkMode ? "text-white" : "text-slate-800"}`}>
-            ₹{orders.length > 0 ? Math.round(totalSales / orders.length) : 0}
+          <h2 className={`text-3xl font-black tracking-tight ${isDarkMode ? "text-white" : "text-slate-800"}`}>
+            ₹{orders.length > 0 ? Math.round(totalSales / orders.length).toLocaleString() : 0}
           </h2>
         </div>
 
         {/* Active Stores Card */}
-        <div className={`${isDarkMode ? "bg-gray-800" : "bg-white"} p-4 rounded-xl shadow`}>
-          <ShoppingBag className="text-pink-600 mb-2"/>
-          <p className={`text-xs uppercase ${isDarkMode ? "text-gray-400" : "text-slate-400"}`}>
+        <div className={`${isDarkMode ? "bg-[#1e293b]/80 border-slate-700" : "bg-white border-slate-100"} p-5 rounded-3xl shadow-sm border backdrop-blur-xl hover:-translate-y-1 hover:shadow-lg transition-all duration-300 group`}>
+          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-4 ${isDarkMode ? "bg-pink-500/20 text-pink-400" : "bg-pink-100 text-pink-600"} group-hover:scale-110 transition-transform duration-300`}>
+            <ShoppingBag size={24} className="stroke-[2.5]" />
+          </div>
+          <p className={`text-xs font-bold tracking-wider uppercase mb-1 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
             Active Stores
           </p>
-          <h2 className={`text-2xl font-bold ${isDarkMode ? "text-white" : "text-slate-800"}`}>
+          <h2 className={`text-3xl font-black tracking-tight ${isDarkMode ? "text-white" : "text-slate-800"}`}>
             {[...new Set(orders.map(o => o.store))].length}
           </h2>
         </div>
 
         {/* Target Progress Card */}
-        <div className={`${isDarkMode ? "bg-gray-800" : "bg-white"} p-4 rounded-xl shadow`}>
-          <TrendingUp className="text-blue-600 mb-2"/>
-          <p className={`text-xs uppercase ${isDarkMode ? "text-gray-400" : "text-slate-400"}`}>
+        <div className={`${isDarkMode ? "bg-[#1e293b]/80 border-slate-700" : "bg-white border-slate-100"} p-5 rounded-3xl shadow-sm border backdrop-blur-xl hover:-translate-y-1 hover:shadow-lg transition-all duration-300 group`}>
+          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-4 ${isDarkMode ? "bg-blue-500/20 text-blue-400" : "bg-blue-100 text-blue-600"} group-hover:scale-110 transition-transform duration-300`}>
+            <TrendingUp size={24} className="stroke-[2.5]" />
+          </div>
+          <p className={`text-xs font-bold tracking-wider uppercase mb-3 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
             Target Progress
           </p>
-          <div className="flex items-center">
-            <div className={`w-full bg-gray-200 rounded-full h-2 ${isDarkMode ? "bg-gray-700" : ""}`}>
-              <div className={`bg-blue-600 h-2 rounded-full ${isDarkMode ? "bg-blue-400" : ""}`} style={{width: `${progress}%`}}></div>
+          <div className="flex flex-col gap-1 w-full">
+            <div className={`w-full bg-slate-200 rounded-full h-2.5 ${isDarkMode ? "bg-slate-700" : ""} overflow-hidden`}>
+              <div 
+                className={`h-2.5 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 relative transition-all duration-1000 ease-out`} 
+                style={{width: `${progress}%`}}
+              >
+                <div className="absolute top-0 bottom-0 left-0 right-0 w-full animate-pulse bg-white/20" style={{ transform: 'skewX(-20deg)' }}></div>
+              </div>
             </div>
-            <span className={`text-xs font-medium ml-2 ${isDarkMode ? "text-gray-300" : "text-slate-500"}`}>
-              {progress}%
-            </span>
+            <div className="flex justify-between items-center text-xs font-bold mt-1">
+              <span className="text-blue-500">{progress.toFixed(1)}%</span>
+              <span className={isDarkMode ? "text-slate-500" : "text-slate-400"}>Target: ₹{(target/1000).toFixed(0)}k</span>
+            </div>
           </div>
         </div>
 
       </div>
 
       {/* Tabbed Charts Section */}
-      <div className={`${isDarkMode ? "bg-gray-800" : "bg-white"} rounded-3xl shadow p-6 mb-8`}>
+      <div className={`${isDarkMode ? "bg-[#1e293b]/80 border-slate-700/50" : "bg-white border-slate-100"} rounded-3xl shadow-sm border backdrop-blur-xl p-6 sm:p-8 mb-10 transition-colors duration-300`}>
         
         {/* Tab Navigation */}
-        <div className={`flex flex-wrap gap-1 mb-6 border-b ${isDarkMode ? "border-gray-700" : "border-gray-200"} pb-4`}>
+        <div className={`flex flex-wrap gap-2 mb-8 pb-4 border-b ${isDarkMode ? "border-slate-700/50" : "border-slate-100"}`}>
           {[
             { id: "salesByStore", label: "Sales", icon: "📊" },
             { id: "weeklyRevenue", label: "Weekly", icon: "📈" },
@@ -666,73 +689,71 @@ const EmployeeOrders = () => {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
+              className={`px-4 py-2 rounded-xl text-sm font-semibold tracking-wide transition-all duration-300 flex items-center gap-2 ${
                 activeTab === tab.id
-                  ? isDarkMode 
-                    ? "bg-blue-600 text-white"
-                    : "bg-blue-500 text-white"
+                  ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20 scale-105"
                   : isDarkMode
-                    ? "bg-gray-700 text-gray-300 hover:bg-gray-600"
-                    : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                    ? "bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white"
+                    : "bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-800"
               }`}
             >
-              <span className="mr-1">{tab.icon}</span>
+              <span>{tab.icon}</span>
               {tab.label}
             </button>
           ))}
         </div>
 
         {/* Tab Content */}
-        <div className="min-h-[250px] max-h-[300px]">
+        <div className="min-h-[300px] max-h-[350px] w-full animate-[fadeIn_0.5s_ease-out]">
           {activeTab === "salesByStore" && (
-            <div>
-              <h3 className={`font-bold mb-2 text-sm ${isDarkMode ? "text-white" : "text-slate-800"}`}>Sales by Store</h3>
-              <div className="h-[200px]">
+            <div className="h-full flex flex-col">
+              <h3 className={`font-extrabold mb-4 text-lg tracking-tight ${isDarkMode ? "text-white" : "text-slate-800"}`}>Sales by Store</h3>
+              <div className="flex-1 min-h-[250px]">
                 <Bar data={barData} options={{ maintainAspectRatio: false }} />
               </div>
             </div>
           )}
           
           {activeTab === "weeklyRevenue" && (
-            <div>
-              <h3 className={`font-bold mb-2 text-sm ${isDarkMode ? "text-white" : "text-slate-800"}`}>Weekly Revenue</h3>
-              <div className="h-[200px]">
+            <div className="h-full flex flex-col">
+              <h3 className={`font-extrabold mb-4 text-lg tracking-tight ${isDarkMode ? "text-white" : "text-slate-800"}`}>Weekly Revenue</h3>
+              <div className="flex-1 min-h-[250px]">
                 <Line data={lineData} options={{ maintainAspectRatio: false }} />
               </div>
             </div>
           )}
           
           {activeTab === "ordersByStatus" && (
-            <div>
-              <h3 className={`font-bold mb-2 text-sm ${isDarkMode ? "text-white" : "text-slate-800"}`}>Orders by Status</h3>
-              <div className="h-[200px] max-w-sm mx-auto">
+            <div className="h-full flex flex-col">
+              <h3 className={`font-extrabold mb-4 text-lg tracking-tight ${isDarkMode ? "text-white" : "text-slate-800"}`}>Orders by Status</h3>
+              <div className="flex-1 min-h-[250px] max-w-sm mx-auto w-full">
                 <Bar data={pieData} options={{ maintainAspectRatio: false }} />
               </div>
             </div>
           )}
           
           {activeTab === "monthlyRevenue" && (
-            <div>
-              <h3 className={`font-bold mb-2 text-sm ${isDarkMode ? "text-white" : "text-slate-800"}`}>Monthly Revenue</h3>
-              <div className="h-[200px]">
+            <div className="h-full flex flex-col">
+              <h3 className={`font-extrabold mb-4 text-lg tracking-tight ${isDarkMode ? "text-white" : "text-slate-800"}`}>Monthly Revenue</h3>
+              <div className="flex-1 min-h-[250px]">
                 <Line data={areaData} options={{ maintainAspectRatio: false }} />
               </div>
             </div>
           )}
           
           {activeTab === "topStores" && (
-            <div>
-              <h3 className={`font-bold mb-2 text-sm ${isDarkMode ? "text-white" : "text-slate-800"}`}>Top Stores</h3>
-              <div className="h-[200px]">
+            <div className="h-full flex flex-col">
+              <h3 className={`font-extrabold mb-4 text-lg tracking-tight ${isDarkMode ? "text-white" : "text-slate-800"}`}>Top Stores</h3>
+              <div className="flex-1 min-h-[250px]">
                 <Bar data={topStoresChartData} options={{ maintainAspectRatio: false }} />
               </div>
             </div>
           )}
           
           {activeTab === "salesExecutive" && (
-            <div>
-              <h3 className={`font-bold mb-2 text-sm ${isDarkMode ? "text-white" : "text-slate-800"}`}>Sales Executive Performance</h3>
-              <div className="h-[200px]">
+            <div className="h-full flex flex-col">
+              <h3 className={`font-extrabold mb-4 text-lg tracking-tight ${isDarkMode ? "text-white" : "text-slate-800"}`}>Sales Executive Performance</h3>
+              <div className="flex-1 min-h-[250px]">
                 <Bar data={executiveChartData} options={{ maintainAspectRatio: false }} />
               </div>
             </div>
@@ -742,133 +763,142 @@ const EmployeeOrders = () => {
       </div>
 
       {/* Orders Table Section */}
-      <div className={`${isDarkMode ? "bg-gray-800" : "bg-white"} rounded-3xl shadow`}>
+      <div className={`${isDarkMode ? "bg-[#1e293b]/80 border-slate-700/50" : "bg-white border-slate-100"} rounded-3xl shadow-sm border backdrop-blur-xl overflow-hidden transition-colors duration-300`}>
         {/* Table Header with Filters and Search */}
-        <div className="p-6 flex flex-col sm:flex-row justify-between gap-4">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-            <h3 className={`font-bold text-lg ${isDarkMode ? "text-white" : "text-slate-800"}`}>
+        <div className={`p-6 sm:p-8 flex flex-col lg:flex-row justify-between gap-6 border-b ${isDarkMode ? "border-slate-700/50" : "border-slate-100"}`}>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
+            <h3 className={`font-black tracking-tight text-xl ${isDarkMode ? "text-white" : "text-slate-800"}`}>
               Order History
             </h3>
             {/* Activity Filter Buttons */}
-            <div className="flex gap-2">
+            <div className={`flex gap-2 p-1.5 rounded-xl ${isDarkMode ? "bg-slate-800/50" : "bg-slate-100"}`}>
               <button
                 onClick={() => setActivityFilter("all")}
-                className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
+                className={`px-4 py-2 rounded-lg text-xs font-bold transition-all duration-300 ${
                   activityFilter === "all"
-                    ? "bg-blue-100 text-blue-700"
+                    ? "bg-white shadow-sm text-blue-600 dark:bg-slate-700 dark:text-blue-400"
                     : isDarkMode 
-                      ? "bg-gray-700 text-gray-300 hover:bg-gray-600"
-                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                      ? "text-slate-400 hover:text-slate-200"
+                      : "text-slate-500 hover:text-slate-700"
                 }`}
               >
                 All
               </button>
               <button
                 onClick={() => setActivityFilter("weekly")}
-                className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
+                className={`px-4 py-2 rounded-lg text-xs font-bold transition-all duration-300 flex items-center gap-1.5 ${
                   activityFilter === "weekly"
-                    ? "bg-blue-100 text-blue-700"
+                    ? "bg-white shadow-sm text-blue-600 dark:bg-slate-700 dark:text-blue-400"
                     : isDarkMode 
-                      ? "bg-gray-700 text-gray-300 hover:bg-gray-600"
-                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                      ? "text-slate-400 hover:text-slate-200"
+                      : "text-slate-500 hover:text-slate-700"
                 }`}
               >
-                <Calendar size={12} className="inline mr-1"/>
+                <Calendar size={14} />
                 Weekly
               </button>
               <button
                 onClick={() => setActivityFilter("daily")}
-                className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
+                className={`px-4 py-2 rounded-lg text-xs font-bold transition-all duration-300 flex items-center gap-1.5 ${
                   activityFilter === "daily"
-                    ? "bg-blue-100 text-blue-700"
+                    ? "bg-white shadow-sm text-blue-600 dark:bg-slate-700 dark:text-blue-400"
                     : isDarkMode 
-                      ? "bg-gray-700 text-gray-300 hover:bg-gray-600"
-                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                      ? "text-slate-400 hover:text-slate-200"
+                      : "text-slate-500 hover:text-slate-700"
                 }`}
               >
-                <Calendar size={12} className="inline mr-1"/>
+                <Calendar size={14} />
                 Daily
               </button>
             </div>
           </div>
           {/* Search Input */}
-          <div className="relative">
-            <Search className={`absolute left-3 top-3 ${isDarkMode ? "text-gray-400" : "text-slate-400"}`} size={16}/>
+          <div className="relative w-full lg:w-72">
+            <Search className={`absolute left-4 top-1/2 -translate-y-1/2 ${isDarkMode ? "text-slate-500" : "text-slate-400"}`} size={18}/>
             <input
               placeholder="Search orders..."
               value={search}
               onChange={e=>setSearch(e.target.value)}
-              className={`pl-9 pr-4 py-2 rounded-lg text-sm ${
+              className={`w-full pl-11 pr-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500/50 ${
                 isDarkMode 
-                  ? "bg-gray-700 text-white placeholder-gray-400" 
-                  : "bg-slate-100 text-slate-800 placeholder-slate-400"
+                  ? "bg-slate-800/50 text-white placeholder-slate-500 border border-slate-700" 
+                  : "bg-slate-50 text-slate-800 placeholder-slate-400 border border-slate-200 focus:bg-white focus:shadow-sm"
               }`}
             />
           </div>
         </div>
         {/* Orders Table - Mobile Responsive */}
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[500px] text-xs">
+          <table className="w-full min-w-[800px] text-sm text-left">
             {/* Table Header */}
-            <thead className={`text-xs uppercase ${isDarkMode ? "text-gray-400" : "text-slate-400"}`}>
+            <thead className={`text-xs uppercase tracking-widest font-bold ${isDarkMode ? "text-slate-400 bg-slate-800/50" : "text-slate-500 bg-slate-50"}`}>
               <tr>
-                <th className="px-2 py-1">Order</th>
-                <th className="px-2 py-1">Store</th>
-                <th className="px-2 py-1">Items</th>
-                <th className="px-2 py-1">Value</th>
-                <th className="px-2 py-1">Sales Executive</th>
-                <th className="px-2 py-1">Status</th>
-                <th className="px-2 py-1">Actions</th>
+                <th className="px-6 py-4">Order</th>
+                <th className="px-6 py-4">Store</th>
+                <th className="px-6 py-4">Items</th>
+                <th className="px-6 py-4">Value</th>
+                <th className="px-6 py-4">Sales Executive</th>
+                <th className="px-6 py-4 text-center">Status</th>
+                <th className="px-6 py-4 text-right">Actions</th>
               </tr>
             </thead>
             {/* Table Body */}
             <tbody>
               {/* Map through filtered orders and render each row */}
-              {filteredOrders.map(o=>(
-                <tr key={o.id} className={`border-t ${isDarkMode ? "hover:bg-gray-700" : "hover:bg-slate-50"}`}>
-                  <td className={`px-2 py-1 font-bold ${isDarkMode ? "text-white" : "text-slate-800"}`}>{o.id}</td>
-                  <td className={`px-2 py-1 ${isDarkMode ? "text-gray-300" : "text-slate-600"}`}>{o.store}</td>
-                  <td className={`px-2 py-1 ${isDarkMode ? "text-gray-300" : "text-slate-600"}`}>{o.items}</td>
-                  <td className={`px-2 py-1 font-bold ${isDarkMode ? "text-white" : "text-slate-800"}`}>₹{o.value}</td>
-                  <td className={`px-2 py-1 ${isDarkMode ? "text-gray-300" : "text-slate-600"}`}>{o.salesExecutive || "N/A"}</td>
-                  <td className="px-2 py-1">
+              {filteredOrders.map((o, index)=>(
+                <tr key={o.id} className={`border-b last:border-0 transition-colors duration-200 ${isDarkMode ? "border-slate-700/50 hover:bg-slate-800/30" : "border-slate-100 hover:bg-slate-50/80"}`} style={{ animation: `fadeIn 0.3s ease-out ${index * 0.05}s both` }}>
+                  <td className={`px-6 py-4 font-bold ${isDarkMode ? "text-blue-400" : "text-blue-600"}`}>{o.id}</td>
+                  <td className={`px-6 py-4 font-medium ${isDarkMode ? "text-slate-200" : "text-slate-700"}`}>
+                    <div className="flex items-center gap-3">
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs ${isDarkMode ? "bg-slate-700 text-slate-300" : "bg-slate-100 text-slate-600"}`}>
+                        {o.store.charAt(0)}
+                      </div>
+                      {o.store}
+                    </div>
+                  </td>
+                  <td className={`px-6 py-4 font-medium ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>{o.items}</td>
+                  <td className={`px-6 py-4 font-black tracking-tight ${isDarkMode ? "text-white" : "text-slate-800"}`}>₹{o.value.toLocaleString()}</td>
+                  <td className={`px-6 py-4 font-medium ${isDarkMode ? "text-slate-400" : "text-slate-600"}`}>{o.salesExecutive || "N/A"}</td>
+                  <td className="px-6 py-4 text-center">
                     {/* Status Toggle Button */}
                     <button
                       onClick={()=>toggleStatus(o.id)}
-                      className={`px-1 py-0.5 rounded text-xs ${
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold tracking-wider transition-all duration-300 hover:scale-105 ${
                         o.status==="Confirmed"
-                          ? "bg-blue-100 text-blue-700"
-                          : "bg-orange-100 text-orange-700"
+                          ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shadow-sm"
+                          : "bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20 shadow-sm"
                       }`}
                     >
                       {o.status}
                     </button>
                   </td>
-                  <td className="px-2 py-1 flex gap-1">
-                    {/* Edit Order Button */}
-                    <button 
-                      onClick={() => editOrder(o)}
-                      className="text-amber-600 hover:text-amber-700 transition-colors"
-                      title="Edit Order"
-                    >
-                      <Edit size={12}/>
-                    </button>
-                    {/* View Order Button */}
-                    <button 
-                      onClick={() => viewOrder(o)}
-                      className="text-blue-600 hover:text-blue-700 transition-colors"
-                      title="View Order"
-                    >
-                      <Eye size={12}/>
-                    </button>
-                    {/* Delete Order Button */}
-                    <button
-                      onClick={()=>deleteOrder(o.id)}
-                      className="text-red-500 hover:text-red-600 transition-colors"
-                      title="Delete Order"
-                    >
-                      <Trash2 size={12}/>
-                    </button>
+                  <td className="px-6 py-4">
+                    <div className="flex gap-2 justify-end">
+                      {/* Edit Order Button */}
+                      <button 
+                        onClick={() => editOrder(o)}
+                        className={`p-2 rounded-lg transition-all duration-200 hover:scale-110 ${isDarkMode ? "bg-slate-800 text-amber-400 hover:bg-amber-400/20" : "bg-slate-100 text-amber-600 hover:bg-amber-100"}`}
+                        title="Edit Order"
+                      >
+                        <Edit size={16}/>
+                      </button>
+                      {/* View Order Button */}
+                      <button 
+                        onClick={() => viewOrder(o)}
+                        className={`p-2 rounded-lg transition-all duration-200 hover:scale-110 ${isDarkMode ? "bg-slate-800 text-blue-400 hover:bg-blue-400/20" : "bg-slate-100 text-blue-600 hover:bg-blue-100"}`}
+                        title="View Order"
+                      >
+                        <Eye size={16}/>
+                      </button>
+                      {/* Delete Order Button */}
+                      <button
+                        onClick={()=>deleteOrder(o.id)}
+                        className={`p-2 rounded-lg transition-all duration-200 hover:scale-110 ${isDarkMode ? "bg-slate-800 text-rose-400 hover:bg-rose-400/20" : "bg-slate-100 text-rose-600 hover:bg-rose-100"}`}
+                        title="Delete Order"
+                      >
+                        <Trash2 size={16}/>
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -879,19 +909,19 @@ const EmployeeOrders = () => {
 
       {/* Create Order Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className={`${isDarkMode ? "bg-gray-800" : "bg-white"} rounded-2xl p-3 sm:p-4 w-full max-w-xs mx-4 sm:mx-0`}>
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 sm:p-0 animate-[fadeIn_0.2s_ease-out]">
+          <div className={`${isDarkMode ? "bg-[#1e293b] border-slate-700" : "bg-white border-slate-100"} rounded-3xl border shadow-2xl p-6 sm:p-8 w-full max-w-md mx-auto max-h-[90vh] overflow-y-auto animate-[slideUp_0.3s_ease-out] relative`}>
             {/* Modal Header */}
-            <div className="flex justify-between items-center mb-6">
-              <h2 className={`text-2xl font-bold ${isDarkMode ? "text-white" : "text-slate-800"}`}>Create Order</h2>
+            <div className={`flex justify-between items-center mb-6 pb-4 border-b ${isDarkMode ? "border-slate-700/50" : "border-slate-100"}`}>
+              <h2 className={`text-2xl font-black tracking-tight ${isDarkMode ? "text-white" : "text-slate-800"}`}>Create Order</h2>
               {/* Close Button - prevents navigation issues */}
               <button
                 onClick={() => {
                   setShowModal(false);
                   setValidationError(false); // Clear any validation errors
                 }}
-                className={`text-2xl font-bold transition-colors ${
-                  isDarkMode ? "text-gray-400 hover:text-gray-200" : "text-gray-500 hover:text-gray-700"
+                className={`w-8 h-8 flex items-center justify-center rounded-full transition-colors ${
+                  isDarkMode ? "bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700" : "bg-slate-100 text-slate-500 hover:text-slate-800 hover:bg-slate-200"
                 }`}
               >
                 ×
@@ -903,10 +933,10 @@ const EmployeeOrders = () => {
                 placeholder="Store Name"
                 value={newOrder.store}
                 onChange={e=>setNewOrder({...newOrder,store:e.target.value})}
-                className={`w-full border p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                className={`w-full border-2 p-3.5 rounded-xl font-medium transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-blue-500/20 ${
                   isDarkMode 
-                    ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400" 
-                    : "bg-white border-gray-300 text-slate-800 placeholder-gray-400"
+                    ? "bg-slate-800/50 border-slate-700 focus:border-blue-500 text-white placeholder-slate-500" 
+                    : "bg-slate-50 border-slate-200 focus:border-blue-500 focus:bg-white text-slate-800 placeholder-slate-400"
                 }`}
               />
               <input
@@ -914,10 +944,10 @@ const EmployeeOrders = () => {
                 type="number"
                 value={newOrder.items}
                 onChange={e=>setNewOrder({...newOrder,items:e.target.value})}
-                className={`w-full border p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                className={`w-full border-2 p-3.5 rounded-xl font-medium transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-blue-500/20 ${
                   isDarkMode 
-                    ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400" 
-                    : "bg-white border-gray-300 text-slate-800 placeholder-gray-400"
+                    ? "bg-slate-800/50 border-slate-700 focus:border-blue-500 text-white placeholder-slate-500" 
+                    : "bg-slate-50 border-slate-200 focus:border-blue-500 focus:bg-white text-slate-800 placeholder-slate-400"
                 }`}
               />
               <input
@@ -925,29 +955,29 @@ const EmployeeOrders = () => {
                 type="number"
                 value={newOrder.value}
                 onChange={e=>setNewOrder({...newOrder,value:e.target.value})}
-                className={`w-full border p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                className={`w-full border-2 p-3.5 rounded-xl font-medium transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-blue-500/20 ${
                   isDarkMode 
-                    ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400" 
-                    : "bg-white border-gray-300 text-slate-800 placeholder-gray-400"
+                    ? "bg-slate-800/50 border-slate-700 focus:border-blue-500 text-white placeholder-slate-500" 
+                    : "bg-slate-50 border-slate-200 focus:border-blue-500 focus:bg-white text-slate-800 placeholder-slate-400"
                 }`}
               />
               <input
                 placeholder="Sales Executive / Employee"
                 value={newOrder.salesExecutive}
                 onChange={e=>setNewOrder({...newOrder,salesExecutive:e.target.value})}
-                className={`w-full border p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                className={`w-full border-2 p-3.5 rounded-xl font-medium transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-blue-500/20 ${
                   isDarkMode 
-                    ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400" 
-                    : "bg-white border-gray-300 text-slate-800 placeholder-gray-400"
+                    ? "bg-slate-800/50 border-slate-700 focus:border-blue-500 text-white placeholder-slate-500" 
+                    : "bg-slate-50 border-slate-200 focus:border-blue-500 focus:bg-white text-slate-800 placeholder-slate-400"
                 }`}
               />
               <select
                 value={newOrder.paymentMethod}
                 onChange={e=>setNewOrder({...newOrder,paymentMethod:e.target.value})}
-                className={`w-full border p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                className={`w-full border-2 p-3.5 rounded-xl font-medium transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-blue-500/20 ${
                   isDarkMode 
-                    ? "bg-gray-700 border-gray-600 text-white" 
-                    : "bg-white border-gray-300 text-slate-800"
+                    ? "bg-slate-800/50 border-slate-700 focus:border-blue-500 text-white" 
+                    : "bg-slate-50 border-slate-200 focus:border-blue-500 focus:bg-white text-slate-800"
                 }`}
               >
                 <option value="">Select Payment Method</option>
@@ -963,10 +993,10 @@ const EmployeeOrders = () => {
                 type="date"
                 value={newOrder.date}
                 onChange={e=>setNewOrder({...newOrder,date:e.target.value})}
-                className={`w-full border p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                className={`w-full border-2 p-3.5 rounded-xl font-medium transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-blue-500/20 ${
                   isDarkMode 
-                    ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400" 
-                    : "bg-white border-gray-300 text-slate-800 placeholder-gray-400"
+                    ? "bg-slate-800/50 border-slate-700 focus:border-blue-500 text-white placeholder-slate-500" 
+                    : "bg-slate-50 border-slate-200 focus:border-blue-500 focus:bg-white text-slate-800 placeholder-slate-400"
                 }`}
               />
               <input
@@ -974,10 +1004,10 @@ const EmployeeOrders = () => {
                 type="date"
                 value={newOrder.deliveryDate}
                 onChange={e=>setNewOrder({...newOrder,deliveryDate:e.target.value})}
-                className={`w-full border p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                className={`w-full border-2 p-3.5 rounded-xl font-medium transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-blue-500/20 ${
                   isDarkMode 
-                    ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400" 
-                    : "bg-white border-gray-300 text-slate-800 placeholder-gray-400"
+                    ? "bg-slate-800/50 border-slate-700 focus:border-blue-500 text-white placeholder-slate-500" 
+                    : "bg-slate-50 border-slate-200 focus:border-blue-500 focus:bg-white text-slate-800 placeholder-slate-400"
                 }`}
               />
               <textarea
@@ -985,16 +1015,16 @@ const EmployeeOrders = () => {
                 value={newOrder.notes}
                 onChange={e=>setNewOrder({...newOrder,notes:e.target.value})}
                 rows={3}
-                className={`w-full border p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                className={`w-full border-2 p-3.5 rounded-xl font-medium transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-blue-500/20 ${
                   isDarkMode 
-                    ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400" 
-                    : "bg-white border-gray-300 text-slate-800 placeholder-gray-400"
+                    ? "bg-slate-800/50 border-slate-700 focus:border-blue-500 text-white placeholder-slate-500" 
+                    : "bg-slate-50 border-slate-200 focus:border-blue-500 focus:bg-white text-slate-800 placeholder-slate-400"
                 }`}
               />
               {/* Create Order Button */}
               <button
                 onClick={createOrder}
-                className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 font-medium"
+                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-4 rounded-xl shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:-translate-y-0.5 transition-all duration-300 font-bold tracking-wide mt-2"
               >
                 Create Order
               </button>
@@ -1005,19 +1035,19 @@ const EmployeeOrders = () => {
 
       {/* Edit Order Modal */}
       {editModal && editingOrder && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className={`${isDarkMode ? "bg-gray-800" : "bg-white"} rounded-2xl p-3 sm:p-4 w-full max-w-xs mx-4 sm:mx-0`}>
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 sm:p-0 animate-[fadeIn_0.2s_ease-out]">
+          <div className={`${isDarkMode ? "bg-[#1e293b] border-slate-700" : "bg-white border-slate-100"} rounded-3xl border shadow-2xl p-6 sm:p-8 w-full max-w-md mx-auto max-h-[90vh] overflow-y-auto animate-[slideUp_0.3s_ease-out] relative`}>
             {/* Modal Header */}
-            <div className="flex justify-between items-center mb-6">
-              <h2 className={`text-2xl font-bold ${isDarkMode ? "text-white" : "text-slate-800"}`}>Edit Order</h2>
+            <div className={`flex justify-between items-center mb-6 pb-4 border-b ${isDarkMode ? "border-slate-700/50" : "border-slate-100"}`}>
+              <h2 className={`text-2xl font-black tracking-tight ${isDarkMode ? "text-white" : "text-slate-800"}`}>Edit Order</h2>
               {/* Close Button */}
               <button
                 onClick={() => {
                   setEditModal(false);
                   setEditingOrder(null); // Clear editing order
                 }}
-                className={`text-2xl font-bold transition-colors ${
-                  isDarkMode ? "text-gray-400 hover:text-gray-200" : "text-gray-500 hover:text-gray-700"
+                className={`w-8 h-8 flex items-center justify-center rounded-full transition-colors ${
+                  isDarkMode ? "bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700" : "bg-slate-100 text-slate-500 hover:text-slate-800 hover:bg-slate-200"
                 }`}
               >
                 ×
@@ -1029,10 +1059,10 @@ const EmployeeOrders = () => {
                 placeholder="Store Name"
                 value={editingOrder.store}
                 onChange={e=>setEditingOrder({...editingOrder,store:e.target.value})}
-                className={`w-full border p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                className={`w-full border-2 p-3.5 rounded-xl font-medium transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-blue-500/20 ${
                   isDarkMode 
-                    ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400" 
-                    : "bg-white border-gray-300 text-slate-800 placeholder-gray-400"
+                    ? "bg-slate-800/50 border-slate-700 focus:border-blue-500 text-white placeholder-slate-500" 
+                    : "bg-slate-50 border-slate-200 focus:border-blue-500 focus:bg-white text-slate-800 placeholder-slate-400"
                 }`}
               />
               <input
@@ -1040,10 +1070,10 @@ const EmployeeOrders = () => {
                 type="number"
                 value={editingOrder.items}
                 onChange={e=>setEditingOrder({...editingOrder,items:e.target.value})}
-                className={`w-full border p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                className={`w-full border-2 p-3.5 rounded-xl font-medium transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-blue-500/20 ${
                   isDarkMode 
-                    ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400" 
-                    : "bg-white border-gray-300 text-slate-800 placeholder-gray-400"
+                    ? "bg-slate-800/50 border-slate-700 focus:border-blue-500 text-white placeholder-slate-500" 
+                    : "bg-slate-50 border-slate-200 focus:border-blue-500 focus:bg-white text-slate-800 placeholder-slate-400"
                 }`}
               />
               <input
@@ -1051,20 +1081,20 @@ const EmployeeOrders = () => {
                 type="number"
                 value={editingOrder.value}
                 onChange={e=>setEditingOrder({...editingOrder,value:e.target.value})}
-                className={`w-full border p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                className={`w-full border-2 p-3.5 rounded-xl font-medium transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-blue-500/20 ${
                   isDarkMode 
-                    ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400" 
-                    : "bg-white border-gray-300 text-slate-800 placeholder-gray-400"
+                    ? "bg-slate-800/50 border-slate-700 focus:border-blue-500 text-white placeholder-slate-500" 
+                    : "bg-slate-50 border-slate-200 focus:border-blue-500 focus:bg-white text-slate-800 placeholder-slate-400"
                 }`}
               />
               <input
                 placeholder="Sales Executive / Employee"
                 value={editingOrder.salesExecutive}
                 onChange={e=>setEditingOrder({...editingOrder,salesExecutive:e.target.value})}
-                className={`w-full border p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                className={`w-full border-2 p-3.5 rounded-xl font-medium transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-blue-500/20 ${
                   isDarkMode 
-                    ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400" 
-                    : "bg-white border-gray-300 text-slate-800 placeholder-gray-400"
+                    ? "bg-slate-800/50 border-slate-700 focus:border-blue-500 text-white placeholder-slate-500" 
+                    : "bg-slate-50 border-slate-200 focus:border-blue-500 focus:bg-white text-slate-800 placeholder-slate-400"
                 }`}
               />
               <select
@@ -1120,7 +1150,7 @@ const EmployeeOrders = () => {
               {/* Update Order Button */}
               <button
                 onClick={updateOrder}
-                className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 font-medium"
+                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-4 rounded-xl shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:-translate-y-0.5 transition-all duration-300 font-bold tracking-wide mt-2"
               >
                 Update Order
               </button>
@@ -1131,80 +1161,84 @@ const EmployeeOrders = () => {
 
       {/* View Order Modal */}
       {viewOrderModal && selectedOrder && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className={`${isDarkMode ? "bg-gray-800" : "bg-white"} rounded-2xl p-2 sm:p-3 w-full max-w-xs mx-4 sm:mx-0`}>
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 sm:p-0 animate-[fadeIn_0.2s_ease-out]">
+          <div className={`${isDarkMode ? "bg-[#1e293b] border-slate-700" : "bg-white border-slate-100"} rounded-3xl border shadow-2xl p-6 sm:p-8 w-full max-w-sm mx-auto animate-[slideUp_0.3s_ease-out]`}>
             {/* Modal Header */}
-            <div className="flex justify-between items-center mb-4">
-              <h2 className={`text-lg font-bold ${isDarkMode ? "text-white" : "text-slate-800"}`}>Order Details</h2>
+            <div className={`flex justify-between items-center mb-6 pb-4 border-b ${isDarkMode ? "border-slate-700/50" : "border-slate-100"}`}>
+              <h2 className={`text-xl font-black tracking-tight ${isDarkMode ? "text-white" : "text-slate-800"}`}>Order Details</h2>
               {/* Close Button */}
               <button
                 onClick={() => {
                   setViewOrderModal(false);
                   setSelectedOrder(null); // Clear selected order
                 }}
-                className={`text-xl font-bold transition-colors ${
-                  isDarkMode ? "text-gray-400 hover:text-gray-200" : "text-gray-500 hover:text-gray-700"
+                className={`w-8 h-8 flex items-center justify-center rounded-full transition-colors ${
+                  isDarkMode ? "bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700" : "bg-slate-100 text-slate-500 hover:text-slate-800 hover:bg-slate-200"
                 }`}
               >
                 ×
               </button>
             </div>
             {/* Order Details */}
-            <div className="space-y-3 text-sm">
+            <div className="space-y-4 text-sm">
               {/* Order ID */}
-              <div className={`border-b pb-2 ${isDarkMode ? "border-gray-700" : "border-gray-200"}`}>
-                <p className={`text-xs mb-1 ${isDarkMode ? "text-gray-400" : "text-gray-500"}`}>Order ID</p>
-                <p className={`text-sm font-semibold ${isDarkMode ? "text-white" : "text-slate-800"}`}>{selectedOrder.id}</p>
+              <div className={`bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border ${isDarkMode ? "border-slate-700/50" : "border-slate-100"}`}>
+                <p className={`text-xs font-bold uppercase tracking-wider mb-1 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Order ID</p>
+                <p className={`text-lg font-black tracking-tight ${isDarkMode ? "text-blue-400" : "text-blue-600"}`}>{selectedOrder.id}</p>
               </div>
-              {/* Store Name */}
-              <div className={`border-b pb-2 ${isDarkMode ? "border-gray-700" : "border-gray-200"}`}>
-                <p className={`text-xs mb-1 ${isDarkMode ? "text-gray-400" : "text-gray-500"}`}>Store Name</p>
-                <p className={`text-sm font-semibold ${isDarkMode ? "text-white" : "text-slate-800"}`}>{selectedOrder.store}</p>
+              
+              <div className="grid grid-cols-2 gap-4">
+                {/* Store Name */}
+                <div>
+                  <p className={`text-xs font-bold uppercase tracking-wider mb-1 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Store</p>
+                  <p className={`text-sm font-semibold ${isDarkMode ? "text-white" : "text-slate-800"}`}>{selectedOrder.store}</p>
+                </div>
+                {/* Order Value */}
+                <div>
+                  <p className={`text-xs font-bold uppercase tracking-wider mb-1 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Value</p>
+                  <p className={`text-sm font-black tracking-tight ${isDarkMode ? "text-white" : "text-slate-800"}`}>₹{selectedOrder.value.toLocaleString()}</p>
+                </div>
+                {/* Number of Items */}
+                <div>
+                  <p className={`text-xs font-bold uppercase tracking-wider mb-1 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Items</p>
+                  <p className={`text-sm font-semibold ${isDarkMode ? "text-white" : "text-slate-800"}`}>{selectedOrder.items}</p>
+                </div>
+                {/* Order Date */}
+                <div>
+                  <p className={`text-xs font-bold uppercase tracking-wider mb-1 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Order Date</p>
+                  <p className={`text-sm font-semibold ${isDarkMode ? "text-white" : "text-slate-800"}`}>{selectedOrder.date}</p>
+                </div>
+                {/* Sales Executive */}
+                <div>
+                  <p className={`text-xs font-bold uppercase tracking-wider mb-1 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Sales Exec</p>
+                  <p className={`text-sm font-semibold ${isDarkMode ? "text-white" : "text-slate-800"}`}>{selectedOrder.salesExecutive || "N/A"}</p>
+                </div>
+                {/* Payment Method */}
+                <div>
+                  <p className={`text-xs font-bold uppercase tracking-wider mb-1 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Payment</p>
+                  <p className={`text-sm font-semibold ${isDarkMode ? "text-white" : "text-slate-800"}`}>{selectedOrder.paymentMethod || "N/A"}</p>
+                </div>
+                {/* Delivery Date */}
+                <div className="col-span-2">
+                  <p className={`text-xs font-bold uppercase tracking-wider mb-1 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Delivery Date</p>
+                  <p className={`text-sm font-semibold ${isDarkMode ? "text-white" : "text-slate-800"}`}>{selectedOrder.deliveryDate || "N/A"}</p>
+                </div>
               </div>
-              {/* Number of Items */}
-              <div className={`border-b pb-2 ${isDarkMode ? "border-gray-700" : "border-gray-200"}`}>
-                <p className={`text-xs mb-1 ${isDarkMode ? "text-gray-400" : "text-gray-500"}`}>Number of Items</p>
-                <p className={`text-sm font-semibold ${isDarkMode ? "text-white" : "text-slate-800"}`}>{selectedOrder.items}</p>
-              </div>
-              {/* Order Value */}
-              <div className={`border-b pb-2 ${isDarkMode ? "border-gray-700" : "border-gray-200"}`}>
-                <p className={`text-xs mb-1 ${isDarkMode ? "text-gray-400" : "text-gray-500"}`}>Order Value</p>
-                <p className={`text-sm font-semibold text-blue-600 ${isDarkMode ? "text-blue-400" : ""}`}>₹{selectedOrder.value}</p>
-              </div>
-              {/* Sales Executive */}
-              <div className={`border-b pb-2 ${isDarkMode ? "border-gray-700" : "border-gray-200"}`}>
-                <p className={`text-xs mb-1 ${isDarkMode ? "text-gray-400" : "text-gray-500"}`}>Sales Executive</p>
-                <p className={`text-sm font-semibold ${isDarkMode ? "text-white" : "text-slate-800"}`}>{selectedOrder.salesExecutive || "N/A"}</p>
-              </div>
-              {/* Payment Method */}
-              <div className={`border-b pb-2 ${isDarkMode ? "border-gray-700" : "border-gray-200"}`}>
-                <p className={`text-xs mb-1 ${isDarkMode ? "text-gray-400" : "text-gray-500"}`}>Payment Method</p>
-                <p className={`text-sm font-semibold ${isDarkMode ? "text-white" : "text-slate-800"}`}>{selectedOrder.paymentMethod || "N/A"}</p>
-              </div>
-              {/* Delivery Date */}
-              <div className={`border-b pb-2 ${isDarkMode ? "border-gray-700" : "border-gray-200"}`}>
-                <p className={`text-xs mb-1 ${isDarkMode ? "text-gray-400" : "text-gray-500"}`}>Delivery Date</p>
-                <p className={`text-sm font-semibold ${isDarkMode ? "text-white" : "text-slate-800"}`}>{selectedOrder.deliveryDate || "N/A"}</p>
-              </div>
+
               {/* Notes */}
-              <div>
-                <p className={`text-xs mb-1 ${isDarkMode ? "text-gray-400" : "text-gray-500"}`}>Notes</p>
-                <p className={`text-sm font-semibold ${isDarkMode ? "text-white" : "text-slate-800"}`}>{selectedOrder.notes || "N/A"}</p>
-              </div>
-              {/* Order Date */}
-              <div>
-                <p className={`text-xs mb-1 ${isDarkMode ? "text-gray-400" : "text-gray-500"}`}>Order Date</p>
-                <p className={`text-sm font-semibold ${isDarkMode ? "text-white" : "text-slate-800"}`}>{selectedOrder.date}</p>
+              <div className={`mt-2 p-4 rounded-xl ${isDarkMode ? "bg-slate-800/30" : "bg-slate-50"} border ${isDarkMode ? "border-slate-700/30" : "border-slate-100"}`}>
+                <p className={`text-xs font-bold uppercase tracking-wider mb-1 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Notes</p>
+                <p className={`text-sm ${isDarkMode ? "text-slate-300" : "text-slate-700"} italic`}>{selectedOrder.notes || "No notes provided"}</p>
               </div>
             </div>
             {/* Close Button */}
-            <div className="mt-4">
+            <div className="mt-8">
               <button
                 onClick={() => {
                   setViewOrderModal(false);
                   setSelectedOrder(null); // Clear selected order
                 }}
-                className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 font-medium text-sm"
+                className="w-full bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-white py-3.5 rounded-xl hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors duration-300 font-bold tracking-wide"
               >
                 Close
               </button>
