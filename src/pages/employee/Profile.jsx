@@ -1,5 +1,35 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { User, Briefcase, FileText, Activity, LayoutDashboard, Settings, Mail, Phone, MapPin, MoreVertical, ShieldCheck, TrendingUp, ShoppingBag, Map as MapIcon, Clock, HeartPulse, Building, Shield, UserCheck, Calendar, CheckCircle, Download, ExternalLink, Bell, Globe, LogOut, Share2, Eye, EyeOff, Lock, AlertTriangle, Smartphone, Wifi, X, MessageSquare, Copy } from 'lucide-react';
+import { User, Briefcase, FileText, Activity, LayoutDashboard, Settings, Mail, Phone, MapPin, MoreVertical, ShieldCheck, TrendingUp, ShoppingBag, Map as MapIcon, Clock, HeartPulse, Building, Shield, UserCheck, Calendar, CheckCircle, Download, ExternalLink, Bell, Globe, LogOut, Share2, Eye, EyeOff, Lock, AlertTriangle, Smartphone, Wifi, X, MessageSquare, Copy, Pencil, UploadCloud } from 'lucide-react';
+
+const ScrollStyles = () => (
+  <style>{`
+    .tf-modal-scroll::-webkit-scrollbar,
+    .tf-settings-scroll::-webkit-scrollbar {
+      width: 5px;
+    }
+    .tf-modal-scroll::-webkit-scrollbar-track,
+    .tf-settings-scroll::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .tf-modal-scroll::-webkit-scrollbar-thumb,
+    .tf-settings-scroll::-webkit-scrollbar-thumb {
+      background: #e2e8f0;
+      border-radius: 10px;
+    }
+    .dark .tf-modal-scroll::-webkit-scrollbar-thumb,
+    .dark .tf-settings-scroll::-webkit-scrollbar-thumb {
+      background: #1e293b;
+    }
+    .tf-modal-scroll::-webkit-scrollbar-thumb:hover,
+    .tf-settings-scroll::-webkit-scrollbar-thumb:hover {
+      background: #cbd5e1;
+    }
+    .dark .tf-modal-scroll::-webkit-scrollbar-thumb:hover,
+    .dark .tf-settings-scroll::-webkit-scrollbar-thumb:hover {
+      background: #334155;
+    }
+  `}</style>
+);
 
 // --- Internal Section Components ---
 // changes
@@ -47,32 +77,32 @@ const ShareProfileModal = ({ isOpen, onClose, employee }) => {
       name: 'WhatsApp', 
       icon: MessageSquare, 
       color: 'bg-[#25D366]/10 text-[#25D366]', 
-      action: () => window.open(`https://wa.me/?text=${encodeURIComponent(`Check out ${employee.name}'s professional portfolio: ${profileUrl}`)}`, '_blank')
+      action: () => window.open(`https://wa.me/?text=${encodeURIComponent(`Check out ${employee.name}'s professional profile: ${profileUrl}`)}`, '_blank')
     },
     { 
       name: 'Email', 
       icon: Mail, 
-      color: 'bg-blue-50 text-blue-600', 
-      action: () => window.location.href = `mailto:?subject=${encodeURIComponent(`${employee.name}'s Profile Portfolio`)}&body=${encodeURIComponent(`Check out this professional portfolio: ${profileUrl}`)}`
+      color: 'bg-slate-50 text-slate-900', 
+      action: () => window.location.href = `mailto:?subject=${encodeURIComponent(`${employee.name}'s Profile Portfolio`)}&body=${encodeURIComponent(`Check out this professional profile: ${profileUrl}`)}`
     },
     { 
       name: 'Copy Link', 
       icon: copied ? CheckCircle : Copy, 
-      color: copied ? 'bg-emerald-50 text-emerald-600' : 'bg-gray-50 text-gray-600', 
+      color: copied ? 'bg-slate-900 text-white' : 'bg-slate-50 text-slate-900', 
       action: handleCopy 
     },
   ];
 
   return (
-    <div className={`fixed inset-0 z-[100] flex items-center justify-center p-4 transition-all duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className={`relative w-full max-w-sm bg-white dark:bg-gray-900 rounded-[2.5rem] shadow-2xl border border-gray-100 dark:border-gray-800 p-8 transition-all duration-300 ${isOpen ? 'scale-100 translate-y-0' : 'scale-95 translate-y-4'}`}>
-        <div className="flex items-center justify-between mb-8">
+    <div className={`fixed inset-0 z-[120] flex items-center justify-center p-4 transition-all duration-300 ${isOpen ? '' : 'pointer-events-none'}`}>
+      <div className={`absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0'}`} />
+      <div className={`relative w-[calc(100%-2rem)] max-w-sm bg-white dark:bg-gray-950 rounded-[2rem] sm:rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-slate-800 p-6 sm:p-8 transition-all duration-300 transform ${isOpen ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`}>
+        <div className="flex items-center justify-between mb-6 sm:mb-8">
           <div className="flex items-center gap-3">
-            <div className="p-3 rounded-2xl bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600"><Share2 size={20} /></div>
+            <div className="p-2.5 sm:p-3 rounded-2xl bg-slate-900 text-white"><Share2 size={20} /></div>
             <h3 className="text-xl font-black text-gray-900 dark:text-white tracking-tight">Share Profile</h3>
           </div>
-          <button onClick={onClose} className="p-2 rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-400 hover:text-gray-900 dark:hover:text-white transition-all"><X size={20} /></button>
+          <button onClick={onClose} className="p-2 rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-500 hover:text-gray-900 dark:hover:text-white transition-all"><X size={20} /></button>
         </div>
 
         <div className="grid grid-cols-1 gap-4">
@@ -80,7 +110,7 @@ const ShareProfileModal = ({ isOpen, onClose, employee }) => {
             <button
               key={i}
               onClick={opt.action}
-              className="flex items-center gap-4 p-4 rounded-2xl border border-gray-50 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-all group"
+              className="flex items-center gap-4 p-4 rounded-2xl border border-slate-50 dark:border-slate-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-all group"
             >
               <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110 ${opt.color}`}>
                 <opt.icon size={24} />
@@ -91,7 +121,7 @@ const ShareProfileModal = ({ isOpen, onClose, employee }) => {
           {navigator.share && (
             <button
               onClick={handleNativeShare}
-              className="mt-2 w-full py-4 rounded-2xl bg-indigo-600 text-white font-black shadow-lg hover:bg-indigo-700 transition-all flex items-center justify-center gap-2"
+              className="mt-2 w-full py-4 rounded-2xl bg-slate-900 text-white font-black shadow-lg hover:bg-slate-800 transition-all flex items-center justify-center gap-2"
             >
               <Globe size={18} />
               More Sharing Options
@@ -103,7 +133,64 @@ const ShareProfileModal = ({ isOpen, onClose, employee }) => {
   );
 };
 
-const ProfileHeader = ({ employee, onEditProfile, onOpenSettings, onShareProfile }) => {
+const PortfolioNavigationOverlay = ({ isOpen, onClose, onNavigate }) => {
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKeyDown = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isOpen, onClose]);
+
+  const navItems = [
+    { id: 'personal', label: 'Personal Info', icon: User, desc: 'Manage your personal details and contact info' },
+    { id: 'documents', label: 'Documents', icon: FileText, desc: 'View and export your verified files' },
+    { id: 'settings', label: 'Settings', icon: Settings, desc: 'Update your password and preferences' },
+  ];
+
+  return (
+    <div className={`fixed inset-0 z-[110] flex items-center justify-center p-4 transition-all duration-500 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+      <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-xl" onClick={onClose} />
+      
+      <div className={`relative w-[calc(100%-2rem)] max-w-4xl max-h-[90vh] flex flex-col transition-all duration-500 transform ${isOpen ? 'scale-100 translate-y-0' : 'scale-95 translate-y-12'}`}>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 sm:mb-12 text-white gap-6 sticky top-0 bg-slate-900/40 backdrop-blur-sm p-4 -m-4 rounded-t-[3rem] z-10">
+          <div>
+            <h2 className="text-3xl sm:text-4xl font-black tracking-tight">Profile Navigation</h2>
+            <p className="text-slate-300 font-medium mt-2 text-sm sm:text-base">Quickly jump between your important records</p>
+          </div>
+          <button onClick={onClose} className="p-3 sm:p-4 rounded-2xl sm:rounded-3xl bg-white/10 hover:bg-white/20 transition-all text-white backdrop-blur-sm self-end sm:self-auto">
+            <X size={28} />
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 overflow-y-auto tf-modal-scroll pr-2 pb-8">
+          {navItems.map((item) => (
+            <button
+              key={item.id}
+              onClick={() => onNavigate(item.id)}
+              className="group relative bg-white dark:bg-gray-900 p-6 sm:p-8 rounded-[2.5rem] sm:rounded-[3rem] border border-white/20 shadow-2xl transition-all hover:-translate-y-2 hover:shadow-slate-500/20 text-left overflow-hidden"
+            >
+              <div className="absolute top-0 right-0 w-32 h-32 bg-slate-50 dark:bg-slate-900/20 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-150" />
+              
+              <div className="relative">
+                <div className="p-4 rounded-[1.5rem] bg-slate-50 dark:bg-slate-900/20 text-slate-900 dark:text-slate-400 w-fit mb-6 transition-transform group-hover:scale-110">
+                  <item.icon size={32} />
+                </div>
+                <h3 className="text-2xl font-black text-gray-900 dark:text-white mb-2">{item.label}</h3>
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400 leading-relaxed">{item.desc}</p>
+                
+                <div className="mt-8 flex items-center gap-2 text-slate-900 dark:text-slate-400 font-black text-sm group-hover:translate-x-2 transition-transform">
+                  Go to {item.label} <ExternalLink size={16} />
+                </div>
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const ProfileHeader = ({ employee, onEditProfile, onOpenSettings, onShareProfile, onOpenNavigation }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const menuRef = useRef(null);
@@ -139,78 +226,83 @@ const ProfileHeader = ({ employee, onEditProfile, onOpenSettings, onShareProfile
   ];
 
   return (
-    <div className="relative rounded-[2.5rem] bg-gradient-to-br from-indigo-600 to-indigo-800 p-8 text-white shadow-2xl">
+    <div 
+      onClick={onOpenNavigation}
+      className={`relative rounded-[2rem] sm:rounded-[2.5rem] bg-white/40 dark:bg-slate-950/40 p-5 sm:p-8 text-gray-900 dark:text-white shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] cursor-pointer group/header overflow-visible border-2 border-slate-200 dark:border-slate-800 backdrop-blur-2xl transition-shadow duration-300 ${menuOpen ? 'z-40' : 'z-20'}`}
+    >
       {/* Toast notification for Share Profile */}
-      <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[100] pointer-events-none">
+      <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[120] pointer-events-none" onClick={(e) => e.stopPropagation()}>
         <div className={`transition-all duration-300 transform ${showToast ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
-          <div className="bg-white dark:bg-gray-900 text-indigo-600 dark:text-indigo-400 px-6 py-3 rounded-2xl shadow-2xl border border-indigo-50 dark:border-indigo-900/50 flex items-center gap-3 font-bold text-sm backdrop-blur-xl bg-white/90">
-            <div className="w-8 h-8 rounded-full bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center">
+          <div className="bg-slate-900 text-white px-6 py-3 rounded-2xl shadow-2xl border border-white/10 flex items-center gap-3 font-bold text-sm backdrop-blur-xl">
+            <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
               <Share2 size={16} />
             </div>
             Profile link copied to clipboard!
           </div>
         </div>
       </div>
+      
       <div className="absolute inset-0 rounded-[2.5rem] overflow-hidden pointer-events-none">
-        <div className="absolute top-0 right-0 -mr-20 -mt-20 h-64 w-64 rounded-full bg-white/10 blur-3xl opacity-50" />
-        <div className="absolute bottom-0 left-0 -ml-20 -mb-20 h-64 w-64 rounded-full bg-indigo-400/20 blur-3xl opacity-30" />
+        <div className="absolute top-0 right-0 -mr-20 -mt-20 h-64 w-64 rounded-full bg-white/5 blur-3xl opacity-50 group-hover/header:opacity-80 transition-opacity duration-700" />
+        <div className="absolute bottom-0 left-0 -ml-20 -mb-20 h-64 w-64 rounded-full bg-slate-400/5 blur-3xl opacity-30" />
       </div>
-      <div className="relative flex flex-col md:flex-row md:items-center gap-8">
-        <div className="flex-shrink-0">
+      
+      <div className="relative flex flex-col sm:flex-row sm:items-center gap-5 sm:gap-8">
+        <div className="flex-shrink-0" onClick={(e) => e.stopPropagation()}>
           <div className="relative">
             <img
               src={employee.avatar || "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix"}
               alt={employee.name}
-              className="h-32 w-32 rounded-3xl border-4 border-white/20 object-cover shadow-xl backdrop-blur-sm"
+              className="h-24 w-24 sm:h-32 sm:w-32 rounded-2xl sm:rounded-3xl border-2 border-slate-200 dark:border-white/10 object-cover shadow-xl"
             />
-            <div className={`absolute -bottom-2 -right-2 h-8 w-8 rounded-full border-4 border-white flex items-center justify-center ${employee.status === 'On Duty' ? 'bg-emerald-500' : 'bg-gray-400'
+            <div className={`absolute -bottom-2 -right-2 h-8 w-8 rounded-full border-4 border-white dark:border-slate-900 flex items-center justify-center ${employee.status === 'On Duty' ? 'bg-emerald-500' : 'bg-slate-400'
               }`}>
               <div className="h-2 w-2 rounded-full bg-white animate-pulse" />
             </div>
           </div>
         </div>
         <div className="flex-grow">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <div className="flex items-center gap-3">
-                <h1 className="text-4xl font-black tracking-tight">
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-200 to-indigo-100 drop-shadow-sm">
+                <h1 className="text-2xl sm:text-4xl font-black tracking-tight">
+                  <span className="text-slate-900 dark:text-white drop-shadow-sm">
                     {employee.name || "Abhiram R"}
                   </span>
                 </h1>
-                <span className="flex items-center gap-1 rounded-full bg-white/20 px-3 py-1 text-xs font-bold uppercase tracking-widest backdrop-blur-md">
+                <span className="flex items-center gap-1 rounded-full bg-slate-100 dark:bg-white/10 px-2.5 py-1 text-[10px] sm:text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-300">
                   <ShieldCheck size={14} />
-                  Employee Profile
+                  Verified Profile
                 </span>
               </div>
-              <p className="mt-2 text-lg font-medium text-indigo-100/80">{employee.designation || "Senior Field Executive"} • {employee.team || "Delta Team"}</p>
+              <p className="mt-1 sm:mt-2 text-base sm:text-lg font-medium text-slate-500 dark:text-slate-400">{employee.designation || "Senior Field Executive"} • {employee.team || "Delta Team"}</p>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
               <button
                 onClick={onEditProfile}
-                className="bg-white text-indigo-600 hover:bg-indigo-50 px-6 py-2.5 rounded-2xl font-bold transition-all hover:scale-105 active:scale-95 shadow-lg whitespace-nowrap"
+                className="bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:opacity-90 px-6 py-2.5 rounded-2xl font-bold transition-all hover:scale-105 active:scale-95 shadow-lg whitespace-nowrap"
               >
                 Edit Profile
               </button>
               <div className="relative" ref={menuRef}>
                 <button
                   onClick={() => setMenuOpen((v) => !v)}
-                  className="p-3 rounded-2xl bg-white/10 hover:bg-white/20 transition-all backdrop-blur-md"
+                  className="p-3 rounded-2xl bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 transition-all text-slate-600 dark:text-white"
                 >
                   <MoreVertical size={20} />
                 </button>
                 {menuOpen && (
-                  <div className="absolute right-0 top-full mt-2 w-60 sm:w-64 bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-800 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+                  <div className="absolute right-0 top-full mt-2 w-60 sm:w-64 bg-slate-900 rounded-2xl shadow-2xl border border-white/10 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-150">
                     {menuItems.map((item, i) => (
                       <button
                         key={i}
                         onClick={item.action}
                         className={`w-full flex items-center gap-3 px-5 py-3.5 text-sm font-bold transition-colors ${item.danger
-                          ? 'text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20'
-                          : 'text-gray-700 dark:text-gray-200 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 hover:text-indigo-600'
-                          } ${i !== 0 ? 'border-t border-gray-50 dark:border-gray-800' : ''}`}
+                          ? 'text-red-400 hover:bg-red-950/30'
+                          : 'text-slate-300 hover:bg-white/10'
+                          } ${i !== 0 ? 'border-t border-white/5' : ''}`}
                       >
-                        <item.icon size={18} className={item.danger ? 'text-red-500' : 'text-gray-400 group-hover:text-indigo-600'} />
+                        <item.icon size={18} className={item.danger ? 'text-red-400' : 'text-slate-500'} />
                         <span className="flex-grow text-left">{item.label}</span>
                       </button>
                     ))}
@@ -219,18 +311,18 @@ const ProfileHeader = ({ employee, onEditProfile, onOpenSettings, onShareProfile
               </div>
             </div>
           </div>
-          <div className="mt-6 flex flex-wrap items-center gap-6 text-sm">
-            <div className="flex items-center gap-2 text-indigo-100/90">
-              <Mail size={16} className="text-white" />
-              <span>{employee.email || 'abhiram@trackforce.com'}</span>
+          <div className="mt-4 sm:mt-6 flex flex-wrap items-center gap-x-6 gap-y-3 text-[13px] sm:text-sm">
+            <div className="flex items-center gap-2 text-slate-400 focus:outline-none">
+              <Mail size={16} className="text-slate-500" />
+              <span className="line-clamp-1">{employee.email || 'abhiram@trackforce.com'}</span>
             </div>
-            <div className="flex items-center gap-2 text-indigo-100/90">
-              <Phone size={16} className="text-white" />
+            <div className="flex items-center gap-2 text-slate-400">
+              <Phone size={16} className="text-slate-500" />
               <span>{employee.phone || '+91 91234 56789'}</span>
             </div>
-            <div className="flex items-center gap-2 text-indigo-100/90">
-              <MapPin size={16} className="text-white" />
-              <span>{employee.location || 'Bengaluru, Karnataka'}</span>
+            <div className="flex items-center gap-2 text-slate-400">
+              <MapPin size={16} className="text-slate-500" />
+              <span className="line-clamp-1">{employee.location || 'Bengaluru, Karnataka'}</span>
             </div>
           </div>
         </div>
@@ -239,33 +331,23 @@ const ProfileHeader = ({ employee, onEditProfile, onOpenSettings, onShareProfile
   );
 };
 
-const OverviewSection = ({ employee }) => {
-  const stats = [
-    { label: 'Visits Today', value: '12', sub: 'Target: 15', icon: TrendingUp, color: 'text-indigo-600', bg: 'bg-indigo-50' },
-    { label: 'Orders Taken', value: '8', sub: '₹28,500 Revenue', icon: ShoppingBag, color: 'text-orange-600', bg: 'bg-orange-50' },
-    { label: 'Distance', value: '18.2 km', sub: 'Travelled today', icon: MapIcon, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-    { label: 'Active Hours', value: '5h 20m', sub: 'Current Shift', icon: Clock, color: 'text-blue-600', bg: 'bg-blue-50' },
-  ];
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-      {stats.map((stat, i) => (
-        <div key={i} className="group relative overflow-hidden bg-white dark:bg-gray-900 p-6 rounded-[2rem] border border-gray-100 dark:border-gray-800 shadow-sm transition-all hover:shadow-xl hover:-translate-y-1">
-          <div className={`p-4 rounded-2xl ${stat.bg} ${stat.color} dark:bg-opacity-10 w-fit mb-4 transition-transform group-hover:scale-110`}>
-            <stat.icon size={24} />
-          </div>
-          <div>
-            <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">{stat.label}</p>
-            <p className="text-3xl font-black text-gray-900 dark:text-white mt-1">{stat.value}</p>
-            <p className="text-[10px] font-bold text-gray-500 mt-1 uppercase">{stat.sub}</p>
-          </div>
-          <div className="absolute top-0 right-0 w-32 h-32 bg-gray-50 dark:bg-gray-800/50 rounded-full -mr-16 -mt-16 opacity-50 pointer-events-none" />
-        </div>
-      ))}
-    </div>
-  );
-};
+// --- Section Components ---
 
-const PersonalInfoSection = ({ employee }) => {
+const PersonalInfoModal = ({ isOpen, onClose, employee }) => {
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKeyDown = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isOpen, onClose]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, [isOpen]);
+
   const infoGroups = [
     {
       title: 'Contact Details',
@@ -282,7 +364,8 @@ const PersonalInfoSection = ({ employee }) => {
       items: [
         { label: 'Full Name', value: employee.name || 'Abhiram Rangoon', icon: User },
         { label: 'Gender', value: employee.gender || 'Male', icon: User },
-        { label: 'Nationality', value: employee.nationality || 'Indian', icon: User },
+        { label: 'Nationality', value: employee.nationality || 'Indian', icon: Globe },
+        { label: 'Date of Birth', value: employee.dob || '12 Oct 1995', icon: Calendar },
       ]
     },
     {
@@ -291,34 +374,52 @@ const PersonalInfoSection = ({ employee }) => {
       items: [
         { label: 'Blood Group', value: employee.bloodGroup || 'A+ Positive', icon: HeartPulse },
         { label: 'Emergency Contact', value: employee.emergencyContact || 'Deepika (Sister) - 9876543210', icon: Phone },
+        { label: 'Allergies', value: employee.allergies || 'None Reported', icon: AlertTriangle },
       ]
     }
   ];
+
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      {infoGroups.map((group, i) => (
-        <div key={i} className="bg-white dark:bg-gray-900 rounded-[2rem] border border-gray-100 dark:border-gray-800 p-8">
-          <div className="flex items-center gap-3 mb-8">
-            <div className="p-3 rounded-2xl bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600">
-              <group.icon size={20} />
-            </div>
-            <h3 className="text-xl font-black text-gray-900 dark:text-white tracking-tight">{group.title}</h3>
-          </div>
-          <div className="space-y-6">
-            {group.items.map((item, j) => (
-              <div key={j} className="group">
-                <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest flex items-center gap-2">
-                  <item.icon size={12} />
-                  {item.label}
-                </p>
-                <p className="mt-2 text-sm font-bold text-gray-700 dark:text-gray-200 leading-relaxed group-hover:text-indigo-600 transition-colors">
-                  {item.value}
-                </p>
+    <div className={`fixed inset-0 z-[120] flex items-center justify-center p-4 transition-all duration-300 ${isOpen ? '' : 'pointer-events-none'}`}>
+      <div className={`absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0'}`} />
+      <div className={`relative w-[calc(100%-2rem)] max-w-4xl bg-white dark:bg-gray-950 rounded-[2rem] sm:rounded-[2.5rem] shadow-2xl border border-gray-100 dark:border-gray-800 transition-all duration-300 transform ${isOpen ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`}>
+        <div className="flex flex-col max-h-[90vh]">
+          <div className="p-5 sm:p-8 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between bg-white/80 dark:bg-gray-950/80 backdrop-blur rounded-t-[2.5rem] flex-shrink-0 sticky top-0 z-10">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="p-2.5 sm:p-3 rounded-2xl bg-slate-900 text-white"><User size={20} className="sm:w-6 sm:h-6" /></div>
+              <div>
+                <h3 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white tracking-tight">Personal Information</h3>
+                <p className="text-[10px] sm:text-sm font-medium text-gray-500">Your verified identity & details</p>
               </div>
-            ))}
+            </div>
+            <button onClick={onClose} className="p-2 rounded-xl sm:rounded-2xl bg-gray-100 dark:bg-gray-900 text-gray-500 hover:text-gray-900 dark:hover:text-white transition-all"><X size={20} /></button>
+          </div>
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-10 tf-modal-scroll">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+              {infoGroups.map((group, i) => (
+                <div key={i} className="bg-slate-50/50 dark:bg-slate-900/40 rounded-[1.5rem] sm:rounded-[2rem] border border-slate-100 dark:border-slate-800 p-5 sm:p-6 lg:p-8 hover:border-slate-200 dark:hover:border-slate-700 transition-colors">
+                  <div className="flex items-center gap-3 mb-8">
+                    <div className="p-2.5 rounded-xl bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-400 shadow-sm"><group.icon size={18} /></div>
+                    <h4 className="text-lg font-black text-gray-900 dark:text-white tracking-tight">{group.title}</h4>
+                  </div>
+                  <div className="space-y-4 sm:space-y-6">
+                    {group.items.map((item, j) => (
+                      <div key={j} className="group">
+                        <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest flex items-center gap-2">
+                          <item.icon size={12} /> {item.label}
+                        </p>
+                        <p className="mt-1 sm:mt-2 text-sm font-bold text-gray-700 dark:text-gray-200 leading-relaxed group-hover:text-slate-900 dark:group-hover:text-white transition-colors">
+                          {item.value}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
-      ))}
+      </div>
     </div>
   );
 };
@@ -333,14 +434,14 @@ const EmploymentSection = () => {
     { label: 'Security Level', value: 'Field Access - Level 1', icon: Shield },
   ];
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 p-10 overflow-hidden relative">
-      <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-50/50 dark:bg-indigo-900/10 rounded-full blur-3xl -mr-32 -mt-32" />
+    <div className="bg-white/40 dark:bg-slate-950/40 rounded-[2rem] sm:rounded-[2.5rem] border-2 border-slate-100 dark:border-slate-800 p-6 sm:p-8 lg:p-10 overflow-hidden relative backdrop-blur-xl">
+      <div className="absolute top-0 right-0 w-64 h-64 bg-slate-50 dark:bg-slate-900/10 rounded-full blur-3xl -mr-32 -mt-32" />
       <div className="relative">
-        <h3 className="text-2xl font-black text-gray-900 dark:text-white mb-10 tracking-tight">Employment Information</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-12 gap-y-10">
+        <h3 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white mb-8 sm:mb-10 tracking-tight">Employment Information</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 lg:gap-x-12 gap-y-8 sm:gap-y-10">
           {details.map((detail, i) => (
             <div key={i} className="flex items-start gap-4">
-              <div className="p-3 rounded-2xl bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400">
+              <div className="p-3 rounded-2xl bg-slate-100 dark:bg-slate-900/40 text-slate-600 dark:text-slate-400">
                 <detail.icon size={20} />
               </div>
               <div>
@@ -355,51 +456,316 @@ const EmploymentSection = () => {
   );
 };
 
-const DocumentsSection = () => {
-  const documents = [
-    { name: 'Kyc Document (Aadhar)', size: '1.2 MB', type: 'PDF', status: 'Verified' },
-    { name: 'PAN Clearance', size: '0.9 MB', type: 'PDF', status: 'Verified' },
-    { name: 'Field Certification', size: '2.1 MB', type: 'PDF', status: 'Active' },
-    { name: 'Monthly Performance Card', size: '1.4 MB', type: 'PDF', status: 'Pending Review' },
-  ];
+const DocumentsModal = ({ isOpen, onClose, documents, onEditDocument, onViewDocument }) => {
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKeyDown = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isOpen, onClose]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, [isOpen]);
+
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 p-10">
-      <div className="flex items-center justify-between mb-10">
-        <h3 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">Your Documents</h3>
-        <button className="text-sm font-bold text-indigo-600 hover:text-indigo-700 underline flex items-center gap-2">
-          <Download size={16} />
-          Export All
-        </button>
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {documents.map((doc, i) => (
-          <a
-            key={i}
-            href="#"
-            onClick={(e) => { e.preventDefault(); window.open('about:blank', '_blank'); }}
-            className="group p-6 rounded-3xl border border-gray-50 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/20 flex items-center justify-between hover:border-indigo-100 dark:hover:border-indigo-900/50 hover:bg-white dark:hover:bg-gray-800 transition-all cursor-pointer"
-          >
-            <div className="flex items-center gap-5">
-              <div className={`p-4 rounded-2xl ${doc.type === 'PDF' ? 'bg-indigo-50 text-indigo-600' : 'bg-green-50 text-green-600'} dark:bg-opacity-10`}>
-                <FileText size={24} />
-              </div>
+    <div className={`fixed inset-0 z-[120] flex items-center justify-center p-4 transition-all duration-300 ${isOpen ? '' : 'pointer-events-none'}`}>
+      <div className={`absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0'}`} />
+      <div className={`relative w-[calc(100%-2rem)] max-w-4xl bg-white dark:bg-gray-950 rounded-[2rem] sm:rounded-[2.5rem] shadow-2xl border border-gray-100 dark:border-gray-800 transition-all duration-300 transform ${isOpen ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`}>
+        <div className="flex flex-col max-h-[90vh]">
+          <div className="p-5 sm:p-8 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between bg-white/80 dark:bg-gray-950/80 backdrop-blur rounded-t-[2.5rem] flex-shrink-0 sticky top-0 z-10">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="p-2.5 sm:p-3 rounded-2xl bg-slate-900 text-white"><FileText size={20} className="sm:w-6 sm:h-6" /></div>
               <div>
-                <p className="font-bold text-gray-900 dark:text-white">{doc.name}</p>
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">{doc.size} • {doc.type}</p>
+                <h3 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white tracking-tight">Professional Documents</h3>
+                <p className="text-[10px] sm:text-sm font-medium text-gray-500">Access verified field records</p>
               </div>
             </div>
-            <div className="flex items-center gap-4">
-              <span className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${doc.status.includes('Verified') || doc.status === 'Active' ? 'bg-emerald-100 text-emerald-700' : 'bg-orange-100 text-orange-700'
-                }`}>
-                {(doc.status.includes('Verified') || doc.status === 'Active') && <CheckCircle size={12} />}
-                {doc.status}
-              </span>
-              <div className="p-2 text-gray-400 hover:text-indigo-600 transition-colors">
-                <ExternalLink size={18} />
-              </div>
+            <div className="flex items-center gap-2 sm:gap-4">
+              <button className="hidden sm:flex text-sm font-bold text-slate-900 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white underline items-center gap-2 mr-4">
+                <Download size={16} /> Export All
+              </button>
+              <button onClick={onClose} className="p-2 rounded-xl sm:rounded-2xl bg-gray-100 dark:bg-gray-900 text-gray-500 hover:text-gray-900 dark:hover:text-white transition-all"><X size={20} /></button>
             </div>
-          </a>
-        ))}
+          </div>
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-10 tf-modal-scroll">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+              {documents.map((doc, i) => (
+                <div
+                  key={i}
+                  className="group p-4 sm:p-5 lg:p-6 rounded-2xl sm:rounded-3xl border border-slate-100 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-800/20 flex items-center justify-between hover:border-slate-200 dark:hover:border-slate-700 hover:bg-white dark:hover:bg-gray-800 transition-all"
+                >
+                  <div className="flex items-center gap-5">
+                    <div className={`p-4 rounded-2xl ${doc.type === 'PDF' ? 'bg-slate-100 text-slate-900' : 'bg-green-50 text-green-600'} dark:bg-opacity-10 group-hover:scale-110 transition-transform`}>
+                      <FileText size={24} />
+                    </div>
+                    <div>
+                      <p className="font-bold text-gray-900 dark:text-white">{doc.name}</p>
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">{doc.size} • {doc.type}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <span className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${doc.status.includes('Verified') || doc.status === 'Active' ? 'bg-emerald-100 text-emerald-700' : 'bg-orange-100 text-orange-700'
+                      }`}>
+                      {(doc.status.includes('Verified') || doc.status === 'Active') && <CheckCircle size={12} />}
+                      {doc.status}
+                    </span>
+                    <div className="flex items-center gap-2">
+                       <button 
+                         onClick={() => onEditDocument(doc)}
+                         className="p-2 rounded-xl bg-slate-100 dark:bg-gray-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-gray-700 transition-all shadow-sm"
+                         title="Upload New Version"
+                       >
+                         <UploadCloud size={16} />
+                       </button>
+                       <button 
+                         onClick={() => onViewDocument(doc)}
+                         className="p-2 text-gray-400 hover:text-slate-900 dark:hover:text-white transition-colors"
+                         title="View Document"
+                       >
+                         <ExternalLink size={18} />
+                       </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const DocumentPreviewModal = ({ isOpen, onClose, document: docRecord }) => {
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKeyDown = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isOpen, onClose]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, [isOpen]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[140] flex items-center justify-center p-4">
+      <div className={`absolute inset-0 bg-slate-900/90 backdrop-blur-xl transition-opacity duration-500`} onClick={onClose} />
+      
+      <div className="relative w-[calc(100%-2rem)] max-w-5xl h-[85vh] transition-all duration-500 transform scale-100 flex flex-col">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-4 sm:mb-6 text-white bg-white/10 p-5 sm:p-6 rounded-[2rem] sm:rounded-[2.5rem] backdrop-blur-md border border-white/10 shadow-2xl flex-shrink-0 sticky top-0 z-10">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <div className="p-2.5 sm:p-3 rounded-2xl bg-white/10 text-white"><FileText size={20} className="sm:w-6 sm:h-6" /></div>
+            <div>
+              <h3 className="text-xl sm:text-2xl font-black tracking-tight line-clamp-1">{docRecord?.name || 'Document Preview'}</h3>
+              <p className="text-slate-300 text-[10px] font-bold uppercase tracking-widest">{docRecord?.status || 'Verified Record'}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 sm:gap-3">
+             <button className="hidden sm:flex p-3 rounded-2xl bg-white/10 hover:bg-white/20 transition-all items-center gap-2 font-bold text-sm">
+                <Download size={20} /> Download
+             </button>
+             <button onClick={onClose} className="p-2.5 sm:p-3 rounded-2xl bg-white/20 hover:bg-white/30 transition-all text-white"><X size={24} /></button>
+          </div>
+        </div>
+
+        {/* Content Area - Sample Document */}
+        <div className="flex-1 bg-white rounded-[2rem] sm:rounded-[3.5rem] shadow-inner overflow-hidden relative border-4 border-slate-900 p-6 sm:p-12 flex items-center justify-center tf-modal-scroll overflow-y-auto">
+           <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, #000 1px, transparent 0)', backgroundSize: '24px 24px' }} />
+           
+           <div className="relative w-full max-w-2xl min-h-full border-[6px] sm:border-[10px] border-double border-slate-100 p-6 sm:p-10 flex flex-col">
+              <div className="flex justify-between items-start mb-8 sm:mb-12">
+                 <div className="w-14 h-14 sm:w-20 sm:h-20 rounded-full border-4 border-slate-200 flex items-center justify-center text-slate-100 transform -rotate-12 flex-shrink-0">
+                    <Shield size={28} className="sm:w-10 sm:h-10" />
+                 </div>
+                 <div className="text-right">
+                    <h4 className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tighter uppercase italic">Trackforce</h4>
+                    <p className="text-[8px] sm:text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Verified Field Excellence</p>
+                 </div>
+              </div>
+
+              <div className="flex-1 flex flex-col items-center justify-center text-center space-y-6 sm:space-y-8 py-8">
+                 <div className="space-y-2">
+                    <p className="text-[8px] sm:text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">CERTIFICATE OF RECORD</p>
+                    <h2 className="text-3xl sm:text-5xl font-black text-slate-900 tracking-tight">{docRecord?.name || 'Professional Document'}</h2>
+                 </div>
+
+                 <div className="w-24 sm:w-32 h-1 bg-slate-900 rounded-full" />
+
+                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-12 sm:gap-x-20 gap-y-6 sm:gap-y-10 text-left w-full max-w-lg mx-auto py-4 sm:py-8">
+                    <div>
+                       <label className="text-[8px] sm:text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Holder Name</label>
+                       <p className="font-bold text-slate-900 border-b-2 border-slate-100 pb-1 text-sm sm:text-base">Abhiram Rangoon</p>
+                    </div>
+                    <div>
+                       <label className="text-[8px] sm:text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Employee ID</label>
+                       <p className="font-bold text-slate-900 border-b-2 border-slate-100 pb-1 text-sm sm:text-base">TF-EXE-402</p>
+                    </div>
+                    <div>
+                       <label className="text-[8px] sm:text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Issue Status</label>
+                       <p className="font-bold text-emerald-600 border-b-2 border-slate-100 pb-1 text-sm sm:text-base">{docRecord?.status || 'Verified'}</p>
+                    </div>
+                    <div>
+                       <label className="text-[8px] sm:text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">File Metadata</label>
+                       <p className="font-bold text-slate-900 border-b-2 border-slate-100 pb-1 text-sm sm:text-base">{docRecord?.size || '0.0 MB'} • {docRecord?.type || 'PDF'}</p>
+                    </div>
+                 </div>
+
+                 <div className="mt-8 flex items-center justify-center gap-4 text-slate-300">
+                    <ShieldCheck size={32} className="opacity-20 sm:w-12 sm:h-12" />
+                    <Activity size={32} className="opacity-20 sm:w-12 sm:h-12" />
+                    <UserCheck size={32} className="opacity-20 sm:w-12 sm:h-12" />
+                 </div>
+              </div>
+
+              <div className="mt-auto pt-10 border-t border-slate-100 flex justify-between items-end opacity-40 grayscale">
+                 <div>
+                    <p className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">Digital Verification Key</p>
+                    <p className="text-[10px] font-mono text-slate-900 mt-1">AX-772-TF-99-RECORD-PREVIEW</p>
+                 </div>
+                 <div className="text-right">
+                    <p className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">Issued Date</p>
+                    <p className="text-xs font-black text-slate-900 mt-1">14 MARCH 2026</p>
+                 </div>
+              </div>
+              
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 border-[20px] border-slate-50 rounded-full w-[500px] h-[500px] pointer-events-none opacity-[0.02]" />
+           </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const DocumentUploadModal = ({ isOpen, onClose, document: docRecord, onSave }) => {
+  const [name, setName] = useState('');
+  const [file, setFile] = useState(null);
+  const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    if (docRecord) {
+      setName(docRecord.name);
+      setFile(null);
+    }
+  }, [docRecord]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKeyDown = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isOpen, onClose]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, [isOpen]);
+
+  const handleFileChange = (e) => {
+    const selectedFile = e.target.files[0];
+    if (selectedFile) {
+      setFile(selectedFile);
+      // Auto-update name if it's empty or generically named
+      if (!name || name === docRecord?.name) {
+        setName(selectedFile.name.split('.')[0]);
+      }
+    }
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const updatedData = { 
+      ...docRecord, 
+      name,
+      size: file ? `${(file.size / (1024 * 1024)).toFixed(1)} MB` : docRecord.size,
+      status: file ? 'Verified' : docRecord.status // Mocking verification on upload
+    };
+    onSave(updatedData);
+  };
+
+  return (
+    <div className={`fixed inset-0 z-[130] flex items-center justify-center p-4 transition-all duration-300 ${isOpen ? '' : 'pointer-events-none'}`}>
+      <div className={`absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0'}`} />
+      <div className={`relative w-[calc(100%-2rem)] max-w-md bg-white dark:bg-gray-950 rounded-[2rem] sm:rounded-[2.5rem] shadow-2xl border border-gray-100 dark:border-gray-800 p-6 sm:p-8 transition-all duration-300 transform ${isOpen ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`}>
+        <div className="flex items-center justify-between mb-6 sm:mb-8">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 sm:p-3 rounded-2xl bg-slate-100 dark:bg-gray-800 text-slate-900 dark:text-slate-400 flex-shrink-0"><UploadCloud size={20} /></div>
+            <h3 className="text-xl font-black text-gray-900 dark:text-white tracking-tight">Upload Document</h3>
+          </div>
+          <button onClick={onClose} className="p-2 rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-500 hover:text-gray-900 dark:hover:text-white transition-all"><X size={20} /></button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="space-y-2">
+            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Document Name</label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full px-6 py-4 rounded-2xl bg-slate-50 dark:bg-gray-900 border-2 border-transparent focus:border-slate-900 dark:focus:border-white outline-none transition-all font-bold text-gray-900 dark:text-white"
+              placeholder="Enter document title"
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">File Attachment</label>
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              onChange={handleFileChange} 
+              className="hidden" 
+              accept=".pdf,.doc,.docx,.jpg,.png"
+            />
+            <div 
+              onClick={() => fileInputRef.current.click()}
+              className="group cursor-pointer p-6 rounded-[2rem] border-2 border-dashed border-slate-200 dark:border-slate-800 hover:border-slate-900 dark:hover:border-white hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-all flex flex-col items-center justify-center gap-3"
+            >
+              {file ? (
+                <div className="flex flex-col items-center">
+                  <div className="p-3 rounded-full bg-emerald-100 text-emerald-600 mb-2 animate-bounce"><CheckCircle size={24} /></div>
+                  <p className="font-black text-gray-900 dark:text-white text-sm text-center line-clamp-1">{file.name}</p>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{(file.size / 1024).toFixed(0)} KB • Ready to upload</p>
+                </div>
+              ) : (
+                <>
+                  <UploadCloud size={32} className="text-gray-300 group-hover:text-slate-900 dark:group-hover:text-white transition-colors" />
+                  <p className="text-sm font-bold text-gray-500 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">Select a file to upload</p>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">PDF, DOCX, JPG or PNG (Max 10MB)</p>
+                </>
+              )}
+            </div>
+          </div>
+          
+          <div className="flex gap-3 pt-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 py-4 rounded-2xl bg-slate-100 dark:bg-gray-800 text-slate-900 dark:text-white font-black hover:bg-slate-200 dark:hover:bg-gray-700 transition-all"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={!file && (!name || name === docRecord?.name)}
+              className="flex-1 py-4 rounded-2xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-black hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-slate-900/10 dark:shadow-none"
+            >
+              Update Record
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );
@@ -525,7 +891,7 @@ const EditProfileModal = ({ isOpen, onClose, employee, onSaveProfile }) => {
       </div>
 
       <div
-        className={`absolute left-1/2 top-1/2 w-[calc(100%-2rem)] max-w-3xl -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-gray-950 shadow-2xl border border-gray-100 dark:border-gray-800 rounded-[2.5rem] transition-all duration-300 ${isOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
+        className={`absolute left-1/2 top-1/2 w-[calc(100%-2rem)] max-w-3xl -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-gray-950 shadow-2xl border border-gray-100 dark:border-gray-800 rounded-[2rem] sm:rounded-[2.5rem] transition-all duration-300 ${isOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
           }`}
         role="dialog"
         aria-modal="true"
@@ -533,22 +899,24 @@ const EditProfileModal = ({ isOpen, onClose, employee, onSaveProfile }) => {
       >
         <div className="max-h-[calc(100vh-2rem)] flex flex-col overflow-hidden">
           {/* Header */}
-          <div className="p-6 sm:p-8 border-b border-gray-100 dark:border-gray-800 bg-white/80 dark:bg-gray-950/80 backdrop-blur">
+          <div className="p-5 sm:p-8 border-b border-gray-100 dark:border-gray-800 bg-white/80 dark:bg-gray-950/80 backdrop-blur flex-shrink-0">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <div className="flex items-center gap-3">
-                  <div className="p-3 rounded-2xl bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600">
+                  <div className="p-2.5 sm:p-3 rounded-2xl bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600">
                     <User size={18} />
                   </div>
-                  <h2 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">Edit Profile</h2>
+                  <h2 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white tracking-tight">Edit Profile</h2>
                 </div>
-                <p className="mt-2 text-sm font-medium text-gray-500">Update your personal information and contact details.</p>
+                <p className="mt-1 sm:mt-2 text-[10px] sm:text-sm font-medium text-gray-500">Update your personal information.</p>
               </div>
               <button
                 onClick={onClose}
-                className="px-4 py-2 rounded-2xl bg-gray-100 dark:bg-gray-900 text-gray-700 dark:text-gray-200 font-bold hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors"
+                className="p-2 sm:px-4 sm:py-2 rounded-xl sm:rounded-2xl bg-gray-100 dark:bg-gray-900 text-gray-700 dark:text-gray-200 font-bold hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors"
+                aria-label="Close"
               >
-                Close
+                <span className="hidden sm:inline">Close</span>
+                <X size={18} className="sm:hidden" />
               </button>
             </div>
           </div>
@@ -802,7 +1170,7 @@ const AccountSettingsPanel = ({ isOpen, onClose, employee, onSaveProfile }) => {
   };
 
   const SectionCard = ({ title, icon: Icon, children, onSubmit, saved, submitLabel = 'Save Changes' }) => (
-    <form onSubmit={onSubmit} className="bg-gray-50/60 dark:bg-gray-900/30 rounded-[2rem] border border-gray-100 dark:border-gray-800 p-6 sm:p-7 mb-6">
+    <form onSubmit={onSubmit} className="bg-gray-50/60 dark:bg-gray-900/30 rounded-[1.5rem] sm:rounded-[2rem] border border-gray-100 dark:border-gray-800 p-5 sm:p-7 mb-6">
       <div className="flex items-center gap-3 mb-6">
         <div className="p-2.5 rounded-2xl bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600"><Icon size={18} /></div>
         <h3 className="text-lg font-black text-gray-900 dark:text-white tracking-tight">{title}</h3>
@@ -835,39 +1203,35 @@ const AccountSettingsPanel = ({ isOpen, onClose, employee, onSaveProfile }) => {
   const selectCls = "w-full px-4 py-3 rounded-2xl bg-white dark:bg-gray-900/40 border border-gray-200 dark:border-gray-800 text-gray-900 dark:text-white font-bold outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400 text-sm appearance-none";
 
   return (
-    <div className={`fixed inset-0 z-50 ${isOpen ? '' : 'pointer-events-none'}`} aria-hidden={!isOpen}>
-      <style>{`
-        .tf-settings-scroll::-webkit-scrollbar { width: 0px; height: 0px; }
-        .tf-settings-scroll { scrollbar-width: none; -ms-overflow-style: none; }
-      `}</style>
+    <div className={`fixed inset-0 z-50 flex items-center justify-center p-4 ${isOpen ? '' : 'pointer-events-none'}`} aria-hidden={!isOpen}>
       <div
         className={`absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity ${isOpen ? 'opacity-100' : 'opacity-0'}`}
         onClick={onClose}
       />
       <div
-        className={`absolute left-1/2 top-1/2 w-[calc(100%-2rem)] max-w-2xl -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-gray-950 shadow-2xl border border-gray-100 dark:border-gray-800 rounded-[2.5rem] transition-all duration-300 ${isOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
+        className={`relative w-[calc(100%-2rem)] max-w-2xl bg-white dark:bg-gray-950 shadow-2xl border border-gray-100 dark:border-gray-800 rounded-[2.5rem] transition-all duration-300 transform ${isOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
           }`}
         role="dialog" aria-modal="true" aria-label="Account Settings"
       >
         <div className="max-h-[calc(100vh-2rem)] flex flex-col overflow-hidden">
           {/* Header */}
-          <div className="p-6 sm:p-8 border-b border-gray-100 dark:border-gray-800 bg-white/80 dark:bg-gray-950/80 backdrop-blur flex-shrink-0">
+          <div className="p-5 sm:p-8 border-b border-gray-100 dark:border-gray-800 bg-white/80 dark:bg-gray-950/80 backdrop-blur flex-shrink-0 sticky top-0 z-10">
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
-                <div className="p-3 rounded-2xl bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600"><Settings size={18} /></div>
+                <div className="p-2.5 sm:p-3 rounded-2xl bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600"><Settings size={18} /></div>
                 <div>
-                  <h2 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">Account Settings</h2>
-                  <p className="text-sm font-medium text-gray-500">Manage preferences, notifications & security</p>
+                  <h2 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white tracking-tight">Account Settings</h2>
+                  <p className="text-[10px] sm:text-sm font-medium text-gray-500">Preferences & security</p>
                 </div>
               </div>
-              <button onClick={onClose} className="p-2 rounded-2xl bg-gray-100 dark:bg-gray-900 text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors">
+              <button onClick={onClose} className="p-2 rounded-xl sm:rounded-2xl bg-gray-100 dark:bg-gray-900 text-gray-500 hover:text-gray-200 dark:hover:bg-gray-800 transition-colors">
                 <X size={18} />
               </button>
             </div>
           </div>
 
           {/* Body */}
-          <div className="tf-settings-scroll flex-1 overflow-y-auto p-5 sm:p-7">
+          <div className="tf-settings-scroll flex-1 overflow-y-auto p-4 sm:p-7">
 
 
             {/* 1. Notification Settings */}
@@ -984,10 +1348,25 @@ const AccountSettingsPanel = ({ isOpen, onClose, employee, onSaveProfile }) => {
 // --- Main Page Component ---
 
 const EmployeeProfile = () => {
-  const [activeTab, setActiveTab] = useState('overview');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isNavigationOpen, setIsNavigationOpen] = useState(false);
+  const [isPersonalInfoOpen, setIsPersonalInfoOpen] = useState(false);
+  const [isDocumentsOpen, setIsDocumentsOpen] = useState(false);
+  const [isEditDocumentOpen, setIsEditDocumentOpen] = useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [editingDocument, setEditingDocument] = useState(null);
+  const [viewingDocument, setViewingDocument] = useState(null);
+
+  const [documents, setDocuments] = useState([
+    { id: 1, name: 'Kyc Document (Aadhar)', size: '1.2 MB', type: 'PDF', status: 'Verified' },
+    { id: 2, name: 'PAN Clearance', size: '0.9 MB', type: 'PDF', status: 'Verified' },
+    { id: 3, name: 'Field Certification', size: '2.1 MB', type: 'PDF', status: 'Active' },
+    { id: 4, name: 'Monthly Performance Card', size: '1.4 MB', type: 'PDF', status: 'Pending Review' },
+    { id: 5, name: 'Work Permit', size: '0.8 MB', type: 'PDF', status: 'Verified' },
+    { id: 6, name: 'Insurance Policy', size: '2.5 MB', type: 'PDF', status: 'Active' },
+  ]);
 
   const [employee, setEmployee] = useState({
     name: 'Abhiram Rangoon',
@@ -1006,48 +1385,30 @@ const EmployeeProfile = () => {
   });
 
   const tabs = [
-    { id: 'overview', label: 'My Dashboard', icon: LayoutDashboard },
     { id: 'personal', label: 'Profile Info', icon: User },
     { id: 'employment', label: 'Work Details', icon: Briefcase },
     { id: 'documents', label: 'Documents', icon: FileText },
-    { id: 'activity', label: 'My Timeline', icon: Activity },
   ];
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'overview':
-        return (
-          <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <OverviewSection employee={employee} />
-            <div className="grid grid-cols-1 gap-10">
-              <EmploymentSection />
-              <DocumentsSection />
-            </div>
-          </div>
-        );
       case 'personal':
         return <div className="animate-in fade-in slide-in-from-bottom-4 duration-500"><PersonalInfoSection employee={employee} /></div>;
       case 'employment':
         return <div className="animate-in fade-in slide-in-from-bottom-4 duration-500"><EmploymentSection /></div>;
       case 'documents':
         return <div className="animate-in fade-in slide-in-from-bottom-4 duration-500"><DocumentsSection /></div>;
-      case 'activity':
-        return <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-          <div className="bg-white dark:bg-gray-900 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 p-10 text-center">
-            <Activity className="mx-auto text-indigo-600 mb-4" size={48} />
-            <p className="text-gray-500">Please visit the dedicated Activity page for full log.</p>
-          </div>
-        </div>;
       default:
-        return <OverviewSection employee={employee} />;
+        return <div className="animate-in fade-in slide-in-from-bottom-4 duration-500"><PersonalInfoSection employee={employee} /></div>;
     }
   };
 
   return (
     <div className="max-w-6xl mx-auto pb-20 px-4 sm:px-0">
+      <ScrollStyles />
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-4">
         <div>
-          <h1 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">Your Portfolio</h1>
+          <h1 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">Your Profile</h1>
           <p className="text-gray-500 font-medium">Manage your field performance and professional records</p>
         </div>
       </div>
@@ -1057,27 +1418,10 @@ const EmployeeProfile = () => {
         onEditProfile={() => setIsEditProfileOpen(true)}
         onOpenSettings={() => setIsSettingsOpen(true)}
         onShareProfile={() => setIsShareModalOpen(true)}
+        onOpenNavigation={() => setIsNavigationOpen(true)}
       />
 
-      <div className="mt-12 mb-10 overflow-x-auto pb-4">
-        <div className="flex items-center gap-2 p-1.5 bg-gray-100/50 dark:bg-gray-800/40 backdrop-blur-md rounded-[2.5rem] w-fit border border-gray-100 dark:border-gray-800">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-3 px-6 py-4 rounded-[2rem] text-sm font-black transition-all whitespace-nowrap ${activeTab === tab.id
-                ? 'bg-white dark:bg-gray-900 text-indigo-600 shadow-xl scale-105'
-                : 'text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-                }`}
-            >
-              <tab.icon size={18} className={activeTab === tab.id ? 'text-indigo-600' : 'text-gray-400'} />
-              {tab.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {renderContent()}
+      <EmploymentSection />
 
       <EditProfileModal
         isOpen={isEditProfileOpen}
@@ -1097,6 +1441,68 @@ const EmployeeProfile = () => {
         isOpen={isShareModalOpen}
         onClose={() => setIsShareModalOpen(false)}
         employee={employee}
+      />
+
+      <PortfolioNavigationOverlay
+        isOpen={isNavigationOpen}
+        onClose={() => setIsNavigationOpen(false)}
+        onNavigate={(id) => {
+          setIsNavigationOpen(false);
+          if (id === 'settings') setIsSettingsOpen(true);
+          else if (id === 'personal') setIsPersonalInfoOpen(true);
+          else if (id === 'documents') setIsDocumentsOpen(true);
+        }}
+      />
+
+      <PersonalInfoModal
+        isOpen={isPersonalInfoOpen}
+        onClose={() => {
+          setIsPersonalInfoOpen(false);
+          setIsNavigationOpen(true);
+        }}
+        employee={employee}
+      />
+
+      <DocumentsModal
+        isOpen={isDocumentsOpen}
+        onClose={() => {
+          setIsDocumentsOpen(false);
+          setIsNavigationOpen(true);
+        }}
+        documents={documents}
+        onEditDocument={(doc) => {
+          setEditingDocument(doc);
+          setIsDocumentsOpen(false);
+          setIsEditDocumentOpen(true);
+        }}
+        onViewDocument={(doc) => {
+          setViewingDocument(doc);
+          setIsDocumentsOpen(false);
+          setIsViewModalOpen(true);
+        }}
+      />
+
+      <DocumentUploadModal
+        isOpen={isEditDocumentOpen}
+        onClose={() => {
+          setIsEditDocumentOpen(false);
+          setIsDocumentsOpen(true);
+        }}
+        document={editingDocument}
+        onSave={(updatedDoc) => {
+          setDocuments(prev => prev.map(d => d.id === updatedDoc.id ? updatedDoc : d));
+          setIsEditDocumentOpen(false);
+          setIsDocumentsOpen(true);
+        }}
+      />
+
+      <DocumentPreviewModal
+        isOpen={isViewModalOpen}
+        onClose={() => {
+          setIsViewModalOpen(false);
+          setIsDocumentsOpen(true);
+        }}
+        document={viewingDocument}
       />
     </div>
   );
