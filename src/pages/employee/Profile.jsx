@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { User, Briefcase, FileText, Activity, LayoutDashboard, Settings, Mail, Phone, MapPin, MoreVertical, ShieldCheck, TrendingUp, ShoppingBag, Map as MapIcon, Clock, HeartPulse, Building, Shield, UserCheck, Calendar, CheckCircle, Download, ExternalLink, Bell, Globe, LogOut, Share2, Eye, EyeOff, Lock, AlertTriangle, Smartphone, Wifi, X } from 'lucide-react';
 
 // --- Internal Section Components ---
-
+// changes
 const ProfileHeader = ({ employee, onEditProfile, onOpenSettings }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
@@ -76,8 +76,8 @@ const ProfileHeader = ({ employee, onEditProfile, onOpenSettings }) => {
                         key={i}
                         onClick={item.action}
                         className={`w-full flex items-center gap-3 px-5 py-3.5 text-sm font-bold transition-colors ${item.danger
-                            ? 'text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20'
-                            : 'text-gray-700 dark:text-gray-200 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 hover:text-indigo-600'
+                          ? 'text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20'
+                          : 'text-gray-700 dark:text-gray-200 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 hover:text-indigo-600'
                           } ${i !== 0 ? 'border-t border-gray-50 dark:border-gray-800' : ''}`}
                       >
                         <item.icon size={18} className={item.danger ? 'text-red-500' : 'text-gray-400 group-hover:text-indigo-600'} />
@@ -930,8 +930,8 @@ const EmployeeProfile = () => {
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={`flex items-center gap-3 px-6 py-4 rounded-[2rem] text-sm font-black transition-all whitespace-nowrap ${activeTab === tab.id
-                  ? 'bg-white dark:bg-gray-900 text-indigo-600 shadow-xl scale-105'
-                  : 'text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                ? 'bg-white dark:bg-gray-900 text-indigo-600 shadow-xl scale-105'
+                : 'text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
                 }`}
             >
               <tab.icon size={18} className={activeTab === tab.id ? 'text-indigo-600' : 'text-gray-400'} />
