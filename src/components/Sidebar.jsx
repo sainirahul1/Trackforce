@@ -28,7 +28,7 @@ const Sidebar = ({ role, user, isCollapsed, onToggle }) => {
       { name: 'Upload Proof', icon: Camera, path: '/employee/upload-proof' },
       { name: 'Activity', icon: Clock, path: '/employee/activity' },
       { name: 'Notifications', icon: Bell, path: '/employee/notifications' },
-      { name: 'My Portfolio', icon: Users, path: '/employee/profile' },
+      { name: 'My Profile', icon: Users, path: '/employee/profile' },
     ],
   };
 
