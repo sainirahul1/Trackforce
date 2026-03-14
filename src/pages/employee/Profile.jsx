@@ -22,9 +22,11 @@ const ProfileHeader = ({ employee, onEditProfile, onOpenSettings }) => {
   ];
 
   return (
-    <div className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-indigo-600 to-indigo-800 p-8 text-white shadow-2xl">
-      <div className="absolute top-0 right-0 -mr-20 -mt-20 h-64 w-64 rounded-full bg-white/10 blur-3xl opacity-50" />
-      <div className="absolute bottom-0 left-0 -ml-20 -mb-20 h-64 w-64 rounded-full bg-indigo-400/20 blur-3xl opacity-30" />
+    <div className="relative rounded-[2.5rem] bg-gradient-to-br from-indigo-600 to-indigo-800 p-8 text-white shadow-2xl">
+      <div className="absolute inset-0 rounded-[2.5rem] overflow-hidden pointer-events-none">
+        <div className="absolute top-0 right-0 -mr-20 -mt-20 h-64 w-64 rounded-full bg-white/10 blur-3xl opacity-50" />
+        <div className="absolute bottom-0 left-0 -ml-20 -mb-20 h-64 w-64 rounded-full bg-indigo-400/20 blur-3xl opacity-30" />
+      </div>
       <div className="relative flex flex-col md:flex-row md:items-center gap-8">
         <div className="flex-shrink-0">
           <div className="relative">
