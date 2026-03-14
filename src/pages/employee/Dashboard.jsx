@@ -2,10 +2,21 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  MapPin, Calendar, TrendingUp, Clock, User, ClipboardList,
-  Map as MapIcon, Bell, Camera, ShoppingBag, ChevronRight, Activity,
-  CheckCircle2, ArrowRight, Navigation2
+  MapPin, Calendar, TrendingUp, Clock, ClipboardList,
+  Map as MapIcon, ShoppingBag, ShoppingBasket, ChevronRight, Activity,
+  CheckCircle2, ArrowRight, Navigation2, Camera, Bell, IndianRupee
 } from 'lucide-react';
+import {
+  Chart as ChartJS, CategoryScale, LinearScale, PointElement,
+  LineElement, Tooltip, Legend, Filler, RadialLinearScale
+} from 'chart.js';
+import { Line, Radar } from 'react-chartjs-2';
+
+// Register Chart.js components
+ChartJS.register(
+  CategoryScale, LinearScale, PointElement,
+  LineElement, Tooltip, Legend, Filler, RadialLinearScale
+);
 
 // =============================================================================
 // STYLE TOKENS & CONSTANTSAB
@@ -35,85 +46,263 @@ const UI_TOKENS = {
 // These smaller components help keep the main Dashboard logic clean and readable.
 // =============================================================================
 
-/**
- * QuickActionItem Component
- * Renders a single icon-based action button for the top grid.
- */
-const QuickActionItem = ({ action, index }) => (
-  <Link
-    to={action.path}
-    className={`${UI_TOKENS.cardBase} flex flex-col items-center justify-center p-6 md:p-8 rounded-[2rem] hover:-translate-y-1`}
-    style={{ transitionDelay: `${index * 30}ms` }}
-  >
-    <div className={`p-4 rounded-2xl ${action.bg} mb-4 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300 ring-4 ring-transparent group-hover:ring-gray-50 dark:group-hover:ring-gray-800`}>
-      <action.icon size={28} className={action.text} />
-    </div>
-    <span className="text-[11px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-      {action.name}
-    </span>
-  </Link>
-);
+
 
 /**
- * StatCard Component
- * Displays key metrics like visits, hours, or tasks with trend indicators.
+ * ProgressRing Component
+ * A compact circular progress indicator for key performance metrics.
  */
-const StatCard = ({ stat }) => (
-  <div className={`${UI_TOKENS.cardBase} p-6 rounded-3xl flex flex-col justify-between hover:border-indigo-100 dark:hover:border-indigo-900/50`}>
-    <div className={`absolute -right-6 -top-6 w-24 h-24 bg-gradient-to-br ${stat.color} opacity-5 group-hover:opacity-10 rounded-full group-hover:scale-150 transition-all duration-500 ease-out`} />
-    <div className="relative z-10 w-full mb-3">
-      <div className="flex justify-between items-start mb-4 w-full">
-        <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">{stat.label}</p>
-        <div className="p-2 bg-gray-50 dark:bg-gray-800 rounded-xl group-hover:bg-white dark:group-hover:bg-gray-700 transition-colors">
-          <stat.icon size={18} className="text-gray-400 dark:text-gray-500 group-hover:text-indigo-500 transition-colors" />
+const ProgressRing = ({ label, current, target, color }) => {
+  const percentage = Math.min(Math.round((current / target) * 100), 100);
+  const radius = 22;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDashoffset = circumference - (percentage / 100) * circumference;
+
+  return (
+    <div className="flex flex-col items-center text-center group p-2 rounded-2xl transition-all hover:bg-gray-50/80">
+      <div className="relative mb-3 transform transition-transform group-hover:scale-110">
+        <svg className="w-16 h-16 -rotate-90 transform">
+          <circle
+            cx="32" cy="32" r={radius}
+            stroke="currentColor" strokeWidth="5" fill="transparent"
+            className="text-gray-200/50"
+          />
+          <circle
+            cx="32" cy="32" r={radius}
+            stroke="currentColor" strokeWidth="5" fill="transparent"
+            strokeDasharray={circumference}
+            style={{
+              strokeDashoffset,
+              transition: 'stroke-dashoffset 1.5s cubic-bezier(0.4, 0, 0.2, 1)',
+              filter: `drop-shadow(0 0 3px currentColor)`
+            }}
+            strokeLinecap="round"
+            className={`${color}`}
+          />
+        </svg>
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className="text-sm font-black text-gray-900 leading-none">{percentage}%</span>
         </div>
       </div>
-      <p className="text-2xl md:text-3xl font-black text-gray-900 dark:text-white mb-1 tracking-tight">{stat.value}</p>
-    </div>
-    <div className="relative z-10">
-      <div className={`flex items-center text-[10px] font-bold px-2 py-1 rounded-lg inline-flex ${stat.trendUp ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400'}`}>
-        {stat.trendUp ? <TrendingUp size={12} className="mr-1.5" /> : <Activity size={12} className="mr-1.5" />}
-        <span>{stat.trend}</span>
+      <p className="text-[11px] font-black text-gray-500 uppercase tracking-[0.15em] leading-none mb-2">{label}</p>
+      <div className="px-3 py-1 bg-gray-100 rounded-lg border border-gray-200/50">
+        <p className="text-xs font-black text-gray-800 tabular-nums">{current}<span className="text-gray-400 mx-0.5">/</span>{target}</p>
       </div>
     </div>
-  </div>
-);
+  );
+};
+
+
+/**
+ * RevenueCard Component
+ * Displays a weekly revenue visualization inspired by the Orders page.
+ */
+const RevenueCard = () => {
+  const data = {
+    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+    datasets: [
+      {
+        label: 'Revenue',
+        data: [12000, 19000, 15000, 25000, 22000, 30000, 28000],
+        borderColor: '#10b981',
+        backgroundColor: (context) => {
+          const chart = context.chart;
+          const { ctx, chartArea } = chart;
+          if (!chartArea) return null;
+          const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+          gradient.addColorStop(0, 'rgba(16, 185, 129, 0)');
+          gradient.addColorStop(1, 'rgba(16, 185, 129, 0.1)');
+          return gradient;
+        },
+        fill: true,
+        tension: 0.5,
+        pointRadius: 4,
+        pointBackgroundColor: '#10b981',
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
+        pointHoverRadius: 6,
+        borderWidth: 4,
+      },
+    ],
+  };
+
+  const options = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: '#fff',
+        titleColor: '#1e293b',
+        bodyColor: '#1e293b',
+        titleFont: { size: 12, weight: 'bold' },
+        bodyFont: { size: 12 },
+        padding: 10,
+        borderRadius: 8,
+        displayColors: false,
+        borderColor: '#e2e8f0',
+        borderWidth: 1
+      },
+    },
+    scales: {
+      x: { display: false },
+      y: { display: false },
+    },
+  };
+
+  return (
+    <Link 
+      to="/employee/orders"
+      className="w-full max-w-[320px] aspect-square bg-white text-gray-900 p-7 rounded-[3rem] shadow-xl relative overflow-hidden group transition-all duration-700 border border-gray-100 hover:border-emerald-500/30 block hover:-translate-y-1 active:scale-[0.98]"
+    >
+      {/* Background Pattern */}
+      <div className="absolute inset-0 opacity-[0.05] pointer-events-none" style={{ backgroundImage: 'radial-gradient(#000 1px, transparent 1px)', backgroundSize: '16px 16px' }} />
+      <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-[60px] -mr-20 -mt-20 pointer-events-none group-hover:scale-125 transition-transform duration-1000" />
+
+      <div className="flex flex-col h-full justify-between items-center relative z-10 text-center">
+        <div className="space-y-1.5">
+          <div className="inline-flex p-3 bg-emerald-50 rounded-2xl mb-1 text-emerald-600 shadow-sm border border-emerald-100">
+            <IndianRupee size={24} />
+          </div>
+          <h3 className="text-2xl font-black tracking-tight leading-none group-hover:text-emerald-600 transition-colors">Revenue</h3>
+          <p className="text-xs text-gray-400 font-bold uppercase tracking-[0.25em]">Weekly Growth</p>
+        </div>
+
+        <div className="w-full h-28 my-2 group-hover:scale-105 transition-transform duration-700">
+          <Line data={data} options={options} />
+        </div>
+
+        <div className="space-y-1">
+          <p className="text-3xl font-black text-slate-800">₹84,200</p>
+          <div className="flex items-center justify-center gap-1.5 text-emerald-600 text-[10px] font-black uppercase tracking-widest bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity">
+            View Analytics
+          </div>
+        </div>
+      </div>
+    </Link>
+  );
+};
+
+/**
+ * CapabilitiesCard Component
+ * Displays a radar chart of the employee's "Capabilities and Power".
+ */
+const CapabilitiesCard = () => {
+  const data = {
+    labels: ['Efficiency', 'Reliability', 'Speed', 'Accuracy', 'Engagement'],
+    datasets: [
+      {
+        label: 'Capabilities',
+        data: [85, 90, 75, 95, 80],
+        backgroundColor: 'rgba(99, 102, 241, 0.2)',
+        borderColor: '#6366f1',
+        borderWidth: 3,
+        pointBackgroundColor: '#6366f1',
+        pointBorderColor: '#fff',
+        pointHoverBackgroundColor: '#fff',
+        pointHoverBorderColor: '#6366f1'
+      },
+    ],
+  };
+
+  const options = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: '#fff',
+        titleColor: '#1e293b',
+        bodyColor: '#1e293b',
+        borderColor: '#e2e8f0',
+        borderWidth: 1,
+        padding: 10,
+        displayColors: false
+      }
+    },
+    scales: {
+      r: {
+        angleLines: { color: '#f1f5f9' },
+        grid: { color: '#f1f5f9' },
+        pointLabels: {
+          color: '#64748b',
+          font: { size: 10, weight: 'bold', family: 'Inter' }
+        },
+        ticks: { display: false },
+        suggestedMin: 0,
+        suggestedMax: 100
+      }
+    }
+  };
+
+  return (
+    <div className="w-full max-w-[320px] aspect-square bg-white text-gray-900 p-7 rounded-[3rem] shadow-xl relative overflow-hidden group transition-all duration-700 border border-gray-100 hover:border-indigo-500/30">
+      {/* Background Pattern */}
+      <div className="absolute inset-0 opacity-[0.05] pointer-events-none" style={{ backgroundImage: 'radial-gradient(#000 1px, transparent 1px)', backgroundSize: '16px 16px' }} />
+      <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/5 rounded-full blur-[60px] -mr-20 -mt-20 pointer-events-none group-hover:scale-125 transition-transform duration-1000" />
+
+      <div className="flex flex-col h-full justify-between items-center relative z-10 text-center">
+        <div className="space-y-1">
+          <div className="inline-flex p-3 bg-indigo-50 rounded-2xl mb-1 text-indigo-600 shadow-sm border border-indigo-100">
+            <TrendingUp size={24} />
+          </div>
+          <h3 className="text-2xl font-black tracking-tight leading-none group-hover:text-indigo-600 transition-colors">Field Mastery</h3>
+          <p className="text-xs text-gray-400 font-bold uppercase tracking-[0.25em]">Capabilities</p>
+        </div>
+
+        <div className="w-full h-36 my-1 group-hover:scale-105 transition-transform duration-700">
+          <Radar data={data} options={options} />
+        </div>
+
+        <div className="w-12 h-1 bg-indigo-100 rounded-full" />
+      </div>
+    </div>
+  );
+};
+
 
 /**
  * ActivityItem Component
- * Renders an entry in the Recent Activity timeline.
+ * Renders a sophisticated card for each entry in the Recent Activity timeline.
  */
 const ActivityItem = ({ activity, isLast }) => (
-  <div className="flex gap-5 relative group/item p-3 -mx-3 rounded-2xl cursor-default transition-all duration-500 hover:shadow-md hover:bg-gradient-to-br hover:from-white hover:to-indigo-50/50 dark:hover:from-gray-900/40 dark:hover:to-indigo-950/20 hover:-translate-y-0.5">
-    {/* Connecting Line for Timeline */}
+  <div className="flex gap-6 relative group/item">
+    {/* Refined Timeline Connector */}
     {!isLast && (
-      <div className="absolute left-[33px] top-[52px] bottom-[-24px] w-[2px] bg-gradient-to-b from-gray-200 to-transparent dark:from-gray-700 dark:to-transparent group-hover/item:from-indigo-200 dark:group-hover/item:from-indigo-800 transition-colors duration-500" />
+      <div className="absolute left-[23px] top-[50px] bottom-[-30px] w-px bg-gradient-to-b from-indigo-200 via-indigo-100 to-transparent dark:from-indigo-900 dark:via-indigo-950 dark:to-transparent opacity-50 group-hover/item:opacity-100 transition-opacity duration-700" />
     )}
 
-    {/* Activity Icon */}
+    {/* Floating Icon with Ring Glow */}
     <div className="relative">
-      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 z-10 transition-transform duration-500 group-hover/item:scale-110 group-hover/item:rotate-3 relative shadow-lg border border-white/50 dark:border-white/5 ${activity.type === 'success' ? 'bg-gradient-to-br from-emerald-100 to-emerald-50 text-emerald-600 dark:from-emerald-900/40 dark:to-emerald-800/20 dark:text-emerald-400' :
-        activity.type === 'info' ? 'bg-gradient-to-br from-blue-100 to-blue-50 text-blue-600 dark:from-blue-900/40 dark:to-blue-800/20 dark:text-blue-400' :
-          'bg-gradient-to-br from-gray-100 to-gray-50 text-gray-600 dark:from-gray-800 dark:to-gray-900 dark:text-gray-400'
+      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 z-10 transition-all duration-700 group-hover/item:scale-110 group-hover/item:rotate-6 relative shadow-lg ${activity.type === 'success' ? 'bg-emerald-50 text-emerald-600 shadow-emerald-500/10' :
+        activity.type === 'info' ? 'bg-blue-50 text-blue-600 shadow-blue-500/10' :
+          'bg-slate-50 text-slate-600 shadow-slate-500/10'
         }`}>
-        {activity.type === 'success' ? <CheckCircle2 size={22} className="drop-shadow-sm" /> :
-          activity.type === 'info' ? <ShoppingBag size={22} className="drop-shadow-sm" /> :
-            <Activity size={22} className="drop-shadow-sm" />}
+        {activity.type === 'success' ? <CheckCircle2 size={22} /> :
+          activity.type === 'info' ? <ShoppingBag size={22} /> :
+            <Activity size={22} />}
+
+        {/* Pulsing ring for the icon when hovered */}
+        <div className={`absolute inset-0 rounded-2xl animate-pulse opacity-0 group-hover/item:opacity-20 transition-opacity duration-700 ${activity.type === 'success' ? 'bg-emerald-400' :
+            activity.type === 'info' ? 'bg-blue-400' : 'bg-slate-400'
+          }`} />
       </div>
     </div>
 
-    {/* Activity Content */}
-    <div className="flex-1 pt-1 pb-1">
-      <div className="flex justify-between items-start mb-1">
-        <p className="text-base font-bold text-gray-900 dark:text-white group-hover/item:text-indigo-600 dark:group-hover/item:text-indigo-400 transition-colors">
+    {/* Activity Content Card */}
+    <div className="flex-1 bg-white/50 dark:bg-gray-800/30 p-4 rounded-2xl border border-gray-100 dark:border-gray-800/50 hover:bg-white dark:hover:bg-gray-800 transition-all duration-500 hover:shadow-xl hover:-translate-y-1 group/content">
+      <div className="flex justify-between items-start mb-1.5">
+        <h4 className="text-[15px] font-black text-gray-900 dark:text-white group-hover/content:text-indigo-600 dark:group-hover/content:text-indigo-400 transition-colors">
           {activity.title}
-        </p>
-        <span className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 px-2.5 py-1 rounded-lg shadow-sm whitespace-nowrap ml-3">
-          {activity.time}
-        </span>
+        </h4>
+        <div className="flex items-center space-x-1.5 opacity-60 group-hover/content:opacity-100 transition-opacity">
+          <Clock size={10} className="text-gray-400" />
+          <span className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">
+            {activity.time}
+          </span>
+        </div>
       </div>
-      <p className="text-sm font-semibold text-gray-500 dark:text-gray-400 flex items-center">
-        <span className="w-1.5 h-1.5 rounded-full bg-gray-300 dark:bg-gray-600 mr-2"></span>
+      <p className="text-xs font-bold text-gray-500 dark:text-gray-400 leading-relaxed uppercase tracking-wider">
         {activity.desc}
       </p>
     </div>
@@ -127,38 +316,18 @@ const ActivityItem = ({ activity, isLast }) => (
 const EmployeeDashboard = () => {
   // --- State Hooks ---
   const [isOnDuty, setIsOnDuty] = useState(false);
-  const [currentTime, setCurrentTime] = useState(new Date());
 
   // --- Effects ---
-  // Real-time clock update (every minute)
-  useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(new Date()), 60000);
-    return () => clearInterval(timer);
-  }, []);
 
   // --- Utilities ---
-  const getGreeting = () => {
-    const hour = currentTime.getHours();
-    if (hour < 12) return 'Good Morning';
-    if (hour < 17) return 'Good Afternoon';
-    return 'Good Evening';
-  };
 
   // --- Mock Data ---
   const stats = [
-    { label: "Today's Visits", value: '12', trend: '+2', trendUp: true, icon: MapIcon, color: 'from-blue-500 to-cyan-400' },
-    { label: "Hours Active", value: isOnDuty ? '6.5h' : '0h', trend: isOnDuty ? 'Shift Active' : 'Off Duty', trendUp: isOnDuty, icon: Clock, color: 'from-emerald-500 to-teal-400' },
-    { label: "Active Tasks", value: '04', trend: '2 High Priority', trendUp: false, icon: ClipboardList, color: 'from-purple-500 to-indigo-400' }
+    { label: "Visits", value: '12', color: 'from-blue-500 to-cyan-400' },
+    { label: "Active", value: '0h', color: 'from-emerald-500 to-teal-400' },
+    { label: "Tasks", value: '04', trend: '2 High Priority', color: 'from-purple-500 to-indigo-400' }
   ];
 
-  const quickActions = [
-    { name: 'Tasks', icon: ClipboardList, path: '/employee/tasks', bg: 'bg-indigo-50 dark:bg-indigo-500/10', text: 'text-indigo-600 dark:text-indigo-400' },
-    { name: 'Visits', icon: MapIcon, path: '/employee/visits', bg: 'bg-emerald-50 dark:bg-emerald-500/10', text: 'text-emerald-600 dark:text-emerald-400' },
-    { name: 'Orders', icon: ShoppingBag, path: '/employee/orders', bg: 'bg-blue-50 dark:bg-blue-500/10', text: 'text-blue-600 dark:text-blue-400' },
-    { name: 'Proof', icon: Camera, path: '/employee/upload-proof', bg: 'bg-purple-50 dark:bg-purple-500/10', text: 'text-purple-600 dark:text-purple-400' },
-    { name: 'Activity', icon: Activity, path: '/employee/activity', bg: 'bg-orange-50 dark:bg-orange-500/10', text: 'text-orange-600 dark:text-orange-400' },
-    { name: 'Alerts', icon: Bell, path: '/employee/notifications', bg: 'bg-rose-50 dark:bg-rose-500/10', text: 'text-rose-600 dark:text-rose-400' },
-  ];
 
   const recentActivities = [
     { title: 'Visit Completed', desc: 'Global Tech HQ', time: '10 mins ago', type: 'success' },
@@ -166,187 +335,212 @@ const EmployeeDashboard = () => {
     { title: 'Started Shift', desc: 'Location verified', time: '6.5 hours ago', type: 'default' },
   ];
 
+
   return (
     <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-10 px-4 md:px-0">
 
       {/* 1. Header Section: Greeting & Profile/Shift Control */}
-      <header className="relative overflow-hidden rounded-[2.5rem] p-8 md:p-12 shadow-2xl bg-gradient-to-br from-slate-700 via-slate-800 to-slate-900 shadow-slate-900/40 transition-all duration-700">
-        {/* Background Decorative Shapes */}
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-white/10 rounded-full blur-3xl -mr-40 -mt-40 pointer-events-none transition-transform duration-1000 animate-pulse" />
-        <div className="absolute bottom-0 left-0 w-72 h-72 bg-indigo-500/20 rounded-full blur-3xl -ml-20 -mb-20 pointer-events-none" />
+      <header className="relative overflow-hidden rounded-[2rem] p-6 md:p-10 shadow-xl bg-gradient-to-br from-slate-700 via-slate-800 to-slate-900 shadow-slate-900/40 transition-all duration-700">
 
-        <div className="relative z-10 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-8">
+        <div className="relative z-10 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
           {/* Greeting Text */}
-          <div className="space-y-3">
-            <div className="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 mb-2">
-              <Clock size={14} className="text-white/80" />
-              <span className="text-sm font-semibold text-white/90 tracking-wide">
-                {currentTime.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
+          <div className="space-y-2">
+            <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/20 mb-1">
+              <Calendar size={12} className="text-white/80" />
+              <span className="text-xs font-black text-white/90 tracking-wide uppercase">
+                Saturday, Mar 14
               </span>
             </div>
-            <h1 className="text-4xl md:text-6xl font-black text-white tracking-tight leading-tight">
-              {getGreeting()}, <br className="hidden md:block" />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-200 to-indigo-100 drop-shadow-sm">Rahul</span>
+            <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight leading-tight">
+              Good Afternoon,<br className="hidden md:block" />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-200 to-emerald-200 drop-shadow-sm">Rahul</span>
             </h1>
-            <p className="flex items-center text-indigo-100/90 font-medium text-lg md:text-xl mt-4">
-              <span className="bg-white/20 px-3 py-1 rounded-lg mr-3 text-sm font-bold backdrop-blur-sm border border-white/10 shadow-sm">#TX402</span>
+            <p className="flex items-center text-indigo-100/90 font-medium text-base md:text-lg mt-2">
               Senior Field Executive
             </p>
           </div>
 
-          {/* Header Controls (Avatar & Shift Toggle) */}
-          <div className="flex flex-col sm:flex-row lg:flex-col items-start sm:items-center lg:items-end gap-4 w-full lg:w-auto">
-            <Link
-              to="/employee/profile"
-              className="relative lg:right-[50px] hidden lg:flex p-5 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 hover:bg-white/20 hover:scale-105 transition-all duration-300 group shadow-lg"
-            >
-              <User className="text-white group-hover:text-blue-200 transition-colors" size={80} />
-            </Link>
+          {/* Header Controls (Stats Grid with Integrated Shift Toggle) */}
+          <div className="flex flex-col items-end gap-6 w-full lg:w-auto">
+            <div className="grid grid-cols-3 gap-4 w-full sm:w-auto">
+              {stats.map((stat, idx) => (
+                <div key={idx} className="flex flex-col items-center justify-center p-4 md:p-6 bg-white/10 backdrop-blur-xl rounded-[2rem] border border-white/10 hover:bg-white/20 transition-all duration-300 min-w-[120px] md:min-w-[160px] shadow-lg group relative overflow-hidden">
+                  <span className="text-[11px] font-black text-white/40 uppercase tracking-[0.2em] mb-2 group-hover:text-white/60 transition-colors">{stat.label}</span>
+                  <div className="flex flex-col items-center">
+                    <span className="text-3xl md:text-4xl font-black text-white mb-1">{stat.value}</span>
+                    {stat.trend && (
+                      <span className="text-[9px] font-black text-indigo-300 uppercase tracking-wider opacity-80">{stat.trend}</span>
+                    )}
+                  </div>
 
-            <div className="w-full sm:w-auto p-4 bg-white/10 backdrop-blur-xl rounded-[2rem] border border-white/20 flex flex-col sm:flex-row items-start sm:items-center justify-between sm:justify-start gap-3 sm:gap-6 shadow-inner">
-              <div className="flex items-center space-x-3">
-                <div className="relative flex h-3 w-3">
-                  {isOnDuty && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>}
-                  <span className={`relative inline-flex rounded-full h-3 w-3 ${isOnDuty ? 'bg-green-500' : 'bg-slate-400'}`}></span>
+                  {/* Integrated Toggle for "Active" (Shift Control) */}
+                  {stat.label === "Active" && (
+                    <div className="mt-4 flex flex-col items-center space-y-3 pt-4 border-t border-white/10 w-full animate-in fade-in slide-in-from-top-2 duration-500">
+                      <div className="flex flex-col items-center">
+                        <span className={`text-[10px] font-black uppercase tracking-widest leading-none mb-1 ${isOnDuty ? 'text-green-300 shadow-green-500/50' : 'text-slate-400'}`}>
+                          {isOnDuty ? 'On Duty' : 'Off Duty'}
+                        </span>
+                        {isOnDuty && (
+                          <div className="absolute top-2 right-2 flex h-2 w-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                          </div>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => setIsOnDuty(!isOnDuty)}
+                        className={`relative inline-flex h-7 w-12 items-center rounded-full transition-all duration-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 scale-90 ${isOnDuty ? 'bg-gradient-to-r from-green-500 to-emerald-500' : 'bg-slate-700'}`}
+                        role="switch"
+                        aria-checked={isOnDuty}
+                      >
+                        <span className="sr-only">Toggle shift</span>
+                        <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-xl transition-all duration-500 ${isOnDuty ? 'translate-x-[1.3rem]' : 'translate-x-1'}`} />
+                      </button>
+                    </div>
+                  )}
                 </div>
-                <div className="flex flex-col">
-                  <span className={`text-sm font-bold uppercase tracking-widest ${isOnDuty ? 'text-green-300' : 'text-slate-300'}`}>
-                    {isOnDuty ? 'On Duty' : 'Off Duty'}
-                  </span>
-                  <span className="text-[10px] text-white/50">{isOnDuty ? 'Shift Started 8:00 AM' : 'Shift Not Started'}</span>
-                </div>
-              </div>
-              <button
-                onClick={() => setIsOnDuty(!isOnDuty)}
-                className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 ${isOnDuty ? 'bg-green-500' : 'bg-slate-600'}`}
-                role="switch"
-                aria-checked={isOnDuty}
-              >
-                <span className="sr-only">Toggle shift</span>
-                <span className={`inline-block h-6 w-6 transform rounded-full bg-white shadow-lg transition-transform duration-300 ease-in-out ${isOnDuty ? 'translate-x-7' : 'translate-x-1'}`} />
-              </button>
+              ))}
             </div>
           </div>
         </div>
       </header>
 
-      {/* 2. Quick Actions Grid: Accessible on mobile as a 2x3 grid, desktop 6x1 */}
-      <nav className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 md:gap-6">
-        {quickActions.map((action, i) => (
-          <QuickActionItem key={i} action={action} index={i} />
-        ))}
-      </nav>
+      {/* 2. Metrics Row: Revenue, Performance, and Capabilities Cards */}
+      <section className="flex flex-col lg:flex-row justify-end items-center gap-6 md:gap-8">
+        <RevenueCard />
+        <CapabilitiesCard />
+        <Link 
+          to="/employee/tasks"
+          className="w-full max-w-[320px] aspect-square bg-white text-gray-900 p-7 rounded-[3rem] shadow-xl relative overflow-hidden group transition-all duration-700 border border-gray-100 hover:border-indigo-500/30 block hover:-translate-y-1 active:scale-[0.98]"
+        >
+          {/* Background Pattern */}
+          <div className="absolute inset-0 opacity-[0.05] pointer-events-none" style={{ backgroundImage: 'radial-gradient(#000 1px, transparent 1px)', backgroundSize: '16px 16px' }} />
+          <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/5 rounded-full blur-[60px] -mr-20 -mt-20 pointer-events-none group-hover:scale-125 transition-transform duration-1000" />
 
-      {/* 3. Metrics Row: Combination of Stats and Daily Progress */}
-      <section className="space-y-6 md:space-y-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
+          <div className="flex flex-col h-full justify-between items-center relative z-10 text-center">
+            <div className="space-y-1.5">
+              <div className="inline-flex p-3 bg-indigo-50 rounded-2xl mb-1 text-indigo-600 shadow-sm border border-indigo-100">
+                <Activity size={24} />
+              </div>
+              <h3 className="text-2xl font-black tracking-tight leading-none group-hover:text-indigo-600 transition-colors">Performance</h3>
+              <p className="text-xs text-gray-400 font-bold uppercase tracking-[0.25em]">Daily Overview</p>
+            </div>
 
-          {/* Stats Sub-grid (Left 2 Columns on Desktop) */}
-          <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-6">
-            {stats.map((stat, i) => (
-              <StatCard key={i} stat={stat} />
-            ))}
+            <div className="grid grid-cols-2 gap-6 w-full px-2">
+              <ProgressRing label="Visits" current={12} target={15} color="text-blue-500" />
+              <ProgressRing label="Tasks" current={8} target={10} color="text-emerald-500" />
+            </div>
+
+            <div className="mt-3 w-16 h-1 bg-gray-100 rounded-full" />
           </div>
+        </Link>
+      </section>
 
-          {/* Daily Progress Card (Right Column on Desktop) */}
-          <div className="bg-gradient-to-br from-gray-900 to-gray-800 text-white p-6 rounded-3xl shadow-xl relative overflow-hidden group h-full transition-all duration-500 hover:shadow-indigo-500/10 hover:from-gray-800 hover:to-slate-900 border border-gray-100 dark:border-gray-800">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/20 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none group-hover:scale-110 transition-transform duration-700" />
-            <h3 className="text-base font-black tracking-tight mb-6 relative z-10 flex items-center">
-              <Activity className="mr-3 text-indigo-400" size={20} />
-              Daily Progress
-            </h3>
-            <div className="space-y-6 relative z-10">
-              {/* Completed Visits Progress */}
-              <div>
-                <div className="flex justify-between text-[11px] font-bold mb-2">
-                  <span className="text-gray-300 uppercase tracking-wider">Visits Completed</span>
-                  <span className="text-white bg-white/10 px-2 py-0.5 rounded-md backdrop-blur-sm">12/15</span>
+      {/* 3. Operations Row: Next Target and Activity Timeline */}
+      <section className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12 items-start">
+        {/* Next Target Destination Card */}
+        <div className="relative group">
+          <Link 
+            to="/employee/tasks" 
+            className={`${UI_TOKENS.cardBase} p-8 md:p-10 rounded-[3rem] shadow-2xl block transition-all duration-700 hover:shadow-indigo-500/10 hover:-translate-y-1 active:scale-[0.98] outline-none group-hover:border-indigo-500/30 overflow-hidden`}
+          >
+            {/* Soft background accents */}
+            <div className="absolute top-0 right-0 w-80 h-80 bg-indigo-50/50 dark:bg-indigo-900/10 rounded-full blur-[80px] -mr-32 -mt-32 pointer-events-none transition-transform duration-1000 group-hover:scale-110" />
+            <div className="absolute bottom-0 left-0 w-64 h-64 bg-emerald-50/30 dark:bg-emerald-900/5 rounded-full blur-[60px] -ml-20 -mb-20 pointer-events-none" />
+
+            <div className="flex justify-between items-center mb-10 relative z-10">
+              <h2 className={UI_TOKENS.sectionTitle}>
+                <div className="p-3 bg-indigo-50 dark:bg-indigo-500/10 rounded-2xl mr-4 text-indigo-600 dark:text-indigo-400 shadow-sm border border-indigo-100/50 dark:border-indigo-500/10">
+                  <Navigation2 size={24} />
                 </div>
-                <div className="h-2.5 w-full bg-gray-700/50 rounded-full overflow-hidden border border-gray-600/50">
-                  <div className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full relative transition-all duration-1000 ease-out" style={{ width: '80%' }}>
-                    <div className="absolute inset-0 bg-white/20 w-full h-full animate-pulse" />
+                <span className="text-2xl tracking-tighter">Next Target</span>
+              </h2>
+              <div className="inline-flex items-center px-4 py-1.5 bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 text-[10px] font-black uppercase tracking-[0.2em] rounded-full border border-rose-100 dark:border-rose-500/20 shadow-sm">
+                Critical priority
+              </div>
+            </div>
+
+            <div className="relative z-10 space-y-8">
+              {/* Target Address and Stylized Mini-Map */}
+              <div className="flex flex-col md:flex-row gap-8 items-stretch">
+                {/* Address Details */}
+                <div className="flex-1 space-y-6">
+                  <div className="space-y-2">
+                    <h3 className="text-3xl font-black text-gray-900 dark:text-white leading-none tracking-tight group-hover:text-indigo-600 transition-colors">
+                      Global Tech Solutions HQ
+                    </h3>
+                    <div className="flex items-center text-gray-500 dark:text-gray-400">
+                      <MapIcon size={16} className="mr-2 text-indigo-500 opacity-70" />
+                      <span className="text-sm font-bold uppercase tracking-widest opacity-80">Sector 4, North Zone</span>
+                    </div>
+                  </div>
+
+                  {/* Dispatch Context */}
+                  <div className="flex items-center gap-6 py-4 border-y border-gray-100 dark:border-gray-800/50">
+                    <div className="flex flex-col">
+                      <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Travel</span>
+                      <span className="text-lg font-black text-slate-800 dark:text-white">18 mins</span>
+                    </div>
+                    <div className="w-px h-8 bg-gray-100 dark:bg-gray-800" />
+                    <div className="flex flex-col">
+                      <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Distance</span>
+                      <span className="text-lg font-black text-slate-800 dark:text-white">4.2 km</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Stylized Mini-Map SVG */}
+                <div className="w-full md:w-48 h-48 bg-slate-50 dark:bg-indigo-950/20 rounded-[2rem] border-2 border-white dark:border-gray-800 shadow-xl overflow-hidden relative">
+                  <svg className="absolute inset-0 w-full h-full text-indigo-200 dark:text-indigo-900/40" viewBox="0 0 100 100" fill="none">
+                    <path d="M0 20 H100 M0 50 H100 M0 80 H100 M20 0 V100 M50 0 V100 M80 0 V100" stroke="currentColor" strokeWidth="0.5" />
+                    <circle cx="50" cy="50" r="30" stroke="currentColor" strokeWidth="0.5" strokeDasharray="2 4" />
+                    <path d="M20 20 L80 80 M80 20 L20 80" stroke="currentColor" strokeWidth="0.2" />
+                    <circle cx="50" cy="50" r="4" fill="#6366f1" className="animate-pulse" />
+                    <path d="M50 50 L75 30" stroke="#6366f1" strokeWidth="2" strokeLinecap="round" strokeDasharray="1 4" />
+                  </svg>
+                  <div className="absolute bottom-3 left-3 right-3 bg-white/90 dark:bg-gray-900/90 backdrop-blur-md py-1.5 px-3 rounded-xl border border-white/50 dark:border-gray-800 shadow-sm">
+                    <p className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest text-center">Tap to View</p>
                   </div>
                 </div>
               </div>
-              {/* Completed Tasks Progress */}
-              <div>
-                <div className="flex justify-between text-[11px] font-bold mb-2">
-                  <span className="text-gray-300 uppercase tracking-wider">Tasks Done</span>
-                  <span className="text-white bg-white/10 px-2 py-0.5 rounded-md backdrop-blur-sm">8/10</span>
-                </div>
-                <div className="h-2.5 w-full bg-gray-700/50 rounded-full overflow-hidden border border-gray-600/50">
-                  <div className="h-full bg-gradient-to-r from-emerald-400 to-emerald-600 rounded-full transition-all duration-1000 ease-out" style={{ width: '80%' }} />
-                </div>
-              </div>
             </div>
-          </div>
+          </Link>
         </div>
 
-        {/* 4. Operations Row: Next Target and Activity Timeline */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 items-start">
+        {/* Recent Activity Feed Card */}
+        <div className={`${UI_TOKENS.cardBase} p-8 md:p-10 rounded-[3rem] shadow-2xl h-full`}>
+          <div className="absolute top-0 right-0 w-80 h-80 bg-indigo-50/50 dark:bg-indigo-900/10 rounded-full blur-[80px] -mr-32 -mt-32 pointer-events-none group-hover:scale-110 transition-transform duration-1000" />
 
-          {/* Next Target Destination Card */}
-          <div className={`${UI_TOKENS.cardBase} p-6 md:p-8 rounded-[2rem]`}>
-            <div className="absolute top-0 right-0 w-80 h-80 bg-indigo-50 dark:bg-indigo-900/20 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none transition-transform duration-700 group-hover:scale-110" />
-            <div className="flex justify-between items-center mb-8 relative z-10">
-              <h2 className={UI_TOKENS.sectionTitle}>
-                <div className="p-2 bg-indigo-50 dark:bg-indigo-500/10 rounded-xl mr-3 text-indigo-600 dark:text-indigo-400">
-                  <Navigation2 size={22} />
-                </div>
-                Next Target
-              </h2>
-              <span className="px-3 py-1 bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 text-[10px] font-black uppercase tracking-widest rounded-full animate-pulse border border-rose-100 dark:border-rose-500/20">
-                High Priority
-              </span>
-            </div>
-            {/* Target Address and Action Card */}
-            <div className={`p-5 sm:p-6 bg-gray-50/80 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-700/50 relative z-10 ${UI_TOKENS.innerHover} group/inner flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-6`}>
-              <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 via-purple-500 to-indigo-600 rounded-2xl flex items-center justify-center text-white shrink-0 shadow-lg shadow-indigo-500/30 group-hover:scale-105 group-hover:rotate-3 transition-transform duration-500">
-                <MapPin size={28} className="drop-shadow-md" />
+          <div className="flex justify-between items-center mb-10 relative z-10">
+            <h3 className={UI_TOKENS.sectionTitle}>
+              <div className="p-3 bg-indigo-50 dark:bg-indigo-500/10 rounded-2xl mr-4 text-indigo-500 shadow-sm border border-indigo-100/50 dark:border-indigo-500/10">
+                <Clock size={24} />
               </div>
-              <div className="flex-1 w-full">
-                <p className="text-lg md:text-xl font-black text-gray-900 dark:text-white mb-1">Global Tech Solutions HQ</p>
-                <p className="text-gray-500 dark:text-gray-400 font-medium flex items-center text-xs sm:text-sm">
-                  <MapIcon size={14} className="mr-1.5 opacity-50" />
-                  Sector 4, North Zone
-                </p>
-                <div className="mt-5 flex flex-wrap gap-3 w-full">
-                  <button className="flex-1 sm:flex-none px-6 py-3 bg-indigo-600 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-md hover:bg-indigo-700 hover:-translate-y-0.5 transition-all duration-300 flex items-center justify-center group/btn">
-                    Directions
-                    <ArrowRight size={14} className="ml-2 group-hover/btn:translate-x-1 transition-transform" />
-                  </button>
-                  <button className="flex-1 sm:flex-none px-6 py-3 bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-gray-50 dark:hover:bg-gray-700 hover:-translate-y-0.5 transition-all duration-300 text-center">
-                    Details
-                  </button>
-                </div>
-              </div>
-            </div>
+              <span className="text-2xl tracking-tighter">Operational Log</span>
+            </h3>
+            <Link to="/employee/activity" className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 flex items-center group/link transition-all border-b-2 border-transparent hover:border-indigo-600/30 pb-0.5">
+              History
+              <ChevronRight size={14} className="ml-1.5 group-hover/link:translate-x-1 transition-transform" />
+            </Link>
           </div>
 
-          {/* Recent Activity Feed Card */}
-          <div className={`${UI_TOKENS.cardBase} p-6 md:p-8 rounded-[2rem] h-full`}>
-            <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-50 dark:bg-indigo-900/10 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none group-hover:scale-110 transition-transform duration-700" />
-            <div className="flex justify-between items-center mb-8 relative z-10">
-              <h3 className={UI_TOKENS.sectionTitle}>
-                <div className="p-2 bg-indigo-50 dark:bg-indigo-500/10 rounded-xl mr-3 text-indigo-500">
-                  <Clock size={22} />
-                </div>
-                Recent Activity
-              </h3>
-              <Link to="/employee/activity" className="text-[10px] font-black uppercase tracking-widest text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 flex items-center group/link transition-colors bg-indigo-50/50 dark:bg-indigo-900/20 px-3 py-1 rounded-lg">
-                View All
-                <ChevronRight size={14} className="ml-1 group-hover/link:translate-x-1 transition-transform" />
-              </Link>
-            </div>
-            {/* Timeline List */}
-            <div className="space-y-6 relative z-10">
-              {recentActivities.map((activity, i) => (
-                <ActivityItem
-                  key={i}
-                  activity={activity}
-                  isLast={i === recentActivities.length - 1}
-                />
-              ))}
+          {/* Timeline List */}
+          <div className="space-y-8 relative z-10 px-1">
+            {recentActivities.map((activity, i) => (
+              <ActivityItem
+                key={i}
+                activity={activity}
+                isLast={i === recentActivities.length - 1}
+              />
+            ))}
+          </div>
+
+          {/* Mini Insights Footer */}
+          <div className="mt-12 pt-8 border-t border-gray-100 dark:border-gray-800/50 flex items-center justify-between opacity-60">
+            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Auto-updating live</p>
+            <div className="flex items-center gap-2">
+              <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
+              <span className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest">Active Intel</span>
             </div>
           </div>
         </div>
