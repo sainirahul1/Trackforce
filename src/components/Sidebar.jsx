@@ -1,9 +1,9 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, Building2, ClipboardList, Map, Settings, LogOut, ShieldCheck, Bell, ShoppingBag, Camera, Clock, AlertCircle } from 'lucide-react';
+import { LayoutDashboard, Users, Building2, ClipboardList, Map, Settings, LogOut, ShieldCheck, Bell, ShoppingBag, Camera, Clock, AlertCircle, ChevronLeft, ChevronRight, Menu } from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
 
-const Sidebar = ({ role, user }) => {
+const Sidebar = ({ role, user, isCollapsed, onToggle }) => {
   const menuItems = {
     superadmin: [
       { name: 'Dashboard', icon: LayoutDashboard, path: '/superadmin/dashboard' },
@@ -35,44 +35,60 @@ const Sidebar = ({ role, user }) => {
   const currentMenu = menuItems[role] || [];
 
   return (
-    <aside className="w-64 h-screen bg-white dark:bg-gray-900 border-r border-gray-100 dark:border-gray-800 flex flex-col fixed left-0 top-0 z-30 transition-colors duration-300">
-      <div className="p-8 flex items-center justify-between">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-primary-main rounded-2xl flex items-center justify-center text-white shadow-xl rotate-3">
-            <ShieldCheck size={24} />
+    <aside className={`${isCollapsed ? 'w-20' : 'w-64'} h-screen bg-white dark:bg-gray-900 border-r border-gray-100 dark:border-gray-800 flex flex-col fixed left-0 top-0 z-30 transition-all duration-300 ease-in-out`}>
+      <div className={`p-6 flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} border-b border-gray-50 dark:border-gray-800`}>
+        {!isCollapsed && (
+          <div className="flex items-center space-x-3 overflow-hidden animate-in fade-in duration-300">
+            <div className="w-10 h-10 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-xl rotate-3 shrink-0">
+              <ShieldCheck size={24} />
+            </div>
+            <span className="text-2xl font-black italic tracking-tighter text-gray-900 dark:text-white truncate">TrackForce</span>
           </div>
-          <span className="text-2xl font-black italic tracking-tighter text-gray-900 dark:text-white">TrackForce</span>
-        </div>
+        )}
+        <button 
+          onClick={onToggle}
+          className="p-2 rounded-xl text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-indigo-600 transition-all"
+        >
+          {isCollapsed ? <Menu size={20} /> : <ChevronLeft size={20} />}
+        </button>
       </div>
-      <nav className="flex-1 px-4 space-y-2 overflow-y-auto">
+      <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto custom-scrollbar">
         {currentMenu.map((item) => (
           <NavLink 
             key={item.path} 
             to={item.path} 
-            className={({ isActive }) => `flex items-center space-x-3 px-4 py-3 rounded-2xl font-bold text-sm transition-all ${
+            className={({ isActive }) => `flex items-center ${isCollapsed ? 'justify-center' : 'space-x-3 px-4'} py-3 rounded-2xl font-bold text-sm transition-all relative group ${
               isActive 
-                ? 'bg-primary-main/10 text-primary-main shadow-inner dark:bg-primary-main/20' 
+                ? 'bg-indigo-50 text-indigo-600 shadow-inner dark:bg-indigo-900/20' 
                 : 'text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
             }`}
           >
-            <item.icon size={18} /><span>{item.name}</span>
+            <item.icon size={20} className={isCollapsed ? 'shrink-0' : ''} />
+            {!isCollapsed && <span className="animate-in slide-in-from-left-2 duration-300">{item.name}</span>}
+            {isCollapsed && (
+              <div className="absolute left-full ml-4 px-3 py-2 bg-gray-900 text-white text-xs font-bold rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all whitespace-nowrap z-50">
+                {item.name}
+              </div>
+            )}
           </NavLink>
         ))}
       </nav>
       <div className="p-4 border-t border-gray-100 dark:border-gray-800">
-        <div className="flex items-center justify-between p-2 rounded-2xl bg-gray-50 dark:bg-gray-800/50">
-          <div className="flex items-center space-x-3 overflow-hidden">
-            <div className="w-10 h-10 rounded-xl bg-primary-main/10 dark:bg-primary-main/20 flex items-center justify-center text-primary-main font-bold shrink-0">
+        <div className={`flex items-center ${isCollapsed ? 'flex-col gap-4' : 'justify-between'} p-2 rounded-2xl bg-gray-50 dark:bg-gray-800/50`}>
+          <div className={`flex items-center ${isCollapsed ? 'flex-col text-center' : 'space-x-3'} overflow-hidden`}>
+            <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center text-indigo-600 font-bold shrink-0">
               {user?.name?.charAt(0) || 'U'}
             </div>
-            <div className="flex flex-col min-w-0">
-              <span className="text-sm font-bold text-gray-900 dark:text-white truncate">{user?.name || 'User'}</span>
-              <span className="text-xs text-gray-400 capitalize truncate">{role || 'Role'}</span>
-            </div>
+            {!isCollapsed && (
+              <div className="flex flex-col min-w-0 animate-in fade-in duration-300">
+                <span className="text-sm font-bold text-gray-900 dark:text-white truncate">{user?.name || 'User'}</span>
+                <span className="text-xs text-gray-400 capitalize truncate">{role || 'Role'}</span>
+              </div>
+            )}
           </div>
           <button 
             onClick={() => { localStorage.clear(); window.location.href = '/login'; }} 
-            className="p-2 text-gray-400 hover:text-red-600 transition-colors"
+            className="p-2 text-gray-400 hover:text-red-600 transition-colors shrink-0"
             title="Logout"
           >
             <LogOut size={18} />

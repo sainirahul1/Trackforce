@@ -1,11 +1,117 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { User, Briefcase, FileText, Activity, LayoutDashboard, Settings, Mail, Phone, MapPin, MoreVertical, ShieldCheck, TrendingUp, ShoppingBag, Map as MapIcon, Clock, HeartPulse, Building, Shield, UserCheck, Calendar, CheckCircle, Download, ExternalLink, Bell, Globe, LogOut, Share2, Eye, EyeOff, Lock, AlertTriangle, Smartphone, Wifi, X } from 'lucide-react';
+import { User, Briefcase, FileText, Activity, LayoutDashboard, Settings, Mail, Phone, MapPin, MoreVertical, ShieldCheck, TrendingUp, ShoppingBag, Map as MapIcon, Clock, HeartPulse, Building, Shield, UserCheck, Calendar, CheckCircle, Download, ExternalLink, Bell, Globe, LogOut, Share2, Eye, EyeOff, Lock, AlertTriangle, Smartphone, Wifi, X, MessageSquare, Copy } from 'lucide-react';
 
 // --- Internal Section Components ---
 // changes
-const ProfileHeader = ({ employee, onEditProfile, onOpenSettings }) => {
+
+const ShareProfileModal = ({ isOpen, onClose, employee }) => {
+  const profileUrl = window.location.href;
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKeyDown = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isOpen, onClose]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, [isOpen]);
+
+  const handleCopy = () => {
+    navigator.clipboard?.writeText(profileUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleNativeShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `${employee.name}'s Profile`,
+          text: `Check out ${employee.name}'s professional portfolio on TrackForce.`,
+          url: profileUrl,
+        });
+      } catch (err) {
+        console.log('Share failed:', err);
+      }
+    }
+  };
+
+  const shareOptions = [
+    { 
+      name: 'WhatsApp', 
+      icon: MessageSquare, 
+      color: 'bg-[#25D366]/10 text-[#25D366]', 
+      action: () => window.open(`https://wa.me/?text=${encodeURIComponent(`Check out ${employee.name}'s professional portfolio: ${profileUrl}`)}`, '_blank')
+    },
+    { 
+      name: 'Email', 
+      icon: Mail, 
+      color: 'bg-blue-50 text-blue-600', 
+      action: () => window.location.href = `mailto:?subject=${encodeURIComponent(`${employee.name}'s Profile Portfolio`)}&body=${encodeURIComponent(`Check out this professional portfolio: ${profileUrl}`)}`
+    },
+    { 
+      name: 'Copy Link', 
+      icon: copied ? CheckCircle : Copy, 
+      color: copied ? 'bg-emerald-50 text-emerald-600' : 'bg-gray-50 text-gray-600', 
+      action: handleCopy 
+    },
+  ];
+
+  return (
+    <div className={`fixed inset-0 z-[100] flex items-center justify-center p-4 transition-all duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+      <div className={`relative w-full max-w-sm bg-white dark:bg-gray-900 rounded-[2.5rem] shadow-2xl border border-gray-100 dark:border-gray-800 p-8 transition-all duration-300 ${isOpen ? 'scale-100 translate-y-0' : 'scale-95 translate-y-4'}`}>
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-3">
+            <div className="p-3 rounded-2xl bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600"><Share2 size={20} /></div>
+            <h3 className="text-xl font-black text-gray-900 dark:text-white tracking-tight">Share Profile</h3>
+          </div>
+          <button onClick={onClose} className="p-2 rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-400 hover:text-gray-900 dark:hover:text-white transition-all"><X size={20} /></button>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4">
+          {shareOptions.map((opt, i) => (
+            <button
+              key={i}
+              onClick={opt.action}
+              className="flex items-center gap-4 p-4 rounded-2xl border border-gray-50 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-all group"
+            >
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110 ${opt.color}`}>
+                <opt.icon size={24} />
+              </div>
+              <span className="font-bold text-gray-700 dark:text-gray-200">{opt.name}</span>
+            </button>
+          ))}
+          {navigator.share && (
+            <button
+              onClick={handleNativeShare}
+              className="mt-2 w-full py-4 rounded-2xl bg-indigo-600 text-white font-black shadow-lg hover:bg-indigo-700 transition-all flex items-center justify-center gap-2"
+            >
+              <Globe size={18} />
+              More Sharing Options
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const ProfileHeader = ({ employee, onEditProfile, onOpenSettings, onShareProfile }) => {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [showToast, setShowToast] = useState(false);
   const menuRef = useRef(null);
+  const toastTimerRef = useRef(null);
+
+  useEffect(() => {
+    return () => { if (toastTimerRef.current) clearTimeout(toastTimerRef.current); };
+  }, []);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -14,17 +120,41 @@ const ProfileHeader = ({ employee, onEditProfile, onOpenSettings }) => {
     return () => document.removeEventListener('mousedown', handler);
   }, [menuOpen]);
 
+  const handleShare = () => {
+    setMenuOpen(false);
+    onShareProfile();
+  };
+
+  const handleSignOut = () => {
+    setMenuOpen(false);
+    localStorage.clear();
+    window.location.href = '/login';
+  };
+
   const menuItems = [
     { label: 'Account Settings', icon: Settings, action: () => { setMenuOpen(false); onOpenSettings(); } },
     { label: 'Download Profile PDF', icon: Download, action: () => { setMenuOpen(false); window.print(); } },
-    { label: 'Share Profile', icon: Share2, action: () => { setMenuOpen(false); navigator.clipboard?.writeText(window.location.href); } },
-    { label: 'Sign Out', icon: LogOut, danger: true, action: () => { setMenuOpen(false); } },
+    { label: 'Share Profile', icon: Share2, action: handleShare },
+    { label: 'Sign Out', icon: LogOut, danger: true, action: handleSignOut },
   ];
 
   return (
-    <div className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-indigo-600 to-indigo-800 p-8 text-white shadow-2xl">
-      <div className="absolute top-0 right-0 -mr-20 -mt-20 h-64 w-64 rounded-full bg-white/10 blur-3xl opacity-50" />
-      <div className="absolute bottom-0 left-0 -ml-20 -mb-20 h-64 w-64 rounded-full bg-indigo-400/20 blur-3xl opacity-30" />
+    <div className="relative rounded-[2.5rem] bg-gradient-to-br from-indigo-600 to-indigo-800 p-8 text-white shadow-2xl">
+      {/* Toast notification for Share Profile */}
+      <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[100] pointer-events-none">
+        <div className={`transition-all duration-300 transform ${showToast ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
+          <div className="bg-white dark:bg-gray-900 text-indigo-600 dark:text-indigo-400 px-6 py-3 rounded-2xl shadow-2xl border border-indigo-50 dark:border-indigo-900/50 flex items-center gap-3 font-bold text-sm backdrop-blur-xl bg-white/90">
+            <div className="w-8 h-8 rounded-full bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center">
+              <Share2 size={16} />
+            </div>
+            Profile link copied to clipboard!
+          </div>
+        </div>
+      </div>
+      <div className="absolute inset-0 rounded-[2.5rem] overflow-hidden pointer-events-none">
+        <div className="absolute top-0 right-0 -mr-20 -mt-20 h-64 w-64 rounded-full bg-white/10 blur-3xl opacity-50" />
+        <div className="absolute bottom-0 left-0 -ml-20 -mb-20 h-64 w-64 rounded-full bg-indigo-400/20 blur-3xl opacity-30" />
+      </div>
       <div className="relative flex flex-col md:flex-row md:items-center gap-8">
         <div className="flex-shrink-0">
           <div className="relative">
@@ -857,6 +987,7 @@ const EmployeeProfile = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
   const [employee, setEmployee] = useState({
     name: 'Abhiram Rangoon',
@@ -921,7 +1052,12 @@ const EmployeeProfile = () => {
         </div>
       </div>
 
-      <ProfileHeader employee={employee} onEditProfile={() => setIsEditProfileOpen(true)} onOpenSettings={() => setIsSettingsOpen(true)} />
+      <ProfileHeader
+        employee={employee}
+        onEditProfile={() => setIsEditProfileOpen(true)}
+        onOpenSettings={() => setIsSettingsOpen(true)}
+        onShareProfile={() => setIsShareModalOpen(true)}
+      />
 
       <div className="mt-12 mb-10 overflow-x-auto pb-4">
         <div className="flex items-center gap-2 p-1.5 bg-gray-100/50 dark:bg-gray-800/40 backdrop-blur-md rounded-[2.5rem] w-fit border border-gray-100 dark:border-gray-800">
@@ -955,6 +1091,12 @@ const EmployeeProfile = () => {
         onClose={() => setIsSettingsOpen(false)}
         employee={employee}
         onSaveProfile={(updates) => setEmployee((prev) => ({ ...prev, ...updates }))}
+      />
+
+      <ShareProfileModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        employee={employee}
       />
     </div>
   );
