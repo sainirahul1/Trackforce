@@ -60,7 +60,7 @@ const UploadProof = () => {
         <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 animate-bounce w-max max-w-[90%]">
           <div className="bg-red-600 dark:bg-red-500 border border-red-300 text-white px-5 py-3 rounded-2xl shadow-[0_0_30px_rgba(239,68,68,0.5)] flex items-center gap-3">
             <AlertCircle size={18} className="flex-shrink-0" />
-            <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider">You haven't done yet!</span>
+            <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider">Please upload all required proofs.</span>
           </div>
         </div>
       )}
