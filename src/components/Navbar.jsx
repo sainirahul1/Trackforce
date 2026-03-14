@@ -26,7 +26,9 @@ const Navbar = ({ user }) => {
                 className={`p-2.5 rounded-2xl transition-all relative ${showNotifications ? 'bg-indigo-600 text-white' : 'bg-gray-50 dark:bg-gray-800 text-gray-400 dark:text-gray-500 hover:text-indigo-600'}`}
             >
                 <Bell size={20} />
-                <span className="absolute top-2 right-2 w-2 h-2 bg-indigo-500 border-2 border-white dark:border-gray-900 rounded-full" />
+                <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 border-2 border-white dark:border-gray-900 rounded-full flex items-center justify-center text-[10px] font-black text-white">
+                  3
+                </span>
             </button>
 
             {showNotifications && (
