@@ -12,7 +12,12 @@ import {
   Edit,           // Icon for edit action
   Calendar,       // Icon for date filters
   Moon,          // Icon for dark mode toggle
-  Sun            // Icon for light mode toggle
+  Sun,            // Icon for light mode toggle
+  BarChart,       // Icon for sales by store
+  LineChart,      // Icon for weekly/monthly revenue
+  PieChart,       // Icon for orders by status
+  Store,          // Icon for top stores
+  UserCheck       // Icon for sales executive
 } from "lucide-react";
 // Import theme context for global dark mode
 import { useTheme } from "../../context/ThemeContext";
@@ -679,12 +684,12 @@ const EmployeeOrders = () => {
         {/* Tab Navigation */}
         <div className={`flex flex-wrap gap-2 mb-8 pb-4 border-b ${isDarkMode ? "border-slate-700/50" : "border-slate-100"}`}>
           {[
-            { id: "salesByStore", label: "Sales", icon: "📊" },
-            { id: "weeklyRevenue", label: "Weekly", icon: "📈" },
-            { id: "ordersByStatus", label: "Status", icon: "🥧" },
-            { id: "monthlyRevenue", label: "Monthly", icon: "📅" },
-            { id: "topStores", label: "Top Stores", icon: "🏪" },
-            { id: "salesExecutive", label: "Executive", icon: "👤" }
+            { id: "salesByStore", label: "Sales", icon: <BarChart size={16} /> },
+            { id: "weeklyRevenue", label: "Weekly", icon: <LineChart size={16} /> },
+            { id: "ordersByStatus", label: "Status", icon: <PieChart size={16} /> },
+            { id: "monthlyRevenue", label: "Monthly", icon: <LineChart size={16} /> },
+            { id: "topStores", label: "Top Stores", icon: <Store size={16} /> },
+            { id: "salesExecutive", label: "Executive", icon: <UserCheck size={16} /> }
           ].map(tab => (
             <button
               key={tab.id}
