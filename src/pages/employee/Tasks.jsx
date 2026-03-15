@@ -1066,6 +1066,26 @@ const EmployeeTasks = () => {
 
 
       <div className="space-y-10">
+        {/* Master Page Header */}
+        <div className="flex-1 space-y-3 mb-6">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20">
+            <LayoutGrid size={14} className="text-indigo-600 dark:text-indigo-400" />
+            <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600 dark:text-indigo-400">Assignment Hub</span>
+          </div>
+          <div>
+            <h2 className="text-4xl md:text-5xl font-black text-gray-900 dark:text-white tracking-tight leading-none mb-2 mt-1">
+              Active <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 to-purple-500">Tasks</span>
+            </h2>
+            <p className="text-sm font-bold text-gray-500 dark:text-gray-400 flex items-center gap-2">
+              Manage your operational queue
+              <span className="hidden sm:inline w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-700" />
+              <span className="text-xs uppercase tracking-widest">
+                Sorted by <span className="text-indigo-600 dark:text-indigo-400 font-black">{sortBy.replace('_', ' ')}</span>
+              </span>
+            </p>
+          </div>
+        </div>
+
         {/* Tab Navigation Switcher */}
         <div className="flex bg-gray-50 dark:bg-gray-900/50 p-2 rounded-[2rem] border border-gray-100 dark:border-gray-800 shadow-inner w-full">
           <button
@@ -1194,39 +1214,36 @@ const EmployeeTasks = () => {
           /* Task Hub Grid - Ultra-Compact High-Density */
           <div className="bg-white dark:bg-gray-900 rounded-[3rem] p-8 md:p-14 border border-gray-100 dark:border-gray-800 shadow-xl space-y-12 animate-in slide-in-from-right-4 duration-500">
             <div className="flex flex-col lg:flex-row lg:items-center gap-8">
-              <div className="flex-1">
-                <h2 className="text-4xl font-black text-gray-900 dark:text-white tracking-widest uppercase mb-2">Tasks </h2>
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-tighter">Queue filtered by <span className="text-indigo-600 font-black">{sortBy.replace('_', ' ')}</span></p>
-              </div>
+              {/* Header logic moved to top of page */}
 
-              <div className="flex flex-wrap items-center justify-end gap-4 ml-auto">
-                <div className="relative group/search">
-                  <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within/search:text-indigo-600 transition-colors" size={20} />
+              <div className="flex flex-col lg:flex-row items-center justify-end gap-4 ml-auto w-full">
+                <div className="relative group/search w-full lg:flex-1 lg:max-w-xl">
+                  <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within/search:text-indigo-600 transition-colors" size={18} />
                   <input
                     type="text"
                     placeholder="Search mission queue..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-12 pr-6 py-4 bg-gray-50 dark:bg-gray-800 rounded-2xl text-xs font-bold outline-none border border-transparent focus:border-indigo-100 dark:focus:border-indigo-900/30 w-full md:w-64 lg:w-96 transition-all shadow-inner"
+                    className="pl-12 pr-6 py-3 bg-gray-50 dark:bg-gray-800 rounded-xl text-xs font-bold outline-none border border-transparent focus:border-indigo-100 dark:focus:border-indigo-900/30 w-full transition-all shadow-inner"
                   />
                 </div>
 
-                <div className="flex bg-gray-50 dark:bg-gray-800 p-2 rounded-2xl border border-gray-100 dark:border-gray-700">
+                <div className="flex bg-gray-50 dark:bg-gray-800 p-1.5 rounded-xl border border-gray-100 dark:border-gray-700 w-full lg:w-auto overflow-x-auto shrink-0 shadow-sm text-gray-600 dark:text-gray-400 scrollbar-hide">
                   <select
                     value={filterPriority}
                     onChange={(e) => setFilterPriority(e.target.value)}
-                    className="bg-transparent text-xs font-black uppercase tracking-widest px-4 py-2 outline-none border-none cursor-pointer text-gray-600 dark:text-gray-400"
+                    className="bg-transparent text-[10px] font-black uppercase tracking-widest px-3 py-1.5 outline-none border-none cursor-pointer hover:text-indigo-600 transition-colors"
                   >
                     <option value="all">Priority: All</option>
                     <option value="high">High</option>
                     <option value="medium">Medium</option>
                     <option value="low">Low</option>
                   </select>
-                  <div className="w-px h-6 bg-gray-200 dark:bg-gray-700 self-center" />
+                  <div className="w-px h-5 bg-gray-200 dark:bg-gray-700 self-center mx-1 shrink-0" />
                   <select
                     value={filterDate}
                     onChange={(e) => setFilterDate(e.target.value)}
-                    className="bg-transparent text-xs font-black uppercase tracking-widest px-4 py-2 outline-none border-none cursor-pointer text-gray-600 dark:text-gray-400"
+                    className="bg-transparent text-[10px] font-black uppercase tracking-widest px-3 py-1.5 outline-none border-none cursor-pointer hover:text-indigo-600 transition-colors"
                   >
                     <option value="all">Time: All</option>
                     <option value="today">Today</option>
@@ -1234,11 +1251,11 @@ const EmployeeTasks = () => {
                     <option value="this_week">This Week</option>
                     <option value="this_month">This Month</option>
                   </select>
-                  <div className="w-px h-6 bg-gray-200 dark:bg-gray-700 self-center" />
+                  <div className="w-px h-5 bg-gray-200 dark:bg-gray-700 self-center mx-1 shrink-0" />
                   <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value)}
-                    className="bg-transparent text-xs font-black uppercase tracking-widest px-4 py-2 outline-none border-none cursor-pointer text-gray-600 dark:text-gray-400"
+                    className="bg-transparent text-[10px] font-black uppercase tracking-widest px-3 py-1.5 outline-none border-none cursor-pointer hover:text-indigo-600 transition-colors"
                   >
                     <option value="nearest">Sort: Nearest</option>
                     <option value="highest_pay">Payout</option>
