@@ -22,7 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-<<<<<<< HEAD
+
 # Environment variables
 .env
 .env.test
@@ -31,5 +31,3 @@ dist-ssr
 .env.development.local
 .env.test.local
 .env.production.local
-=======
->>>>>>> feature/orders-module
