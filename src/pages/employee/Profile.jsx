@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { User, Briefcase, FileText, Activity, LayoutDashboard, Settings, Mail, Phone, MapPin, MoreVertical, ShieldCheck, TrendingUp, ShoppingBag, Map as MapIcon, Clock, HeartPulse, Building, Shield, UserCheck, Calendar, CheckCircle, Download, ExternalLink, Bell, Globe, LogOut, Share2, Eye, EyeOff, Lock, AlertTriangle, Smartphone, Wifi, X, MessageSquare, Copy, Pencil, UploadCloud, ChevronDown, CheckCircle2, Filter, Search, GripVertical, MoreHorizontal, Info, Users } from 'lucide-react';
 import { useNotifications } from '../../context/NotificationContext';
 
@@ -1578,6 +1579,18 @@ const EmployeeProfile = () => {
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [editingDocument, setEditingDocument] = useState(null);
   const [viewingDocument, setViewingDocument] = useState(null);
+
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('modal') === 'settings') {
+      setIsSettingsOpen(true);
+      // Clean up URL to avoid re-triggering on refresh
+      navigate(location.pathname, { replace: true });
+    }
+  }, [location, navigate]);
 
   const [documents, setDocuments] = useState([
     { id: 1, name: 'Kyc Document (Aadhar)', size: '1.2 MB', type: 'PDF', status: 'Verified' },
