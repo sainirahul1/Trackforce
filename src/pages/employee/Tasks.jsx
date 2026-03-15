@@ -1245,10 +1245,6 @@ const EmployeeTasks = () => {
                     <option value="priority">Priority</option>
                   </select>
                 </div>
-
-                <button className="p-4 bg-gray-50 dark:bg-gray-800 rounded-2xl text-gray-400 hover:text-indigo-600 border border-gray-100 dark:border-gray-700 transition-all shadow-md">
-                  <Filter size={18} />
-                </button>
               </div>
             </div>
 
@@ -1276,84 +1272,84 @@ const EmployeeTasks = () => {
                     </div>
 
                     {!collapsedCategories[category] && (
-                    <div className={view === 'list' ? "space-y-3" : "grid grid-cols-1 gap-3"}>
-                      {tasks.map((task) => (
-                        <div
-                          key={task.id}
-                          onClick={() => setSelectedTask(task)}
-                          className="group relative bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-[2rem] overflow-hidden transition-all hover:shadow-3xl hover:border-indigo-100 dark:hover:border-indigo-900/40 flex flex-col md:flex-row md:items-center cursor-pointer"
-                        >
-                          {/* Left Priority Strip */}
-                          <div className={`absolute left-0 top-0 bottom-0 w-2 ${task.priority === 'high' ? 'bg-red-500' :
-                            task.priority === 'medium' ? 'bg-orange-500' : 'bg-emerald-500'
-                            }`} />
+                      <div className={view === 'list' ? "space-y-3" : "grid grid-cols-1 gap-3"}>
+                        {tasks.map((task) => (
+                          <div
+                            key={task.id}
+                            onClick={() => setSelectedTask(task)}
+                            className="group relative bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-[2rem] overflow-hidden transition-all hover:shadow-3xl hover:border-indigo-100 dark:hover:border-indigo-900/40 flex flex-col md:flex-row md:items-center cursor-pointer"
+                          >
+                            {/* Left Priority Strip */}
+                            <div className={`absolute left-0 top-0 bottom-0 w-2 ${task.priority === 'high' ? 'bg-red-500' :
+                              task.priority === 'medium' ? 'bg-orange-500' : 'bg-emerald-500'
+                              }`} />
 
-                          {/* Info Section - Left */}
-                           <div className="p-5 flex-1 flex items-start gap-4">
-                             <div className={`p-3 rounded-xl shrink-0 ${getPriorityColor(task.priority)} shadow-sm group-hover:scale-110 transition-transform`}>
-                              {getCategoryIcon(task.type)}
-                            </div>
-                            <div className="min-w-0">
-                              <div className="flex items-center gap-3 mb-2">
-                                <p className="text-xs font-black uppercase text-gray-400 tracking-wider leading-none">{task.type}</p>
-                                <span className="w-1.5 h-1.5 rounded-full bg-gray-200" />
-                                <p className={`text-xs font-bold uppercase tracking-widest ${task.status === 'in-progress' ? 'text-orange-500 animate-pulse' :
-                                  task.status === 'delayed' ? 'text-red-500' : 'text-gray-500'
-                                  }`}>
-                                  {task.status.replace('-', ' ')}
-                                </p>
-                                <span className="w-1.5 h-1.5 rounded-full bg-gray-200" />
-                                <span className={`text-xs font-black uppercase px-3 py-1 rounded-full border ${task.priority === 'high' ? 'bg-red-50 text-red-600 border-red-100' :
-                                  task.priority === 'medium' ? 'bg-orange-50 text-orange-600 border-orange-100' :
-                                    'bg-emerald-50 text-emerald-600 border-emerald-100'
-                                  }`}>
-                                  {task.priority}
-                                </span>
+                            {/* Info Section - Left */}
+                            <div className="p-5 flex-1 flex items-start gap-4">
+                              <div className={`p-3 rounded-xl shrink-0 ${getPriorityColor(task.priority)} shadow-sm group-hover:scale-110 transition-transform`}>
+                                {getCategoryIcon(task.type)}
                               </div>
-                               <h3 className="text-lg font-black text-gray-900 dark:text-white mb-1 tracking-tighter leading-tight group-hover:text-indigo-600 transition-colors truncate">
-                                {task.title}
-                              </h3>
-                              <div className="flex items-center gap-3">
-                                <MapPin size={16} className="text-gray-400 shrink-0" />
-                                <p className="text-xs font-bold text-gray-600 dark:text-gray-400 truncate">
-                                  {task.store} • <span className="text-gray-400 font-medium">{task.address}</span>
-                                </p>
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-3 mb-2">
+                                  <p className="text-xs font-black uppercase text-gray-400 tracking-wider leading-none">{task.type}</p>
+                                  <span className="w-1.5 h-1.5 rounded-full bg-gray-200" />
+                                  <p className={`text-xs font-bold uppercase tracking-widest ${task.status === 'in-progress' ? 'text-orange-500 animate-pulse' :
+                                    task.status === 'delayed' ? 'text-red-500' : 'text-gray-500'
+                                    }`}>
+                                    {task.status.replace('-', ' ')}
+                                  </p>
+                                  <span className="w-1.5 h-1.5 rounded-full bg-gray-200" />
+                                  <span className={`text-xs font-black uppercase px-3 py-1 rounded-full border ${task.priority === 'high' ? 'bg-red-50 text-red-600 border-red-100' :
+                                    task.priority === 'medium' ? 'bg-orange-50 text-orange-600 border-orange-100' :
+                                      'bg-emerald-50 text-emerald-600 border-emerald-100'
+                                    }`}>
+                                    {task.priority}
+                                  </span>
+                                </div>
+                                <h3 className="text-lg font-black text-gray-900 dark:text-white mb-1 tracking-tighter leading-tight group-hover:text-indigo-600 transition-colors truncate">
+                                  {task.title}
+                                </h3>
+                                <div className="flex items-center gap-3">
+                                  <MapPin size={16} className="text-gray-400 shrink-0" />
+                                  <p className="text-xs font-bold text-gray-600 dark:text-gray-400 truncate">
+                                    {task.store} • <span className="text-gray-400 font-medium">{task.address}</span>
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Action Section - Right */}
+                            <div className="p-5 pl-5 md:w-[360px] flex flex-col justify-center items-end gap-3 bg-gray-50/30 dark:bg-gray-800/20 md:border-l md:border-gray-50 md:dark:border-gray-800/50">
+                              <div className="flex items-center gap-8 w-full justify-end mb-2">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center shadow-inner">
+                                    <Navigation size={18} className="text-indigo-600" />
+                                  </div>
+                                  <div>
+                                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Distance</p>
+                                    <p className="text-sm font-black text-gray-900 dark:text-white leading-none">{task.distance}</p>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                  <div className="w-10 h-10 rounded-xl bg-pink-50 dark:bg-pink-900/30 flex items-center justify-center shadow-inner">
+                                    <Clock size={18} className="text-pink-600" />
+                                  </div>
+                                  <div>
+                                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Arrival</p>
+                                    <p className="text-sm font-black text-gray-900 dark:text-white leading-none">{task.eta}</p>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-3 w-full justify-end">
+                                <button className="w-auto flex items-center justify-center gap-3 px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] transition-all shadow-xl shadow-indigo-100 dark:shadow-none whitespace-nowrap hover:scale-[1.02] active:scale-95">
+                                  Start Task
+                                </button>
                               </div>
                             </div>
                           </div>
-
-                          {/* Action Section - Right */}
-                           <div className="p-5 pl-5 md:w-[360px] flex flex-col justify-center items-end gap-3 bg-gray-50/30 dark:bg-gray-800/20 md:border-l md:border-gray-50 md:dark:border-gray-800/50">
-                            <div className="flex items-center gap-8 w-full justify-end mb-2">
-                              <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center shadow-inner">
-                                  <Navigation size={18} className="text-indigo-600" />
-                                </div>
-                                <div>
-                                  <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Distance</p>
-                                  <p className="text-sm font-black text-gray-900 dark:text-white leading-none">{task.distance}</p>
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-pink-50 dark:bg-pink-900/30 flex items-center justify-center shadow-inner">
-                                  <Clock size={18} className="text-pink-600" />
-                                </div>
-                                <div>
-                                  <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Arrival</p>
-                                  <p className="text-sm font-black text-gray-900 dark:text-white leading-none">{task.eta}</p>
-                                </div>
-                              </div>
-                            </div>
-
-                            <div className="flex items-center gap-3 w-full justify-end">
-                              <button className="w-auto flex items-center justify-center gap-3 px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] transition-all shadow-xl shadow-indigo-100 dark:shadow-none whitespace-nowrap hover:scale-[1.02] active:scale-95">
-                                Start Task
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
                     )}
                   </div>
                 )

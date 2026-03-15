@@ -153,7 +153,7 @@ const RevenueCard = () => {
   return (
     <Link
       to="/employee/orders"
-      className="w-full max-w-[320px] aspect-square bg-white text-gray-900 p-7 rounded-[3rem] shadow-xl relative overflow-hidden group transition-all duration-700 border border-gray-100 hover:border-emerald-500/30 block hover:-translate-y-1 active:scale-[0.98]"
+      className="w-full max-w-[320px] aspect-square bg-white dark:bg-slate-900 text-gray-900 dark:text-white p-7 rounded-[3rem] shadow-xl relative overflow-hidden group transition-all duration-700 border border-gray-100 dark:border-slate-800 hover:border-emerald-500/30 block hover:-translate-y-1 active:scale-[0.98]"
     >
       {/* Background Pattern */}
       <div className="absolute inset-0 opacity-[0.05] pointer-events-none" style={{ backgroundImage: 'radial-gradient(#000 1px, transparent 1px)', backgroundSize: '16px 16px' }} />
@@ -236,7 +236,7 @@ const CapabilitiesCard = () => {
   };
 
   return (
-    <div className="w-full max-w-[320px] aspect-square bg-white text-gray-900 p-7 rounded-[3rem] shadow-xl relative overflow-hidden group transition-all duration-700 border border-gray-100 hover:border-indigo-500/30">
+    <div className="w-full max-w-[320px] aspect-square bg-white dark:bg-slate-900 text-gray-900 dark:text-white p-7 rounded-[3rem] shadow-xl relative overflow-hidden group transition-all duration-700 border border-gray-100 dark:border-slate-800 hover:border-indigo-500/30">
       {/* Background Pattern */}
       <div className="absolute inset-0 opacity-[0.05] pointer-events-none" style={{ backgroundImage: 'radial-gradient(#000 1px, transparent 1px)', backgroundSize: '16px 16px' }} />
       <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/5 rounded-full blur-[60px] -mr-20 -mt-20 pointer-events-none group-hover:scale-125 transition-transform duration-1000" />
@@ -411,7 +411,7 @@ const EmployeeDashboard = () => {
         <CapabilitiesCard />
         <Link
           to="/employee/tasks"
-          className="w-full max-w-[320px] aspect-square bg-white text-gray-900 p-7 rounded-[3rem] shadow-xl relative overflow-hidden group transition-all duration-700 border border-gray-100 hover:border-indigo-500/30 block hover:-translate-y-1 active:scale-[0.98]"
+          className="w-full max-w-[320px] aspect-square bg-white dark:bg-slate-900 text-gray-900 dark:text-white p-7 rounded-[3rem] shadow-xl relative overflow-hidden group transition-all duration-700 border border-gray-100 dark:border-slate-800 hover:border-indigo-500/30 block hover:-translate-y-1 active:scale-[0.98]"
         >
           {/* Background Pattern */}
           <div className="absolute inset-0 opacity-[0.05] pointer-events-none" style={{ backgroundImage: 'radial-gradient(#000 1px, transparent 1px)', backgroundSize: '16px 16px' }} />
