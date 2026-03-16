@@ -30,7 +30,7 @@ const DashboardLayout = ({ allowedRole }) => {
       />
       <div className={`flex-1 ${isSidebarCollapsed ? 'ml-20' : 'ml-64'} flex flex-col min-h-screen transition-all duration-300`}>
         <Navbar user={storedUser} />
-        <main className="flex-1 p-8 overflow-y-auto animate-in text-gray-900 dark:text-gray-100">
+        <main className="flex-1 p-8 overflow-y-auto text-gray-900 dark:text-gray-100">
           <div className="max-w-7xl mx-auto">
             <Outlet context={{ workStatus, setWorkStatus }} />
           </div>
