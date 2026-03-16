@@ -187,7 +187,7 @@ const ProfileUnifiedOverlay = ({ isOpen, onClose, employee, documents, activeTab
             </button>
           ))}
         </div>
-        <div className="p-4 border-t border-gray-100 dark:border-gray-800 space-y-4">
+        <div className="p-4 border-t border-gray-100 dark:border-gray-800">
           <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-800 flex items-center gap-3">
              <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center text-indigo-600 font-bold shrink-0">
                {employee.name.charAt(0)}
@@ -197,10 +197,6 @@ const ProfileUnifiedOverlay = ({ isOpen, onClose, employee, documents, activeTab
                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest truncate">{employee.designation}</p>
              </div>
           </div>
-          <button onClick={onClose} className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold text-gray-400 hover:bg-rose-50 hover:text-rose-600 transition-all">
-            <LogOut size={20} />
-            <span>Close Overlay</span>
-          </button>
         </div>
       </aside>
 
@@ -1913,7 +1909,8 @@ const EmployeeProfile = () => {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     if (params.get('modal') === 'settings') {
-      setIsSettingsOpen(true);
+      setActiveTab('settings');
+      setIsNavigationOpen(true);
       // Clean up URL to avoid re-triggering on refresh
       navigate(location.pathname, { replace: true });
     }
@@ -1976,7 +1973,10 @@ const EmployeeProfile = () => {
       <ProfileHeader
         employee={employee}
         onEditProfile={() => setIsEditProfileOpen(true)}
-        onOpenSettings={() => setIsSettingsOpen(true)}
+        onOpenSettings={() => {
+          setActiveTab('settings');
+          setIsNavigationOpen(true);
+        }}
         onShareProfile={() => setIsShareModalOpen(true)}
         onOpenNavigation={() => setIsNavigationOpen(true)}
       />
