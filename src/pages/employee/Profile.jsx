@@ -96,7 +96,7 @@ const ShareProfileModal = ({ isOpen, onClose, employee }) => {
   ];
 
   return (
-    <div className={`fixed inset-0 z-[120] flex items-center justify-center p-4 transition-all duration-300 ${isOpen ? '' : 'pointer-events-none'}`}>
+    <div className={`fixed inset-0 z-[200] flex items-center justify-center p-4 transition-all duration-300 ${isOpen ? '' : 'pointer-events-none'}`}>
       <div className={`absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0'}`} />
       <div className={`relative w-[calc(100%-2rem)] max-w-sm bg-white dark:bg-gray-950 rounded-[2rem] sm:rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-slate-800 p-6 sm:p-8 transition-all duration-300 transform ${isOpen ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`}>
         <div className="flex items-center justify-between mb-6 sm:mb-8">
@@ -159,7 +159,7 @@ const ProfileUnifiedOverlay = ({ isOpen, onClose, employee, documents, activeTab
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[150] flex animate-in fade-in duration-300">
+    <div className="fixed inset-0 z-[200] flex animate-in fade-in duration-300">
       {/* Sidebar Mockup */}
       <aside className="w-64 bg-white dark:bg-gray-900 border-r border-gray-100 dark:border-gray-800 flex flex-col hidden lg:flex">
         <div className="p-6 flex items-center justify-between border-b border-gray-50 dark:border-gray-800">
@@ -704,7 +704,7 @@ const PersonalInfoModal = ({ isOpen, onClose, employee }) => {
   ];
 
   return (
-    <div className={`fixed inset-0 z-[120] flex items-center justify-center p-4 transition-all duration-300 ${isOpen ? '' : 'pointer-events-none'}`}>
+    <div className={`fixed inset-0 z-[200] flex items-center justify-center p-4 transition-all duration-300 ${isOpen ? '' : 'pointer-events-none'}`}>
       <div className={`absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0'}`} />
       <div className={`relative w-[calc(100%-2rem)] max-w-4xl bg-white dark:bg-gray-950 rounded-[2rem] sm:rounded-[2.5rem] shadow-2xl border border-gray-100 dark:border-gray-800 transition-all duration-300 transform ${isOpen ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`}>
         <div className="flex flex-col max-h-[90vh]">
@@ -1015,7 +1015,7 @@ const DocumentsModal = ({ isOpen, onClose, documents, onEditDocument, onViewDocu
   }, [isOpen]);
 
   return (
-    <div className={`fixed inset-0 z-[120] flex items-center justify-center p-4 transition-all duration-300 ${isOpen ? '' : 'pointer-events-none'}`}>
+    <div className={`fixed inset-0 z-[200] flex items-center justify-center p-4 transition-all duration-300 ${isOpen ? '' : 'pointer-events-none'}`}>
       <div className={`absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0'}`} />
       <div className={`relative w-[calc(100%-2rem)] max-w-4xl bg-white dark:bg-gray-950 rounded-[2rem] sm:rounded-[2.5rem] shadow-2xl border border-gray-100 dark:border-gray-800 transition-all duration-300 transform ${isOpen ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`}>
         <div className="flex flex-col max-h-[90vh]">
@@ -1101,7 +1101,7 @@ const DocumentPreviewModal = ({ isOpen, onClose, document: docRecord }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[140] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
       <div className={`absolute inset-0 bg-slate-900/90 backdrop-blur-xl transition-opacity duration-500`} onClick={onClose} />
 
       <div className="relative w-[calc(100%-2rem)] max-w-5xl h-[85vh] transition-all duration-500 transform scale-100 flex flex-col">
@@ -1239,7 +1239,7 @@ const DocumentUploadModal = ({ isOpen, onClose, document: docRecord, onSave }) =
   };
 
   return (
-    <div className={`fixed inset-0 z-[130] flex items-center justify-center p-4 transition-all duration-300 ${isOpen ? '' : 'pointer-events-none'}`}>
+    <div className={`fixed inset-0 z-[200] flex items-center justify-center p-4 transition-all duration-300 ${isOpen ? '' : 'pointer-events-none'}`}>
       <div className={`absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0'}`} />
       <div className={`relative w-[calc(100%-2rem)] max-w-md bg-white dark:bg-gray-950 rounded-[2rem] sm:rounded-[2.5rem] shadow-2xl border border-gray-100 dark:border-gray-800 p-6 sm:p-8 transition-all duration-300 transform ${isOpen ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`}>
         <div className="flex items-center justify-between mb-6 sm:mb-8">
@@ -1413,7 +1413,7 @@ const EditProfileModal = ({ isOpen, onClose, employee, onSaveProfile }) => {
   };
 
   return (
-    <div className={`fixed inset-0 z-[120] ${isOpen ? '' : 'pointer-events-none'}`} aria-hidden={!isOpen}>
+    <div className={`fixed inset-0 z-[200] ${isOpen ? '' : 'pointer-events-none'}`} aria-hidden={!isOpen}>
       <style>{`
         .tf-modal-scroll::-webkit-scrollbar { width: 0px; height: 0px; }
         .tf-modal-scroll { scrollbar-width: none; -ms-overflow-style: none; }
@@ -1746,7 +1746,7 @@ const AccountSettingsPanel = ({ isOpen, onClose, employee, onSaveProfile }) => {
   const selectCls = "w-full px-4 py-3 rounded-2xl bg-white dark:bg-gray-900/40 border border-gray-200 dark:border-gray-800 text-gray-900 dark:text-white font-bold outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400 text-sm appearance-none";
 
   return (
-    <div className={`fixed inset-0 z-[120] flex items-center justify-center p-4 ${isOpen ? '' : 'pointer-events-none'}`} aria-hidden={!isOpen}>
+    <div className={`fixed inset-0 z-[200] flex items-center justify-center p-4 ${isOpen ? '' : 'pointer-events-none'}`} aria-hidden={!isOpen}>
       <div
         className={`absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity ${isOpen ? 'opacity-100' : 'opacity-0'}`}
         onClick={onClose}
@@ -1962,8 +1962,9 @@ const EmployeeProfile = () => {
 
   return (
     <div className="max-w-6xl mx-auto pb-20 px-4 sm:px-0">
-      <ScrollStyles />
-      <div className="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-4">
+      <div className="animate-in duration-500">
+        <ScrollStyles />
+        <div className="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-4">
         <div>
           <h1 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">Your Profile</h1>
           <p className="text-gray-500 font-medium">Manage your field performance and professional records</p>
@@ -1983,6 +1984,7 @@ const EmployeeProfile = () => {
 
       <EmploymentSection />
       <NotificationsSection />
+      </div>
 
       <EditProfileModal
         isOpen={isEditProfileOpen}

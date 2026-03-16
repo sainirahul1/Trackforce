@@ -114,7 +114,8 @@ const EmployeeVisits = () => {
   };
 
   return (
-    <div className="space-y-6 sm:space-y-8 max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 h-full">
+    <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 h-full">
+      <div className="space-y-6 sm:space-y-8 animate-in duration-500">
       {/* Page Heading */}
       <div className="px-2 mb-5">
         <h1 className="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white tracking-tight">Store Visits</h1>
@@ -293,9 +294,11 @@ const EmployeeVisits = () => {
         </div>
       </div>
 
+      </div>
+
       {/* Floating Modal for Visit Details */}
       {selectedVisit && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-gray-900/40 backdrop-blur-sm" onClick={() => setSelectedVisit(null)}></div>
 
           <div className="relative w-full max-w-4xl bg-white dark:bg-gray-900 rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-300">

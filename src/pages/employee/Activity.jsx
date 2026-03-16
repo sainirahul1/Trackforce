@@ -77,7 +77,7 @@ const EmployeeActivity = () => {
   const displayActivities = showMore ? [...activities, ...extraActivities] : activities;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-10">
+    <div className="max-w-4xl mx-auto space-y-10 animate-in">
       <div className="flex justify-between items-center px-4 md:px-0">
         <div>
           <h1 className="text-3xl font-black text-gray-900 dark:text-white">Activity Log</h1>

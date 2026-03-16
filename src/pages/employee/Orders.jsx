@@ -315,23 +315,7 @@ const EmployeeOrders = () => {
 
     // Main container with background and padding
     <div className={`${isDarkMode ? "bg-[#0f172a] text-white" : "bg-slate-50 text-slate-800"} min-h-screen p-4 sm:p-8 font-sans transition-colors duration-300`}>
-
-      {/* Success Message - shows when order is created or updated successfully */}
-      {success && (
-        <div className="fixed top-6 right-6 bg-emerald-500/90 backdrop-blur-md text-white px-6 py-4 rounded-xl shadow-2xl z-[120] animate-bounce flex items-center gap-3 border border-emerald-400/20">
-          <div className="bg-white/20 p-1.5 rounded-full"><TrendingUp size={16} /></div>
-          <span className="font-medium">{lastAction === "update" ? "Order Updated Successfully" : "Order Created Successfully"}</span>
-        </div>
-      )}
-
-      {/* Validation Error Message - shows when validation fails */}
-      {validationError && (
-        <div className="fixed top-6 right-6 bg-rose-500/90 backdrop-blur-md text-white px-6 py-4 rounded-xl shadow-2xl z-[120] animate-bounce flex items-center gap-3 border border-rose-400/20">
-          <span className="text-xl">⚠️</span>
-          <span className="font-medium">{validationError}</span>
-        </div>
-      )}
-
+      <div className="animate-in duration-500">
       {/* Header Section */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-10 gap-4">
 
@@ -567,10 +551,27 @@ const EmployeeOrders = () => {
           </table>
         </div>
       </div>
+      </div>
+
+      {/* Success Message - shows when order is created or updated successfully */}
+      {success && (
+        <div className="fixed top-6 right-6 bg-emerald-500/90 backdrop-blur-md text-white px-6 py-4 rounded-xl shadow-2xl z-[300] animate-bounce flex items-center gap-3 border border-emerald-400/20">
+          <div className="bg-white/20 p-1.5 rounded-full"><TrendingUp size={16} /></div>
+          <span className="font-medium">{lastAction === "update" ? "Order Updated Successfully" : "Order Created Successfully"}</span>
+        </div>
+      )}
+
+      {/* Validation Error Message - shows when validation fails */}
+      {validationError && (
+        <div className="fixed top-6 right-6 bg-rose-500/90 backdrop-blur-md text-white px-6 py-4 rounded-xl shadow-2xl z-[300] animate-bounce flex items-center gap-3 border border-rose-400/20">
+          <span className="text-xl">⚠️</span>
+          <span className="font-medium">{validationError}</span>
+        </div>
+      )}
 
       {/* Create Order Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[120] p-4 sm:p-0 animate-[fadeIn_0.2s_ease-out]">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[200] p-4 sm:p-0 animate-[fadeIn_0.2s_ease-out]">
           <div className={`${isDarkMode ? "bg-[#1e293b] border-slate-700" : "bg-white border-slate-100"} rounded-3xl border shadow-2xl p-6 sm:p-8 w-full max-w-md mx-auto max-h-[90vh] overflow-y-auto animate-[slideUp_0.3s_ease-out] relative`}>
             {/* Modal Header */}
             <div className={`flex justify-between items-center mb-6 pb-4 border-b ${isDarkMode ? "border-slate-700/50" : "border-slate-100"}`}>
@@ -696,7 +697,7 @@ const EmployeeOrders = () => {
 
       {/* Edit Order Modal */}
       {editModal && editingOrder && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[120] p-4 sm:p-0 animate-[fadeIn_0.2s_ease-out]">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[200] p-4 sm:p-0 animate-[fadeIn_0.2s_ease-out]">
           <div className={`${isDarkMode ? "bg-[#1e293b] border-slate-700" : "bg-white border-slate-100"} rounded-3xl border shadow-2xl p-6 sm:p-8 w-full max-w-md mx-auto max-h-[90vh] overflow-y-auto animate-[slideUp_0.3s_ease-out] relative`}>
             {/* Modal Header */}
             <div className={`flex justify-between items-center mb-6 pb-4 border-b ${isDarkMode ? "border-slate-700/50" : "border-slate-100"}`}>
@@ -822,7 +823,7 @@ const EmployeeOrders = () => {
 
       {/* View Order Modal */}
       {viewOrderModal && selectedOrder && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[120] p-4 sm:p-0 animate-[fadeIn_0.2s_ease-out]">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[200] p-4 sm:p-0 animate-[fadeIn_0.2s_ease-out]">
           <div className={`${isDarkMode ? "bg-[#1e293b] border-slate-700" : "bg-white border-slate-100"} rounded-3xl border shadow-2xl p-6 sm:p-8 w-full max-w-sm mx-auto animate-[slideUp_0.3s_ease-out]`}>
             {/* Modal Header */}
             <div className={`flex justify-between items-center mb-6 pb-4 border-b ${isDarkMode ? "border-slate-700/50" : "border-slate-100"}`}>

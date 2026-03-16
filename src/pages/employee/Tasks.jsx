@@ -294,7 +294,7 @@ const TaskDetailOverlay = ({ task, onClose, onUpdateOperationalData, onStartTask
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8 animate-in fade-in duration-300">
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 md:p-8 animate-in fade-in duration-300">
       <div
         className="absolute inset-0 bg-gray-900/60 backdrop-blur-md"
         onClick={onClose}
@@ -1076,7 +1076,8 @@ const EmployeeTasks = () => {
   };
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6 pb-40 px-4 md:px-0">
+    <div className="max-w-7xl mx-auto py-12 px-8 h-full">
+      <div className="space-y-12 animate-in duration-500">
       {/* <PerformanceStatsOverview /> */}
       <style>{`
         @keyframes dash {
@@ -1405,6 +1406,8 @@ const EmployeeTasks = () => {
             </div>
           </div>
         )}
+      </div>
+
       </div>
 
       {/* Task Detail Overlay */}
