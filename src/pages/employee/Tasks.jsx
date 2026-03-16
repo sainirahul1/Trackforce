@@ -40,7 +40,9 @@ import {
   Settings,
   HelpCircle,
   TrendingUp as TrendingUpIcon,
-  TrendingDown as TrendingDownIcon
+  TrendingDown as TrendingDownIcon,
+  Info,
+  ExternalLink
 } from 'lucide-react';
 import { useOutletContext } from 'react-router-dom';
 import Button from '../../components/Button';
@@ -328,8 +330,33 @@ const TaskDetailOverlay = ({ task, onClose, onUpdateOperationalData, onStartTask
             </div>
 
             <div className="mt-8 space-y-4">
-              <div className="p-5 bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm">
-                <p className="text-[10px] font-black uppercase text-indigo-600 dark:text-indigo-400 tracking-widest mb-3">Client Profile</p>
+              <div className="p-5 bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm group/client transition-all duration-300 relative overflow-visible">
+                {/* Floating Overlay Company Description on Hover */}
+                <div className="absolute left-0 right-0 bottom-full mb-2 opacity-0 pointer-events-none group-hover/client:opacity-100 group-hover/client:pointer-events-auto transition-all duration-300 z-[60]">
+                  <div className="bg-gray-900 dark:bg-gray-950 p-5 rounded-2xl shadow-2xl border border-gray-800 text-left">
+                    <div className="flex items-start gap-3 text-gray-300 mb-4">
+                      <Info size={16} className="mt-0.5 shrink-0 text-indigo-400" />
+                      <p className="text-xs font-medium leading-relaxed">
+                        {task.companyDescription || 'Strategic partner for retail execution covering primary aisles and billing counters.'}
+                      </p>
+                    </div>
+                    <a
+                      href={`https://www.google.com/search?q=${encodeURIComponent(task.companyName)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-2 w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-colors shadow-lg"
+                    >
+                      Company Profile <ExternalLink size={14} />
+                    </a>
+                  </div>
+                  {/* Tooltip Triangle */}
+                  <div className="w-4 h-4 bg-gray-900 border-r border-b border-gray-800 transform rotate-45 absolute -bottom-2 left-6"></div>
+                </div>
+
+                <p className="text-[10px] font-black uppercase text-indigo-600 dark:text-indigo-400 tracking-widest mb-3 flex items-center justify-between">
+                  Client Profile
+                  <span className="opacity-0 group-hover/client:opacity-100 transition-opacity text-gray-300 dark:text-gray-600">Hover for Insights</span>
+                </p>
                 <div className="flex items-center gap-4 mb-4">
                   <div className="w-10 h-10 rounded-xl bg-gray-50 dark:bg-gray-950 flex items-center justify-center border border-gray-100 dark:border-gray-800">
                     <User size={20} className="text-gray-400" />
@@ -347,18 +374,6 @@ const TaskDetailOverlay = ({ task, onClose, onUpdateOperationalData, onStartTask
                   <div className="flex items-center justify-between text-[10px]">
                     <span className="font-bold text-gray-400 uppercase">Email</span>
                     <span className="font-black text-indigo-500">{task.companyEmail}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="p-5 bg-emerald-50 dark:bg-emerald-950/30 rounded-2xl border border-emerald-100/50 dark:border-emerald-900/30">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-white dark:bg-gray-800 flex items-center justify-center shadow-sm">
-                    <Zap size={14} className="text-emerald-600" />
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-black text-emerald-900 dark:text-emerald-400 uppercase tracking-tight">Incentive</p>
-                    <p className="text-sm font-black text-emerald-600 leading-none">{task.incentive} Pay</p>
                   </div>
                 </div>
               </div>
@@ -431,7 +446,7 @@ const TaskDetailOverlay = ({ task, onClose, onUpdateOperationalData, onStartTask
               </div>
 
               {/* Evidence Grid */}
-              <div className="space-y-4">
+              <div className="space-y-4 text-center sm:text-left">
                 <h5 className="text-[10px] font-black text-gray-900 dark:text-white uppercase tracking-widest border-b border-gray-100 dark:border-gray-800 pb-3">Evidence Collection</h5>
                 <div className="grid grid-cols-2 gap-4">
                   {[
@@ -466,6 +481,19 @@ const TaskDetailOverlay = ({ task, onClose, onUpdateOperationalData, onStartTask
                     );
                   })}
                 </div>
+              </div>
+
+              {/* Task Description / Notes Field */}
+              <div className="space-y-4 pt-4 border-t border-gray-100 dark:border-gray-800">
+                <div className="flex justify-between items-center">
+                  <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest ml-1">Visit Notes & Observations</label>
+                </div>
+                <textarea
+                  value={task.visitNotes || ''}
+                  onChange={(e) => onUpdateOperationalData(task.id, { visitNotes: e.target.value })}
+                  placeholder="Enter any specific observations, client feedback, or issues faced during the visit..."
+                  className="w-full bg-gray-50 dark:bg-gray-800 border border-transparent dark:border-gray-700 rounded-2xl px-5 py-4 text-xs font-medium focus:ring-2 focus:ring-indigo-500 transition-all outline-none resize-none h-24 shadow-inner"
+                />
               </div>
 
               <div className="pt-4">
@@ -525,6 +553,7 @@ const EmployeeTasks = () => {
       companyContact: 'Rajesh Kumar',
       companyEmail: 'ops@futuregroup.in',
       companyInsight: 'Premium Partner • 12 Months',
+      companyDescription: 'Flagship hypermarket location with high daily footfall. Focus intensely on premium product placement and end-cap visibility tracking.',
       address: 'MG Road, Bengaluru',
       distance: '1.2 km',
       distanceVal: 1.2,
@@ -557,6 +586,7 @@ const EmployeeTasks = () => {
       companyContact: 'Anjali Sharma',
       companyEmail: 'store.support@reliance.com',
       companyInsight: 'Top Tier Client • High Volume',
+      companyDescription: 'Core retail partner for daily essentials. Ensure correct pricing tags and promotional banners are prominently displayed and unblocked.',
       address: 'Indiranagar, Bengaluru',
       distance: '3.4 km',
       distanceVal: 3.4,
@@ -588,6 +618,7 @@ const EmployeeTasks = () => {
       companyContact: 'Suresh Raina',
       companyEmail: 'finance@adityabirla.com',
       companyInsight: 'Enterprise Account • Active',
+      companyDescription: 'A major enterprise account requiring strict compliance with our latest merchandising guidelines and payment collection protocols.',
       address: 'Koramangala, Bengaluru',
       distance: '0.8 km',
       distanceVal: 0.8,
