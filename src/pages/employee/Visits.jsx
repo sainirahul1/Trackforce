@@ -1,99 +1,432 @@
-import React from 'react';
-import { MapPin, Navigation, Clock, CheckCircle2, ChevronRight } from 'lucide-react';
+import React, { useState } from 'react';
+import { MapPin, Navigation, Clock, CheckCircle2, ChevronRight, Calendar, AlertCircle, Phone, Image as ImageIcon, Camera, Map, X, Users, Store, FileText, MessageSquare } from 'lucide-react';
 import Button from '../../components/Button';
 
 const EmployeeVisits = () => {
+  const [selectedVisit, setSelectedVisit] = useState(null);
+  const [filterStatus, setFilterStatus] = useState('All');
+  const [filterDate, setFilterDate] = useState('');
+  const dateInputRef = React.useRef(null);
+
   const visits = [
-    { id: 1, store: 'Reliance Fresh - HSR', address: 'Sector 2, HSR Layout, BLR', time: '10:00 AM', status: 'Completed' },
-    { id: 2, store: 'More Megamart - Koramangala', address: '8th Block, Koramangala, BLR', time: '12:30 PM', status: 'In Progress' },
-    { id: 3, store: 'Big Bazaar - Central', address: 'MG Road, Bengaluru', time: '03:00 PM', status: 'Pending' },
-    { id: 4, store: 'Star Bazar - Indiranagar', address: '100ft Road, Indiranagar, BLR', time: '05:30 PM', status: 'Upcoming' },
+    {
+      id: 1,
+      store: 'Reliance Fresh - HSR',
+      address: 'Sector 2, HSR Layout, BLR',
+      time: '10:00 AM',
+      status: 'Completed',
+      distance: '1.2 km',
+      date: new Date().toISOString().split('T')[0],
+      companyDescription: 'Reliance Fresh is a chain of convenience stores operated by Reliance Retail. They offer fresh fruits, vegetables, and daily groceries.',
+      companyLink: 'https://relianceretail.com',
+      feedback: 'Store manager was busy, but managed to check stock levels. Competitor presence is high in this area.',
+      uploadedImages: ['https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=200&h=200', 'https://images.unsplash.com/photo-1604719312566-8912e9227c6a?auto=format&fit=crop&q=80&w=200&h=200']
+    },
+    {
+      id: 2,
+      store: 'More Megamart - Koramangala',
+      address: '8th Block, Koramangala, BLR',
+      time: '12:30 PM',
+      status: 'In Progress',
+      distance: '3.5 km',
+      date: new Date().toISOString().split('T')[0],
+      companyDescription: 'More Megamart provides a hypermarket shopping experience with a wide range of products including apparel, groceries, and electronics.',
+      companyLink: 'https://www.moreretail.in',
+      feedback: 'Currently auditing the beverage aisle. Display looks good.',
+      uploadedImages: []
+    },
+    {
+      id: 3,
+      store: 'Big Bazaar - Central',
+      address: 'MG Road, Bengaluru',
+      time: '03:00 PM',
+      status: 'Not Visit',
+      distance: '5.0 km',
+      date: new Date(new Date().setDate(new Date().getDate() + 1)).toISOString().split('T')[0],
+      companyDescription: 'Big Bazaar is one of the oldest hypermarket chains, known for value-for-money products.',
+      companyLink: 'https://www.bigbazaar.com',
+      feedback: 'Store was closed due to local holiday. Will reschedule.',
+      uploadedImages: []
+    },
+    {
+      id: 4,
+      store: 'Star Bazar - Indiranagar',
+      address: '100ft Road, Indiranagar, BLR',
+      time: '05:30 PM',
+      status: 'Follow Up',
+      distance: '8.2 km',
+      date: new Date().toISOString().split('T')[0],
+      companyDescription: 'Star Bazar offers a modern retail environment focusing on fresh produce, meat, and private labels.',
+      companyLink: 'https://www.starbazaarindia.com',
+      feedback: 'Met with the owner. Needs catalog for new summer products. Going back tomorrow.',
+      uploadedImages: []
+    },
   ];
 
+  const statuses = ['All', 'Completed', 'In Progress', 'Not Visit', 'Follow Up'];
+
+  const filteredVisits = visits.filter(v => {
+    const matchStatus = filterStatus === 'All' || v.status === filterStatus;
+    const matchDate = !filterDate || v.date === filterDate;
+    return matchStatus && matchDate;
+  });
+
+  const getStatusStyles = (status) => {
+    switch (status) {
+      case 'Completed':
+        return {
+          icon: 'bg-green-100 text-green-600 dark:bg-green-500/20 dark:text-green-400',
+          badge: 'text-green-700 bg-green-100 dark:text-green-400 dark:bg-green-500/20',
+          border: 'border-green-200 dark:border-green-500/30'
+        };
+      case 'In Progress':
+        return {
+          icon: 'bg-blue-100/50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400 animate-pulse',
+          badge: 'text-blue-700 bg-blue-100/50 dark:text-blue-400 dark:bg-blue-500/10',
+          border: 'border-blue-200 dark:border-blue-500/30'
+        };
+      case 'Not Visit':
+        return {
+          icon: 'bg-red-100/50 text-red-600 dark:bg-red-500/10 dark:text-red-400',
+          badge: 'text-red-700 bg-red-100/50 dark:text-red-400 dark:bg-red-500/10',
+          border: 'border-red-100 dark:border-red-500/20'
+        };
+      case 'Follow Up':
+        return {
+          icon: 'bg-amber-100/50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400',
+          badge: 'text-amber-700 bg-amber-100/50 dark:text-amber-400 dark:bg-amber-500/10',
+          border: 'border-amber-100 dark:border-amber-500/20'
+        };
+      default:
+        return {
+          icon: 'bg-gray-100/50 text-gray-500 dark:bg-gray-800 dark:text-gray-400',
+          badge: 'text-gray-600 bg-gray-100/50 dark:text-gray-400 dark:bg-gray-800',
+          border: 'border-gray-100 dark:border-gray-800'
+        };
+    }
+  };
+
+  const statusCounts = {
+    'Completed': visits.filter(v => v.status === 'Completed').length,
+    'In Progress': visits.filter(v => v.status === 'In Progress').length,
+    'Not Visit': visits.filter(v => v.status === 'Not Visit').length,
+    'Follow Up': visits.filter(v => v.status === 'Follow Up').length,
+  };
+
   return (
-    <div className="space-y-8 max-w-5xl mx-auto">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-black text-gray-900 dark:text-white">Store Visits</h1>
-          <p className="text-gray-500 font-medium">Your schedule for {new Date().toLocaleDateString()}</p>
-        </div>
-        <Button className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl">
-          <MapPin size={18} className="mr-2" />
-          View On Map
-        </Button>
+    <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 h-full">
+      <div className="space-y-6 sm:space-y-8 animate-in duration-500">
+      {/* Page Heading */}
+      <div className="px-2 mb-5">
+        <h1 className="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white tracking-tight">Store Visits</h1>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      {/* Filters & Results Count Section */}
+      <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 bg-white dark:bg-gray-900 p-4 sm:p-5 rounded-[2rem] border border-gray-100 dark:border-gray-800 shadow-sm mb-6 sm:mb-8">
+        <div className="flex items-center gap-3 overflow-x-auto custom-scrollbar pb-2 sm:pb-0 w-full xl:w-auto pr-2 sm:pr-0">
+          {statuses.map(status => (
+            <button
+              key={status}
+              onClick={() => setFilterStatus(status)}
+              className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all duration-300 ${filterStatus === status
+                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200 dark:shadow-none'
+                  : 'bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                }`}
+            >
+              {status}
+            </button>
+          ))}
+
+          <div className="flex items-center shrink-0 ml-2 gap-2">
+            {filterDate && (
+              <div className="flex items-center gap-1.5 text-indigo-700 dark:text-indigo-400 px-3 py-2 rounded-xl text-xs font-bold bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/30 shadow-sm animate-in fade-in">
+                {filterDate.split('-').reverse().join('/')}
+                <button onClick={() => setFilterDate('')} className="hover:bg-indigo-100 dark:hover:bg-indigo-500/30 rounded-md transition-colors p-0.5 ml-1">
+                  <X size={14} />
+                </button>
+              </div>
+            )}
+            <button
+              onClick={() => dateInputRef.current?.showPicker()}
+              className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors shadow-sm border border-gray-200 dark:border-gray-700 shrink-0"
+            >
+              <Calendar size={18} />
+              <input
+                ref={dateInputRef}
+                type="date"
+                value={filterDate}
+                onChange={(e) => setFilterDate(e.target.value)}
+                className="absolute w-[1px] h-[1px] opacity-0 -z-10 pointer-events-none"
+                title="Select Date"
+              />
+            </button>
+          </div>
+        </div>
+
+        {/* Results Count (Right side) */}
+        <div className="flex items-center gap-3 bg-indigo-50 dark:bg-indigo-500/10 px-4 py-2.5 rounded-xl border border-indigo-100 dark:border-indigo-500/20 shadow-sm shrink-0 ml-auto xl:ml-0">
+          <span className="relative flex h-2.5 w-2.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-indigo-500"></span>
+          </span>
+          <span className="text-xs font-black text-indigo-700 dark:text-indigo-400 uppercase tracking-widest">{filteredVisits.length} Locations</span>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
+        {/* Visits List */}
         <div className="lg:col-span-2 space-y-4">
-          {visits.map((visit) => (
-            <div key={visit.id} className="bg-white dark:bg-gray-900 p-6 rounded-[2rem] border border-gray-100 dark:border-gray-800 shadow-sm flex items-center justify-between group hover:shadow-md transition-all">
-              <div className="flex items-center gap-6">
-                <div className={`p-4 rounded-2xl ${
-                  visit.status === 'Completed' ? 'bg-emerald-50 text-emerald-600' :
-                  visit.status === 'In Progress' ? 'bg-blue-50 text-blue-600' : 'bg-gray-50 text-gray-400'
-                }`}>
-                  <Navigation size={24} />
-                </div>
-                <div>
-                  <h3 className="font-bold text-gray-900 dark:text-white text-lg">{visit.store}</h3>
-                  <p className="text-sm text-gray-500">{visit.address}</p>
-                  <div className="flex items-center gap-3 mt-2">
-                    <span className="flex items-center gap-1 text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                      <Clock size={12} />
-                      {visit.time}
-                    </span>
-                    <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-lg ${
-                      visit.status === 'Completed' ? 'text-emerald-600 bg-emerald-50' :
-                      visit.status === 'In Progress' ? 'text-blue-600 bg-blue-50' : 'text-gray-400 bg-gray-50'
-                    }`}>
-                      {visit.status}
-                    </span>
+          <div className="space-y-4">
+            {filteredVisits.length > 0 ? filteredVisits.map((visit, idx) => {
+              const styles = getStatusStyles(visit.status);
+              return (
+                <div
+                  key={visit.id}
+                  onClick={() => setSelectedVisit(visit)}
+                  className={`bg-white dark:bg-gray-900 p-4 sm:p-5 rounded-[2rem] border ${styles.border} shadow-sm hover:shadow-md hover:border-indigo-200 dark:hover:border-indigo-500/30 transition-all duration-300 group relative overflow-hidden cursor-pointer`}
+                >
+                  <div className="flex flex-col gap-3">
+                    {/* Top Row: Store Info & Status */}
+                    <div className="flex justify-between items-start gap-4">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-bold text-gray-900 dark:text-white text-base sm:text-lg truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                          {idx + 1}. {visit.store}
+                        </h3>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1.5 mt-1">
+                          <MapPin size={12} className="shrink-0 text-gray-400" />
+                          <span className="truncate">{visit.address}</span>
+                        </p>
+                      </div>
+                      <span className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg shrink-0 ${styles.badge} ${styles.border} border`}>
+                        {visit.status}
+                      </span>
+                    </div>
+
+                    {/* Bottom Row: Details & Actions */}
+                    <div className="flex flex-wrap items-end justify-between gap-3 mt-1">
+                      <div className="flex items-center gap-2">
+                        <span className="flex items-center gap-1.5 text-[11px] font-bold text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-800 px-2 py-1.5 rounded-lg">
+                          <Clock size={12} className="text-indigo-500" />
+                          {visit.time}
+                        </span>
+                        <span className="flex items-center gap-1.5 text-[11px] font-bold text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-800 px-2 py-1.5 rounded-lg">
+                          <Map size={12} className="text-emerald-500" />
+                          {visit.distance}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <button onClick={(e) => { e.stopPropagation(); window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(visit.address)}`, '_blank'); }} className="flex items-center gap-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-lg text-[11px] font-bold transition-colors">
+                          <Navigation size={12} /> Directions
+                        </button>
+                        <button onClick={(e) => { e.stopPropagation(); /* phone logic */ }} className="flex items-center gap-1.5 bg-green-50 hover:bg-green-100 text-green-700 px-3 py-1.5 rounded-lg text-[11px] font-bold transition-colors">
+                          <Phone size={12} /> Call Store
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
+              );
+            }) : (
+              <div className="text-center py-12 bg-white dark:bg-gray-900 rounded-[2rem] border border-gray-100 dark:border-gray-800 shadow-sm">
+                <div className="p-4 bg-gray-50 dark:bg-gray-800/80 rounded-full w-max mx-auto mb-4">
+                  <Calendar size={24} className="text-gray-400" />
+                </div>
+                <p className="text-gray-500 font-bold mb-1">No visits found</p>
+                <p className="text-sm text-gray-400">Try adjusting your date or status filters.</p>
               </div>
-              <button className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-400 group-hover:text-indigo-600 group-hover:bg-indigo-50 transition-all">
-                <ChevronRight size={20} />
-              </button>
-            </div>
-          ))}
+            )}
+          </div>
         </div>
 
-        <div className="space-y-6">
-          <div className="bg-gradient-to-br from-indigo-600 to-indigo-800 p-8 rounded-[2.5rem] text-white shadow-xl">
-            <h3 className="text-xl font-black mb-4 tracking-tight">Today's Summary</h3>
-            <div className="space-y-4">
-              <div className="flex justify-between items-center text-sm">
-                <span className="opacity-80">Total Scheduled</span>
-                <span className="font-black">8 Stores</span>
+        {/* Sidebar */}
+        <div className="space-y-6 sm:space-y-8 mt-4 lg:mt-0">
+          <div className="bg-white dark:bg-gray-900 p-6 sm:p-8 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 shadow-sm relative overflow-hidden">
+            <h3 className="font-black text-gray-900 dark:text-white mb-6 text-xl flex items-center gap-2.5">
+              <div className="p-2 bg-indigo-50 dark:bg-indigo-500/10 rounded-xl">
+                <MapPin className="text-indigo-500" size={20} />
               </div>
-              <div className="flex justify-between items-center text-sm">
-                <span className="opacity-80">Completed</span>
-                <span className="font-black">3 Stores</span>
+              Today's Summary
+            </h3>
+
+            <div className="space-y-3">
+              <div className="flex gap-4 p-3 sm:p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/50 transition-colors duration-300 group border border-transparent hover:border-emerald-100 dark:hover:border-emerald-500/20">
+                <div className="flex w-full justify-between items-center">
+                  <div className="flex items-center gap-3">
+                    <CheckCircle2 size={16} className="text-emerald-500 shrink-0" />
+                    <span className="text-sm text-gray-600 dark:text-gray-300 font-bold">Completed</span>
+                  </div>
+                  <span className="font-black text-emerald-600 dark:text-emerald-400 text-base">{statusCounts['Completed']}</span>
+                </div>
               </div>
-              <div className="pt-4 border-t border-white/20">
-                <p className="text-xs opacity-60 uppercase font-black tracking-widest mb-2">Completion Rate</p>
-                <div className="w-full h-2 bg-white/20 rounded-full overflow-hidden">
-                  <div className="h-full bg-white w-[37%]" />
+
+              <div className="flex gap-4 p-3 sm:p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/50 transition-colors duration-300 group border border-transparent hover:border-blue-100 dark:hover:border-blue-500/20">
+                <div className="flex w-full justify-between items-center">
+                  <div className="flex items-center gap-3">
+                    <Navigation size={16} className="text-blue-500 shrink-0" />
+                    <span className="text-sm text-gray-600 dark:text-gray-300 font-bold">In Progress</span>
+                  </div>
+                  <span className="font-black text-blue-600 dark:text-blue-400 text-base">{statusCounts['In Progress']}</span>
+                </div>
+              </div>
+
+              <div className="flex gap-4 p-3 sm:p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/50 transition-colors duration-300 group border border-transparent hover:border-red-100 dark:hover:border-red-500/20">
+                <div className="flex w-full justify-between items-center">
+                  <div className="flex items-center gap-3">
+                    <X size={16} className="text-red-500 shrink-0" />
+                    <span className="text-sm text-gray-600 dark:text-gray-300 font-bold">Not Visit</span>
+                  </div>
+                  <span className="font-black text-red-600 dark:text-red-400 text-base">{statusCounts['Not Visit']}</span>
+                </div>
+              </div>
+
+              <div className="flex gap-4 p-3 sm:p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/50 transition-colors duration-300 group border border-transparent hover:border-amber-100 dark:hover:border-amber-500/20">
+                <div className="flex w-full justify-between items-center">
+                  <div className="flex items-center gap-3">
+                    <AlertCircle size={16} className="text-amber-500 shrink-0" />
+                    <span className="text-sm text-gray-600 dark:text-gray-300 font-bold">Follow Up</span>
+                  </div>
+                  <span className="font-black text-amber-600 dark:text-amber-400 text-base">{statusCounts['Follow Up']}</span>
                 </div>
               </div>
             </div>
           </div>
-
-          <div className="bg-white dark:bg-gray-900 p-8 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 shadow-sm">
-            <h3 className="font-black text-gray-900 dark:text-white mb-6">Zone Guidelines</h3>
-            <ul className="space-y-4">
-              <li className="flex gap-3 text-sm text-gray-500">
-                <CheckCircle2 size={16} className="text-emerald-500 shrink-0" />
-                <span>Always check-in before entering the store premises.</span>
-              </li>
-              <li className="flex gap-3 text-sm text-gray-500">
-                <CheckCircle2 size={16} className="text-emerald-500 shrink-0" />
-                <span>Upload a minimum of 2 photos for each visit.</span>
-              </li>
-            </ul>
-          </div>
         </div>
       </div>
+
+      </div>
+
+      {/* Floating Modal for Visit Details */}
+      {selectedVisit && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-gray-900/40 backdrop-blur-sm" onClick={() => setSelectedVisit(null)}></div>
+
+          <div className="relative w-full max-w-4xl bg-white dark:bg-gray-900 rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-300">
+            {/* Ultra-Clean Professional Header (Compact & Reordered) */}
+            <div className="relative bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 shrink-0 px-5 py-5 sm:px-6 sm:py-6">
+              <button
+                onClick={() => setSelectedVisit(null)}
+                className="absolute top-4 sm:top-5 right-4 sm:right-5 z-20 p-2 rounded-full bg-gray-50/80 dark:bg-gray-800/80 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 hover:text-gray-900 dark:hover:text-white transition-all shadow-sm backdrop-blur-sm"
+              >
+                <X size={16} />
+              </button>
+
+              <div className="flex flex-col gap-4">
+                
+                {/* 1. Header Section: Title & Address */}
+                <div className="flex flex-col gap-1 pr-10">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <h2 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white tracking-tight leading-tight">
+                      {selectedVisit.store}
+                    </h2>
+                    {/* Status Badge Beside Title */}
+                    <div className={`px-2 py-0.5 rounded text-[10px] font-bold flex items-center gap-1 uppercase tracking-wider shrink-0 ${selectedVisit.status === 'Completed' ? 'text-emerald-700 bg-emerald-50 border border-emerald-100 dark:text-emerald-400 dark:bg-emerald-500/10 dark:border-emerald-500/20' : 'text-gray-700 bg-gray-50 border border-gray-200 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300'}`}>
+                      {selectedVisit.status === 'Completed' && <CheckCircle2 size={10} className="text-emerald-600 dark:text-emerald-400" />}
+                      {selectedVisit.status}
+                    </div>
+                  </div>
+                  <p className="flex items-start gap-1.5 text-gray-500 dark:text-gray-400 text-sm font-medium">
+                    <MapPin size={16} className="text-gray-400 shrink-0 mt-0.5" />
+                    {selectedVisit.address}
+                  </p>
+                </div>
+
+                {/* 2. Core Details & Actions Block */}
+                <div className="flex flex-col gap-3">
+                  
+                  {/* Time, Distance, and Actions Row */}
+                  <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-y-3 w-full">
+                    {/* Left side: Time & Distance */}
+                    <div className="flex items-center gap-x-3 shrink-0">
+                      {/* Time */}
+                      <div className="flex items-center gap-1.5 text-gray-700 dark:text-gray-300">
+                        <Clock size={12} className="text-gray-400" />
+                        <span className="font-semibold text-[13px]">{selectedVisit.time}</span>
+                      </div>
+
+                      <div className="w-px h-3 bg-gray-200 dark:bg-gray-700"></div>
+
+                      {/* Distance */}
+                      <div className="flex items-center gap-1.5 text-gray-700 dark:text-gray-300">
+                        <Map size={12} className="text-gray-400" />
+                        <span className="font-semibold text-[13px]">{selectedVisit.distance}</span>
+                      </div>
+                    </div>
+
+                    {/* Right side: Actions (Far Right) */}
+                    <div className="flex flex-row gap-2 shrink-0">
+                      <button onClick={() => window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(selectedVisit.address)}`, '_blank')} className="bg-indigo-600 hover:bg-indigo-700 text-white rounded px-3 py-1.5 flex items-center justify-center gap-1.5 transition-colors font-semibold text-[11px] shadow-sm shrink-0">
+                        <Navigation size={12} className="shrink-0" />
+                        <span>Directions</span>
+                      </button>
+                      <button className="bg-white hover:bg-gray-50 text-gray-800 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-100 border border-gray-200 dark:border-gray-700 rounded px-3 py-1.5 flex items-center justify-center gap-1.5 transition-colors font-semibold text-[11px] shadow-sm shrink-0">
+                        <Phone size={12} className="shrink-0 text-gray-500" />
+                        <span>Call Store</span>
+                      </button>
+                    </div>
+                  </div>
+
+                </div>
+
+              </div>
+            </div>
+
+            <div className="p-5 sm:p-8 overflow-y-auto custom-scrollbar flex-1 flex flex-col gap-6">
+
+              {/* Company Description & Link */}
+              <div className="bg-white dark:bg-gray-900 rounded-2xl p-5 border border-gray-100 dark:border-gray-800 shadow-sm">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400 flex items-center gap-2">
+                    <Store size={14} className="text-violet-500" />
+                    Company Description
+                  </h4>
+                  {selectedVisit.companyLink && (
+                    <a href={selectedVisit.companyLink} target="_blank" rel="noopener noreferrer" className="text-[10px] font-bold text-indigo-500 hover:text-indigo-600 flex items-center gap-1 bg-indigo-50 dark:bg-indigo-500/10 px-2 py-1 rounded-md transition-colors">
+                      Visit Website <ChevronRight size={12} />
+                    </a>
+                  )}
+                </div>
+                <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed font-medium">
+                  {selectedVisit.companyDescription}
+                </p>
+              </div>
+
+              {/* Feedback and Notes */}
+              <div className="bg-white dark:bg-gray-900 rounded-2xl p-5 border border-gray-100 dark:border-gray-800 shadow-sm">
+                <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-3 flex items-center gap-2">
+                  <MessageSquare size={14} className="text-blue-500" />
+                  Task Feedback / Notes
+                </h4>
+                <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed italic border-l-2 border-blue-300 dark:border-blue-500/50 pl-4 font-medium">
+                  "{selectedVisit.feedback}"
+                </p>
+              </div>
+
+              {/* Uploaded Images */}
+              <div className="bg-white dark:bg-gray-900 rounded-2xl p-5 border border-gray-100 dark:border-gray-800 shadow-sm">
+                <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-4 flex items-center gap-2">
+                  <ImageIcon size={14} className="text-emerald-500" />
+                  Uploaded Images
+                </h4>
+                {selectedVisit.uploadedImages && selectedVisit.uploadedImages.length > 0 ? (
+                  <div className="flex gap-4 overflow-x-auto pb-2 custom-scrollbar">
+                    {selectedVisit.uploadedImages.map((img, idx) => (
+                      <div key={idx} className="shrink-0 relative group">
+                        <img src={img} alt={`Proof ${idx + 1}`} className="w-28 h-28 object-cover rounded-2xl border-2 border-gray-50 dark:border-gray-800 shadow-md transition-transform duration-300 group-hover:scale-[1.02]" />
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-sm font-bold text-gray-400 dark:text-gray-500 bg-gray-50 dark:bg-gray-800/50 border border-dashed border-gray-200 dark:border-gray-700 rounded-2xl p-6 text-center">
+                    No images uploaded yet.
+                  </div>
+                )}
+              </div>
+
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

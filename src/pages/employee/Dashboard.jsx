@@ -1,105 +1,554 @@
-import React, { useState } from 'react';
+// hjsdgfjhdsgfj
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { MapPin, Navigation2, Calendar, TrendingUp, Clock, User, ClipboardList, Settings, Map, Bell, Camera, ShoppingBag } from 'lucide-react';
+import {
+  MapPin, Calendar, TrendingUp, Clock, ClipboardList,
+  Map as MapIcon, ShoppingBag, ShoppingBasket, ChevronRight, Activity,
+  CheckCircle2, ArrowRight, Navigation2, Camera, Bell, IndianRupee
+} from 'lucide-react';
+import {
+  Chart as ChartJS, CategoryScale, LinearScale, PointElement,
+  LineElement, Tooltip, Legend, Filler, RadialLinearScale
+} from 'chart.js';
+import { Line, Radar } from 'react-chartjs-2';
 
-const EmployeeDashboard = () => {
-  const [isOnDuty, setIsOnDuty] = useState(false);
+// Register Chart.js components
+ChartJS.register(
+  CategoryScale, LinearScale, PointElement,
+  LineElement, Tooltip, Legend, Filler, RadialLinearScale
+);
+
+// =============================================================================
+// STYLE TOKENS & CONSTANTSAB
+// Shared styling strings to ensure consistency and easier maintenance.
+// =============================================================================
+
+const UI_TOKENS = {
+  // Main Card Wrapper: includes base styles, dark mode adjustments, and premium hover effects
+  cardBase: `
+    group relative overflow-hidden transition-all duration-500 
+    bg-white dark:bg-gray-900 
+    border border-gray-100 dark:border-gray-800 
+    shadow-sm hover:shadow-xl 
+    hover:bg-gradient-to-br hover:from-white hover:to-indigo-50/50 
+    dark:hover:from-gray-900 dark:hover:to-indigo-950/20
+  `,
+  // Inner container hover effect (lift and shadow)
+  innerHover: `
+    transition-all duration-500 hover:shadow-md hover:-translate-y-0.5
+  `,
+  // Section Title styling
+  sectionTitle: "text-xl font-black text-gray-900 dark:text-white tracking-tight flex items-center",
+}
+
+// =============================================================================
+// SUB-COMPONENTS
+// These smaller components help keep the main Dashboard logic clean and readable.
+// =============================================================================
+
+
+
+/**
+ * ProgressRing Component
+ * A compact circular progress indicator for key performance metrics.
+ */
+const ProgressRing = ({ label, current, target, color }) => {
+  const percentage = Math.min(Math.round((current / target) * 100), 100);
+  const radius = 22;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDashoffset = circumference - (percentage / 100) * circumference;
+
   return (
-    <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in duration-500">
-      <div className="bg-gradient-to-br from-indigo-600 to-indigo-800 dark:from-indigo-900 dark:to-indigo-950 rounded-[2.5rem] p-10 text-white shadow-2xl relative overflow-hidden">
-        <div className="relative z-10 flex justify-between items-start">
-          <div className="space-y-4">
-            <h1 className="text-4xl font-black tracking-tight leading-none">Hello, Abhiram</h1>
-            <p className="font-bold text-indigo-100 dark:text-indigo-200">Senior Field Executive | ID: #TX402</p>
-          </div>
-          <Link 
-            to="/employee/profile"
-            className="p-4 bg-white/20 backdrop-blur-md rounded-2xl border border-white/20 hover:bg-white/30 transition-all group"
-          >
-            <User className="group-hover:scale-110 transition-transform" />
-          </Link>
-        </div>
-        <div className="mt-8 p-6 bg-white/10 dark:bg-black/20 backdrop-blur-xl rounded-3xl border border-white/10 w-fit flex items-center space-x-6">
-            <span className={`text-sm font-black tracking-widest uppercase ${isOnDuty ? 'text-green-300' : 'text-white/40 dark:text-white/20'}`}>{isOnDuty ? 'on duty' : 'off duty'}</span>
-            <button
-              onClick={() => setIsOnDuty(!isOnDuty)}
-              className={`px-6 py-2 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${isOnDuty
-                ? 'bg-white text-indigo-600 hover:scale-105 shadow-xl'
-                : 'bg-indigo-600 text-white border border-white/20 hover:bg-indigo-500'
-                }`}
-            >
-              {isOnDuty ? 'End Shift' : 'Start Shift'}
-            </button>
-          </div>
-          <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -mr-20 -mt-20 blur-3xl" />
-        </div>
-
-      <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
-        {[
-          { name: 'Tasks', icon: ClipboardList, path: '/employee/tasks', color: 'bg-indigo-50 text-indigo-600' },
-          { name: 'Visits', icon: Map, path: '/employee/visits', color: 'bg-emerald-50 text-emerald-600' },
-          { name: 'Orders', icon: ShoppingBag, path: '/employee/orders', color: 'bg-blue-50 text-blue-600' },
-          { name: 'Proof', icon: Camera, path: '/employee/upload-proof', color: 'bg-purple-50 text-purple-600' },
-          { name: 'Activity', icon: Clock, path: '/employee/activity', color: 'bg-orange-50 text-orange-600' },
-          { name: 'Alerts', icon: Bell, path: '/employee/notifications', color: 'bg-gray-50 text-gray-600' },
-        ].map((action, i) => (
-          <Link 
-            key={i}
-            to={action.path}
-            className="flex flex-col items-center justify-center p-6 bg-white dark:bg-gray-900 rounded-[2rem] border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all group"
-          >
-            <div className={`p-3 rounded-2xl ${action.color} mb-3 group-hover:scale-110 transition-transform`}>
-              <action.icon size={20} />
-            </div>
-            <span className="text-[10px] font-black uppercase tracking-widest text-gray-500">{action.name}</span>
-          </Link>
-        ))}
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white dark:bg-gray-900 p-8 rounded-[2rem] border border-gray-100 dark:border-gray-800 shadow-sm">
-          <p className="text-xs font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">Today's Visits</p>
-          <p className="text-4xl font-black text-gray-900 dark:text-white mt-2">12</p>
-          <div className="mt-4 flex items-center text-xs font-bold text-success">
-            <TrendingUp size={14} className="mr-1" />
-            <span>+2 from yesterday</span>
-          </div>
-        </div>
-        <div className="bg-white dark:bg-gray-900 p-8 rounded-[2rem] border border-gray-100 dark:border-gray-800 shadow-sm">
-          <p className="text-xs font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">Hours Active</p>
-          <p className="text-4xl font-black text-gray-900 dark:text-white mt-2">6.5h</p>
-          <div className="mt-4 flex items-center text-xs font-bold text-gray-400 dark:text-gray-500">
-            <Clock size={14} className="mr-1" />
-            <span>Shift started 8:00 AM</span>
-          </div>
-        </div>
-        <div className="bg-white dark:bg-gray-900 p-8 rounded-[2rem] border border-gray-100 dark:border-gray-800 shadow-sm">
-          <p className="text-xs font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">Active Tasks</p>
-          <p className="text-4xl font-black text-gray-900 dark:text-white mt-2">04</p>
-          <div className="mt-4 flex items-center text-xs font-bold text-indigo-600">
-            <ClipboardList size={14} className="mr-1" />
-            <span>2 High Priority</span>
-          </div>
+    <div className="flex flex-col items-center text-center group p-2 rounded-2xl transition-all hover:bg-gray-50/80">
+      <div className="relative mb-3 transform transition-transform group-hover:scale-110">
+        <svg className="w-16 h-16 -rotate-90 transform">
+          <circle
+            cx="32" cy="32" r={radius}
+            stroke="currentColor" strokeWidth="5" fill="transparent"
+            className="text-gray-200/50"
+          />
+          <circle
+            cx="32" cy="32" r={radius}
+            stroke="currentColor" strokeWidth="5" fill="transparent"
+            strokeDasharray={circumference}
+            style={{
+              strokeDashoffset,
+              transition: 'stroke-dashoffset 1.5s cubic-bezier(0.4, 0, 0.2, 1)',
+              filter: `drop-shadow(0 0 3px currentColor)`
+            }}
+            strokeLinecap="round"
+            className={`${color}`}
+          />
+        </svg>
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className="text-sm font-black text-gray-900 leading-none">{percentage}%</span>
         </div>
       </div>
-
-      <div className="bg-white dark:bg-gray-900 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 p-10 shadow-sm">
-        <h2 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight mb-8">Next Target Location</h2>
-        <div className="flex items-start space-x-6 p-6 bg-gray-50 dark:bg-gray-800/50 rounded-3xl border border-gray-100 dark:border-gray-800">
-          <div className="w-16 h-16 bg-indigo-500/10 dark:bg-indigo-500/20 rounded-2xl flex items-center justify-center text-indigo-600 shrink-0">
-            <MapPin size={32} />
-          </div>
-          <div className="flex-1">
-            <p className="text-xl font-black text-gray-900 dark:text-white">Global Tech Solutions HQ</p>
-            <p className="text-gray-500 dark:text-gray-400 font-medium mt-1">123 Business Enclave, North Zone</p>
-            <div className="mt-6 flex space-x-3">
-              <button className="px-6 py-3 bg-indigo-600 text-white rounded-2xl text-sm font-black shadow-lg shadow-indigo-600/20 hover:scale-105 transition-all">Get Directions</button>
-              <button className="px-6 py-3 bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 rounded-2xl text-sm font-black hover:bg-gray-50 dark:hover:bg-gray-700 transition-all">View Details</button>
-            </div>
-          </div>
-        </div>
+      <p className="text-[11px] font-black text-gray-500 uppercase tracking-[0.15em] leading-none mb-2">{label}</p>
+      <div className="px-3 py-1 bg-gray-100 rounded-lg border border-gray-200/50">
+        <p className="text-xs font-black text-gray-800 tabular-nums">{current}<span className="text-gray-400 mx-0.5">/</span>{target}</p>
       </div>
     </div>
   );
 };
 
+
+/**
+ * RevenueCard Component
+ * Displays a weekly revenue visualization inspired by the Orders page.
+ */
+const RevenueCard = () => {
+  const data = {
+    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+    datasets: [
+      {
+        label: 'Revenue',
+        data: [12000, 19000, 15000, 25000, 22000, 30000, 28000],
+        borderColor: '#10b981',
+        backgroundColor: (context) => {
+          const chart = context.chart;
+          const { ctx, chartArea } = chart;
+          if (!chartArea) return null;
+          const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+          gradient.addColorStop(0, 'rgba(16, 185, 129, 0)');
+          gradient.addColorStop(1, 'rgba(16, 185, 129, 0.1)');
+          return gradient;
+        },
+        fill: true,
+        tension: 0.5,
+        pointRadius: 4,
+        pointBackgroundColor: '#10b981',
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
+        pointHoverRadius: 6,
+        borderWidth: 4,
+      },
+    ],
+  };
+
+  const options = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: '#fff',
+        titleColor: '#1e293b',
+        bodyColor: '#1e293b',
+        titleFont: { size: 12, weight: 'bold' },
+        bodyFont: { size: 12 },
+        padding: 10,
+        borderRadius: 8,
+        displayColors: false,
+        borderColor: '#e2e8f0',
+        borderWidth: 1
+      },
+    },
+    scales: {
+      x: { display: false },
+      y: { display: false },
+    },
+  };
+
+  return (
+    <Link
+      to="/employee/orders"
+      className="w-full max-w-[320px] aspect-square bg-white dark:bg-slate-900 text-gray-900 dark:text-white p-7 rounded-[3rem] shadow-xl relative overflow-hidden group transition-all duration-700 border border-gray-100 dark:border-slate-800 hover:border-emerald-500/30 block hover:-translate-y-1 active:scale-[0.98]"
+    >
+      {/* Background Pattern */}
+      <div className="absolute inset-0 opacity-[0.05] pointer-events-none" style={{ backgroundImage: 'radial-gradient(#000 1px, transparent 1px)', backgroundSize: '16px 16px' }} />
+      <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-[60px] -mr-20 -mt-20 pointer-events-none group-hover:scale-125 transition-transform duration-1000" />
+
+      <div className="flex flex-col h-full justify-between items-center relative z-10 text-center">
+        <div className="space-y-1.5">
+          <div className="inline-flex p-3 bg-emerald-50 rounded-2xl mb-1 text-emerald-600 shadow-sm border border-emerald-100">
+            <IndianRupee size={24} />
+          </div>
+          <h3 className="text-2xl font-black tracking-tight leading-none group-hover:text-emerald-600 transition-colors">Revenue</h3>
+          <p className="text-xs text-gray-400 font-bold uppercase tracking-[0.25em]">Weekly Growth</p>
+        </div>
+
+        <div className="w-full h-28 my-2 group-hover:scale-105 transition-transform duration-700">
+          <Line data={data} options={options} />
+        </div>
+
+        <div className="space-y-1">
+          <p className="text-3xl font-black text-slate-800">₹84,200</p>
+          <div className="flex items-center justify-center gap-1.5 text-emerald-600 text-[10px] font-black uppercase tracking-widest bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity">
+            View Analytics
+          </div>
+        </div>
+      </div>
+    </Link>
+  );
+};
+
+/**
+ * CapabilitiesCard Component
+ * Displays a radar chart of the employee's "Capabilities and Power".
+ */
+const CapabilitiesCard = () => {
+  const data = {
+    labels: ['Efficiency', 'Reliability', 'Speed', 'Accuracy', 'Engagement'],
+    datasets: [
+      {
+        label: 'Capabilities',
+        data: [85, 90, 75, 95, 80],
+        backgroundColor: 'rgba(99, 102, 241, 0.2)',
+        borderColor: '#6366f1',
+        borderWidth: 3,
+        pointBackgroundColor: '#6366f1',
+        pointBorderColor: '#fff',
+        pointHoverBackgroundColor: '#fff',
+        pointHoverBorderColor: '#6366f1'
+      },
+    ],
+  };
+
+  const options = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: '#fff',
+        titleColor: '#1e293b',
+        bodyColor: '#1e293b',
+        borderColor: '#e2e8f0',
+        borderWidth: 1,
+        padding: 10,
+        displayColors: false
+      }
+    },
+    scales: {
+      r: {
+        angleLines: { color: '#f1f5f9' },
+        grid: { color: '#f1f5f9' },
+        pointLabels: {
+          color: '#64748b',
+          font: { size: 10, weight: 'bold', family: 'Inter' }
+        },
+        ticks: { display: false },
+        suggestedMin: 0,
+        suggestedMax: 100
+      }
+    }
+  };
+
+  return (
+    <div className="w-full max-w-[320px] aspect-square bg-white dark:bg-slate-900 text-gray-900 dark:text-white p-7 rounded-[3rem] shadow-xl relative overflow-hidden group transition-all duration-700 border border-gray-100 dark:border-slate-800 hover:border-indigo-500/30">
+      {/* Background Pattern */}
+      <div className="absolute inset-0 opacity-[0.05] pointer-events-none" style={{ backgroundImage: 'radial-gradient(#000 1px, transparent 1px)', backgroundSize: '16px 16px' }} />
+      <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/5 rounded-full blur-[60px] -mr-20 -mt-20 pointer-events-none group-hover:scale-125 transition-transform duration-1000" />
+
+      <div className="flex flex-col h-full justify-between items-center relative z-10 text-center">
+        <div className="space-y-1">
+          <div className="inline-flex p-3 bg-indigo-50 rounded-2xl mb-1 text-indigo-600 shadow-sm border border-indigo-100">
+            <TrendingUp size={24} />
+          </div>
+          <h3 className="text-2xl font-black tracking-tight leading-none group-hover:text-indigo-600 transition-colors">Field Mastery</h3>
+          <p className="text-xs text-gray-400 font-bold uppercase tracking-[0.25em]">Capabilities</p>
+        </div>
+
+        <div className="w-full h-36 my-1 group-hover:scale-105 transition-transform duration-700">
+          <Radar data={data} options={options} />
+        </div>
+
+        <div className="w-12 h-1 bg-indigo-100 rounded-full" />
+      </div>
+    </div>
+  );
+};
+
+
+/**
+ * ActivityItem Component
+ * Renders a sophisticated card for each entry in the Recent Activity timeline.
+ */
+const ActivityItem = ({ activity, isLast }) => (
+  <div className="flex gap-6 relative group/item">
+    {/* Refined Timeline Connector */}
+    {!isLast && (
+      <div className="absolute left-[23px] top-[50px] bottom-[-30px] w-px bg-gradient-to-b from-indigo-200 via-indigo-100 to-transparent dark:from-indigo-900 dark:via-indigo-950 dark:to-transparent opacity-50 group-hover/item:opacity-100 transition-opacity duration-700" />
+    )}
+
+    {/* Floating Icon with Ring Glow */}
+    <div className="relative">
+      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 z-10 transition-all duration-700 group-hover/item:scale-110 group-hover/item:rotate-6 relative shadow-lg ${activity.type === 'success' ? 'bg-emerald-50 text-emerald-600 shadow-emerald-500/10' :
+        activity.type === 'info' ? 'bg-blue-50 text-blue-600 shadow-blue-500/10' :
+          'bg-slate-50 text-slate-600 shadow-slate-500/10'
+        }`}>
+        {activity.type === 'success' ? <CheckCircle2 size={22} /> :
+          activity.type === 'info' ? <ShoppingBag size={22} /> :
+            <Activity size={22} />}
+
+        {/* Pulsing ring for the icon when hovered */}
+        <div className={`absolute inset-0 rounded-2xl animate-pulse opacity-0 group-hover/item:opacity-20 transition-opacity duration-700 ${activity.type === 'success' ? 'bg-emerald-400' :
+          activity.type === 'info' ? 'bg-blue-400' : 'bg-slate-400'
+          }`} />
+      </div>
+    </div>
+
+    {/* Activity Content Card */}
+    <div className="flex-1 bg-white/50 dark:bg-gray-800/30 p-4 rounded-2xl border border-gray-100 dark:border-gray-800/50 hover:bg-white dark:hover:bg-gray-800 transition-all duration-500 hover:shadow-xl hover:-translate-y-1 group/content">
+      <div className="flex justify-between items-start mb-1.5">
+        <h4 className="text-[15px] font-black text-gray-900 dark:text-white group-hover/content:text-indigo-600 dark:group-hover/content:text-indigo-400 transition-colors">
+          {activity.title}
+        </h4>
+        <div className="flex items-center space-x-1.5 opacity-60 group-hover/content:opacity-100 transition-opacity">
+          <Clock size={10} className="text-gray-400" />
+          <span className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">
+            {activity.time}
+          </span>
+        </div>
+      </div>
+      <p className="text-xs font-bold text-gray-500 dark:text-gray-400 leading-relaxed uppercase tracking-wider">
+        {activity.desc}
+      </p>
+    </div>
+  </div>
+);
+
+// =============================================================================
+// MAIN COMPONENT: EmployeeDashboard
+// =============================================================================
+
+const EmployeeDashboard = () => {
+  // --- State Hooks ---
+  const [isOnDuty, setIsOnDuty] = useState(false);
+
+  // --- Effects ---
+
+  // --- Utilities ---
+
+  // --- Mock Data ---
+  const stats = [
+    { label: "Visits", value: '12', color: 'from-blue-500 to-cyan-400' },
+    { label: "Active", value: '0h', color: 'from-emerald-500 to-teal-400' },
+    { label: "Tasks", value: '04', trend: '2 High Priority', color: 'from-purple-500 to-indigo-400' }
+  ];
+
+
+  const recentActivities = [
+    { title: 'Visit Completed', desc: 'Global Tech HQ', time: '10 mins ago', type: 'success' },
+    { title: 'Order Placed', desc: '#ORD-7829', time: '1 hour ago', type: 'info' },
+    { title: 'Started Shift', desc: 'Location verified', time: '6.5 hours ago', type: 'default' },
+  ];
+
+
+  return (
+    <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-10 px-4 md:px-0">
+
+      {/* 1. Header Section: Greeting & Profile/Shift Control */}
+      <header className="relative overflow-hidden rounded-[2rem] p-6 md:p-10 shadow-xl bg-gradient-to-br from-slate-700 via-slate-800 to-slate-900 shadow-slate-900/40 transition-all duration-700">
+
+        <div className="relative z-10 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+          {/* Greeting Text */}
+          <div className="space-y-2">
+            <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/20 mb-1">
+              <Calendar size={12} className="text-white/80" />
+              <span className="text-xs font-black text-white/90 tracking-wide uppercase">
+                Saturday, Mar 14
+              </span>
+            </div>
+            <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight leading-tight">
+              Good Afternoon,<br className="hidden md:block" />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-200 to-emerald-200 drop-shadow-sm">Person</span>
+            </h1>
+            <p className="flex items-center text-indigo-100/90 font-medium text-base md:text-lg mt-2">
+              Senior Field Executive
+            </p>
+          </div>
+
+          {/* Header Controls (Stats Grid with Integrated Shift Toggle) */}
+          <div className="flex flex-col items-end gap-6 w-full lg:w-auto">
+            <div className="grid grid-cols-3 gap-4 w-full sm:w-auto">
+              {stats.map((stat, idx) => (
+                <div key={idx} className="flex flex-col items-center justify-center p-4 md:p-6 bg-white/10 backdrop-blur-xl rounded-[2rem] border border-white/10 hover:bg-white/20 transition-all duration-300 min-w-[120px] md:min-w-[160px] shadow-lg group relative overflow-hidden">
+                  <span className="text-[11px] font-black text-white/40 uppercase tracking-[0.2em] mb-2 group-hover:text-white/60 transition-colors">{stat.label}</span>
+                  <div className="flex flex-col items-center">
+                    <span className="text-3xl md:text-4xl font-black text-white mb-1">{stat.value}</span>
+                    {stat.trend && (
+                      <span className="text-[9px] font-black text-indigo-300 uppercase tracking-wider opacity-80">{stat.trend}</span>
+                    )}
+                  </div>
+
+                  {/* Integrated Toggle for "Active" (Shift Control) */}
+                  {stat.label === "Active" && (
+                    <div className="mt-4 flex flex-col items-center space-y-3 pt-4 border-t border-white/10 w-full animate-in fade-in slide-in-from-top-2 duration-500">
+                      <div className="flex flex-col items-center">
+                        <span className={`text-[10px] font-black uppercase tracking-widest leading-none mb-1 ${isOnDuty ? 'text-green-300 shadow-green-500/50' : 'text-slate-400'}`}>
+                          {isOnDuty ? 'On Duty' : 'Off Duty'}
+                        </span>
+                        {isOnDuty && (
+                          <div className="absolute top-2 right-2 flex h-2 w-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                          </div>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => setIsOnDuty(!isOnDuty)}
+                        className={`relative inline-flex h-7 w-12 items-center rounded-full transition-all duration-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 scale-90 ${isOnDuty ? 'bg-gradient-to-r from-green-500 to-emerald-500' : 'bg-slate-700'}`}
+                        role="switch"
+                        aria-checked={isOnDuty}
+                      >
+                        <span className="sr-only">Toggle shift</span>
+                        <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-xl transition-all duration-500 ${isOnDuty ? 'translate-x-[1.3rem]' : 'translate-x-1'}`} />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* 2. Metrics Row: Revenue, Performance, and Capabilities Cards */}
+      <section className="flex flex-col lg:flex-row justify-end items-center gap-6 md:gap-8">
+        <RevenueCard />
+        <CapabilitiesCard />
+        <Link
+          to="/employee/tasks"
+          className="w-full max-w-[320px] aspect-square bg-white dark:bg-slate-900 text-gray-900 dark:text-white p-7 rounded-[3rem] shadow-xl relative overflow-hidden group transition-all duration-700 border border-gray-100 dark:border-slate-800 hover:border-indigo-500/30 block hover:-translate-y-1 active:scale-[0.98]"
+        >
+          {/* Background Pattern */}
+          <div className="absolute inset-0 opacity-[0.05] pointer-events-none" style={{ backgroundImage: 'radial-gradient(#000 1px, transparent 1px)', backgroundSize: '16px 16px' }} />
+          <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/5 rounded-full blur-[60px] -mr-20 -mt-20 pointer-events-none group-hover:scale-125 transition-transform duration-1000" />
+
+          <div className="flex flex-col h-full justify-between items-center relative z-10 text-center">
+            <div className="space-y-1.5">
+              <div className="inline-flex p-3 bg-indigo-50 rounded-2xl mb-1 text-indigo-600 shadow-sm border border-indigo-100">
+                <Activity size={24} />
+              </div>
+              <h3 className="text-2xl font-black tracking-tight leading-none group-hover:text-indigo-600 transition-colors">Performance</h3>
+              <p className="text-xs text-gray-400 font-bold uppercase tracking-[0.25em]">Daily Overview</p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-6 w-full px-2">
+              <ProgressRing label="Visits" current={12} target={15} color="text-blue-500" />
+              <ProgressRing label="Tasks" current={8} target={10} color="text-emerald-500" />
+            </div>
+
+            <div className="mt-3 w-16 h-1 bg-gray-100 rounded-full" />
+          </div>
+        </Link>
+      </section>
+
+      {/* 3. Operations Row: Next Target and Activity Timeline */}
+      <section className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12 items-start">
+        {/* Next Target Destination Card */}
+        <div className="relative group">
+          <Link
+            to="/employee/tasks"
+            className={`${UI_TOKENS.cardBase} p-8 md:p-10 rounded-[3rem] shadow-2xl block transition-all duration-700 hover:shadow-indigo-500/10 hover:-translate-y-1 active:scale-[0.98] outline-none group-hover:border-indigo-500/30 overflow-hidden`}
+          >
+            {/* Soft background accents */}
+            <div className="absolute top-0 right-0 w-80 h-80 bg-indigo-50/50 dark:bg-indigo-900/10 rounded-full blur-[80px] -mr-32 -mt-32 pointer-events-none transition-transform duration-1000 group-hover:scale-110" />
+            <div className="absolute bottom-0 left-0 w-64 h-64 bg-emerald-50/30 dark:bg-emerald-900/5 rounded-full blur-[60px] -ml-20 -mb-20 pointer-events-none" />
+
+            <div className="flex justify-between items-center mb-10 relative z-10">
+              <h2 className={UI_TOKENS.sectionTitle}>
+                <div className="p-3 bg-indigo-50 dark:bg-indigo-500/10 rounded-2xl mr-4 text-indigo-600 dark:text-indigo-400 shadow-sm border border-indigo-100/50 dark:border-indigo-500/10">
+                  <Navigation2 size={24} />
+                </div>
+                <span className="text-2xl tracking-tighter">Next Target</span>
+              </h2>
+              <div className="inline-flex items-center px-4 py-1.5 bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 text-[10px] font-black uppercase tracking-[0.2em] rounded-full border border-rose-100 dark:border-rose-500/20 shadow-sm">
+                Critical priority
+              </div>
+            </div>
+
+            <div className="relative z-10 space-y-8">
+              {/* Target Address and Stylized Mini-Map */}
+              <div className="flex flex-col md:flex-row gap-8 items-stretch">
+                {/* Address Details */}
+                <div className="flex-1 space-y-6">
+                  <div className="space-y-2">
+                    <h3 className="text-3xl font-black text-gray-900 dark:text-white leading-none tracking-tight group-hover:text-indigo-600 transition-colors">
+                      Global Tech Solutions HQ
+                    </h3>
+                    <div className="flex items-center text-gray-500 dark:text-gray-400">
+                      <MapIcon size={16} className="mr-2 text-indigo-500 opacity-70" />
+                      <span className="text-sm font-bold uppercase tracking-widest opacity-80">Sector 4, North Zone</span>
+                    </div>
+                  </div>
+
+                  {/* Dispatch Context */}
+                  <div className="flex items-center gap-6 py-4 border-y border-gray-100 dark:border-gray-800/50">
+                    <div className="flex flex-col">
+                      <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Travel</span>
+                      <span className="text-lg font-black text-slate-800 dark:text-white">18 mins</span>
+                    </div>
+                    <div className="w-px h-8 bg-gray-100 dark:bg-gray-800" />
+                    <div className="flex flex-col">
+                      <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Distance</span>
+                      <span className="text-lg font-black text-slate-800 dark:text-white">4.2 km</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Stylized Mini-Map SVG */}
+                <div className="w-full md:w-48 h-48 bg-slate-50 dark:bg-indigo-950/20 rounded-[2rem] border-2 border-white dark:border-gray-800 shadow-xl overflow-hidden relative">
+                  <svg className="absolute inset-0 w-full h-full text-indigo-200 dark:text-indigo-900/40" viewBox="0 0 100 100" fill="none">
+                    <path d="M0 20 H100 M0 50 H100 M0 80 H100 M20 0 V100 M50 0 V100 M80 0 V100" stroke="currentColor" strokeWidth="0.5" />
+                    <circle cx="50" cy="50" r="30" stroke="currentColor" strokeWidth="0.5" strokeDasharray="2 4" />
+                    <path d="M20 20 L80 80 M80 20 L20 80" stroke="currentColor" strokeWidth="0.2" />
+                    <circle cx="50" cy="50" r="4" fill="#6366f1" className="animate-pulse" />
+                    <path d="M50 50 L75 30" stroke="#6366f1" strokeWidth="2" strokeLinecap="round" strokeDasharray="1 4" />
+                  </svg>
+                  <div className="absolute bottom-3 left-3 right-3 bg-white/90 dark:bg-gray-900/90 backdrop-blur-md py-1.5 px-3 rounded-xl border border-white/50 dark:border-gray-800 shadow-sm">
+                    <p className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest text-center">Tap to View</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Link>
+        </div>
+
+        {/* Recent Activity Feed Card */}
+        <div className={`${UI_TOKENS.cardBase} p-8 md:p-10 rounded-[3rem] shadow-2xl h-full`}>
+          <div className="absolute top-0 right-0 w-80 h-80 bg-indigo-50/50 dark:bg-indigo-900/10 rounded-full blur-[80px] -mr-32 -mt-32 pointer-events-none group-hover:scale-110 transition-transform duration-1000" />
+
+          <div className="flex justify-between items-center mb-10 relative z-10">
+            <h3 className={UI_TOKENS.sectionTitle}>
+              <div className="p-3 bg-indigo-50 dark:bg-indigo-500/10 rounded-2xl mr-4 text-indigo-500 shadow-sm border border-indigo-100/50 dark:border-indigo-500/10">
+                <Clock size={24} />
+              </div>
+              <span className="text-2xl tracking-tighter">Operational Log</span>
+            </h3>
+            <Link to="/employee/activity" className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 flex items-center group/link transition-all border-b-2 border-transparent hover:border-indigo-600/30 pb-0.5">
+              History
+              <ChevronRight size={14} className="ml-1.5 group-hover/link:translate-x-1 transition-transform" />
+            </Link>
+          </div>
+
+          {/* Timeline List */}
+          <div className="space-y-8 relative z-10 px-1">
+            {recentActivities.map((activity, i) => (
+              <ActivityItem
+                key={i}
+                activity={activity}
+                isLast={i === recentActivities.length - 1}
+              />
+            ))}
+          </div>
+
+          {/* Mini Insights Footer */}
+          <div className="mt-12 pt-8 border-t border-gray-100 dark:border-gray-800/50 flex items-center justify-between opacity-60">
+            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Auto-updating live</p>
+            <div className="flex items-center gap-2">
+              <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
+              <span className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest">Active Intel</span>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+};
+
 export default EmployeeDashboard;
+
+

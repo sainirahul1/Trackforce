@@ -17,9 +17,7 @@ import EmployeeDashboard from '../pages/employee/Dashboard';
 import EmployeeProfile from '../pages/employee/Profile';
 import EmployeeVisits from '../pages/employee/Visits';
 import EmployeeOrders from '../pages/employee/Orders';
-import UploadProof from '../pages/employee/UploadProof';
 import EmployeeActivity from '../pages/employee/Activity';
-import EmployeeNotifications from '../pages/employee/Notifications';
 import EmployeeTasks from '../pages/employee/Tasks';
 import ManagerIssues from '../pages/manager/Issues';
 import TenantIssues from '../pages/tenant/Issues';
@@ -66,9 +64,7 @@ const AppRouter = () => (
       <Route path="profile" element={<EmployeeProfile />} />
       <Route path="visits" element={<EmployeeVisits />} />
       <Route path="orders" element={<EmployeeOrders />} />
-      <Route path="upload-proof" element={<UploadProof />} />
       <Route path="activity" element={<EmployeeActivity />} />
-      <Route path="notifications" element={<EmployeeNotifications />} />
       <Route path="tasks" element={<EmployeeTasks />} />
       <Route index element={<Navigate to="dashboard" replace />} />
     </Route>

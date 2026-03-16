@@ -23,12 +23,11 @@ dist-ssr
 *.sln
 *.sw?
 
-# Environment
+# Environment variables
 .env
+.env.test
+.env.production
+.env.local
 .env.development.local
 .env.test.local
 .env.production.local
-.env.local
-
-# Vite
-*.timestamp-*
