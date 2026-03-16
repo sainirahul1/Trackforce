@@ -7,53 +7,17 @@ import {
   TrendingUp,     // Icon for growth indicator
   PlusCircle,     // Icon for create order button
   Search,         // Icon for search input
-  Trash2,         // Icon for delete action
   Eye,           // Icon for view action
   Edit,           // Icon for edit action
-  Calendar,       // Icon for date filters
-  Moon,          // Icon for dark mode toggle
-  Sun,            // Icon for light mode toggle
-  BarChart,       // Icon for sales by store
-  LineChart,      // Icon for weekly/monthly revenue
-  PieChart,       // Icon for orders by status
-  Store,          // Icon for top stores
-  UserCheck       // Icon for sales executive
+  Layers,         // Icon for 'All' filter
+  Clock,          // Icon for 'Today' filter
+  CalendarDays    // Icon for 'Weekly' filter
 } from "lucide-react";
 // Import theme context for global dark mode
 import { useTheme } from "../../context/ThemeContext";
 
-// Import Chart.js components for data visualization
-import {
-  Chart as ChartJS,    // Main Chart.js library
-  CategoryScale,       // Scale for categorical data
-  LinearScale,         // Scale for numerical data
-  BarElement,          // Bar chart element
-  LineElement,         // Line chart element
-  PointElement,        // Point element for line charts
-  Tooltip,             // Chart tooltips
-  Legend              // Chart legends
-} from "chart.js";
-
-// Import React Chart.js components
-import { Bar, Line } from "react-chartjs-2";
-
-// Register Chart.js components globally
-ChartJS.register(
-  CategoryScale,       // Register category scale
-  LinearScale,         // Register linear scale
-  BarElement,          // Register bar element
-  LineElement,         // Register line element
-  PointElement,        // Register point element
-  Tooltip,             // Register tooltip
-  Legend              // Register legend
-);
-
 // Main Employee Orders Component
 const EmployeeOrders = () => {
-
-  // Set target revenue goal
-  const target = 350000;
-
   // Use global theme context
   const { isDarkMode, toggleTheme } = useTheme();
 
@@ -61,8 +25,7 @@ const EmployeeOrders = () => {
   const [search,setSearch] = useState("");                    // Search query state
   const [showModal,setShowModal] = useState(false);           // Modal visibility state
   const [success,setSuccess] = useState(false);              // Success message state
-  const [activityFilter,setActivityFilter] = useState("all"); // Activity filter state
-  const [activeTab,setActiveTab] = useState("salesByStore"); // Active tab state
+  const [activityFilter,setActivityFilter] = useState("All"); // Activity filter state
   const [lastAction,setLastAction] = useState("");         // Track last action (create/update)
   const [validationError,setValidationError] = useState(false); // Validation error state
   const [selectedOrder,setSelectedOrder] = useState(null);   // Selected order for viewing
@@ -73,7 +36,6 @@ const EmployeeOrders = () => {
     store:"",      // Store name field
     items:"",       // Number of items field
     value:"",       // Order value field
-    salesExecutive:"", // Sales Executive/Employee field
     storeLocation:"", // Store Location field
     orderStatus:"Pending", // Order Status field
     paymentStatus:"Pending", // Payment Status field
@@ -85,7 +47,8 @@ const EmployeeOrders = () => {
     notes:"" // Notes field
   });
 
-  // Auto-navigation effect - always running
+  // Auto-navigation effect removed as per user request
+  /*
   useEffect(() => {
     const interval = setInterval(() => {
       setActiveTab(prevTab => {
@@ -98,24 +61,20 @@ const EmployeeOrders = () => {
     
     return () => clearInterval(interval);
   }, []);
+  */
 
   // Initial orders data with sample orders
   const [orders,setOrders] = useState([
-    { id:"ORD-892", store:"Reliance Fresh", items:12, value:14200, status:"Confirmed", date:"2024-03-13" },
-    { id:"ORD-891", store:"Global Mart", items:5, value:6800, status:"Pending", date:"2024-03-13" },
-    { id:"ORD-890", store:"Daily Needs", items:23, value:32500, status:"Confirmed", date:"2024-03-12" },
-    { id:"ORD-889", store:"Super Market", items:8, value:9200, status:"Confirmed", date:"2024-03-11" },
-    { id:"ORD-888", store:"City Store", items:15, value:18900, status:"Pending", date:"2024-03-10" }
+    { id:"ORD-892", store:"Reliance Fresh", items:12, value:14200, status:"Pending", date:"2024-03-13" },
+    { id:"ORD-891", store:"Global Mart", items:5, value:6800, status:"Completed", date:"2024-03-13" },
+    { id:"ORD-890", store:"Daily Needs", items:23, value:32500, status:"Pending", date:"2024-03-12" }
   ]);
 
   // Calculate total sales from all orders
   const totalSales = orders.reduce((a,b)=>a+b.value,0);
-  // Calculate progress percentage towards target
-  const progress = Math.min((totalSales/target)*100,100);
 
   // Function to filter orders based on search and activity filter
   const getFilteredOrders = () => {
-    const today = new Date();
     // Filter orders by search query (store name or order ID)
     const filteredBySearch = orders.filter(
       o =>
@@ -124,33 +83,61 @@ const EmployeeOrders = () => {
     );
 
     // Apply activity filter
-    if (activityFilter === "daily") {
-      return filteredBySearch.filter(o => o.date === today.toISOString().split('T')[0]);
-    } else if (activityFilter === "weekly") {
-      const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
-      return filteredBySearch.filter(o => new Date(o.date) >= weekAgo);
+    if (activityFilter === "All") {
+      return filteredBySearch;
     }
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (activityFilter === "Daily") {
+      return filteredBySearch.filter(o => {
+        const orderDate = new Date(o.date);
+        orderDate.setHours(0, 0, 0, 0);
+        return orderDate.getTime() === today.getTime();
+      });
+    }
+
+    if (activityFilter === "Weekly") {
+      const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+      return filteredBySearch.filter(o => {
+        const orderDate = new Date(o.date);
+        return orderDate >= weekAgo;
+      });
+    }
+
     return filteredBySearch;
+  };
+
+  // Export orders to CSV
+  const exportOrders = () => {
+    const headers = ["Order ID", "Store", "Items", "Value", "Status", "Date"];
+    const csvRows = [
+      headers.join(","),
+      ...filteredOrders.map(o => [
+        o.id,
+        `"${o.store}"`,
+        o.items,
+        o.value,
+        o.status,
+        o.date
+      ].join(","))
+    ];
+    
+    const csvContent = csvRows.join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `orders_export_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   // Get filtered orders for display
   const filteredOrders = getFilteredOrders();
-
-  // Function to toggle order status between Confirmed and Pending
-  const toggleStatus = id => {
-    setOrders(
-      orders.map(o =>
-        o.id===id
-          ? {...o,status:o.status==="Confirmed"?"Pending":"Confirmed"}
-          :o
-      )
-    );
-  };
-
-  // Function to delete an order by ID
-  const deleteOrder = id => {
-    setOrders(orders.filter(o=>o.id!==id));
-  };
 
   // Function to view order details
   const viewOrder = order => {
@@ -165,7 +152,6 @@ const EmployeeOrders = () => {
       store: order.store || "",
       items: order.items?.toString() || "",
       value: order.value?.toString() || "",
-      salesExecutive: order.salesExecutive || "",
       storeLocation: order.storeLocation || "",
       orderStatus: order.orderStatus || order.status || "Pending",
       paymentStatus: order.paymentStatus || "Pending",
@@ -187,7 +173,7 @@ const EmployeeOrders = () => {
     setValidationError(false);
     
     // Validate that all required fields are filled (only check fields that are actually in form)
-    if (!editingOrder.store || !editingOrder.items || !editingOrder.value || !editingOrder.salesExecutive || !editingOrder.paymentMethod) {
+    if (!editingOrder.store || !editingOrder.items || !editingOrder.value || !editingOrder.paymentMethod) {
       console.log('Validation failed');
       setValidationError("Please fill in all required fields");
       setTimeout(() => setValidationError(false), 3000);
@@ -315,181 +301,14 @@ const EmployeeOrders = () => {
     },3000);
   };
 
-  // Dynamic Sales by Store data - calculates total sales per store
-  const getStoreSalesData = () => {
-    const storeSales = {}; // Initialize empty object for store sales
-    orders.forEach(order => {
-      if (storeSales[order.store]) {
-        storeSales[order.store] += order.value; // Add to existing store total
-      } else {
-        storeSales[order.store] = order.value; // Initialize store total
-      }
-    });
-    return storeSales;
-  };
 
-  const storeSalesData = getStoreSalesData();
-  
-  // Bar chart configuration for sales by store
-  const barData = {
-    labels: Object.keys(storeSalesData), // Store names as labels
-    datasets:[
-      {
-        label:"Sales",                    // Dataset label
-        data: Object.values(storeSalesData), // Sales values as data
-        backgroundColor:"#3b82f6"         // Blue color for bars
-      }
-    ]
-  };
 
-  // Dynamic Weekly Revenue data - calculates revenue by day of week
-  const getWeeklyRevenueData = () => {
-    const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-    const today = new Date();
-    const weekData = [0, 0, 0, 0, 0, 0, 0]; // Initialize week data array
-    
-    orders.forEach(order => {
-      const orderDate = new Date(order.date);
-      const dayOfWeek = orderDate.getDay(); // Get day index (0-6)
-      weekData[dayOfWeek] += order.value; // Add order value to corresponding day
-    });
-    
-    return weekData;
-  };
-
-  const weeklyRevenueData = getWeeklyRevenueData();
-  
-  // Line chart configuration for weekly revenue
-  const lineData = {
-    labels:["Sun","Mon","Tue","Wed","Thu","Fri","Sat"], // Day labels
-    datasets:[
-      {
-        label:"Weekly Revenue",    // Dataset label
-        data:weeklyRevenueData,    // Revenue data per day
-        borderColor:"#6366f1",    // Indigo color for line
-        tension:0.4              // Curve tension for smooth line
-      }
-    ]
-  };
-
-  // Orders by Status data
-  const getOrdersByStatusData = () => {
-    const statusData = {};
-    orders.forEach(order => {
-      if (statusData[order.status]) {
-        statusData[order.status] += 1;
-      } else {
-        statusData[order.status] = 1;
-      }
-    });
-    return statusData;
-  };
-
-  const ordersByStatusData = getOrdersByStatusData();
-  
-  // Pie chart configuration for orders by status
-  const pieData = {
-    labels: Object.keys(ordersByStatusData),
-    datasets:[
-      {
-        data: Object.values(ordersByStatusData),
-        backgroundColor: [
-          "#3b82f6", // Blue for Confirmed
-          "#f97316", // Orange for Pending
-          "#10b981", // Green for Completed
-          "#ef4444", // Red for Cancelled
-        ]
-      }
-    ]
-  };
-
-  // Monthly Revenue data
-  const getMonthlyRevenueData = () => {
-    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-    const monthData = new Array(12).fill(0);
-    
-    orders.forEach(order => {
-      const orderDate = new Date(order.date);
-      const month = orderDate.getMonth();
-      monthData[month] += order.value;
-    });
-    
-    return monthData;
-  };
-
-  const monthlyRevenueData = getMonthlyRevenueData();
-  
-  // Area chart configuration for monthly revenue
-  const areaData = {
-    labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
-    datasets:[
-      {
-        label:"Monthly Revenue",
-        data: monthlyRevenueData,
-        backgroundColor: "rgba(99, 102, 241, 0.2)",
-        borderColor: "#6366f1",
-        borderWidth: 2,
-        fill: true,
-        tension: 0.4
-      }
-    ]
-  };
-
-  // Top Stores data
-  const getTopStoresData = () => {
-    const storeSales = getStoreSalesData();
-    const sortedStores = Object.entries(storeSales)
-      .sort(([,a], [,b]) => b - a)
-      .slice(0, 5);
-    
-    return {
-      labels: sortedStores.map(([store]) => store),
-      data: sortedStores.map(([,sales]) => sales)
-    };
-  };
-
-  const topStoresData = getTopStoresData();
-  
-  // Horizontal bar chart for top stores
-  const topStoresChartData = {
-    labels: topStoresData.labels,
-    datasets:[
-      {
-        label:"Top Stores",
-        data: topStoresData.data,
-        backgroundColor: "#10b981"
-      }
-    ]
-  };
-
-  // Sales Executive Performance data
+  /*
+  // Sales Executive Performance data removed as per user request
   const getSalesExecutiveData = () => {
-    const executiveData = {};
-    orders.forEach(order => {
-      if (order.salesExecutive) {
-        if (executiveData[order.salesExecutive]) {
-          executiveData[order.salesExecutive] += order.value;
-        } else {
-          executiveData[order.salesExecutive] = order.value;
-        }
-      }
-    });
-    return executiveData;
+    ...
   };
-
-  const salesExecutiveData = getSalesExecutiveData();
-  
-  // Bar chart for sales executive performance
-  const executiveChartData = {
-    labels: Object.keys(salesExecutiveData),
-    datasets:[
-      {
-        label:"Sales Executive Performance",
-        data: Object.values(salesExecutiveData),
-        backgroundColor: "#f59e0b"
-      }
-    ]
-  };
+  */
 
   // Main render method
   return (
@@ -564,10 +383,10 @@ const EmployeeOrders = () => {
         {/* Revenue Card */}
         <div className={`${isDarkMode ? "bg-[#1e293b]/80 border-slate-700" : "bg-white border-slate-100"} p-5 rounded-3xl shadow-sm border backdrop-blur-xl hover:-translate-y-1 hover:shadow-lg transition-all duration-300 group`}>
           <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-4 ${isDarkMode ? "bg-blue-500/20 text-blue-400" : "bg-blue-100 text-blue-600"} group-hover:scale-110 transition-transform duration-300`}>
-            <ShoppingBag size={24} className="stroke-[2.5]" />
+            <IndianRupee size={24} className="stroke-[2.5]" />
           </div>
           <p className={`text-xs font-bold tracking-wider uppercase mb-1 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
-            Revenue
+            Total Revenue
           </p>
           <h2 className={`text-3xl font-black tracking-tight ${isDarkMode ? "text-white" : "text-slate-800"}`}>
             ₹{totalSales.toLocaleString()}
@@ -587,26 +406,13 @@ const EmployeeOrders = () => {
           </h2>
         </div>
 
-        {/* Today's Orders Card */}
-        <div className={`${isDarkMode ? "bg-[#1e293b]/80 border-slate-700" : "bg-white border-slate-100"} p-5 rounded-3xl shadow-sm border backdrop-blur-xl hover:-translate-y-1 hover:shadow-lg transition-all duration-300 group`}>
-          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-4 ${isDarkMode ? "bg-purple-500/20 text-purple-400" : "bg-purple-100 text-purple-600"} group-hover:scale-110 transition-transform duration-300`}>
-            <Calendar size={24} className="stroke-[2.5]" />
-          </div>
-          <p className={`text-xs font-bold tracking-wider uppercase mb-1 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
-            Today's Orders
-          </p>
-          <h2 className={`text-3xl font-black tracking-tight ${isDarkMode ? "text-white" : "text-slate-800"}`}>
-            {orders.filter(o => o.date === new Date().toISOString().split('T')[0]).length}
-          </h2>
-        </div>
-
         {/* Pending Orders Card */}
         <div className={`${isDarkMode ? "bg-[#1e293b]/80 border-slate-700" : "bg-white border-slate-100"} p-5 rounded-3xl shadow-sm border backdrop-blur-xl hover:-translate-y-1 hover:shadow-lg transition-all duration-300 group`}>
           <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-4 ${isDarkMode ? "bg-orange-500/20 text-orange-400" : "bg-orange-100 text-orange-600"} group-hover:scale-110 transition-transform duration-300`}>
             <ShoppingBag size={24} className="stroke-[2.5]" />
           </div>
           <p className={`text-xs font-bold tracking-wider uppercase mb-1 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
-            Pending Orders
+            Total Pending
           </p>
           <h2 className={`text-3xl font-black tracking-tight ${isDarkMode ? "text-white" : "text-slate-800"}`}>
             {orders.filter(o => o.status === "Pending").length}
@@ -619,232 +425,96 @@ const EmployeeOrders = () => {
             <ShoppingBag size={24} className="stroke-[2.5]" />
           </div>
           <p className={`text-xs font-bold tracking-wider uppercase mb-1 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
-            Completed Orders
+            Total Completed
           </p>
           <h2 className={`text-3xl font-black tracking-tight ${isDarkMode ? "text-white" : "text-slate-800"}`}>
-            {orders.filter(o => o.status === "Confirmed").length}
+            {orders.filter(o => o.status === "Completed").length}
           </h2>
-        </div>
-
-        {/* Average Order Value Card */}
-        <div className={`${isDarkMode ? "bg-[#1e293b]/80 border-slate-700" : "bg-white border-slate-100"} p-5 rounded-3xl shadow-sm border backdrop-blur-xl hover:-translate-y-1 hover:shadow-lg transition-all duration-300 group`}>
-          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-4 ${isDarkMode ? "bg-indigo-500/20 text-indigo-400" : "bg-indigo-100 text-indigo-600"} group-hover:scale-110 transition-transform duration-300`}>
-            <IndianRupee size={24} className="stroke-[2.5]" />
-          </div>
-          <p className={`text-xs font-bold tracking-wider uppercase mb-1 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
-            Average Order Value
-          </p>
-          <h2 className={`text-3xl font-black tracking-tight ${isDarkMode ? "text-white" : "text-slate-800"}`}>
-            ₹{orders.length > 0 ? Math.round(totalSales / orders.length).toLocaleString() : 0}
-          </h2>
-        </div>
-
-        {/* Active Stores Card */}
-        <div className={`${isDarkMode ? "bg-[#1e293b]/80 border-slate-700" : "bg-white border-slate-100"} p-5 rounded-3xl shadow-sm border backdrop-blur-xl hover:-translate-y-1 hover:shadow-lg transition-all duration-300 group`}>
-          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-4 ${isDarkMode ? "bg-pink-500/20 text-pink-400" : "bg-pink-100 text-pink-600"} group-hover:scale-110 transition-transform duration-300`}>
-            <ShoppingBag size={24} className="stroke-[2.5]" />
-          </div>
-          <p className={`text-xs font-bold tracking-wider uppercase mb-1 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
-            Active Stores
-          </p>
-          <h2 className={`text-3xl font-black tracking-tight ${isDarkMode ? "text-white" : "text-slate-800"}`}>
-            {[...new Set(orders.map(o => o.store))].length}
-          </h2>
-        </div>
-
-        {/* Target Progress Card */}
-        <div className={`${isDarkMode ? "bg-[#1e293b]/80 border-slate-700" : "bg-white border-slate-100"} p-5 rounded-3xl shadow-sm border backdrop-blur-xl hover:-translate-y-1 hover:shadow-lg transition-all duration-300 group`}>
-          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-4 ${isDarkMode ? "bg-blue-500/20 text-blue-400" : "bg-blue-100 text-blue-600"} group-hover:scale-110 transition-transform duration-300`}>
-            <TrendingUp size={24} className="stroke-[2.5]" />
-          </div>
-          <p className={`text-xs font-bold tracking-wider uppercase mb-3 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
-            Target Progress
-          </p>
-          <div className="flex flex-col gap-1 w-full">
-            <div className={`w-full bg-slate-200 rounded-full h-2.5 ${isDarkMode ? "bg-slate-700" : ""} overflow-hidden`}>
-              <div 
-                className={`h-2.5 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 relative transition-all duration-1000 ease-out`} 
-                style={{width: `${progress}%`}}
-              >
-                <div className="absolute top-0 bottom-0 left-0 right-0 w-full animate-pulse bg-white/20" style={{ transform: 'skewX(-20deg)' }}></div>
-              </div>
-            </div>
-            <div className="flex justify-between items-center text-xs font-bold mt-1">
-              <span className="text-blue-500">{progress.toFixed(1)}%</span>
-              <span className={isDarkMode ? "text-slate-500" : "text-slate-400"}>Target: ₹{(target/1000).toFixed(0)}k</span>
-            </div>
-          </div>
         </div>
 
       </div>
 
-      {/* Tabbed Charts Section */}
-      <div className={`${isDarkMode ? "bg-[#1e293b]/80 border-slate-700/50" : "bg-white border-slate-100"} rounded-3xl shadow-sm border backdrop-blur-xl p-6 sm:p-8 mb-10 transition-colors duration-300`}>
-        
-        {/* Tab Navigation */}
-        <div className={`flex flex-wrap gap-2 mb-8 pb-4 border-b ${isDarkMode ? "border-slate-700/50" : "border-slate-100"}`}>
-          {[
-            { id: "salesByStore", label: "Sales", icon: <BarChart size={16} /> },
-            { id: "weeklyRevenue", label: "Weekly", icon: <LineChart size={16} /> },
-            { id: "ordersByStatus", label: "Status", icon: <PieChart size={16} /> },
-            { id: "monthlyRevenue", label: "Monthly", icon: <LineChart size={16} /> },
-            { id: "topStores", label: "Top Stores", icon: <Store size={16} /> },
-            { id: "salesExecutive", label: "Executive", icon: <UserCheck size={16} /> }
-          ].map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`px-4 py-2 rounded-xl text-sm font-semibold tracking-wide transition-all duration-300 flex items-center gap-2 ${
-                activeTab === tab.id
-                  ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20 scale-105"
-                  : isDarkMode
-                    ? "bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white"
-                    : "bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-800"
-              }`}
-            >
-              <span>{tab.icon}</span>
-              {tab.label}
-            </button>
-          ))}
-        </div>
 
-        {/* Tab Content */}
-        <div className="min-h-[300px] max-h-[350px] w-full animate-[fadeIn_0.5s_ease-out]">
-          {activeTab === "salesByStore" && (
-            <div className="h-full flex flex-col">
-              <h3 className={`font-extrabold mb-4 text-lg tracking-tight ${isDarkMode ? "text-white" : "text-slate-800"}`}>Sales by Store</h3>
-              <div className="flex-1 min-h-[250px]">
-                <Bar data={barData} options={{ maintainAspectRatio: false }} />
-              </div>
-            </div>
-          )}
-          
-          {activeTab === "weeklyRevenue" && (
-            <div className="h-full flex flex-col">
-              <h3 className={`font-extrabold mb-4 text-lg tracking-tight ${isDarkMode ? "text-white" : "text-slate-800"}`}>Weekly Revenue</h3>
-              <div className="flex-1 min-h-[250px]">
-                <Line data={lineData} options={{ maintainAspectRatio: false }} />
-              </div>
-            </div>
-          )}
-          
-          {activeTab === "ordersByStatus" && (
-            <div className="h-full flex flex-col">
-              <h3 className={`font-extrabold mb-4 text-lg tracking-tight ${isDarkMode ? "text-white" : "text-slate-800"}`}>Orders by Status</h3>
-              <div className="flex-1 min-h-[250px] max-w-sm mx-auto w-full">
-                <Bar data={pieData} options={{ maintainAspectRatio: false }} />
-              </div>
-            </div>
-          )}
-          
-          {activeTab === "monthlyRevenue" && (
-            <div className="h-full flex flex-col">
-              <h3 className={`font-extrabold mb-4 text-lg tracking-tight ${isDarkMode ? "text-white" : "text-slate-800"}`}>Monthly Revenue</h3>
-              <div className="flex-1 min-h-[250px]">
-                <Line data={areaData} options={{ maintainAspectRatio: false }} />
-              </div>
-            </div>
-          )}
-          
-          {activeTab === "topStores" && (
-            <div className="h-full flex flex-col">
-              <h3 className={`font-extrabold mb-4 text-lg tracking-tight ${isDarkMode ? "text-white" : "text-slate-800"}`}>Top Stores</h3>
-              <div className="flex-1 min-h-[250px]">
-                <Bar data={topStoresChartData} options={{ maintainAspectRatio: false }} />
-              </div>
-            </div>
-          )}
-          
-          {activeTab === "salesExecutive" && (
-            <div className="h-full flex flex-col">
-              <h3 className={`font-extrabold mb-4 text-lg tracking-tight ${isDarkMode ? "text-white" : "text-slate-800"}`}>Sales Executive Performance</h3>
-              <div className="flex-1 min-h-[250px]">
-                <Bar data={executiveChartData} options={{ maintainAspectRatio: false }} />
-              </div>
-            </div>
-          )}
-        </div>
-
-      </div>
 
       {/* Orders Table Section */}
       <div className={`${isDarkMode ? "bg-[#1e293b]/80 border-slate-700/50" : "bg-white border-slate-100"} rounded-3xl shadow-sm border backdrop-blur-xl overflow-hidden transition-colors duration-300`}>
         {/* Table Header with Filters and Search */}
-        <div className={`p-6 sm:p-8 flex flex-col lg:flex-row justify-between gap-6 border-b ${isDarkMode ? "border-slate-700/50" : "border-slate-100"}`}>
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
-            <h3 className={`font-black tracking-tight text-xl ${isDarkMode ? "text-white" : "text-slate-800"}`}>
+        <div className={`p-4 sm:p-6 border-b ${isDarkMode ? "border-slate-700/50" : "border-slate-100"}`}>
+          <div className="flex flex-col gap-6">
+            <h3 className={`font-black tracking-tight text-lg ${isDarkMode ? "text-white" : "text-slate-800"}`}>
               Order History
             </h3>
-            {/* Activity Filter Buttons */}
-            <div className={`flex gap-2 p-1.5 rounded-xl ${isDarkMode ? "bg-slate-800/50" : "bg-slate-100"}`}>
-              <button
-                onClick={() => setActivityFilter("all")}
-                className={`px-4 py-2 rounded-lg text-xs font-bold transition-all duration-300 ${
-                  activityFilter === "all"
-                    ? "bg-white shadow-sm text-blue-600 dark:bg-slate-700 dark:text-blue-400"
-                    : isDarkMode 
-                      ? "text-slate-400 hover:text-slate-200"
-                      : "text-slate-500 hover:text-slate-700"
-                }`}
-              >
-                All
-              </button>
-              <button
-                onClick={() => setActivityFilter("weekly")}
-                className={`px-4 py-2 rounded-lg text-xs font-bold transition-all duration-300 flex items-center gap-1.5 ${
-                  activityFilter === "weekly"
-                    ? "bg-white shadow-sm text-blue-600 dark:bg-slate-700 dark:text-blue-400"
-                    : isDarkMode 
-                      ? "text-slate-400 hover:text-slate-200"
-                      : "text-slate-500 hover:text-slate-700"
-                }`}
-              >
-                <Calendar size={14} />
-                Weekly
-              </button>
-              <button
-                onClick={() => setActivityFilter("daily")}
-                className={`px-4 py-2 rounded-lg text-xs font-bold transition-all duration-300 flex items-center gap-1.5 ${
-                  activityFilter === "daily"
-                    ? "bg-white shadow-sm text-blue-600 dark:bg-slate-700 dark:text-blue-400"
-                    : isDarkMode 
-                      ? "text-slate-400 hover:text-slate-200"
-                      : "text-slate-500 hover:text-slate-700"
-                }`}
-              >
-                <Calendar size={14} />
-                Daily
-              </button>
+            
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              {/* Activity Filter Buttons */}
+              <div className="flex items-center gap-3">
+                <span className={`text-[10px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>Filters:</span>
+                <div className={`flex items-center gap-2 p-1 rounded-xl ${isDarkMode ? "bg-slate-800/50" : "bg-slate-100"}`}>
+                  {[
+                    { id: "All", icon: <Layers size={14} /> },
+                    { id: "Weekly", icon: <CalendarDays size={14} /> },
+                    { id: "Daily", icon: <Clock size={14} /> }
+                  ].map(filter => (
+                    <button
+                      key={filter.id}
+                      onClick={() => setActivityFilter(filter.id)}
+                      className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all duration-300 flex items-center gap-2 ${
+                        activityFilter === filter.id
+                          ? "bg-white shadow-sm text-blue-600 dark:bg-slate-700 dark:text-blue-400"
+                          : isDarkMode 
+                            ? "text-slate-400 hover:text-slate-200 hover:bg-slate-700/50"
+                            : "text-slate-500 hover:text-slate-700 hover:bg-white/50"
+                      }`}
+                    >
+                      {filter.icon}
+                      <span>{filter.id}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 flex-1 sm:flex-initial">
+                {/* Search Input */}
+                <div className="relative flex-1 sm:w-64">
+                  <span className={`absolute right-3 top-1/2 -translate-y-1/2 ${isDarkMode ? "text-slate-500" : "text-slate-400"} pointer-events-none text-sm`}>🔍</span>
+                  <input
+                    placeholder="Search Orders"
+                    value={search}
+                    onChange={e=>setSearch(e.target.value)}
+                    className={`w-full pl-4 pr-10 py-1.5 rounded-xl text-xs font-medium transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500/50 ${
+                      isDarkMode 
+                        ? "bg-slate-800/50 text-white placeholder-slate-500 border border-slate-700" 
+                        : "bg-slate-50 text-slate-800 placeholder-slate-400 border border-slate-200 focus:bg-white focus:shadow-sm"
+                    }`}
+                  />
+                </div>
+                {/* Export Button */}
+                <button 
+                  onClick={exportOrders}
+                  className={`flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-bold transition-all duration-300 border ${
+                    isDarkMode 
+                      ? "bg-slate-800/50 border-slate-700 text-slate-300 hover:bg-slate-700 hover:text-white" 
+                      : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-800 shadow-sm"
+                  }`}
+                >
+                  Export ▼
+                </button>
+              </div>
             </div>
-          </div>
-          {/* Search Input */}
-          <div className="relative w-full lg:w-72">
-            <Search className={`absolute left-4 top-1/2 -translate-y-1/2 ${isDarkMode ? "text-slate-500" : "text-slate-400"}`} size={18}/>
-            <input
-              placeholder="Search orders..."
-              value={search}
-              onChange={e=>setSearch(e.target.value)}
-              className={`w-full pl-11 pr-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500/50 ${
-                isDarkMode 
-                  ? "bg-slate-800/50 text-white placeholder-slate-500 border border-slate-700" 
-                  : "bg-slate-50 text-slate-800 placeholder-slate-400 border border-slate-200 focus:bg-white focus:shadow-sm"
-              }`}
-            />
           </div>
         </div>
         {/* Orders Table - Mobile Responsive */}
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[800px] text-sm text-left">
+          <table className="w-full min-w-[700px] text-xs text-left mb-2">
             {/* Table Header */}
-            <thead className={`text-xs uppercase tracking-widest font-bold ${isDarkMode ? "text-slate-400 bg-slate-800/50" : "text-slate-500 bg-slate-50"}`}>
+            <thead className={`text-[10px] uppercase tracking-widest font-bold ${isDarkMode ? "text-slate-400 bg-slate-800/50" : "text-slate-500 bg-slate-50"}`}>
               <tr>
-                <th className="px-6 py-4">Order</th>
-                <th className="px-6 py-4">Store</th>
-                <th className="px-6 py-4">Items</th>
-                <th className="px-6 py-4">Value</th>
-                <th className="px-6 py-4">Sales Executive</th>
-                <th className="px-6 py-4 text-center">Status</th>
-                <th className="px-6 py-4 text-right">Actions</th>
+                <th className="px-4 py-3">Order ID</th>
+                <th className="px-4 py-3">Store</th>
+                <th className="px-4 py-3">Items</th>
+                <th className="px-4 py-3">Value</th>
+                <th className="px-4 py-3 text-center">Status</th>
+                <th className="px-4 py-3 text-right">Actions</th>
               </tr>
             </thead>
             {/* Table Body */}
@@ -852,56 +522,46 @@ const EmployeeOrders = () => {
               {/* Map through filtered orders and render each row */}
               {filteredOrders.map((o, index)=>(
                 <tr key={o.id} className={`border-b last:border-0 transition-colors duration-200 ${isDarkMode ? "border-slate-700/50 hover:bg-slate-800/30" : "border-slate-100 hover:bg-slate-50/80"}`} style={{ animation: `fadeIn 0.3s ease-out ${index * 0.05}s both` }}>
-                  <td className={`px-6 py-4 font-bold ${isDarkMode ? "text-blue-400" : "text-blue-600"}`}>{o.id}</td>
-                  <td className={`px-6 py-4 font-medium ${isDarkMode ? "text-slate-200" : "text-slate-700"}`}>
-                    <div className="flex items-center gap-3">
-                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs ${isDarkMode ? "bg-slate-700 text-slate-300" : "bg-slate-100 text-slate-600"}`}>
+                  <td className={`px-4 py-3 font-bold ${isDarkMode ? "text-blue-400" : "text-blue-600"}`}>{o.id}</td>
+                  <td className={`px-4 py-3 font-medium ${isDarkMode ? "text-slate-200" : "text-slate-700"}`}>
+                    <div className="flex items-center gap-2">
+                      <div className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold text-[10px] ${isDarkMode ? "bg-slate-700 text-slate-300" : "bg-slate-100 text-slate-600"}`}>
                         {o.store.charAt(0)}
                       </div>
                       {o.store}
                     </div>
                   </td>
-                  <td className={`px-6 py-4 font-medium ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>{o.items}</td>
-                  <td className={`px-6 py-4 font-black tracking-tight ${isDarkMode ? "text-white" : "text-slate-800"}`}>₹{o.value.toLocaleString()}</td>
-                  <td className={`px-6 py-4 font-medium ${isDarkMode ? "text-slate-400" : "text-slate-600"}`}>{o.salesExecutive || "N/A"}</td>
-                  <td className="px-6 py-4 text-center">
-                    {/* Status Toggle Button */}
-                    <button
-                      onClick={()=>toggleStatus(o.id)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-bold tracking-wider transition-all duration-300 hover:scale-105 ${
-                        o.status==="Confirmed"
-                          ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shadow-sm"
-                          : "bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20 shadow-sm"
-                      }`}
-                    >
+                  <td className={`px-4 py-3 font-medium ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>{o.items}</td>
+                  <td className={`px-4 py-3 font-black tracking-tight ${isDarkMode ? "text-white" : "text-slate-800"}`}>₹{o.value.toLocaleString()}</td>
+                  <td className="px-4 py-3 text-center">
+                    {/* Status Label */}
+                    <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold tracking-wider ${
+                      o.status === "Completed"
+                        ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
+                        : o.status === "Processing"
+                          ? "bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20"
+                          : "bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20"
+                    }`}>
                       {o.status}
-                    </button>
+                    </span>
                   </td>
-                  <td className="px-6 py-4">
-                    <div className="flex gap-2 justify-end">
+                  <td className="px-4 py-3">
+                    <div className="flex gap-1.5 justify-end">
                       {/* Edit Order Button */}
                       <button 
                         onClick={() => editOrder(o)}
-                        className={`p-2 rounded-lg transition-all duration-200 hover:scale-110 ${isDarkMode ? "bg-slate-800 text-amber-400 hover:bg-amber-400/20" : "bg-slate-100 text-amber-600 hover:bg-amber-100"}`}
+                        className={`p-1.5 rounded-lg transition-all duration-200 hover:scale-110 ${isDarkMode ? "bg-slate-800 text-amber-400 hover:bg-amber-400/20" : "bg-slate-100 text-amber-600 hover:bg-amber-100"}`}
                         title="Edit Order"
                       >
-                        <Edit size={16}/>
+                        <Edit size={14}/>
                       </button>
                       {/* View Order Button */}
                       <button 
                         onClick={() => viewOrder(o)}
-                        className={`p-2 rounded-lg transition-all duration-200 hover:scale-110 ${isDarkMode ? "bg-slate-800 text-blue-400 hover:bg-blue-400/20" : "bg-slate-100 text-blue-600 hover:bg-blue-100"}`}
+                        className={`p-1.5 rounded-lg transition-all duration-200 hover:scale-110 ${isDarkMode ? "bg-slate-800 text-blue-400 hover:bg-blue-400/20" : "bg-slate-100 text-blue-600 hover:bg-blue-100"}`}
                         title="View Order"
                       >
-                        <Eye size={16}/>
-                      </button>
-                      {/* Delete Order Button */}
-                      <button
-                        onClick={()=>deleteOrder(o.id)}
-                        className={`p-2 rounded-lg transition-all duration-200 hover:scale-110 ${isDarkMode ? "bg-slate-800 text-rose-400 hover:bg-rose-400/20" : "bg-slate-100 text-rose-600 hover:bg-rose-100"}`}
-                        title="Delete Order"
-                      >
-                        <Trash2 size={16}/>
+                        <Eye size={14}/>
                       </button>
                     </div>
                   </td>
@@ -933,106 +593,114 @@ const EmployeeOrders = () => {
               </button>
             </div>
             {/* Modal Form */}
-            <div className="space-y-4">
-              <input
-                placeholder="Store Name"
-                value={newOrder.store}
-                onChange={e=>setNewOrder({...newOrder,store:e.target.value})}
-                className={`w-full border-2 p-3.5 rounded-xl font-medium transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-blue-500/20 ${
-                  isDarkMode 
-                    ? "bg-slate-800/50 border-slate-700 focus:border-blue-500 text-white placeholder-slate-500" 
-                    : "bg-slate-50 border-slate-200 focus:border-blue-500 focus:bg-white text-slate-800 placeholder-slate-400"
-                }`}
-              />
-              <input
-                placeholder="Items"
-                type="number"
-                value={newOrder.items}
-                onChange={e=>setNewOrder({...newOrder,items:e.target.value})}
-                className={`w-full border-2 p-3.5 rounded-xl font-medium transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-blue-500/20 ${
-                  isDarkMode 
-                    ? "bg-slate-800/50 border-slate-700 focus:border-blue-500 text-white placeholder-slate-500" 
-                    : "bg-slate-50 border-slate-200 focus:border-blue-500 focus:bg-white text-slate-800 placeholder-slate-400"
-                }`}
-              />
-              <input
-                placeholder="Order Value"
-                type="number"
-                value={newOrder.value}
-                onChange={e=>setNewOrder({...newOrder,value:e.target.value})}
-                className={`w-full border-2 p-3.5 rounded-xl font-medium transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-blue-500/20 ${
-                  isDarkMode 
-                    ? "bg-slate-800/50 border-slate-700 focus:border-blue-500 text-white placeholder-slate-500" 
-                    : "bg-slate-50 border-slate-200 focus:border-blue-500 focus:bg-white text-slate-800 placeholder-slate-400"
-                }`}
-              />
-              <input
-                placeholder="Sales Executive / Employee"
-                value={newOrder.salesExecutive}
-                onChange={e=>setNewOrder({...newOrder,salesExecutive:e.target.value})}
-                className={`w-full border-2 p-3.5 rounded-xl font-medium transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-blue-500/20 ${
-                  isDarkMode 
-                    ? "bg-slate-800/50 border-slate-700 focus:border-blue-500 text-white placeholder-slate-500" 
-                    : "bg-slate-50 border-slate-200 focus:border-blue-500 focus:bg-white text-slate-800 placeholder-slate-400"
-                }`}
-              />
-              <select
-                value={newOrder.paymentMethod}
-                onChange={e=>setNewOrder({...newOrder,paymentMethod:e.target.value})}
-                className={`w-full border-2 p-3.5 rounded-xl font-medium transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-blue-500/20 ${
-                  isDarkMode 
-                    ? "bg-slate-800/50 border-slate-700 focus:border-blue-500 text-white" 
-                    : "bg-slate-50 border-slate-200 focus:border-blue-500 focus:bg-white text-slate-800"
-                }`}
-              >
-                <option value="">Select Payment Method</option>
-                <option value="UPI">UPI</option>
-                <option value="Cash">Cash</option>
-                <option value="Credit Card">Credit Card</option>
-                <option value="Debit Card">Debit Card</option>
-                <option value="Net Banking">Net Banking</option>
-                <option value="Cheque">Cheque</option>
-              </select>
-              <input
-                placeholder="Order Date"
-                type="date"
-                value={newOrder.date}
-                onChange={e=>setNewOrder({...newOrder,date:e.target.value})}
-                className={`w-full border-2 p-3.5 rounded-xl font-medium transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-blue-500/20 ${
-                  isDarkMode 
-                    ? "bg-slate-800/50 border-slate-700 focus:border-blue-500 text-white placeholder-slate-500" 
-                    : "bg-slate-50 border-slate-200 focus:border-blue-500 focus:bg-white text-slate-800 placeholder-slate-400"
-                }`}
-              />
-              <input
-                placeholder="Delivery Date"
-                type="date"
-                value={newOrder.deliveryDate}
-                onChange={e=>setNewOrder({...newOrder,deliveryDate:e.target.value})}
-                className={`w-full border-2 p-3.5 rounded-xl font-medium transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-blue-500/20 ${
-                  isDarkMode 
-                    ? "bg-slate-800/50 border-slate-700 focus:border-blue-500 text-white placeholder-slate-500" 
-                    : "bg-slate-50 border-slate-200 focus:border-blue-500 focus:bg-white text-slate-800 placeholder-slate-400"
-                }`}
-              />
-              <textarea
-                placeholder="Notes"
-                value={newOrder.notes}
-                onChange={e=>setNewOrder({...newOrder,notes:e.target.value})}
-                rows={3}
-                className={`w-full border-2 p-3.5 rounded-xl font-medium transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-blue-500/20 ${
-                  isDarkMode 
-                    ? "bg-slate-800/50 border-slate-700 focus:border-blue-500 text-white placeholder-slate-500" 
-                    : "bg-slate-50 border-slate-200 focus:border-blue-500 focus:bg-white text-slate-800 placeholder-slate-400"
-                }`}
-              />
-              {/* Create Order Button */}
-              <button
-                onClick={createOrder}
-                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-4 rounded-xl shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:-translate-y-0.5 transition-all duration-300 font-bold tracking-wide mt-2"
-              >
-                Create Order
-              </button>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="col-span-2 sm:col-span-1">
+                <input
+                  placeholder="Store Name"
+                  value={newOrder.store}
+                  onChange={e=>setNewOrder({...newOrder,store:e.target.value})}
+                  className={`w-full border-2 p-3.5 rounded-xl font-medium transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-blue-500/20 ${
+                    isDarkMode 
+                      ? "bg-slate-800/50 border-slate-700 focus:border-blue-500 text-white placeholder-slate-500" 
+                      : "bg-slate-50 border-slate-200 focus:border-blue-500 focus:bg-white text-slate-800 placeholder-slate-400"
+                  }`}
+                />
+              </div>
+              <div className="col-span-2 sm:col-span-1">
+                <input
+                  placeholder="Items"
+                  type="number"
+                  value={newOrder.items}
+                  onChange={e=>setNewOrder({...newOrder,items:e.target.value})}
+                  className={`w-full border-2 p-3.5 rounded-xl font-medium transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-blue-500/20 ${
+                    isDarkMode 
+                      ? "bg-slate-800/50 border-slate-700 focus:border-blue-500 text-white placeholder-slate-500" 
+                      : "bg-slate-50 border-slate-200 focus:border-blue-500 focus:bg-white text-slate-800 placeholder-slate-400"
+                  }`}
+                />
+              </div>
+              <div className="col-span-2 sm:col-span-1">
+                <input
+                  placeholder="Order Value"
+                  type="number"
+                  value={newOrder.value}
+                  onChange={e=>setNewOrder({...newOrder,value:e.target.value})}
+                  className={`w-full border-2 p-3.5 rounded-xl font-medium transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-blue-500/20 ${
+                    isDarkMode 
+                      ? "bg-slate-800/50 border-slate-700 focus:border-blue-500 text-white placeholder-slate-500" 
+                      : "bg-slate-50 border-slate-200 focus:border-blue-500 focus:bg-white text-slate-800 placeholder-slate-400"
+                  }`}
+                />
+              </div>
+              <div className="col-span-2 sm:col-span-1">
+                <select
+                  value={newOrder.paymentMethod}
+                  onChange={e=>setNewOrder({...newOrder,paymentMethod:e.target.value})}
+                  className={`w-full border-2 p-3.5 rounded-xl font-medium transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-blue-500/20 ${
+                    isDarkMode 
+                      ? "bg-slate-800/50 border-slate-700 focus:border-blue-500 text-white" 
+                      : "bg-slate-50 border-slate-200 focus:border-blue-500 focus:bg-white text-slate-800"
+                  }`}
+                >
+                  <option value="">Payment Method</option>
+                  <option value="UPI">UPI</option>
+                  <option value="Cash">Cash</option>
+                  <option value="Credit Card">Credit Card</option>
+                  <option value="Debit Card">Debit Card</option>
+                  <option value="Net Banking">Net Banking</option>
+                  <option value="Cheque">Cheque</option>
+                </select>
+              </div>
+              <div className="col-span-2 sm:col-span-1">
+                <label className="text-[10px] uppercase font-bold text-slate-500 ml-1 mb-1 block">Order Date</label>
+                <input
+                  placeholder="Order Date"
+                  type="date"
+                  value={newOrder.date}
+                  onChange={e=>setNewOrder({...newOrder,date:e.target.value})}
+                  className={`w-full border-2 p-3.5 rounded-xl font-medium transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-blue-500/20 ${
+                    isDarkMode 
+                      ? "bg-slate-800/50 border-slate-700 focus:border-blue-500 text-white" 
+                      : "bg-slate-50 border-slate-200 focus:border-blue-500 focus:bg-white text-slate-800"
+                  }`}
+                />
+              </div>
+              <div className="col-span-2 sm:col-span-1">
+                <label className="text-[10px] uppercase font-bold text-slate-500 ml-1 mb-1 block">Delivery Date</label>
+                <input
+                  placeholder="Delivery Date"
+                  type="date"
+                  value={newOrder.deliveryDate}
+                  onChange={e=>setNewOrder({...newOrder,deliveryDate:e.target.value})}
+                  className={`w-full border-2 p-3.5 rounded-xl font-medium transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-blue-500/20 ${
+                    isDarkMode 
+                      ? "bg-slate-800/50 border-slate-700 focus:border-blue-500 text-white" 
+                      : "bg-slate-50 border-slate-200 focus:border-blue-500 focus:bg-white text-slate-800"
+                  }`}
+                />
+              </div>
+              <div className="col-span-2">
+                <textarea
+                  placeholder="Notes"
+                  value={newOrder.notes}
+                  onChange={e=>setNewOrder({...newOrder,notes:e.target.value})}
+                  rows={2}
+                  className={`w-full border-2 p-3.5 rounded-xl font-medium transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-blue-500/20 ${
+                    isDarkMode 
+                      ? "bg-slate-800/50 border-slate-700 focus:border-blue-500 text-white placeholder-slate-500" 
+                      : "bg-slate-50 border-slate-200 focus:border-blue-500 focus:bg-white text-slate-800 placeholder-slate-400"
+                  }`}
+                />
+              </div>
+              <div className="col-span-2">
+                {/* Create Order Button */}
+                <button
+                  onClick={createOrder}
+                  className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-4 rounded-xl shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:-translate-y-0.5 transition-all duration-300 font-bold tracking-wide mt-2"
+                >
+                  Create Order
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -1059,106 +727,114 @@ const EmployeeOrders = () => {
               </button>
             </div>
             {/* Edit Form */}
-            <div className="space-y-4">
-              <input
-                placeholder="Store Name"
-                value={editingOrder.store}
-                onChange={e=>setEditingOrder({...editingOrder,store:e.target.value})}
-                className={`w-full border-2 p-3.5 rounded-xl font-medium transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-blue-500/20 ${
-                  isDarkMode 
-                    ? "bg-slate-800/50 border-slate-700 focus:border-blue-500 text-white placeholder-slate-500" 
-                    : "bg-slate-50 border-slate-200 focus:border-blue-500 focus:bg-white text-slate-800 placeholder-slate-400"
-                }`}
-              />
-              <input
-                placeholder="Items"
-                type="number"
-                value={editingOrder.items}
-                onChange={e=>setEditingOrder({...editingOrder,items:e.target.value})}
-                className={`w-full border-2 p-3.5 rounded-xl font-medium transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-blue-500/20 ${
-                  isDarkMode 
-                    ? "bg-slate-800/50 border-slate-700 focus:border-blue-500 text-white placeholder-slate-500" 
-                    : "bg-slate-50 border-slate-200 focus:border-blue-500 focus:bg-white text-slate-800 placeholder-slate-400"
-                }`}
-              />
-              <input
-                placeholder="Order Value"
-                type="number"
-                value={editingOrder.value}
-                onChange={e=>setEditingOrder({...editingOrder,value:e.target.value})}
-                className={`w-full border-2 p-3.5 rounded-xl font-medium transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-blue-500/20 ${
-                  isDarkMode 
-                    ? "bg-slate-800/50 border-slate-700 focus:border-blue-500 text-white placeholder-slate-500" 
-                    : "bg-slate-50 border-slate-200 focus:border-blue-500 focus:bg-white text-slate-800 placeholder-slate-400"
-                }`}
-              />
-              <input
-                placeholder="Sales Executive / Employee"
-                value={editingOrder.salesExecutive}
-                onChange={e=>setEditingOrder({...editingOrder,salesExecutive:e.target.value})}
-                className={`w-full border-2 p-3.5 rounded-xl font-medium transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-blue-500/20 ${
-                  isDarkMode 
-                    ? "bg-slate-800/50 border-slate-700 focus:border-blue-500 text-white placeholder-slate-500" 
-                    : "bg-slate-50 border-slate-200 focus:border-blue-500 focus:bg-white text-slate-800 placeholder-slate-400"
-                }`}
-              />
-              <select
-                value={editingOrder.paymentMethod}
-                onChange={e=>setEditingOrder({...editingOrder,paymentMethod:e.target.value})}
-                className={`w-full border p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  isDarkMode 
-                    ? "bg-gray-700 border-gray-600 text-white" 
-                    : "bg-white border-gray-300 text-slate-800"
-                }`}
-              >
-                <option value="">Select Payment Method</option>
-                <option value="UPI">UPI</option>
-                <option value="Cash">Cash</option>
-                <option value="Credit Card">Credit Card</option>
-                <option value="Debit Card">Debit Card</option>
-                <option value="Net Banking">Net Banking</option>
-                <option value="Cheque">Cheque</option>
-              </select>
-              <input
-                placeholder="Order Date"
-                type="date"
-                value={editingOrder.date}
-                onChange={e=>setEditingOrder({...editingOrder,date:e.target.value})}
-                className={`w-full border p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  isDarkMode 
-                    ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400" 
-                    : "bg-white border-gray-300 text-slate-800 placeholder-gray-400"
-                }`}
-              />
-              <input
-                placeholder="Delivery Date"
-                type="date"
-                value={editingOrder.deliveryDate}
-                onChange={e=>setEditingOrder({...editingOrder,deliveryDate:e.target.value})}
-                className={`w-full border p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  isDarkMode 
-                    ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400" 
-                    : "bg-white border-gray-300 text-slate-800 placeholder-gray-400"
-                }`}
-              />
-              <textarea
-                placeholder="Notes"
-                value={editingOrder.notes}
-                onChange={e=>setEditingOrder({...editingOrder,notes:e.target.value})}
-                rows={3}
-                className={`w-full border p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  isDarkMode 
-                    ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400" 
-                    : "bg-white border-gray-300 text-slate-800 placeholder-gray-400"
-                }`}
-              />
-              {/* Update Order Button */}
-              <button
-                onClick={updateOrder}
-                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-4 rounded-xl shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:-translate-y-0.5 transition-all duration-300 font-bold tracking-wide mt-2"
-              >
-                Update Order
-              </button>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="col-span-2 sm:col-span-1">
+                <input
+                  placeholder="Store Name"
+                  value={editingOrder.store}
+                  onChange={e=>setEditingOrder({...editingOrder,store:e.target.value})}
+                  className={`w-full border-2 p-3.5 rounded-xl font-medium transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-blue-500/20 ${
+                    isDarkMode 
+                      ? "bg-slate-800/50 border-slate-700 focus:border-blue-500 text-white placeholder-slate-500" 
+                      : "bg-slate-50 border-slate-200 focus:border-blue-500 focus:bg-white text-slate-800 placeholder-slate-400"
+                  }`}
+                />
+              </div>
+              <div className="col-span-2 sm:col-span-1">
+                <input
+                  placeholder="Items"
+                  type="number"
+                  value={editingOrder.items}
+                  onChange={e=>setEditingOrder({...editingOrder,items:e.target.value})}
+                  className={`w-full border-2 p-3.5 rounded-xl font-medium transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-blue-500/20 ${
+                    isDarkMode 
+                      ? "bg-slate-800/50 border-slate-700 focus:border-blue-500 text-white placeholder-slate-500" 
+                      : "bg-slate-50 border-slate-200 focus:border-blue-500 focus:bg-white text-slate-800 placeholder-slate-400"
+                  }`}
+                />
+              </div>
+              <div className="col-span-2 sm:col-span-1">
+                <input
+                  placeholder="Order Value"
+                  type="number"
+                  value={editingOrder.value}
+                  onChange={e=>setEditingOrder({...editingOrder,value:e.target.value})}
+                  className={`w-full border-2 p-3.5 rounded-xl font-medium transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-blue-500/20 ${
+                    isDarkMode 
+                      ? "bg-slate-800/50 border-slate-700 focus:border-blue-500 text-white placeholder-slate-500" 
+                      : "bg-slate-50 border-slate-200 focus:border-blue-500 focus:bg-white text-slate-800 placeholder-slate-400"
+                  }`}
+                />
+              </div>
+              <div className="col-span-2 sm:col-span-1">
+                <select
+                  value={editingOrder.paymentMethod}
+                  onChange={e=>setEditingOrder({...editingOrder,paymentMethod:e.target.value})}
+                  className={`w-full border-2 p-3.5 rounded-xl font-medium transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-blue-500/20 ${
+                    isDarkMode 
+                      ? "bg-slate-800/50 border-slate-700 focus:border-blue-500 text-white" 
+                      : "bg-slate-50 border-slate-200 focus:border-blue-500 focus:bg-white text-slate-800"
+                  }`}
+                >
+                  <option value="">Payment Method</option>
+                  <option value="UPI">UPI</option>
+                  <option value="Cash">Cash</option>
+                  <option value="Credit Card">Credit Card</option>
+                  <option value="Debit Card">Debit Card</option>
+                  <option value="Net Banking">Net Banking</option>
+                  <option value="Cheque">Cheque</option>
+                </select>
+              </div>
+              <div className="col-span-2 sm:col-span-1">
+                <label className="text-[10px] uppercase font-bold text-slate-500 ml-1 mb-1 block">Order Date</label>
+                <input
+                  placeholder="Order Date"
+                  type="date"
+                  value={editingOrder.date}
+                  onChange={e=>setEditingOrder({...editingOrder,date:e.target.value})}
+                  className={`w-full border-2 p-3.5 rounded-xl font-medium transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-blue-500/20 ${
+                    isDarkMode 
+                      ? "bg-slate-800/50 border-slate-700 focus:border-blue-500 text-white" 
+                      : "bg-slate-50 border-slate-200 focus:border-blue-500 focus:bg-white text-slate-800"
+                  }`}
+                />
+              </div>
+              <div className="col-span-2 sm:col-span-1">
+                <label className="text-[10px] uppercase font-bold text-slate-500 ml-1 mb-1 block">Delivery Date</label>
+                <input
+                  placeholder="Delivery Date"
+                  type="date"
+                  value={editingOrder.deliveryDate}
+                  onChange={e=>setEditingOrder({...editingOrder,deliveryDate:e.target.value})}
+                  className={`w-full border-2 p-3.5 rounded-xl font-medium transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-blue-500/20 ${
+                    isDarkMode 
+                      ? "bg-slate-800/50 border-slate-700 focus:border-blue-500 text-white" 
+                      : "bg-slate-50 border-slate-200 focus:border-blue-500 focus:bg-white text-slate-800"
+                  }`}
+                />
+              </div>
+              <div className="col-span-2">
+                <textarea
+                  placeholder="Notes"
+                  value={editingOrder.notes}
+                  onChange={e=>setEditingOrder({...editingOrder,notes:e.target.value})}
+                  rows={2}
+                  className={`w-full border-2 p-3.5 rounded-xl font-medium transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-blue-500/20 ${
+                    isDarkMode 
+                      ? "bg-slate-800/50 border-slate-700 focus:border-blue-500 text-white placeholder-slate-500" 
+                      : "bg-slate-50 border-slate-200 focus:border-blue-500 focus:bg-white text-slate-800 placeholder-slate-400"
+                  }`}
+                />
+              </div>
+              <div className="col-span-2">
+                {/* Update Order Button */}
+                <button
+                  onClick={updateOrder}
+                  className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-4 rounded-xl shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:-translate-y-0.5 transition-all duration-300 font-bold tracking-wide mt-2"
+                >
+                  Update Order
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -1212,11 +888,6 @@ const EmployeeOrders = () => {
                 <div>
                   <p className={`text-xs font-bold uppercase tracking-wider mb-1 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Order Date</p>
                   <p className={`text-sm font-semibold ${isDarkMode ? "text-white" : "text-slate-800"}`}>{selectedOrder.date}</p>
-                </div>
-                {/* Sales Executive */}
-                <div>
-                  <p className={`text-xs font-bold uppercase tracking-wider mb-1 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Sales Exec</p>
-                  <p className={`text-sm font-semibold ${isDarkMode ? "text-white" : "text-slate-800"}`}>{selectedOrder.salesExecutive || "N/A"}</p>
                 </div>
                 {/* Payment Method */}
                 <div>
