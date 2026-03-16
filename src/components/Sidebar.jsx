@@ -26,7 +26,6 @@ const Sidebar = ({ role, user, isCollapsed, onToggle }) => {
       { name: 'My Visits', icon: Map, path: '/employee/visits' },
       { name: 'My Orders', icon: ShoppingBag, path: '/employee/orders' },
       { name: 'Activity', icon: Clock, path: '/employee/activity' },
-      { name: 'Notifications', icon: Bell, path: '/employee/notifications' },
       { name: 'My Profile', icon: Users, path: '/employee/profile' },
     ],
   };
@@ -37,11 +36,11 @@ const Sidebar = ({ role, user, isCollapsed, onToggle }) => {
     <aside className={`${isCollapsed ? 'w-20' : 'w-64'} h-screen bg-white dark:bg-gray-900 border-r border-gray-100 dark:border-gray-800 flex flex-col fixed left-0 top-0 z-30 transition-all duration-300 ease-in-out`}>
       <div className={`p-6 flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} border-b border-gray-50 dark:border-gray-800`}>
         {!isCollapsed && (
-          <div className="flex items-center space-x-3 overflow-hidden animate-in fade-in duration-300">
+          <div className="flex items-center gap-2.5 animate-in fade-in duration-300">
             <div className="w-10 h-10 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-xl rotate-3 shrink-0">
               <ShieldCheck size={24} />
             </div>
-            <span className="text-2xl font-black italic tracking-tighter text-gray-900 dark:text-white truncate">TrackForce</span>
+            <span className="text-[22px] font-black italic tracking-tighter text-gray-900 dark:text-white pt-0.5">TrackForce</span>
           </div>
         )}
         <button 

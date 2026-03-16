@@ -499,7 +499,7 @@ const EmployeeOrders = () => {
       
       {/* Success Message - shows when order is created or updated successfully */}
       {success && (
-        <div className="fixed top-6 right-6 bg-emerald-500/90 backdrop-blur-md text-white px-6 py-4 rounded-xl shadow-2xl z-50 animate-bounce flex items-center gap-3 border border-emerald-400/20">
+        <div className="fixed top-6 right-6 bg-emerald-500/90 backdrop-blur-md text-white px-6 py-4 rounded-xl shadow-2xl z-[120] animate-bounce flex items-center gap-3 border border-emerald-400/20">
           <div className="bg-white/20 p-1.5 rounded-full"><TrendingUp size={16} /></div>
           <span className="font-medium">{lastAction === "update" ? "Order Updated Successfully" : "Order Created Successfully"}</span>
         </div>
@@ -507,7 +507,7 @@ const EmployeeOrders = () => {
 
       {/* Validation Error Message - shows when validation fails */}
       {validationError && (
-        <div className="fixed top-6 right-6 bg-rose-500/90 backdrop-blur-md text-white px-6 py-4 rounded-xl shadow-2xl z-50 animate-bounce flex items-center gap-3 border border-rose-400/20">
+        <div className="fixed top-6 right-6 bg-rose-500/90 backdrop-blur-md text-white px-6 py-4 rounded-xl shadow-2xl z-[120] animate-bounce flex items-center gap-3 border border-rose-400/20">
           <span className="text-xl">⚠️</span>
           <span className="font-medium">{validationError}</span>
         </div>
@@ -914,7 +914,7 @@ const EmployeeOrders = () => {
 
       {/* Create Order Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 sm:p-0 animate-[fadeIn_0.2s_ease-out]">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[120] p-4 sm:p-0 animate-[fadeIn_0.2s_ease-out]">
           <div className={`${isDarkMode ? "bg-[#1e293b] border-slate-700" : "bg-white border-slate-100"} rounded-3xl border shadow-2xl p-6 sm:p-8 w-full max-w-md mx-auto max-h-[90vh] overflow-y-auto animate-[slideUp_0.3s_ease-out] relative`}>
             {/* Modal Header */}
             <div className={`flex justify-between items-center mb-6 pb-4 border-b ${isDarkMode ? "border-slate-700/50" : "border-slate-100"}`}>
@@ -933,44 +933,47 @@ const EmployeeOrders = () => {
               </button>
             </div>
             {/* Modal Form */}
-            <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              {/* Store Name - full width */}
               <input
                 placeholder="Store Name"
                 value={newOrder.store}
                 onChange={e=>setNewOrder({...newOrder,store:e.target.value})}
-                className={`w-full border-2 p-3.5 rounded-xl font-medium transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-blue-500/20 ${
+                className={`col-span-2 w-full border-2 p-3 rounded-xl font-medium transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-blue-500/20 ${
                   isDarkMode 
                     ? "bg-slate-800/50 border-slate-700 focus:border-blue-500 text-white placeholder-slate-500" 
                     : "bg-slate-50 border-slate-200 focus:border-blue-500 focus:bg-white text-slate-800 placeholder-slate-400"
                 }`}
               />
+              {/* Items + Order Value */}
               <input
-                placeholder="Items"
+                placeholder="Items (qty)"
                 type="number"
                 value={newOrder.items}
                 onChange={e=>setNewOrder({...newOrder,items:e.target.value})}
-                className={`w-full border-2 p-3.5 rounded-xl font-medium transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-blue-500/20 ${
+                className={`w-full border-2 p-3 rounded-xl font-medium transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-blue-500/20 ${
                   isDarkMode 
                     ? "bg-slate-800/50 border-slate-700 focus:border-blue-500 text-white placeholder-slate-500" 
                     : "bg-slate-50 border-slate-200 focus:border-blue-500 focus:bg-white text-slate-800 placeholder-slate-400"
                 }`}
               />
               <input
-                placeholder="Order Value"
+                placeholder="Order Value (₹)"
                 type="number"
                 value={newOrder.value}
                 onChange={e=>setNewOrder({...newOrder,value:e.target.value})}
-                className={`w-full border-2 p-3.5 rounded-xl font-medium transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-blue-500/20 ${
+                className={`w-full border-2 p-3 rounded-xl font-medium transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-blue-500/20 ${
                   isDarkMode 
                     ? "bg-slate-800/50 border-slate-700 focus:border-blue-500 text-white placeholder-slate-500" 
                     : "bg-slate-50 border-slate-200 focus:border-blue-500 focus:bg-white text-slate-800 placeholder-slate-400"
                 }`}
               />
+              {/* Sales Executive + Payment Method */}
               <input
-                placeholder="Sales Executive / Employee"
+                placeholder="Sales Executive"
                 value={newOrder.salesExecutive}
                 onChange={e=>setNewOrder({...newOrder,salesExecutive:e.target.value})}
-                className={`w-full border-2 p-3.5 rounded-xl font-medium transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-blue-500/20 ${
+                className={`w-full border-2 p-3 rounded-xl font-medium transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-blue-500/20 ${
                   isDarkMode 
                     ? "bg-slate-800/50 border-slate-700 focus:border-blue-500 text-white placeholder-slate-500" 
                     : "bg-slate-50 border-slate-200 focus:border-blue-500 focus:bg-white text-slate-800 placeholder-slate-400"
@@ -979,13 +982,13 @@ const EmployeeOrders = () => {
               <select
                 value={newOrder.paymentMethod}
                 onChange={e=>setNewOrder({...newOrder,paymentMethod:e.target.value})}
-                className={`w-full border-2 p-3.5 rounded-xl font-medium transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-blue-500/20 ${
+                className={`w-full border-2 p-3 rounded-xl font-medium transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-blue-500/20 ${
                   isDarkMode 
                     ? "bg-slate-800/50 border-slate-700 focus:border-blue-500 text-white" 
                     : "bg-slate-50 border-slate-200 focus:border-blue-500 focus:bg-white text-slate-800"
                 }`}
               >
-                <option value="">Select Payment Method</option>
+                <option value="">Payment Method</option>
                 <option value="UPI">UPI</option>
                 <option value="Cash">Cash</option>
                 <option value="Credit Card">Credit Card</option>
@@ -993,12 +996,13 @@ const EmployeeOrders = () => {
                 <option value="Net Banking">Net Banking</option>
                 <option value="Cheque">Cheque</option>
               </select>
+              {/* Order Date + Delivery Date */}
               <input
                 placeholder="Order Date"
                 type="date"
                 value={newOrder.date}
                 onChange={e=>setNewOrder({...newOrder,date:e.target.value})}
-                className={`w-full border-2 p-3.5 rounded-xl font-medium transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-blue-500/20 ${
+                className={`w-full border-2 p-3 rounded-xl font-medium transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-blue-500/20 ${
                   isDarkMode 
                     ? "bg-slate-800/50 border-slate-700 focus:border-blue-500 text-white placeholder-slate-500" 
                     : "bg-slate-50 border-slate-200 focus:border-blue-500 focus:bg-white text-slate-800 placeholder-slate-400"
@@ -1009,27 +1013,28 @@ const EmployeeOrders = () => {
                 type="date"
                 value={newOrder.deliveryDate}
                 onChange={e=>setNewOrder({...newOrder,deliveryDate:e.target.value})}
-                className={`w-full border-2 p-3.5 rounded-xl font-medium transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-blue-500/20 ${
+                className={`w-full border-2 p-3 rounded-xl font-medium transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-blue-500/20 ${
                   isDarkMode 
                     ? "bg-slate-800/50 border-slate-700 focus:border-blue-500 text-white placeholder-slate-500" 
                     : "bg-slate-50 border-slate-200 focus:border-blue-500 focus:bg-white text-slate-800 placeholder-slate-400"
                 }`}
               />
+              {/* Notes - full width */}
               <textarea
                 placeholder="Notes"
                 value={newOrder.notes}
                 onChange={e=>setNewOrder({...newOrder,notes:e.target.value})}
-                rows={3}
-                className={`w-full border-2 p-3.5 rounded-xl font-medium transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-blue-500/20 ${
+                rows={2}
+                className={`col-span-2 w-full border-2 p-3 rounded-xl font-medium transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-blue-500/20 ${
                   isDarkMode 
                     ? "bg-slate-800/50 border-slate-700 focus:border-blue-500 text-white placeholder-slate-500" 
                     : "bg-slate-50 border-slate-200 focus:border-blue-500 focus:bg-white text-slate-800 placeholder-slate-400"
                 }`}
               />
-              {/* Create Order Button */}
+              {/* Create Order Button - full width */}
               <button
                 onClick={createOrder}
-                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-4 rounded-xl shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:-translate-y-0.5 transition-all duration-300 font-bold tracking-wide mt-2"
+                className="col-span-2 w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3.5 rounded-xl shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:-translate-y-0.5 transition-all duration-300 font-bold tracking-wide"
               >
                 Create Order
               </button>
@@ -1040,7 +1045,7 @@ const EmployeeOrders = () => {
 
       {/* Edit Order Modal */}
       {editModal && editingOrder && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 sm:p-0 animate-[fadeIn_0.2s_ease-out]">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[120] p-4 sm:p-0 animate-[fadeIn_0.2s_ease-out]">
           <div className={`${isDarkMode ? "bg-[#1e293b] border-slate-700" : "bg-white border-slate-100"} rounded-3xl border shadow-2xl p-6 sm:p-8 w-full max-w-md mx-auto max-h-[90vh] overflow-y-auto animate-[slideUp_0.3s_ease-out] relative`}>
             {/* Modal Header */}
             <div className={`flex justify-between items-center mb-6 pb-4 border-b ${isDarkMode ? "border-slate-700/50" : "border-slate-100"}`}>
@@ -1166,7 +1171,7 @@ const EmployeeOrders = () => {
 
       {/* View Order Modal */}
       {viewOrderModal && selectedOrder && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 sm:p-0 animate-[fadeIn_0.2s_ease-out]">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[120] p-4 sm:p-0 animate-[fadeIn_0.2s_ease-out]">
           <div className={`${isDarkMode ? "bg-[#1e293b] border-slate-700" : "bg-white border-slate-100"} rounded-3xl border shadow-2xl p-6 sm:p-8 w-full max-w-sm mx-auto animate-[slideUp_0.3s_ease-out]`}>
             {/* Modal Header */}
             <div className={`flex justify-between items-center mb-6 pb-4 border-b ${isDarkMode ? "border-slate-700/50" : "border-slate-100"}`}>

@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { User, Briefcase, FileText, Activity, LayoutDashboard, Settings, Mail, Phone, MapPin, MoreVertical, ShieldCheck, TrendingUp, ShoppingBag, Map as MapIcon, Clock, HeartPulse, Building, Shield, UserCheck, Calendar, CheckCircle, Download, ExternalLink, Bell, Globe, LogOut, Share2, Eye, EyeOff, Lock, AlertTriangle, Smartphone, Wifi, X, MessageSquare, Copy, Pencil, UploadCloud } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { User, Briefcase, FileText, Activity, LayoutDashboard, Settings, Mail, Phone, MapPin, MoreVertical, ShieldCheck, TrendingUp, ShoppingBag, Map as MapIcon, Clock, HeartPulse, Building, Shield, UserCheck, Calendar, CheckCircle, Download, ExternalLink, Bell, Globe, LogOut, Share2, Eye, EyeOff, Lock, AlertTriangle, Smartphone, Wifi, X, MessageSquare, Copy, Pencil, UploadCloud, ChevronDown, CheckCircle2, Filter, Search, GripVertical, MoreHorizontal, Info, Users } from 'lucide-react';
+import { useNotifications } from '../../context/NotificationContext';
 
 const ScrollStyles = () => (
   <style>{`
@@ -73,23 +75,23 @@ const ShareProfileModal = ({ isOpen, onClose, employee }) => {
   };
 
   const shareOptions = [
-    { 
-      name: 'WhatsApp', 
-      icon: MessageSquare, 
-      color: 'bg-[#25D366]/10 text-[#25D366]', 
+    {
+      name: 'WhatsApp',
+      icon: MessageSquare,
+      color: 'bg-[#25D366]/10 text-[#25D366]',
       action: () => window.open(`https://wa.me/?text=${encodeURIComponent(`Check out ${employee.name}'s professional profile: ${profileUrl}`)}`, '_blank')
     },
-    { 
-      name: 'Email', 
-      icon: Mail, 
-      color: 'bg-slate-50 text-slate-900', 
+    {
+      name: 'Email',
+      icon: Mail,
+      color: 'bg-slate-50 text-slate-900',
       action: () => window.location.href = `mailto:?subject=${encodeURIComponent(`${employee.name}'s Profile Portfolio`)}&body=${encodeURIComponent(`Check out this professional profile: ${profileUrl}`)}`
     },
-    { 
-      name: 'Copy Link', 
-      icon: copied ? CheckCircle : Copy, 
-      color: copied ? 'bg-slate-900 text-white' : 'bg-slate-50 text-slate-900', 
-      action: handleCopy 
+    {
+      name: 'Copy Link',
+      icon: copied ? CheckCircle : Copy,
+      color: copied ? 'bg-slate-900 text-white' : 'bg-slate-50 text-slate-900',
+      action: handleCopy
     },
   ];
 
@@ -150,7 +152,7 @@ const PortfolioNavigationOverlay = ({ isOpen, onClose, onNavigate }) => {
   return (
     <div className={`fixed inset-0 z-[110] flex items-center justify-center p-4 transition-all duration-500 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
       <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-xl" onClick={onClose} />
-      
+
       <div className={`relative w-[calc(100%-2rem)] max-w-4xl max-h-[90vh] flex flex-col transition-all duration-500 transform ${isOpen ? 'scale-100 translate-y-0' : 'scale-95 translate-y-12'}`}>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 sm:mb-12 text-white gap-6 sticky top-0 bg-slate-900/40 backdrop-blur-sm p-4 -m-4 rounded-t-[3rem] z-10">
           <div>
@@ -167,17 +169,17 @@ const PortfolioNavigationOverlay = ({ isOpen, onClose, onNavigate }) => {
             <button
               key={item.id}
               onClick={() => onNavigate(item.id)}
-              className="group relative bg-white dark:bg-gray-900 p-6 sm:p-8 rounded-[2.5rem] sm:rounded-[3rem] border border-white/20 shadow-2xl transition-all hover:-translate-y-2 hover:shadow-slate-500/20 text-left overflow-hidden"
+              className="group relative bg-white dark:bg-gray-900 p-6 sm:p-8 rounded-[2.5rem] sm:rounded-[3rem] border border-white/20 shadow-2xl transition-all hover:-translate-y-2 hover:shadow-slate-500/20 text-left overflow-hidden isolate transform-gpu"
             >
               <div className="absolute top-0 right-0 w-32 h-32 bg-slate-50 dark:bg-slate-900/20 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-150" />
-              
+
               <div className="relative">
                 <div className="p-4 rounded-[1.5rem] bg-slate-50 dark:bg-slate-900/20 text-slate-900 dark:text-slate-400 w-fit mb-6 transition-transform group-hover:scale-110">
                   <item.icon size={32} />
                 </div>
                 <h3 className="text-2xl font-black text-gray-900 dark:text-white mb-2">{item.label}</h3>
                 <p className="text-sm font-medium text-gray-500 dark:text-gray-400 leading-relaxed">{item.desc}</p>
-                
+
                 <div className="mt-8 flex items-center gap-2 text-slate-900 dark:text-slate-400 font-black text-sm group-hover:translate-x-2 transition-transform">
                   Go to {item.label} <ExternalLink size={16} />
                 </div>
@@ -226,7 +228,7 @@ const ProfileHeader = ({ employee, onEditProfile, onOpenSettings, onShareProfile
   ];
 
   return (
-    <div 
+    <div
       onClick={onOpenNavigation}
       className={`relative rounded-[2rem] sm:rounded-[2.5rem] bg-white/40 dark:bg-slate-950/40 p-5 sm:p-8 text-gray-900 dark:text-white shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] cursor-pointer group/header overflow-visible border-2 border-slate-200 dark:border-slate-800 backdrop-blur-2xl transition-shadow duration-300 ${menuOpen ? 'z-40' : 'z-20'}`}
     >
@@ -241,12 +243,12 @@ const ProfileHeader = ({ employee, onEditProfile, onOpenSettings, onShareProfile
           </div>
         </div>
       </div>
-      
+
       <div className="absolute inset-0 rounded-[2.5rem] overflow-hidden pointer-events-none">
         <div className="absolute top-0 right-0 -mr-20 -mt-20 h-64 w-64 rounded-full bg-white/5 blur-3xl opacity-50 group-hover/header:opacity-80 transition-opacity duration-700" />
         <div className="absolute bottom-0 left-0 -ml-20 -mb-20 h-64 w-64 rounded-full bg-slate-400/5 blur-3xl opacity-30" />
       </div>
-      
+
       <div className="relative flex flex-col sm:flex-row sm:items-center gap-5 sm:gap-8">
         <div className="flex-shrink-0" onClick={(e) => e.stopPropagation()}>
           <div className="relative">
@@ -267,7 +269,7 @@ const ProfileHeader = ({ employee, onEditProfile, onOpenSettings, onShareProfile
               <div className="flex items-center gap-3">
                 <h1 className="text-2xl sm:text-4xl font-black tracking-tight">
                   <span className="text-slate-900 dark:text-white drop-shadow-sm">
-                    {employee.name || "Abhiram R"}
+                    {employee.name || "Person"}
                   </span>
                 </h1>
                 <span className="flex items-center gap-1 rounded-full bg-slate-100 dark:bg-white/10 px-2.5 py-1 text-[10px] sm:text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-300">
@@ -314,7 +316,7 @@ const ProfileHeader = ({ employee, onEditProfile, onOpenSettings, onShareProfile
           <div className="mt-4 sm:mt-6 flex flex-wrap items-center gap-x-6 gap-y-3 text-[13px] sm:text-sm">
             <div className="flex items-center gap-2 text-slate-400 focus:outline-none">
               <Mail size={16} className="text-slate-500" />
-              <span className="line-clamp-1">{employee.email || 'abhiram@trackforce.com'}</span>
+              <span className="line-clamp-1">{employee.email || 'person@trackforce.com'}</span>
             </div>
             <div className="flex items-center gap-2 text-slate-400">
               <Phone size={16} className="text-slate-500" />
@@ -354,7 +356,7 @@ const PersonalInfoModal = ({ isOpen, onClose, employee }) => {
       icon: Phone,
       items: [
         { label: 'Primary Phone', value: employee.phone || '+91 91234 56789', icon: Phone },
-        { label: 'Official Email', value: employee.email || 'abhiram@trackforce.com', icon: Mail },
+        { label: 'Official Email', value: employee.email || 'person@trackforce.com', icon: Mail },
         { label: 'Residential Address', value: employee.address || 'Indiranagar, Bengaluru, KA', icon: MapPin },
       ]
     },
@@ -362,7 +364,7 @@ const PersonalInfoModal = ({ isOpen, onClose, employee }) => {
       title: 'Identification',
       icon: User,
       items: [
-        { label: 'Full Name', value: employee.name || 'Abhiram Rangoon', icon: User },
+        { label: 'Full Name', value: employee.name || 'test person', icon: User },
         { label: 'Gender', value: employee.gender || 'Male', icon: User },
         { label: 'Nationality', value: employee.nationality || 'Indian', icon: Globe },
         { label: 'Date of Birth', value: employee.dob || '12 Oct 1995', icon: Calendar },
@@ -434,7 +436,7 @@ const EmploymentSection = () => {
     { label: 'Security Level', value: 'Field Access - Level 1', icon: Shield },
   ];
   return (
-    <div className="bg-white/40 dark:bg-slate-950/40 rounded-[2rem] sm:rounded-[2.5rem] border-2 border-slate-100 dark:border-slate-800 p-6 sm:p-8 lg:p-10 overflow-hidden relative backdrop-blur-xl">
+    <div className="bg-white/40 dark:bg-slate-950/40 rounded-[2rem] sm:rounded-[2.5rem] border-2 border-slate-100 dark:border-slate-800 p-6 sm:p-8 lg:p-10 overflow-hidden relative backdrop-blur-xl mb-6">
       <div className="absolute top-0 right-0 w-64 h-64 bg-slate-50 dark:bg-slate-900/10 rounded-full blur-3xl -mr-32 -mt-32" />
       <div className="relative">
         <h3 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white mb-8 sm:mb-10 tracking-tight">Employment Information</h3>
@@ -451,6 +453,225 @@ const EmploymentSection = () => {
             </div>
           ))}
         </div>
+      </div>
+    </div>
+  );
+};
+
+const NotificationsSection = () => {
+  const {
+    executiveList, setExecutiveList,
+    managerList, setManagerList,
+    markAllAsRead
+  } = useNotifications();
+
+  const [activeCategory, setActiveCategory] = useState('executive');
+  const [priorityFilter, setPriorityFilter] = useState('all');
+  const [draggedItemIndex, setDraggedItemIndex] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isPriorityExpanded, setIsPriorityExpanded] = useState(false);
+
+  const onDragStart = (e, index) => {
+    setDraggedItemIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', index);
+  };
+
+  const onDrop = (e, targetIndex) => {
+    e.preventDefault();
+    if (draggedItemIndex === null || draggedItemIndex === targetIndex) return;
+
+    const list = activeCategory === 'executive' ? [...executiveList] : [...managerList];
+    const draggedItem = list[draggedItemIndex];
+
+    list.splice(draggedItemIndex, 1);
+    list.splice(targetIndex, 0, draggedItem);
+
+    if (activeCategory === 'executive') setExecutiveList(list);
+    else setManagerList(list);
+
+    setDraggedItemIndex(null);
+  };
+
+  const currentCategoryData = activeCategory === 'executive' ? executiveList : managerList;
+
+  const filteredNotifications = currentCategoryData.filter(n => {
+    const matchesPriority = priorityFilter === 'all' || n.priority === priorityFilter;
+    const matchesSearch = n.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      n.desc.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesPriority && matchesSearch;
+  });
+
+  const getIcon = (type) => {
+    switch (type) {
+      case 'alert': return <AlertTriangle size={18} />;
+      case 'success': return <CheckCircle2 size={18} />;
+      case 'message': return <MessageSquare size={18} />;
+      default: return <Info size={18} />;
+    }
+  };
+
+  const getColor = (type) => {
+    switch (type) {
+      case 'alert': return 'bg-rose-50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-400';
+      case 'success': return 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400';
+      case 'message': return 'bg-sky-50 text-sky-600 dark:bg-sky-500/10 dark:text-sky-400';
+      default: return 'bg-slate-50 text-slate-500 dark:bg-slate-800 dark:text-slate-400';
+    }
+  };
+
+  return (
+    <div id="notifications" className="bg-white/40 dark:bg-slate-950/40 rounded-[2rem] sm:rounded-[2.5rem] border-2 border-slate-100 dark:border-slate-800 p-6 sm:p-8 lg:p-10 relative backdrop-blur-xl">
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-8 select-none">
+        <div className="space-y-1">
+          <h3 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white tracking-tight">Notifications</h3>
+          <p className="text-[10px] sm:text-sm font-medium text-gray-500">Real-time alerts and activity updates</p>
+        </div>
+
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full lg:w-auto">
+          <div className="relative group flex-1 sm:min-w-[260px]">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" size={16} />
+            <input
+              type="text"
+              placeholder="Search notifications..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-10 py-3 bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-indigo-500/5 transition-all outline-none"
+            />
+            {searchQuery && (
+              <button onClick={() => setSearchQuery('')} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-900 dark:hover:text-white">
+                <X size={14} />
+              </button>
+            )}
+          </div>
+
+          <button
+            onClick={() => markAllAsRead(activeCategory)}
+            className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 px-5 py-3 rounded-xl transition-all uppercase tracking-widest whitespace-nowrap"
+          >
+            Mark all read
+          </button>
+        </div>
+      </div>
+
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+        <div className="inline-flex p-1 bg-slate-100/50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800">
+          <button
+            onClick={() => setActiveCategory('executive')}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${activeCategory === 'executive'
+              ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-sm'
+              : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
+              }`}
+          >
+            <Briefcase size={16} />
+            Field Ops
+            <span className={`ml-1 text-[10px] px-1.5 py-0.5 rounded-md ${activeCategory === 'executive' ? 'bg-indigo-50 text-indigo-600 font-black' : 'bg-slate-200/50 text-slate-400 font-bold'}`}>
+              {executiveList.length}
+            </span>
+          </button>
+          <button
+            onClick={() => setActiveCategory('manager')}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${activeCategory === 'manager'
+              ? 'bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-sm'
+              : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
+              }`}
+          >
+            <Users size={16} />
+            Management
+            <span className={`ml-1 text-[10px] px-1.5 py-0.5 rounded-md ${activeCategory === 'manager' ? 'bg-emerald-50 text-emerald-600 font-black' : 'bg-slate-200/50 text-slate-400 font-bold'}`}>
+              {managerList.length}
+            </span>
+          </button>
+        </div>
+
+        <div className="relative">
+          <button
+            onClick={() => setIsPriorityExpanded(!isPriorityExpanded)}
+            className={`flex items-center gap-3 px-5 py-2.5 rounded-xl font-bold text-sm transition-all bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-indigo-200 shadow-sm ${isPriorityExpanded ? 'ring-2 ring-indigo-500/20 border-indigo-500' : 'text-slate-600'
+              }`}
+          >
+            <Filter size={14} className={isPriorityExpanded ? 'text-indigo-600' : 'text-slate-400'} />
+            <span className="min-w-[80px] text-left">
+              {priorityFilter === 'all' ? 'All Priorities' : `${priorityFilter.charAt(0).toUpperCase() + priorityFilter.slice(1)} Priority`}
+            </span>
+            <ChevronDown size={14} className={`transition-transform duration-300 ${isPriorityExpanded ? 'rotate-180' : ''}`} />
+          </button>
+
+          {isPriorityExpanded && (
+            <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="p-1.5 flex flex-col gap-1">
+                {['all', 'high', 'low'].map((filter) => (
+                  <button
+                    key={filter}
+                    onClick={() => { setPriorityFilter(filter); setIsPriorityExpanded(false); }}
+                    className={`flex items-center justify-between px-4 py-2.5 rounded-xl text-sm font-bold transition-all ${priorityFilter === filter
+                      ? 'bg-indigo-600 text-white'
+                      : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
+                      }`}
+                  >
+                    {filter === 'all' ? 'All Alerts' : `${filter.charAt(0).toUpperCase() + filter.slice(1)} Priority`}
+                    {priorityFilter === filter && <CheckCircle2 size={14} className="text-white" />}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-3">
+        {filteredNotifications.length > 0 ? (
+          filteredNotifications.map((n, index) => (
+            <div
+              key={n.id}
+              draggable={priorityFilter === 'all' && searchQuery === ''}
+              onDragStart={(e) => onDragStart(e, index)}
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => onDrop(e, index)}
+              onDragEnd={() => setDraggedItemIndex(null)}
+              className={`group flex items-start gap-4 p-4 sm:p-5 rounded-2xl border transition-all duration-300 relative ${priorityFilter === 'all' && searchQuery === '' ? 'cursor-move' : 'cursor-default'
+                } ${draggedItemIndex === index ? 'opacity-30 scale-[0.99] border-dashed border-indigo-400 bg-slate-50/50' : ''
+                } ${n.isRead
+                  ? 'bg-white/60 dark:bg-slate-900/40 border-slate-100 dark:border-slate-800/50'
+                  : 'bg-white dark:bg-slate-900 border-indigo-100 dark:border-indigo-500/20 shadow-sm'
+                }`}
+            >
+              <div className={`absolute top-0 right-8 px-2 py-0.5 rounded-b-md text-[8px] font-black uppercase tracking-widest ${n.priority === 'high' ? 'bg-rose-500 text-white' : 'bg-sky-500 text-white'
+                }`}>
+                {n.priority}
+              </div>
+
+              <div className={`p-3 rounded-xl shrink-0 ${getColor(n.type)} transition-transform group-hover:scale-110 shadow-sm`}>
+                {getIcon(n.type)}
+              </div>
+
+              <div className="flex-1 min-w-0">
+                <div className="flex justify-between items-start gap-3 mb-1">
+                  <h4 className={`font-bold tracking-tight text-sm sm:text-base ${n.isRead ? 'text-slate-600 dark:text-slate-400' : 'text-slate-900 dark:text-white'} group-hover:text-indigo-600 transition-colors`}>
+                    {n.title}
+                  </h4>
+                  <span className="shrink-0 text-[10px] font-bold text-slate-400 pt-0.5 uppercase tracking-widest">{n.time}</span>
+                </div>
+                <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm font-medium leading-relaxed max-w-2xl line-clamp-1 group-hover:line-clamp-none transition-all">
+                  {n.desc}
+                </p>
+
+                {!n.isRead && (
+                  <div className="mt-2 flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
+                    <span className="text-[9px] font-black text-indigo-500 uppercase tracking-widest">New</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="text-center py-12 bg-white/50 dark:bg-slate-900/30 rounded-3xl border border-dashed border-slate-200 dark:border-slate-800">
+            <Bell size={28} className="mx-auto text-slate-300 dark:text-slate-700 mb-3" />
+            <h4 className="text-base font-bold text-slate-900 dark:text-white mb-1">No alerts found</h4>
+            <p className="text-slate-500 text-xs sm:text-sm">You're all caught up!</p>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -514,20 +735,20 @@ const DocumentsModal = ({ isOpen, onClose, documents, onEditDocument, onViewDocu
                       {doc.status}
                     </span>
                     <div className="flex items-center gap-2">
-                       <button 
-                         onClick={() => onEditDocument(doc)}
-                         className="p-2 rounded-xl bg-slate-100 dark:bg-gray-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-gray-700 transition-all shadow-sm"
-                         title="Upload New Version"
-                       >
-                         <UploadCloud size={16} />
-                       </button>
-                       <button 
-                         onClick={() => onViewDocument(doc)}
-                         className="p-2 text-gray-400 hover:text-slate-900 dark:hover:text-white transition-colors"
-                         title="View Document"
-                       >
-                         <ExternalLink size={18} />
-                       </button>
+                      <button
+                        onClick={() => onEditDocument(doc)}
+                        className="p-2 rounded-xl bg-slate-100 dark:bg-gray-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-gray-700 transition-all shadow-sm"
+                        title="Upload New Version"
+                      >
+                        <UploadCloud size={16} />
+                      </button>
+                      <button
+                        onClick={() => onViewDocument(doc)}
+                        className="p-2 text-gray-400 hover:text-slate-900 dark:hover:text-white transition-colors"
+                        title="View Document"
+                      >
+                        <ExternalLink size={18} />
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -560,7 +781,7 @@ const DocumentPreviewModal = ({ isOpen, onClose, document: docRecord }) => {
   return (
     <div className="fixed inset-0 z-[140] flex items-center justify-center p-4">
       <div className={`absolute inset-0 bg-slate-900/90 backdrop-blur-xl transition-opacity duration-500`} onClick={onClose} />
-      
+
       <div className="relative w-[calc(100%-2rem)] max-w-5xl h-[85vh] transition-all duration-500 transform scale-100 flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between mb-4 sm:mb-6 text-white bg-white/10 p-5 sm:p-6 rounded-[2rem] sm:rounded-[2.5rem] backdrop-blur-md border border-white/10 shadow-2xl flex-shrink-0 sticky top-0 z-10">
@@ -572,75 +793,75 @@ const DocumentPreviewModal = ({ isOpen, onClose, document: docRecord }) => {
             </div>
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
-             <button className="hidden sm:flex p-3 rounded-2xl bg-white/10 hover:bg-white/20 transition-all items-center gap-2 font-bold text-sm">
-                <Download size={20} /> Download
-             </button>
-             <button onClick={onClose} className="p-2.5 sm:p-3 rounded-2xl bg-white/20 hover:bg-white/30 transition-all text-white"><X size={24} /></button>
+            <button className="hidden sm:flex p-3 rounded-2xl bg-white/10 hover:bg-white/20 transition-all items-center gap-2 font-bold text-sm">
+              <Download size={20} /> Download
+            </button>
+            <button onClick={onClose} className="p-2.5 sm:p-3 rounded-2xl bg-white/20 hover:bg-white/30 transition-all text-white"><X size={24} /></button>
           </div>
         </div>
 
         {/* Content Area - Sample Document */}
         <div className="flex-1 bg-white rounded-[2rem] sm:rounded-[3.5rem] shadow-inner overflow-hidden relative border-4 border-slate-900 p-6 sm:p-12 flex items-center justify-center tf-modal-scroll overflow-y-auto">
-           <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, #000 1px, transparent 0)', backgroundSize: '24px 24px' }} />
-           
-           <div className="relative w-full max-w-2xl min-h-full border-[6px] sm:border-[10px] border-double border-slate-100 p-6 sm:p-10 flex flex-col">
-              <div className="flex justify-between items-start mb-8 sm:mb-12">
-                 <div className="w-14 h-14 sm:w-20 sm:h-20 rounded-full border-4 border-slate-200 flex items-center justify-center text-slate-100 transform -rotate-12 flex-shrink-0">
-                    <Shield size={28} className="sm:w-10 sm:h-10" />
-                 </div>
-                 <div className="text-right">
-                    <h4 className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tighter uppercase italic">Trackforce</h4>
-                    <p className="text-[8px] sm:text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Verified Field Excellence</p>
-                 </div>
+          <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, #000 1px, transparent 0)', backgroundSize: '24px 24px' }} />
+
+          <div className="relative w-full max-w-2xl min-h-full border-[6px] sm:border-[10px] border-double border-slate-100 p-6 sm:p-10 flex flex-col">
+            <div className="flex justify-between items-start mb-8 sm:mb-12">
+              <div className="w-14 h-14 sm:w-20 sm:h-20 rounded-full border-4 border-slate-200 flex items-center justify-center text-slate-100 transform -rotate-12 flex-shrink-0">
+                <Shield size={28} className="sm:w-10 sm:h-10" />
+              </div>
+              <div className="text-right">
+                <h4 className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tighter uppercase italic">Trackforce</h4>
+                <p className="text-[8px] sm:text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Verified Field Excellence</p>
+              </div>
+            </div>
+
+            <div className="flex-1 flex flex-col items-center justify-center text-center space-y-6 sm:space-y-8 py-8">
+              <div className="space-y-2">
+                <p className="text-[8px] sm:text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">CERTIFICATE OF RECORD</p>
+                <h2 className="text-3xl sm:text-5xl font-black text-slate-900 tracking-tight">{docRecord?.name || 'Professional Document'}</h2>
               </div>
 
-              <div className="flex-1 flex flex-col items-center justify-center text-center space-y-6 sm:space-y-8 py-8">
-                 <div className="space-y-2">
-                    <p className="text-[8px] sm:text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">CERTIFICATE OF RECORD</p>
-                    <h2 className="text-3xl sm:text-5xl font-black text-slate-900 tracking-tight">{docRecord?.name || 'Professional Document'}</h2>
-                 </div>
+              <div className="w-24 sm:w-32 h-1 bg-slate-900 rounded-full" />
 
-                 <div className="w-24 sm:w-32 h-1 bg-slate-900 rounded-full" />
-
-                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-12 sm:gap-x-20 gap-y-6 sm:gap-y-10 text-left w-full max-w-lg mx-auto py-4 sm:py-8">
-                    <div>
-                       <label className="text-[8px] sm:text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Holder Name</label>
-                       <p className="font-bold text-slate-900 border-b-2 border-slate-100 pb-1 text-sm sm:text-base">Abhiram Rangoon</p>
-                    </div>
-                    <div>
-                       <label className="text-[8px] sm:text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Employee ID</label>
-                       <p className="font-bold text-slate-900 border-b-2 border-slate-100 pb-1 text-sm sm:text-base">TF-EXE-402</p>
-                    </div>
-                    <div>
-                       <label className="text-[8px] sm:text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Issue Status</label>
-                       <p className="font-bold text-emerald-600 border-b-2 border-slate-100 pb-1 text-sm sm:text-base">{docRecord?.status || 'Verified'}</p>
-                    </div>
-                    <div>
-                       <label className="text-[8px] sm:text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">File Metadata</label>
-                       <p className="font-bold text-slate-900 border-b-2 border-slate-100 pb-1 text-sm sm:text-base">{docRecord?.size || '0.0 MB'} • {docRecord?.type || 'PDF'}</p>
-                    </div>
-                 </div>
-
-                 <div className="mt-8 flex items-center justify-center gap-4 text-slate-300">
-                    <ShieldCheck size={32} className="opacity-20 sm:w-12 sm:h-12" />
-                    <Activity size={32} className="opacity-20 sm:w-12 sm:h-12" />
-                    <UserCheck size={32} className="opacity-20 sm:w-12 sm:h-12" />
-                 </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-12 sm:gap-x-20 gap-y-6 sm:gap-y-10 text-left w-full max-w-lg mx-auto py-4 sm:py-8">
+                <div>
+                  <label className="text-[8px] sm:text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Holder Name</label>
+                  <p className="font-bold text-slate-900 border-b-2 border-slate-100 pb-1 text-sm sm:text-base">Test person</p>
+                </div>
+                <div>
+                  <label className="text-[8px] sm:text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Employee ID</label>
+                  <p className="font-bold text-slate-900 border-b-2 border-slate-100 pb-1 text-sm sm:text-base">TF-EXE-402</p>
+                </div>
+                <div>
+                  <label className="text-[8px] sm:text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Issue Status</label>
+                  <p className="font-bold text-emerald-600 border-b-2 border-slate-100 pb-1 text-sm sm:text-base">{docRecord?.status || 'Verified'}</p>
+                </div>
+                <div>
+                  <label className="text-[8px] sm:text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">File Metadata</label>
+                  <p className="font-bold text-slate-900 border-b-2 border-slate-100 pb-1 text-sm sm:text-base">{docRecord?.size || '0.0 MB'} • {docRecord?.type || 'PDF'}</p>
+                </div>
               </div>
 
-              <div className="mt-auto pt-10 border-t border-slate-100 flex justify-between items-end opacity-40 grayscale">
-                 <div>
-                    <p className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">Digital Verification Key</p>
-                    <p className="text-[10px] font-mono text-slate-900 mt-1">AX-772-TF-99-RECORD-PREVIEW</p>
-                 </div>
-                 <div className="text-right">
-                    <p className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">Issued Date</p>
-                    <p className="text-xs font-black text-slate-900 mt-1">14 MARCH 2026</p>
-                 </div>
+              <div className="mt-8 flex items-center justify-center gap-4 text-slate-300">
+                <ShieldCheck size={32} className="opacity-20 sm:w-12 sm:h-12" />
+                <Activity size={32} className="opacity-20 sm:w-12 sm:h-12" />
+                <UserCheck size={32} className="opacity-20 sm:w-12 sm:h-12" />
               </div>
-              
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 border-[20px] border-slate-50 rounded-full w-[500px] h-[500px] pointer-events-none opacity-[0.02]" />
-           </div>
+            </div>
+
+            <div className="mt-auto pt-10 border-t border-slate-100 flex justify-between items-end opacity-40 grayscale">
+              <div>
+                <p className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">Digital Verification Key</p>
+                <p className="text-[10px] font-mono text-slate-900 mt-1">AX-772-TF-99-RECORD-PREVIEW</p>
+              </div>
+              <div className="text-right">
+                <p className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">Issued Date</p>
+                <p className="text-xs font-black text-slate-900 mt-1">14 MARCH 2026</p>
+              </div>
+            </div>
+
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 border-[20px] border-slate-50 rounded-full w-[500px] h-[500px] pointer-events-none opacity-[0.02]" />
+          </div>
         </div>
       </div>
     </div>
@@ -686,8 +907,8 @@ const DocumentUploadModal = ({ isOpen, onClose, document: docRecord, onSave }) =
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const updatedData = { 
-      ...docRecord, 
+    const updatedData = {
+      ...docRecord,
       name,
       size: file ? `${(file.size / (1024 * 1024)).toFixed(1)} MB` : docRecord.size,
       status: file ? 'Verified' : docRecord.status // Mocking verification on upload
@@ -722,14 +943,14 @@ const DocumentUploadModal = ({ isOpen, onClose, document: docRecord, onSave }) =
 
           <div className="space-y-2">
             <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">File Attachment</label>
-            <input 
-              type="file" 
-              ref={fileInputRef} 
-              onChange={handleFileChange} 
-              className="hidden" 
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              className="hidden"
               accept=".pdf,.doc,.docx,.jpg,.png"
             />
-            <div 
+            <div
               onClick={() => fileInputRef.current.click()}
               className="group cursor-pointer p-6 rounded-[2rem] border-2 border-dashed border-slate-200 dark:border-slate-800 hover:border-slate-900 dark:hover:border-white hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-all flex flex-col items-center justify-center gap-3"
             >
@@ -748,7 +969,7 @@ const DocumentUploadModal = ({ isOpen, onClose, document: docRecord, onSave }) =
               )}
             </div>
           </div>
-          
+
           <div className="flex gap-3 pt-2">
             <button
               type="button"
@@ -870,7 +1091,7 @@ const EditProfileModal = ({ isOpen, onClose, employee, onSaveProfile }) => {
   };
 
   return (
-    <div className={`fixed inset-0 z-50 ${isOpen ? '' : 'pointer-events-none'}`} aria-hidden={!isOpen}>
+    <div className={`fixed inset-0 z-[120] ${isOpen ? '' : 'pointer-events-none'}`} aria-hidden={!isOpen}>
       <style>{`
         .tf-modal-scroll::-webkit-scrollbar { width: 0px; height: 0px; }
         .tf-modal-scroll { scrollbar-width: none; -ms-overflow-style: none; }
@@ -881,7 +1102,7 @@ const EditProfileModal = ({ isOpen, onClose, employee, onSaveProfile }) => {
       />
 
       {/* Toast notification */}
-      <div className="fixed inset-0 z-[60] pointer-events-none flex items-start justify-center p-4 sm:p-6">
+      <div className="fixed inset-0 z-[130] pointer-events-none flex items-start justify-center p-4 sm:p-6">
         <div className={`transition-all duration-200 ${saveToast.open ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'}`}>
           <div className="rounded-2xl px-4 py-3 sm:px-5 sm:py-4 shadow-2xl border text-sm font-black flex items-center gap-2 bg-emerald-50 text-emerald-800 border-emerald-100">
             <CheckCircle size={16} />
@@ -1203,7 +1424,7 @@ const AccountSettingsPanel = ({ isOpen, onClose, employee, onSaveProfile }) => {
   const selectCls = "w-full px-4 py-3 rounded-2xl bg-white dark:bg-gray-900/40 border border-gray-200 dark:border-gray-800 text-gray-900 dark:text-white font-bold outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400 text-sm appearance-none";
 
   return (
-    <div className={`fixed inset-0 z-50 flex items-center justify-center p-4 ${isOpen ? '' : 'pointer-events-none'}`} aria-hidden={!isOpen}>
+    <div className={`fixed inset-0 z-[120] flex items-center justify-center p-4 ${isOpen ? '' : 'pointer-events-none'}`} aria-hidden={!isOpen}>
       <div
         className={`absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity ${isOpen ? 'opacity-100' : 'opacity-0'}`}
         onClick={onClose}
@@ -1359,6 +1580,18 @@ const EmployeeProfile = () => {
   const [editingDocument, setEditingDocument] = useState(null);
   const [viewingDocument, setViewingDocument] = useState(null);
 
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('modal') === 'settings') {
+      setIsSettingsOpen(true);
+      // Clean up URL to avoid re-triggering on refresh
+      navigate(location.pathname, { replace: true });
+    }
+  }, [location, navigate]);
+
   const [documents, setDocuments] = useState([
     { id: 1, name: 'Kyc Document (Aadhar)', size: '1.2 MB', type: 'PDF', status: 'Verified' },
     { id: 2, name: 'PAN Clearance', size: '0.9 MB', type: 'PDF', status: 'Verified' },
@@ -1369,11 +1602,11 @@ const EmployeeProfile = () => {
   ]);
 
   const [employee, setEmployee] = useState({
-    name: 'Abhiram Rangoon',
+    name: 'Test person',
     designation: 'Senior Field Executive',
     team: 'Delta Team',
     status: 'On Duty',
-    email: 'abhiram@trackforce.com',
+    email: 'person@trackforce.com',
     phone: '+91 91234 56789',
     location: 'Bengaluru, Karnataka',
     address: 'Indiranagar, Bengaluru, KA',
@@ -1422,6 +1655,7 @@ const EmployeeProfile = () => {
       />
 
       <EmploymentSection />
+      <NotificationsSection />
 
       <EditProfileModal
         isOpen={isEditProfileOpen}

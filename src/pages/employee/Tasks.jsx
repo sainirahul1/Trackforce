@@ -26,9 +26,10 @@ import {
   Pause,
   Power,
   ChevronUp,
+  ChevronDown,
   X,
   User,
-  Send,
+  LogOut,
   Camera,
   Check,
   ShoppingBag,
@@ -39,7 +40,9 @@ import {
   Settings,
   HelpCircle,
   TrendingUp as TrendingUpIcon,
-  TrendingDown as TrendingDownIcon
+  TrendingDown as TrendingDownIcon,
+  Info,
+  ExternalLink
 } from 'lucide-react';
 import { useOutletContext } from 'react-router-dom';
 import Button from '../../components/Button';
@@ -327,8 +330,33 @@ const TaskDetailOverlay = ({ task, onClose, onUpdateOperationalData, onStartTask
             </div>
 
             <div className="mt-8 space-y-4">
-              <div className="p-5 bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm">
-                <p className="text-[10px] font-black uppercase text-indigo-600 dark:text-indigo-400 tracking-widest mb-3">Client Profile</p>
+              <div className="p-5 bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm group/client transition-all duration-300 relative overflow-visible">
+                {/* Floating Overlay Company Description on Hover */}
+                <div className="absolute left-0 right-0 bottom-full mb-2 opacity-0 pointer-events-none group-hover/client:opacity-100 group-hover/client:pointer-events-auto transition-all duration-300 z-[60]">
+                  <div className="bg-gray-900 dark:bg-gray-950 p-5 rounded-2xl shadow-2xl border border-gray-800 text-left">
+                    <div className="flex items-start gap-3 text-gray-300 mb-4">
+                      <Info size={16} className="mt-0.5 shrink-0 text-indigo-400" />
+                      <p className="text-xs font-medium leading-relaxed">
+                        {task.companyDescription || 'Strategic partner for retail execution covering primary aisles and billing counters.'}
+                      </p>
+                    </div>
+                    <a
+                      href={`https://www.google.com/search?q=${encodeURIComponent(task.companyName)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-2 w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-colors shadow-lg"
+                    >
+                      Company Profile <ExternalLink size={14} />
+                    </a>
+                  </div>
+                  {/* Tooltip Triangle */}
+                  <div className="w-4 h-4 bg-gray-900 border-r border-b border-gray-800 transform rotate-45 absolute -bottom-2 left-6"></div>
+                </div>
+
+                <p className="text-[10px] font-black uppercase text-indigo-600 dark:text-indigo-400 tracking-widest mb-3 flex items-center justify-between">
+                  Client Profile
+                  <span className="opacity-0 group-hover/client:opacity-100 transition-opacity text-gray-300 dark:text-gray-600">Hover for Insights</span>
+                </p>
                 <div className="flex items-center gap-4 mb-4">
                   <div className="w-10 h-10 rounded-xl bg-gray-50 dark:bg-gray-950 flex items-center justify-center border border-gray-100 dark:border-gray-800">
                     <User size={20} className="text-gray-400" />
@@ -346,18 +374,6 @@ const TaskDetailOverlay = ({ task, onClose, onUpdateOperationalData, onStartTask
                   <div className="flex items-center justify-between text-[10px]">
                     <span className="font-bold text-gray-400 uppercase">Email</span>
                     <span className="font-black text-indigo-500">{task.companyEmail}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="p-5 bg-emerald-50 dark:bg-emerald-950/30 rounded-2xl border border-emerald-100/50 dark:border-emerald-900/30">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-white dark:bg-gray-800 flex items-center justify-center shadow-sm">
-                    <Zap size={14} className="text-emerald-600" />
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-black text-emerald-900 dark:text-emerald-400 uppercase tracking-tight">Incentive</p>
-                    <p className="text-sm font-black text-emerald-600 leading-none">{task.incentive} Pay</p>
                   </div>
                 </div>
               </div>
@@ -430,7 +446,7 @@ const TaskDetailOverlay = ({ task, onClose, onUpdateOperationalData, onStartTask
               </div>
 
               {/* Evidence Grid */}
-              <div className="space-y-4">
+              <div className="space-y-4 text-center sm:text-left">
                 <h5 className="text-[10px] font-black text-gray-900 dark:text-white uppercase tracking-widest border-b border-gray-100 dark:border-gray-800 pb-3">Evidence Collection</h5>
                 <div className="grid grid-cols-2 gap-4">
                   {[
@@ -467,6 +483,19 @@ const TaskDetailOverlay = ({ task, onClose, onUpdateOperationalData, onStartTask
                 </div>
               </div>
 
+              {/* Task Description / Notes Field */}
+              <div className="space-y-4 pt-4 border-t border-gray-100 dark:border-gray-800">
+                <div className="flex justify-between items-center">
+                  <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest ml-1">Visit Notes & Observations</label>
+                </div>
+                <textarea
+                  value={task.visitNotes || ''}
+                  onChange={(e) => onUpdateOperationalData(task.id, { visitNotes: e.target.value })}
+                  placeholder="Enter any specific observations, client feedback, or issues faced during the visit..."
+                  className="w-full bg-gray-50 dark:bg-gray-800 border border-transparent dark:border-gray-700 rounded-2xl px-5 py-4 text-xs font-medium focus:ring-2 focus:ring-indigo-500 transition-all outline-none resize-none h-24 shadow-inner"
+                />
+              </div>
+
               <div className="pt-4">
                 <button
                   onClick={onClose}
@@ -493,6 +522,11 @@ const EmployeeTasks = () => {
   const [sortBy, setSortBy] = useState('nearest');
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
+  const [collapsedCategories, setCollapsedCategories] = useState({});
+
+  const toggleCategory = (category) => {
+    setCollapsedCategories(prev => ({ ...prev, [category]: !prev[category] }));
+  };
 
   const context = useOutletContext() || {};
   const { workStatus = 'Offline', setWorkStatus = () => { } } = context;
@@ -519,6 +553,7 @@ const EmployeeTasks = () => {
       companyContact: 'Rajesh Kumar',
       companyEmail: 'ops@futuregroup.in',
       companyInsight: 'Premium Partner • 12 Months',
+      companyDescription: 'Flagship hypermarket location with high daily footfall. Focus intensely on premium product placement and end-cap visibility tracking.',
       address: 'MG Road, Bengaluru',
       distance: '1.2 km',
       distanceVal: 1.2,
@@ -551,6 +586,7 @@ const EmployeeTasks = () => {
       companyContact: 'Anjali Sharma',
       companyEmail: 'store.support@reliance.com',
       companyInsight: 'Top Tier Client • High Volume',
+      companyDescription: 'Core retail partner for daily essentials. Ensure correct pricing tags and promotional banners are prominently displayed and unblocked.',
       address: 'Indiranagar, Bengaluru',
       distance: '3.4 km',
       distanceVal: 3.4,
@@ -582,6 +618,7 @@ const EmployeeTasks = () => {
       companyContact: 'Suresh Raina',
       companyEmail: 'finance@adityabirla.com',
       companyInsight: 'Enterprise Account • Active',
+      companyDescription: 'A major enterprise account requiring strict compliance with our latest merchandising guidelines and payment collection protocols.',
       address: 'Koramangala, Bengaluru',
       distance: '0.8 km',
       distanceVal: 0.8,
@@ -602,6 +639,67 @@ const EmployeeTasks = () => {
       checklist: [
         { id: 1, text: 'Collect signed invoice copy', completed: false },
         { id: 2, text: 'Verify payment mode (Cheque/NEFT)', completed: false }
+      ]
+    },
+    // --- Additional Yesterday Tasks ---
+    {
+      id: 11,
+      title: 'Store Inspection Audit',
+      store: 'Reliance Digital',
+      companyName: 'Reliance Retail Ltd',
+      companyContact: 'Kavita Reddy',
+      companyEmail: 'kavita@reliance.com',
+      companyInsight: 'Key Electronics Partner',
+      address: 'Jayanagar, Bengaluru',
+      distance: '4.2 km',
+      distanceVal: 4.2,
+      eta: '30 mins',
+      priority: 'high',
+      status: 'pending',
+      visitStatus: 'Delayed',
+      missionStatus: 'Pending',
+      isTaskStarted: false,
+      dueDate: 'Yesterday, 02:00 PM',
+      date: new Date(Date.now() - 86400000), // Yesterday
+      type: 'Audit',
+      incentive: '₹200',
+      incentiveVal: 200,
+      difficulty: 'Medium',
+      coords: { x: 35, y: 45 },
+      evidence: { storeFront: null, selfie: null, productDisplay: null, officialDoc: null },
+      checklist: [
+        { id: 1, text: 'Check electronic displays for defects', completed: false },
+        { id: 2, text: 'Verify staff uniform compliance', completed: false }
+      ]
+    },
+    {
+      id: 12,
+      title: 'Hardware Maintenance',
+      store: 'Star Bazaar',
+      companyName: 'Trent Hypermarket',
+      companyContact: 'Anil Kumar',
+      companyEmail: 'anil@trent.in',
+      companyInsight: 'Standard Account',
+      address: 'Hebbal, Bengaluru',
+      distance: '9.5 km',
+      distanceVal: 9.5,
+      eta: '45 mins',
+      priority: 'medium',
+      status: 'delayed',
+      visitStatus: 'Missed',
+      missionStatus: 'Overdue',
+      isTaskStarted: false,
+      dueDate: 'Yesterday, 11:30 AM',
+      date: new Date(Date.now() - 86400000), // Yesterday
+      type: 'Retail',
+      incentive: '₹150',
+      incentiveVal: 150,
+      difficulty: 'Hard',
+      coords: { x: 45, y: 75 },
+      evidence: { storeFront: null, selfie: null, productDisplay: null, officialDoc: null },
+      checklist: [
+        { id: 1, text: 'Fix POS barcode scanner', completed: false },
+        { id: 2, text: 'Update firmware on backend terminal', completed: false }
       ]
     },
     {
@@ -635,6 +733,7 @@ const EmployeeTasks = () => {
         { id: 3, text: 'Submit final report draft', completed: false }
       ]
     },
+    // --- This Week Tasks ---
     {
       id: 5,
       title: 'Display Unit Setup',
@@ -653,7 +752,7 @@ const EmployeeTasks = () => {
       missionStatus: 'Pending',
       isTaskStarted: false,
       dueDate: 'This Week',
-      date: new Date(Date.now() + 3 * 86400000), // This Week
+      date: new Date(Date.now() + 3 * 86400000),
       type: 'Retail',
       incentive: '₹300',
       incentiveVal: 300,
@@ -662,6 +761,68 @@ const EmployeeTasks = () => {
       evidence: { storeFront: null, selfie: null, productDisplay: null, officialDoc: null },
       checklist: []
     },
+    {
+      id: 7,
+      title: 'Market Competitor Analysis',
+      store: 'D-Mart Sarjapur',
+      companyName: 'Avenue Supermarts',
+      companyContact: 'Priya Patel',
+      companyEmail: 'priya@dmart.in',
+      companyInsight: 'Tier 1 Account • High Frequency',
+      address: 'Sarjapur Road, Bengaluru',
+      distance: '6.1 km',
+      distanceVal: 6.1,
+      eta: '35 mins',
+      priority: 'medium',
+      status: 'pending',
+      visitStatus: 'Reached Client',
+      missionStatus: 'Pending',
+      isTaskStarted: false,
+      dueDate: 'This Week',
+      date: new Date(Date.now() + 2 * 86400000),
+      type: 'Survey',
+      incentive: '₹180',
+      incentiveVal: 180,
+      difficulty: 'Medium',
+      coords: { x: 55, y: 65 },
+      evidence: { storeFront: null, selfie: null, productDisplay: null, officialDoc: null },
+      checklist: [
+        { id: 1, text: 'Visit 3 competitor outlets', completed: false },
+        { id: 2, text: 'Record pricing data for key SKUs', completed: false },
+        { id: 3, text: 'Photograph competitor display setups', completed: false },
+      ]
+    },
+    {
+      id: 8,
+      title: 'Promotional Campaign Setup',
+      store: 'Lifestyle Store',
+      companyName: 'Landmark Group',
+      companyContact: 'Sumanth Rao',
+      companyEmail: 's.rao@landmark.in',
+      companyInsight: 'Premium Partner • Event Client',
+      address: 'Orion Mall, Bengaluru',
+      distance: '10.3 km',
+      distanceVal: 10.3,
+      eta: '55 mins',
+      priority: 'high',
+      status: 'pending',
+      visitStatus: 'Reached Client',
+      missionStatus: 'Pending',
+      isTaskStarted: false,
+      dueDate: 'This Week',
+      date: new Date(Date.now() + 4 * 86400000),
+      type: 'Retail',
+      incentive: '₹350',
+      incentiveVal: 350,
+      difficulty: 'Hard',
+      coords: { x: 25, y: 70 },
+      evidence: { storeFront: null, selfie: null, productDisplay: null, officialDoc: null },
+      checklist: [
+        { id: 1, text: 'Set up 2 promotional kiosks', completed: false },
+        { id: 2, text: 'Brief store staff on campaign rules', completed: false },
+      ]
+    },
+    // --- This Month Tasks ---
     {
       id: 6,
       title: 'Audit Report Filing',
@@ -680,7 +841,7 @@ const EmployeeTasks = () => {
       missionStatus: 'Pending',
       isTaskStarted: false,
       dueDate: 'This Month',
-      date: new Date(Date.now() + 20 * 86400000), // This Month
+      date: new Date(Date.now() + 20 * 86400000),
       type: 'Audit',
       incentive: '₹120',
       incentiveVal: 120,
@@ -688,6 +849,67 @@ const EmployeeTasks = () => {
       coords: { x: 65, y: 45 },
       evidence: { storeFront: null, selfie: null, productDisplay: null, officialDoc: null },
       checklist: []
+    },
+    {
+      id: 9,
+      title: 'Annual Stock Reconciliation',
+      store: 'Croma Electronics',
+      companyName: 'Infiniti Retail',
+      companyContact: 'Deepak Menon',
+      companyEmail: 'deepak@croma.com',
+      companyInsight: 'Enterprise Account • 3 Years',
+      address: 'Phoenix Marketcity, Bengaluru',
+      distance: '7.5 km',
+      distanceVal: 7.5,
+      eta: '40 mins',
+      priority: 'high',
+      status: 'pending',
+      visitStatus: 'Reached Client',
+      missionStatus: 'Pending',
+      isTaskStarted: false,
+      dueDate: 'This Month',
+      date: new Date(Date.now() + 12 * 86400000),
+      type: 'Finance',
+      incentive: '₹400',
+      incentiveVal: 400,
+      difficulty: 'Hard',
+      coords: { x: 40, y: 55 },
+      evidence: { storeFront: null, selfie: null, productDisplay: null, officialDoc: null },
+      checklist: [
+        { id: 1, text: 'Cross-check invoices with physical stock', completed: false },
+        { id: 2, text: 'Flag discrepancies in ERP system', completed: false },
+        { id: 3, text: 'Submit signed reconciliation sheet', completed: false },
+      ]
+    },
+    {
+      id: 10,
+      title: 'Customer Loyalty Drive',
+      store: 'Shoppers Stop',
+      companyName: 'K Raheja Corp',
+      companyContact: 'Meena Iyer',
+      companyEmail: 'm.iyer@shoppersstop.com',
+      companyInsight: 'Long-term Partner • High Footfall',
+      address: 'Koramangala, Bengaluru',
+      distance: '3.9 km',
+      distanceVal: 3.9,
+      eta: '25 mins',
+      priority: 'medium',
+      status: 'pending',
+      visitStatus: 'Reached Client',
+      missionStatus: 'Pending',
+      isTaskStarted: false,
+      dueDate: 'This Month',
+      date: new Date(Date.now() + 18 * 86400000),
+      type: 'Survey',
+      incentive: '₹200',
+      incentiveVal: 200,
+      difficulty: 'Medium',
+      coords: { x: 60, y: 30 },
+      evidence: { storeFront: null, selfie: null, productDisplay: null, officialDoc: null },
+      checklist: [
+        { id: 1, text: 'Enrol 20 customers in loyalty programme', completed: false },
+        { id: 2, text: 'Distribute welcome kit packs', completed: false },
+      ]
     }
   ];
 
@@ -875,6 +1097,26 @@ const EmployeeTasks = () => {
 
 
       <div className="space-y-10">
+        {/* Master Page Header */}
+        <div className="flex-1 space-y-3 mb-6">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20">
+            <LayoutGrid size={14} className="text-indigo-600 dark:text-indigo-400" />
+            <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600 dark:text-indigo-400">Assignment Hub</span>
+          </div>
+          <div>
+            <h2 className="text-4xl md:text-5xl font-black text-gray-900 dark:text-white tracking-tight leading-none mb-2 mt-1">
+              Active <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 to-purple-500">Tasks</span>
+            </h2>
+            <p className="text-sm font-bold text-gray-500 dark:text-gray-400 flex items-center gap-2">
+              Manage your operational queue
+              <span className="hidden sm:inline w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-700" />
+              <span className="text-xs uppercase tracking-widest">
+                Sorted by <span className="text-indigo-600 dark:text-indigo-400 font-black">{sortBy.replace('_', ' ')}</span>
+              </span>
+            </p>
+          </div>
+        </div>
+
         {/* Tab Navigation Switcher */}
         <div className="flex bg-gray-50 dark:bg-gray-900/50 p-2 rounded-[2rem] border border-gray-100 dark:border-gray-800 shadow-inner w-full">
           <button
@@ -1003,39 +1245,36 @@ const EmployeeTasks = () => {
           /* Task Hub Grid - Ultra-Compact High-Density */
           <div className="bg-white dark:bg-gray-900 rounded-[3rem] p-8 md:p-14 border border-gray-100 dark:border-gray-800 shadow-xl space-y-12 animate-in slide-in-from-right-4 duration-500">
             <div className="flex flex-col lg:flex-row lg:items-center gap-8">
-              <div className="flex-1">
-                <h2 className="text-4xl font-black text-gray-900 dark:text-white tracking-widest uppercase mb-2">Tasks </h2>
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-tighter">Queue filtered by <span className="text-indigo-600 font-black">{sortBy.replace('_', ' ')}</span></p>
-              </div>
+              {/* Header logic moved to top of page */}
 
-              <div className="flex flex-wrap items-center justify-end gap-4 ml-auto">
-                <div className="relative group/search">
-                  <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within/search:text-indigo-600 transition-colors" size={20} />
+              <div className="flex flex-col lg:flex-row items-center justify-end gap-4 ml-auto w-full">
+                <div className="relative group/search w-full lg:flex-1 lg:max-w-xl">
+                  <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within/search:text-indigo-600 transition-colors" size={18} />
                   <input
                     type="text"
                     placeholder="Search mission queue..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-12 pr-6 py-4 bg-gray-50 dark:bg-gray-800 rounded-2xl text-xs font-bold outline-none border border-transparent focus:border-indigo-100 dark:focus:border-indigo-900/30 w-full md:w-64 lg:w-96 transition-all shadow-inner"
+                    className="pl-12 pr-6 py-3 bg-gray-50 dark:bg-gray-800 rounded-xl text-xs font-bold outline-none border border-transparent focus:border-indigo-100 dark:focus:border-indigo-900/30 w-full transition-all shadow-inner"
                   />
                 </div>
 
-                <div className="flex bg-gray-50 dark:bg-gray-800 p-2 rounded-2xl border border-gray-100 dark:border-gray-700">
+                <div className="flex bg-gray-50 dark:bg-gray-800 p-1.5 rounded-xl border border-gray-100 dark:border-gray-700 w-full lg:w-auto overflow-x-auto shrink-0 shadow-sm text-gray-600 dark:text-gray-400 scrollbar-hide">
                   <select
                     value={filterPriority}
                     onChange={(e) => setFilterPriority(e.target.value)}
-                    className="bg-transparent text-xs font-black uppercase tracking-widest px-4 py-2 outline-none border-none cursor-pointer text-gray-600 dark:text-gray-400"
+                    className="bg-transparent text-[10px] font-black uppercase tracking-widest px-3 py-1.5 outline-none border-none cursor-pointer hover:text-indigo-600 transition-colors"
                   >
                     <option value="all">Priority: All</option>
                     <option value="high">High</option>
                     <option value="medium">Medium</option>
                     <option value="low">Low</option>
                   </select>
-                  <div className="w-px h-6 bg-gray-200 dark:bg-gray-700 self-center" />
+                  <div className="w-px h-5 bg-gray-200 dark:bg-gray-700 self-center mx-1 shrink-0" />
                   <select
                     value={filterDate}
                     onChange={(e) => setFilterDate(e.target.value)}
-                    className="bg-transparent text-xs font-black uppercase tracking-widest px-4 py-2 outline-none border-none cursor-pointer text-gray-600 dark:text-gray-400"
+                    className="bg-transparent text-[10px] font-black uppercase tracking-widest px-3 py-1.5 outline-none border-none cursor-pointer hover:text-indigo-600 transition-colors"
                   >
                     <option value="all">Time: All</option>
                     <option value="today">Today</option>
@@ -1043,119 +1282,123 @@ const EmployeeTasks = () => {
                     <option value="this_week">This Week</option>
                     <option value="this_month">This Month</option>
                   </select>
-                  <div className="w-px h-6 bg-gray-200 dark:bg-gray-700 self-center" />
+                  <div className="w-px h-5 bg-gray-200 dark:bg-gray-700 self-center mx-1 shrink-0" />
                   <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value)}
-                    className="bg-transparent text-xs font-black uppercase tracking-widest px-4 py-2 outline-none border-none cursor-pointer text-gray-600 dark:text-gray-400"
+                    className="bg-transparent text-[10px] font-black uppercase tracking-widest px-3 py-1.5 outline-none border-none cursor-pointer hover:text-indigo-600 transition-colors"
                   >
                     <option value="nearest">Sort: Nearest</option>
                     <option value="highest_pay">Payout</option>
                     <option value="priority">Priority</option>
                   </select>
                 </div>
-
-                <button className="p-4 bg-gray-50 dark:bg-gray-800 rounded-2xl text-gray-400 hover:text-indigo-600 border border-gray-100 dark:border-gray-700 transition-all shadow-md">
-                  <Filter size={18} />
-                </button>
               </div>
             </div>
 
-            <div className="space-y-12">
+            <div className="space-y-6">
               {Object.entries(groupedTasks).map(([category, tasks]) => (
                 tasks.length > 0 && (
-                  <div key={category} className="space-y-6">
-                    <div className="flex items-center gap-4 border-b border-gray-100 dark:border-gray-800 pb-4">
+                  <div key={category} className="space-y-3">
+                    <div
+                      className="flex items-center gap-4 border-b border-gray-100 dark:border-gray-800 pb-4 cursor-pointer select-none"
+                      onClick={() => toggleCategory(category)}
+                    >
                       <div className="w-10 h-10 rounded-xl bg-gray-50 dark:bg-gray-800 flex items-center justify-center text-gray-400">
                         {category === 'Today' ? <Clock size={18} className="text-indigo-600" /> :
                           category === 'Yesterday' ? <Calendar size={18} /> :
                             category === 'This Week' ? <LayoutGrid size={18} /> :
                               <TrendingUpIcon size={18} />}
                       </div>
-                      <div>
+                      <div className="flex-1">
                         <h3 className="text-lg font-black text-gray-900 dark:text-white uppercase tracking-widest">{category}'s Missions</h3>
                         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">{tasks.length} Operational Targets</p>
                       </div>
+                      <div className={`p-2 rounded-xl text-gray-400 transition-transform duration-300 ${collapsedCategories[category] ? 'rotate-180' : ''}`}>
+                        <ChevronDown size={18} />
+                      </div>
                     </div>
 
-                    <div className={view === 'list' ? "space-y-6" : "grid grid-cols-1 gap-6"}>
-                      {tasks.map((task) => (
-                        <div
-                          key={task.id}
-                          onClick={() => setSelectedTask(task)}
-                          className="group relative bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-[2.5rem] overflow-hidden transition-all hover:shadow-3xl hover:border-indigo-100 dark:hover:border-indigo-900/40 flex flex-col md:flex-row md:items-center cursor-pointer min-h-[180px]"
-                        >
-                          {/* Left Priority Strip */}
-                          <div className={`absolute left-0 top-0 bottom-0 w-2 ${task.priority === 'high' ? 'bg-red-500' :
-                            task.priority === 'medium' ? 'bg-orange-500' : 'bg-emerald-500'
-                            }`} />
+                    {!collapsedCategories[category] && (
+                      <div className={view === 'list' ? "space-y-3" : "grid grid-cols-1 gap-3"}>
+                        {tasks.map((task) => (
+                          <div
+                            key={task.id}
+                            onClick={() => setSelectedTask(task)}
+                            className="group relative bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-[2rem] overflow-hidden transition-all hover:shadow-3xl hover:border-indigo-100 dark:hover:border-indigo-900/40 flex flex-col md:flex-row md:items-center cursor-pointer"
+                          >
+                            {/* Left Priority Strip */}
+                            <div className={`absolute left-0 top-0 bottom-0 w-2 ${task.priority === 'high' ? 'bg-red-500' :
+                              task.priority === 'medium' ? 'bg-orange-500' : 'bg-emerald-500'
+                              }`} />
 
-                          {/* Info Section - Left */}
-                          <div className="p-8 flex-1 flex items-start gap-6">
-                            <div className={`p-4 rounded-2xl shrink-0 ${getPriorityColor(task.priority)} shadow-sm group-hover:scale-110 transition-transform`}>
-                              {getCategoryIcon(task.type)}
-                            </div>
-                            <div className="min-w-0">
-                              <div className="flex items-center gap-3 mb-2">
-                                <p className="text-xs font-black uppercase text-gray-400 tracking-wider leading-none">{task.type}</p>
-                                <span className="w-1.5 h-1.5 rounded-full bg-gray-200" />
-                                <p className={`text-xs font-bold uppercase tracking-widest ${task.status === 'in-progress' ? 'text-orange-500 animate-pulse' :
-                                  task.status === 'delayed' ? 'text-red-500' : 'text-gray-500'
-                                  }`}>
-                                  {task.status.replace('-', ' ')}
-                                </p>
-                                <span className="w-1.5 h-1.5 rounded-full bg-gray-200" />
-                                <span className={`text-xs font-black uppercase px-3 py-1 rounded-full border ${task.priority === 'high' ? 'bg-red-50 text-red-600 border-red-100' :
-                                  task.priority === 'medium' ? 'bg-orange-50 text-orange-600 border-orange-100' :
-                                    'bg-emerald-50 text-emerald-600 border-emerald-100'
-                                  }`}>
-                                  {task.priority}
-                                </span>
+                            {/* Info Section - Left */}
+                            <div className="p-5 flex-1 flex items-start gap-4">
+                              <div className={`p-3 rounded-xl shrink-0 ${getPriorityColor(task.priority)} shadow-sm group-hover:scale-110 transition-transform`}>
+                                {getCategoryIcon(task.type)}
                               </div>
-                              <h3 className="text-2xl font-black text-gray-900 dark:text-white mb-3 tracking-tighter leading-tight group-hover:text-indigo-600 transition-colors truncate">
-                                {task.title}
-                              </h3>
-                              <div className="flex items-center gap-3">
-                                <MapPin size={16} className="text-gray-400 shrink-0" />
-                                <p className="text-xs font-bold text-gray-600 dark:text-gray-400 truncate">
-                                  {task.store} • <span className="text-gray-400 font-medium">{task.address}</span>
-                                </p>
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-3 mb-2">
+                                  <p className="text-xs font-black uppercase text-gray-400 tracking-wider leading-none">{task.type}</p>
+                                  <span className="w-1.5 h-1.5 rounded-full bg-gray-200" />
+                                  <p className={`text-xs font-bold uppercase tracking-widest ${task.status === 'in-progress' ? 'text-orange-500 animate-pulse' :
+                                    task.status === 'delayed' ? 'text-red-500' : 'text-gray-500'
+                                    }`}>
+                                    {task.status.replace('-', ' ')}
+                                  </p>
+                                  <span className="w-1.5 h-1.5 rounded-full bg-gray-200" />
+                                  <span className={`text-xs font-black uppercase px-3 py-1 rounded-full border ${task.priority === 'high' ? 'bg-red-50 text-red-600 border-red-100' :
+                                    task.priority === 'medium' ? 'bg-orange-50 text-orange-600 border-orange-100' :
+                                      'bg-emerald-50 text-emerald-600 border-emerald-100'
+                                    }`}>
+                                    {task.priority}
+                                  </span>
+                                </div>
+                                <h3 className="text-lg font-black text-gray-900 dark:text-white mb-1 tracking-tighter leading-tight group-hover:text-indigo-600 transition-colors truncate">
+                                  {task.title}
+                                </h3>
+                                <div className="flex items-center gap-3">
+                                  <MapPin size={16} className="text-gray-400 shrink-0" />
+                                  <p className="text-xs font-bold text-gray-600 dark:text-gray-400 truncate">
+                                    {task.store} • <span className="text-gray-400 font-medium">{task.address}</span>
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Action Section - Right */}
+                            <div className="p-5 pl-5 md:w-[360px] flex flex-col justify-center items-end gap-3 bg-gray-50/30 dark:bg-gray-800/20 md:border-l md:border-gray-50 md:dark:border-gray-800/50">
+                              <div className="flex items-center gap-8 w-full justify-end mb-2">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center shadow-inner">
+                                    <Navigation size={18} className="text-indigo-600" />
+                                  </div>
+                                  <div>
+                                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Distance</p>
+                                    <p className="text-sm font-black text-gray-900 dark:text-white leading-none">{task.distance}</p>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                  <div className="w-10 h-10 rounded-xl bg-pink-50 dark:bg-pink-900/30 flex items-center justify-center shadow-inner">
+                                    <Clock size={18} className="text-pink-600" />
+                                  </div>
+                                  <div>
+                                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Arrival</p>
+                                    <p className="text-sm font-black text-gray-900 dark:text-white leading-none">{task.eta}</p>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-3 w-full justify-end">
+                                <button className="w-auto flex items-center justify-center gap-3 px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] transition-all shadow-xl shadow-indigo-100 dark:shadow-none whitespace-nowrap hover:scale-[1.02] active:scale-95">
+                                  Start Task
+                                </button>
                               </div>
                             </div>
                           </div>
-
-                          {/* Action Section - Right */}
-                          <div className="p-8 md:w-[400px] flex flex-col justify-center items-end gap-6 bg-gray-50/30 dark:bg-gray-800/20 md:border-l md:border-gray-50 md:dark:border-gray-800/50">
-                            <div className="flex items-center gap-8 w-full justify-end mb-2">
-                              <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center shadow-inner">
-                                  <Navigation size={18} className="text-indigo-600" />
-                                </div>
-                                <div>
-                                  <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Distance</p>
-                                  <p className="text-sm font-black text-gray-900 dark:text-white leading-none">{task.distance}</p>
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-pink-50 dark:bg-pink-900/30 flex items-center justify-center shadow-inner">
-                                  <Clock size={18} className="text-pink-600" />
-                                </div>
-                                <div>
-                                  <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Arrival</p>
-                                  <p className="text-sm font-black text-gray-900 dark:text-white leading-none">{task.eta}</p>
-                                </div>
-                              </div>
-                            </div>
-
-                            <div className="flex items-center gap-3 w-full justify-end">
-                              <button className="w-auto flex items-center justify-center gap-3 px-10 py-5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] transition-all shadow-xl shadow-indigo-100 dark:shadow-none whitespace-nowrap hover:scale-[1.02] active:scale-95">
-                                Start Task
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )
               ))}

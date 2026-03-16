@@ -151,9 +151,9 @@ const RevenueCard = () => {
   };
 
   return (
-    <Link 
+    <Link
       to="/employee/orders"
-      className="w-full max-w-[320px] aspect-square bg-white text-gray-900 p-7 rounded-[3rem] shadow-xl relative overflow-hidden group transition-all duration-700 border border-gray-100 hover:border-emerald-500/30 block hover:-translate-y-1 active:scale-[0.98]"
+      className="w-full max-w-[320px] aspect-square bg-white dark:bg-slate-900 text-gray-900 dark:text-white p-7 rounded-[3rem] shadow-xl relative overflow-hidden group transition-all duration-700 border border-gray-100 dark:border-slate-800 hover:border-emerald-500/30 block hover:-translate-y-1 active:scale-[0.98]"
     >
       {/* Background Pattern */}
       <div className="absolute inset-0 opacity-[0.05] pointer-events-none" style={{ backgroundImage: 'radial-gradient(#000 1px, transparent 1px)', backgroundSize: '16px 16px' }} />
@@ -236,7 +236,7 @@ const CapabilitiesCard = () => {
   };
 
   return (
-    <div className="w-full max-w-[320px] aspect-square bg-white text-gray-900 p-7 rounded-[3rem] shadow-xl relative overflow-hidden group transition-all duration-700 border border-gray-100 hover:border-indigo-500/30">
+    <div className="w-full max-w-[320px] aspect-square bg-white dark:bg-slate-900 text-gray-900 dark:text-white p-7 rounded-[3rem] shadow-xl relative overflow-hidden group transition-all duration-700 border border-gray-100 dark:border-slate-800 hover:border-indigo-500/30">
       {/* Background Pattern */}
       <div className="absolute inset-0 opacity-[0.05] pointer-events-none" style={{ backgroundImage: 'radial-gradient(#000 1px, transparent 1px)', backgroundSize: '16px 16px' }} />
       <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/5 rounded-full blur-[60px] -mr-20 -mt-20 pointer-events-none group-hover:scale-125 transition-transform duration-1000" />
@@ -284,7 +284,7 @@ const ActivityItem = ({ activity, isLast }) => (
 
         {/* Pulsing ring for the icon when hovered */}
         <div className={`absolute inset-0 rounded-2xl animate-pulse opacity-0 group-hover/item:opacity-20 transition-opacity duration-700 ${activity.type === 'success' ? 'bg-emerald-400' :
-            activity.type === 'info' ? 'bg-blue-400' : 'bg-slate-400'
+          activity.type === 'info' ? 'bg-blue-400' : 'bg-slate-400'
           }`} />
       </div>
     </div>
@@ -353,7 +353,7 @@ const EmployeeDashboard = () => {
             </div>
             <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight leading-tight">
               Good Afternoon,<br className="hidden md:block" />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-200 to-emerald-200 drop-shadow-sm">Rahul</span>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-200 to-emerald-200 drop-shadow-sm">Person</span>
             </h1>
             <p className="flex items-center text-indigo-100/90 font-medium text-base md:text-lg mt-2">
               Senior Field Executive
@@ -409,9 +409,9 @@ const EmployeeDashboard = () => {
       <section className="flex flex-col lg:flex-row justify-end items-center gap-6 md:gap-8">
         <RevenueCard />
         <CapabilitiesCard />
-        <Link 
+        <Link
           to="/employee/tasks"
-          className="w-full max-w-[320px] aspect-square bg-white text-gray-900 p-7 rounded-[3rem] shadow-xl relative overflow-hidden group transition-all duration-700 border border-gray-100 hover:border-indigo-500/30 block hover:-translate-y-1 active:scale-[0.98]"
+          className="w-full max-w-[320px] aspect-square bg-white dark:bg-slate-900 text-gray-900 dark:text-white p-7 rounded-[3rem] shadow-xl relative overflow-hidden group transition-all duration-700 border border-gray-100 dark:border-slate-800 hover:border-indigo-500/30 block hover:-translate-y-1 active:scale-[0.98]"
         >
           {/* Background Pattern */}
           <div className="absolute inset-0 opacity-[0.05] pointer-events-none" style={{ backgroundImage: 'radial-gradient(#000 1px, transparent 1px)', backgroundSize: '16px 16px' }} />
@@ -440,8 +440,8 @@ const EmployeeDashboard = () => {
       <section className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12 items-start">
         {/* Next Target Destination Card */}
         <div className="relative group">
-          <Link 
-            to="/employee/tasks" 
+          <Link
+            to="/employee/tasks"
             className={`${UI_TOKENS.cardBase} p-8 md:p-10 rounded-[3rem] shadow-2xl block transition-all duration-700 hover:shadow-indigo-500/10 hover:-translate-y-1 active:scale-[0.98] outline-none group-hover:border-indigo-500/30 overflow-hidden`}
           >
             {/* Soft background accents */}
