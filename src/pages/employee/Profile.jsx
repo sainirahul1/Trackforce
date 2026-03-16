@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { User, Briefcase, FileText, Activity, LayoutDashboard, Settings, Mail, Phone, MapPin, MoreVertical, ShieldCheck, TrendingUp, ShoppingBag, Map as MapIcon, Clock, HeartPulse, Building, Shield, UserCheck, Calendar, CheckCircle, Download, ExternalLink, Bell, Globe, LogOut, Share2, Eye, EyeOff, Lock, AlertTriangle, Smartphone, Wifi, X, MessageSquare, Copy, Pencil, UploadCloud, ChevronDown, CheckCircle2, Filter, Search, GripVertical, MoreHorizontal, Info, Users } from 'lucide-react';
+import { User, Briefcase, FileText, Activity, LayoutDashboard, Settings, Mail, Phone, MapPin, MoreVertical, ShieldCheck, TrendingUp, ShoppingBag, Map as MapIcon, Clock, HeartPulse, Building, Shield, UserCheck, Calendar, CheckCircle, Download, ExternalLink, Bell, Globe, LogOut, Share2, Eye, EyeOff, Lock, AlertTriangle, Smartphone, Wifi, X, MessageSquare, Copy, Pencil, UploadCloud, ChevronDown, CheckCircle2, Filter, Search, GripVertical, MoreHorizontal, Info, Users, Menu } from 'lucide-react';
 import { useNotifications } from '../../context/NotificationContext';
 
 const ScrollStyles = () => (
@@ -135,7 +135,7 @@ const ShareProfileModal = ({ isOpen, onClose, employee }) => {
   );
 };
 
-const PortfolioNavigationOverlay = ({ isOpen, onClose, onNavigate }) => {
+const ProfileUnifiedOverlay = ({ isOpen, onClose, employee, documents, activeTab, setActiveTab, onEditDocument, onViewDocument, onEditProfile, onSaveProfile }) => {
   useEffect(() => {
     if (!isOpen) return;
     const onKeyDown = (e) => { if (e.key === 'Escape') onClose(); };
@@ -143,51 +143,377 @@ const PortfolioNavigationOverlay = ({ isOpen, onClose, onNavigate }) => {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [isOpen, onClose]);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, [isOpen]);
+
   const navItems = [
-    { id: 'personal', label: 'Personal Info', icon: User, desc: 'Manage your personal details and contact info' },
-    { id: 'documents', label: 'Documents', icon: FileText, desc: 'View and export your verified files' },
-    { id: 'settings', label: 'Settings', icon: Settings, desc: 'Update your password and preferences' },
+    { id: 'personal', label: 'Personal Info', icon: User },
+    { id: 'documents', label: 'Documents', icon: FileText },
+    { id: 'settings', label: 'Settings', icon: Settings },
   ];
 
+  if (!isOpen) return null;
+
   return (
-    <div className={`fixed inset-0 z-[110] flex items-center justify-center p-4 transition-all duration-500 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-      <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-xl" onClick={onClose} />
-
-      <div className={`relative w-[calc(100%-2rem)] max-w-4xl max-h-[90vh] flex flex-col transition-all duration-500 transform ${isOpen ? 'scale-100 translate-y-0' : 'scale-95 translate-y-12'}`}>
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 sm:mb-12 text-white gap-6 sticky top-0 bg-slate-900/40 backdrop-blur-sm p-4 -m-4 rounded-t-[3rem] z-10">
-          <div>
-            <h2 className="text-3xl sm:text-4xl font-black tracking-tight">Profile Navigation</h2>
-            <p className="text-slate-300 font-medium mt-2 text-sm sm:text-base">Quickly jump between your important records</p>
+    <div className="fixed inset-0 z-[150] flex animate-in fade-in duration-300">
+      {/* Sidebar Mockup */}
+      <aside className="w-64 bg-white dark:bg-gray-900 border-r border-gray-100 dark:border-gray-800 flex flex-col hidden lg:flex">
+        <div className="p-6 flex items-center justify-between border-b border-gray-50 dark:border-gray-800">
+          <div className="flex items-center gap-2.5">
+            <div className="w-10 h-10 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-xl rotate-3 shrink-0">
+              <ShieldCheck size={24} />
+            </div>
+            <span className="text-[22px] font-black italic tracking-tighter text-gray-900 dark:text-white pt-0.5">TrackForce</span>
           </div>
-          <button onClick={onClose} className="p-3 sm:p-4 rounded-2xl sm:rounded-3xl bg-white/10 hover:bg-white/20 transition-all text-white backdrop-blur-sm self-end sm:self-auto">
-            <X size={28} />
-          </button>
         </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 overflow-y-auto tf-modal-scroll pr-2 pb-8">
+        <div className="flex-1 p-4 space-y-2">
+          <p className="px-4 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Profile Sections</p>
           {navItems.map((item) => (
             <button
               key={item.id}
-              onClick={() => onNavigate(item.id)}
-              className="group relative bg-white dark:bg-gray-900 p-6 sm:p-8 rounded-[2.5rem] sm:rounded-[3rem] border border-white/20 shadow-2xl transition-all hover:-translate-y-2 hover:shadow-slate-500/20 text-left overflow-hidden isolate transform-gpu"
+              onClick={() => setActiveTab(item.id)}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all ${
+                activeTab === item.id
+                  ? 'bg-indigo-50 text-indigo-600 shadow-inner dark:bg-indigo-900/20'
+                  : 'text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
+              }`}
             >
-              <div className="absolute top-0 right-0 w-32 h-32 bg-slate-50 dark:bg-slate-900/20 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-150" />
-
-              <div className="relative">
-                <div className="p-4 rounded-[1.5rem] bg-slate-50 dark:bg-slate-900/20 text-slate-900 dark:text-slate-400 w-fit mb-6 transition-transform group-hover:scale-110">
-                  <item.icon size={32} />
-                </div>
-                <h3 className="text-2xl font-black text-gray-900 dark:text-white mb-2">{item.label}</h3>
-                <p className="text-sm font-medium text-gray-500 dark:text-gray-400 leading-relaxed">{item.desc}</p>
-
-                <div className="mt-8 flex items-center gap-2 text-slate-900 dark:text-slate-400 font-black text-sm group-hover:translate-x-2 transition-transform">
-                  Go to {item.label} <ExternalLink size={16} />
-                </div>
-              </div>
+              <item.icon size={20} />
+              <span>{item.label}</span>
             </button>
           ))}
         </div>
+        <div className="p-4 border-t border-gray-100 dark:border-gray-800 space-y-4">
+          <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-800 flex items-center gap-3">
+             <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center text-indigo-600 font-bold shrink-0">
+               {employee.name.charAt(0)}
+             </div>
+             <div className="min-w-0">
+               <p className="font-black text-gray-900 dark:text-white text-sm truncate">{employee.name}</p>
+               <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest truncate">{employee.designation}</p>
+             </div>
+          </div>
+          <button onClick={onClose} className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold text-gray-400 hover:bg-rose-50 hover:text-rose-600 transition-all">
+            <LogOut size={20} />
+            <span>Close Overlay</span>
+          </button>
+        </div>
+      </aside>
+
+      {/* Main Content Area */}
+      <main className="flex-1 bg-gray-50 dark:bg-gray-950 flex flex-col relative overflow-hidden">
+        {/* Background Accents */}
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-indigo-500/5 rounded-full blur-[120px] -mr-64 -mt-64 pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-emerald-500/5 rounded-full blur-[120px] -ml-64 -mb-64 pointer-events-none" />
+
+        {/* Top Header with Horizontal Navigation */}
+        <header className="h-24 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-100 dark:border-gray-800 flex items-center justify-between px-8 sticky top-0 z-20 transition-all shrink-0">
+          <div className="flex items-center gap-8">
+             <button onClick={onClose} className="lg:hidden p-2.5 rounded-2xl bg-gray-50 dark:bg-gray-800 text-gray-400 hover:text-indigo-600 transition-all">
+                <Menu size={20} />
+             </button>
+             <h2 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">Your Profile</h2>
+          </div>
+          
+          <div className="flex items-center gap-4">
+            <button onClick={onClose} className="p-3 bg-gray-50 dark:bg-gray-800 text-gray-400 hover:text-gray-900 dark:hover:text-white rounded-2xl transition-all">
+              <X size={20} />
+            </button>
+          </div>
+        </header>
+
+        {/* Scrollable Content Body */}
+        <div className="flex-1 overflow-y-auto p-8 lg:p-12 tf-modal-scroll relative z-10">
+          <div className="max-w-6xl mx-auto">
+            {activeTab === 'personal' && (
+              <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="flex flex-col gap-8">
+                   <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight mb-1">Personal Details</h3>
+                        <p className="text-gray-500 font-medium">Your verified identity and health records</p>
+                      </div>
+                   </div>
+                   <div className="flex flex-col gap-8">
+                      <PersonalInfoContent employee={employee} />
+                   </div>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'documents' && (
+              <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="flex flex-col gap-8">
+                   <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight mb-1">Verified Documents</h3>
+                        <p className="text-gray-500 font-medium">Access and manage your professional credentials</p>
+                      </div>
+                      <button className="flex items-center gap-2 px-6 py-2.5 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl font-black text-sm text-gray-900 dark:text-white hover:bg-gray-50 transition-all shadow-sm">
+                        <Download size={18} /> Export Records
+                      </button>
+                   </div>
+                   <div className="flex flex-col gap-8">
+                      <DocumentsContent documents={documents} onEditDocument={onEditDocument} onViewDocument={onViewDocument} />
+                   </div>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'settings' && (
+              <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="flex flex-col gap-8">
+                   <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight mb-1">Account Control</h3>
+                        <p className="text-gray-500 font-medium">Security, notifications and system preferences</p>
+                      </div>
+                   </div>
+                   <SettingsContent employee={employee} onSaveProfile={onSaveProfile} />
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+};
+
+// --- Content Sub-components for Overlay ---
+
+const PersonalInfoContent = ({ employee }) => {
+  const groups = [
+    {
+      title: 'Identity & Contact',
+      icon: User,
+      items: [
+        { label: 'Full Name', value: employee.name, icon: User },
+        { label: 'Official Email', value: employee.email, icon: Mail },
+        { label: 'Work Phone', value: employee.phone, icon: Phone },
+        { label: 'Nationality', value: employee.nationality, icon: Globe },
+      ]
+    },
+    {
+      title: 'Residential Address',
+      icon: MapPin,
+      items: [
+        { label: 'Location', value: employee.location, icon: MapPin },
+        { label: 'Home Address', value: employee.address || 'Not specified', icon: Building },
+      ]
+    },
+    {
+      title: 'Medical Summary',
+      icon: HeartPulse,
+      items: [
+        { label: 'Blood Group', value: employee.bloodGroup, icon: HeartPulse },
+        { label: 'Emergency Contact', value: employee.emergencyContact, icon: Phone },
+      ]
+    }
+  ];
+
+  return groups.map((group, idx) => (
+    <div key={idx} className="bg-white dark:bg-gray-900 p-8 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all group">
+      <div className="flex items-center gap-3 mb-8">
+        <div className="p-3 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 rounded-2xl group-hover:scale-110 transition-transform">
+          <group.icon size={20} />
+        </div>
+        <h4 className="text-lg font-black text-gray-900 dark:text-white tracking-tight">{group.title}</h4>
       </div>
+      <div className="flex flex-col gap-6">
+        {group.items.map((item, i) => (
+          <div key={i} className="flex items-center justify-between gap-4 py-3 border-b border-gray-50 dark:border-gray-800/50 last:border-0 hover:bg-gray-50/50 dark:hover:bg-gray-800/20 -mx-4 px-4 rounded-xl transition-colors">
+            <div className="flex items-center gap-2.5 min-w-0">
+               <div className="p-1.5 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-400 group-hover:text-indigo-500 transition-colors">
+                  <item.icon size={12} />
+               </div>
+               <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest truncate">{item.label}</p>
+            </div>
+            <p className="text-sm font-bold text-gray-700 dark:text-gray-200 text-right truncate">{item.value}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  ));
+};
+
+const DocumentsContent = ({ documents, onEditDocument, onViewDocument }) => {
+  return documents.map((doc, i) => (
+    <div
+      key={i}
+      className="group p-8 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 flex flex-col gap-6 hover:border-indigo-500/30 hover:shadow-xl hover:-translate-y-1 transition-all"
+    >
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-6">
+          <div className={`p-5 rounded-2xl ${doc.type === 'PDF' ? 'bg-indigo-50 text-indigo-600' : 'bg-emerald-50 text-emerald-600'} dark:bg-opacity-10 group-hover:scale-110 transition-transform`}>
+            <FileText size={28} />
+          </div>
+          <div>
+            <p className="text-xl font-black text-gray-900 dark:text-white tracking-tight">{doc.name}</p>
+            <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mt-0.5">Professional Document</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => onEditDocument(doc)}
+            className="p-3 rounded-2xl bg-gray-50 dark:bg-gray-800 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all shadow-sm"
+          >
+            <UploadCloud size={18} />
+          </button>
+          <button
+            onClick={() => onViewDocument(doc)}
+            className="p-3 bg-indigo-600 text-white rounded-2xl shadow-lg shadow-indigo-200 dark:shadow-none hover:bg-indigo-700 transition-all active:scale-95"
+          >
+            <ExternalLink size={18} />
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-3 gap-6 pt-6 border-t border-gray-50 dark:border-gray-800">
+        <div className="flex flex-col gap-1">
+          <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Format</span>
+          <span className="text-sm font-bold text-gray-700 dark:text-gray-200">{doc.type}</span>
+        </div>
+        <div className="flex flex-col gap-1">
+          <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Size</span>
+          <span className="text-sm font-bold text-gray-700 dark:text-gray-200">{doc.size}</span>
+        </div>
+        <div className="flex flex-col gap-1">
+          <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Status</span>
+          <span className={`text-sm font-bold ${doc.status === 'Verified' ? 'text-emerald-500' : 'text-orange-500'}`}>{doc.status}</span>
+        </div>
+      </div>
+    </div>
+  ));
+};
+
+const SettingsContent = ({ employee, onSaveProfile }) => {
+  const [displayName, setDisplayName] = useState(employee.name || '');
+  const [emailNotif, setEmailNotif] = useState(true);
+  const [pushNotif, setPushNotif] = useState(true);
+  const [twoFA, setTwoFA] = useState(false);
+  const [loginAlerts, setLoginAlerts] = useState(true);
+  const [sessionTimeout, setSessionTimeout] = useState('30');
+  
+  const SectionContainer = ({ title, icon: Icon, children }) => (
+    <div className="bg-white dark:bg-gray-900 p-8 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 shadow-sm flex flex-col gap-6">
+      <div className="flex items-center gap-4 mb-2">
+        <div className="p-3 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 rounded-2xl">
+          <Icon size={20} />
+        </div>
+        <h4 className="text-xl font-black text-gray-900 dark:text-white tracking-tight">{title}</h4>
+      </div>
+      {children}
+    </div>
+  );
+
+  const SettingRow = ({ label, sub, children }) => (
+    <div className="flex items-center justify-between gap-8 py-4 border-b border-gray-50 dark:border-gray-800/50 last:border-0">
+      <div className="min-w-0 flex-1">
+        <p className="font-bold text-gray-900 dark:text-white truncate">{label}</p>
+        <p className="text-xs text-gray-500 font-medium mt-1">{sub}</p>
+      </div>
+      <div className="shrink-0">
+        {children}
+      </div>
+    </div>
+  );
+
+  const inputCls = "px-4 py-2.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 text-gray-900 dark:text-white font-bold outline-none focus:ring-2 focus:ring-indigo-500/30 text-sm w-64 text-right transition-all";
+
+  return (
+    <div className="flex flex-col gap-8 pb-12">
+      <SectionContainer title="User Preferences" icon={User}>
+        <SettingRow label="Display Name" sub="How your name appears across the platform">
+          <input 
+            value={displayName} 
+            onChange={(e) => setDisplayName(e.target.value)}
+            onBlur={() => onSaveProfile({ name: displayName })}
+            className={inputCls}
+          />
+        </SettingRow>
+        <SettingRow label="Language" sub="Select your preferred display language">
+          <select className={inputCls}>
+            <option>English (US)</option>
+            <option>Hindi</option>
+            <option>Spanish</option>
+          </select>
+        </SettingRow>
+      </SectionContainer>
+
+      <SectionContainer title="Notifications" icon={Bell}>
+        <SettingRow label="Email Updates" sub="Receive shift alerts and company news">
+          <Toggle checked={emailNotif} onChange={setEmailNotif} />
+        </SettingRow>
+        <SettingRow label="Push Alerts" sub="Real-time mobile and desktop notifications">
+          <Toggle checked={pushNotif} onChange={setPushNotif} />
+        </SettingRow>
+      </SectionContainer>
+
+      <SectionContainer title="Security & Privacy" icon={ShieldCheck}>
+        <SettingRow label="Two-Factor Auth" sub="Additional security via verification code">
+          <Toggle checked={twoFA} onChange={setTwoFA} />
+        </SettingRow>
+        <SettingRow label="Login Activity Alerts" sub="Notify me on new sign-in events">
+          <Toggle checked={loginAlerts} onChange={setLoginAlerts} />
+        </SettingRow>
+        <SettingRow label="Session Timeout" sub="Auto-logout after period of inactivity">
+           <select 
+             value={sessionTimeout} 
+             onChange={(e) => setSessionTimeout(e.target.value)}
+             className={inputCls}
+           >
+              <option value="15">15 minutes</option>
+              <option value="30">30 minutes</option>
+              <option value="60">1 hour</option>
+              <option value="240">4 hours</option>
+              <option value="never">Never</option>
+           </select>
+        </SettingRow>
+
+        <div className="mt-6 pt-6 border-t border-gray-50 dark:border-gray-800">
+          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Active Sessions</p>
+          <div className="space-y-4">
+            {[
+              { device: 'Chrome — Windows 11', loc: 'Bengaluru, IN', current: true },
+              { device: 'TrackForce Mobile App', loc: 'Bengaluru, IN', current: false },
+            ].map((s, i) => (
+              <div key={i} className="flex items-center justify-between p-4 bg-gray-50/50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-800">
+                <div className="flex items-center gap-4">
+                   <div className="p-2 bg-white dark:bg-gray-900 rounded-lg text-indigo-600 shadow-sm">
+                      <Smartphone size={16} />
+                   </div>
+                   <div>
+                      <p className="text-sm font-bold text-gray-900 dark:text-white">{s.device}</p>
+                      <p className="text-[10px] text-gray-500 font-medium">{s.loc}</p>
+                   </div>
+                </div>
+                {s.current ? (
+                  <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 px-3 py-1 rounded-full">Active</span>
+                ) : (
+                  <button className="text-[10px] font-black uppercase tracking-widest text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20 px-3 py-1 rounded-full transition-colors">Revoke</button>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="p-8 bg-indigo-50/30 dark:bg-indigo-900/10 rounded-[2.5rem] border border-indigo-100/50 dark:border-indigo-500/10 flex items-center justify-between gap-8 mt-6">
+          <div className="flex-1">
+            <h5 className="font-black text-gray-900 dark:text-white uppercase tracking-widest text-xs flex items-center gap-2 mb-2">
+              <Lock size={14} className="text-indigo-600" /> Password Management
+            </h5>
+            <p className="text-sm text-gray-500 font-medium leading-relaxed">Regularly update your password to keep your account safe.</p>
+          </div>
+          <button className="px-8 py-4 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-2xl font-black text-sm hover:scale-[1.02] transition-all shadow-xl shrink-0">
+            Update Password
+          </button>
+        </div>
+      </SectionContainer>
     </div>
   );
 };
@@ -1579,6 +1905,7 @@ const EmployeeProfile = () => {
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [editingDocument, setEditingDocument] = useState(null);
   const [viewingDocument, setViewingDocument] = useState(null);
+  const [activeTab, setActiveTab] = useState('personal');
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -1677,15 +2004,28 @@ const EmployeeProfile = () => {
         employee={employee}
       />
 
-      <PortfolioNavigationOverlay
+      <ProfileUnifiedOverlay
         isOpen={isNavigationOpen}
         onClose={() => setIsNavigationOpen(false)}
-        onNavigate={(id) => {
+        employee={employee}
+        documents={documents}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        onEditDocument={(doc) => {
+          setEditingDocument(doc);
           setIsNavigationOpen(false);
-          if (id === 'settings') setIsSettingsOpen(true);
-          else if (id === 'personal') setIsPersonalInfoOpen(true);
-          else if (id === 'documents') setIsDocumentsOpen(true);
+          setIsEditDocumentOpen(true);
         }}
+        onViewDocument={(doc) => {
+          setViewingDocument(doc);
+          setIsNavigationOpen(false);
+          setIsViewModalOpen(true);
+        }}
+        onEditProfile={() => {
+           setIsNavigationOpen(false);
+           setIsEditProfileOpen(true);
+        }}
+        onSaveProfile={(updates) => setEmployee((prev) => ({ ...prev, ...updates }))}
       />
 
       <PersonalInfoModal
@@ -1720,13 +2060,13 @@ const EmployeeProfile = () => {
         isOpen={isEditDocumentOpen}
         onClose={() => {
           setIsEditDocumentOpen(false);
-          setIsDocumentsOpen(true);
+          setIsNavigationOpen(true);
         }}
         document={editingDocument}
         onSave={(updatedDoc) => {
           setDocuments(prev => prev.map(d => d.id === updatedDoc.id ? updatedDoc : d));
           setIsEditDocumentOpen(false);
-          setIsDocumentsOpen(true);
+          setIsNavigationOpen(true);
         }}
       />
 
@@ -1734,7 +2074,7 @@ const EmployeeProfile = () => {
         isOpen={isViewModalOpen}
         onClose={() => {
           setIsViewModalOpen(false);
-          setIsDocumentsOpen(true);
+          setIsNavigationOpen(true);
         }}
         document={viewingDocument}
       />
