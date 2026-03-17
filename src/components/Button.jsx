@@ -5,7 +5,7 @@ const Button = ({ children, variant = 'primary', size = 'md', className = '', ..
   const variants = {
     primary: 'bg-primary-main text-white hover:bg-primary-dark',
     secondary: 'bg-gray-100 text-gray-900 hover:bg-gray-200',
-    outline: 'border-2 border-gray-100 text-gray-700 hover:bg-gray-50',
+    outline: 'border-2 border-gray-100 dark:border-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800',
     superAdmin: 'bg-superAdmin text-white hover:opacity-90 shadow-lg shadow-superAdmin/20',
     tenant: 'bg-tenant text-white hover:opacity-90 shadow-lg shadow-tenant/20',
     manager: 'bg-manager text-white hover:opacity-90 shadow-lg shadow-manager/20',
