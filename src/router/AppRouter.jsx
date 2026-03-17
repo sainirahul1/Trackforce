@@ -13,15 +13,24 @@ import TenantEmployees from '../pages/tenant/Employees';
 import ManagerDashboard from '../pages/manager/Dashboard';
 import ManagerTeam from '../pages/manager/Team';
 import EmployeeDetails from '../pages/manager/EmployeeDetails';
+import LiveTracking from '../pages/manager/LiveTracking';
+import ManagerTasksBoard from '../pages/manager/Tasks';
+import ManagerVisits from '../pages/manager/Visits';
+import InventoryOrders from '../pages/manager/InventoryOrders';
+import ManagerAnalytics from '../pages/manager/Analytics';
+import ManagerActivityLog from '../pages/manager/ActivityLog';
+import ManagerProfile from '../pages/manager/Profile';
+import ManagerIssues from '../pages/manager/Issues';
+import TenantIssues from '../pages/tenant/Issues';
+import SuperAdminIssues from '../pages/superadmin/Issues';
+
+// Employee Portal
 import EmployeeDashboard from '../pages/employee/Dashboard';
 import EmployeeProfile from '../pages/employee/Profile';
 import EmployeeVisits from '../pages/employee/Visits';
 import EmployeeOrders from '../pages/employee/Orders';
 import EmployeeActivity from '../pages/employee/Activity';
 import EmployeeTasks from '../pages/employee/Tasks';
-import ManagerIssues from '../pages/manager/Issues';
-import TenantIssues from '../pages/tenant/Issues';
-import SuperAdminIssues from '../pages/superadmin/Issues';
 
 const AppRouter = () => (
   <Routes>
@@ -54,6 +63,13 @@ const AppRouter = () => (
       <Route path="dashboard" element={<ManagerDashboard />} />
       <Route path="team" element={<ManagerTeam />} />
       <Route path="team/:id" element={<EmployeeDetails />} />
+      <Route path="live" element={<LiveTracking />} />
+      <Route path="tasks" element={<ManagerTasksBoard />} />
+      <Route path="visits" element={<ManagerVisits />} />
+      <Route path="inventory" element={<InventoryOrders />} />
+      <Route path="analytics" element={<ManagerAnalytics />} />
+      <Route path="activity" element={<ManagerActivityLog />} />
+      <Route path="profile" element={<ManagerProfile />} />
       <Route path="issues" element={<ManagerIssues />} />
       <Route index element={<Navigate to="dashboard" replace />} />
     </Route>
