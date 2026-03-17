@@ -153,6 +153,13 @@ const IssueDetails = ({ issue, onBack, onStatusUpdate, onUpdatePriority, onDelet
   const [showEscalateModal, setShowEscalateModal] = useState(false);
   const [selectedEscalateTarget, setSelectedEscalateTarget] = useState('Super Admin');
 
+  // Sync state when issue changes
+  useEffect(() => {
+    setLocalStatus(issue.status);
+    setLocalPriority(issue.priority);
+    setEscalatedTo(issue.status === 'Escalated' ? (issue.escalatedTo || 'Super Admin') : null);
+  }, [issue]);
+
   const handleStatusChange = (s) => {
     setLocalStatus(s);
     if (s !== 'Escalated') setEscalatedTo(null);
@@ -169,6 +176,7 @@ const IssueDetails = ({ issue, onBack, onStatusUpdate, onUpdatePriority, onDelet
     setEscalatedTo(selectedEscalateTarget);
     onStatusUpdate(issue.id, 'Escalated', selectedEscalateTarget);
     setShowEscalateModal(false);
+    onBack(); // Return to dashboard after escalation
   };
 
   const handleDelete = () => {
@@ -258,48 +266,61 @@ const IssueDetails = ({ issue, onBack, onStatusUpdate, onUpdatePriority, onDelet
         </button>
         
         <div className="flex flex-wrap items-center gap-4">
-          {localStatus !== 'Escalated' && (
-            <div className="flex flex-col gap-1.5">
-               <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Status</label>
-               <div className="relative">
-                  <select 
-                    value={localStatus}
-                    onChange={(e) => handleStatusChange(e.target.value)}
-                    className={`appearance-none bg-white dark:bg-gray-900 px-6 py-3.5 pr-12 rounded-2xl text-xs font-black uppercase tracking-widest border-2 transition-all outline-none cursor-pointer focus:ring-4 focus:ring-indigo-500/10 ${localStatus === 'Resolved' ? 'border-emerald-500 text-emerald-600' : 'border-indigo-500 text-indigo-600'}`}
-                  >
-                    <option value="Open">Open</option>
-                    <option value="In Progress">In Progress</option>
-                    <option value="Resolved">Resolved</option>
-                  </select>
-                  <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
-                    <ArrowUpRight size={14} className="rotate-90" />
-                  </div>
-               </div>
-            </div>
-          )}
-
-          {localStatus === 'Escalated' && (
-            <div className="flex items-center gap-3 text-purple-600 font-black text-xs uppercase tracking-widest bg-purple-50 dark:bg-purple-900/20 px-8 py-4 rounded-2xl border border-purple-100 dark:border-purple-500/30 shadow-lg shadow-purple-500/5 mt-5">
-              <ShieldAlert size={18} /> ⚠ Escalated to Super Admin
-            </div>
-          )}
+          <div className="flex flex-col gap-1.5">
+             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Status</label>
+             <div className="relative">
+                <select 
+                  value={localStatus}
+                  onChange={(e) => handleStatusChange(e.target.value)}
+                  className={`appearance-none bg-white dark:bg-gray-900 px-6 py-3.5 pr-12 rounded-2xl text-xs font-black uppercase tracking-widest border-2 transition-all outline-none cursor-pointer focus:ring-4 focus:ring-indigo-500/10 ${localStatus === 'Resolved' ? 'border-emerald-500 text-emerald-600' : (localStatus === 'Escalated' ? 'border-purple-500 text-purple-600' : 'border-indigo-500 text-indigo-600')}`}
+                >
+                  <option value="Open">Open</option>
+                  <option value="In Progress">In Progress</option>
+                  <option value="Resolved">Resolved</option>
+                  <option value="Escalated">Escalated</option>
+                </select>
+                <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                  <ArrowUpRight size={14} className="rotate-90" />
+                </div>
+             </div>
+          </div>
 
           <div className="flex items-center gap-3 mt-5">
+            {localStatus === 'Escalated' && (
+              <button 
+                onClick={() => {
+                  onStatusUpdate(issue.id, 'In Progress');
+                  onBack();
+                }}
+                className="px-6 py-3.5 bg-purple-600 text-white hover:bg-purple-700 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-purple-500/30 active:scale-95 flex items-center gap-2"
+              >
+                <Reply size={14} /> [ Return back ]
+              </button>
+            )}
+            
             <button 
               onClick={handleExit}
               className="px-8 py-3.5 bg-gray-100 dark:bg-gray-800 text-gray-500 hover:text-gray-900 rounded-2xl text-xs font-black uppercase tracking-widest transition-all border border-gray-200 dark:border-gray-700 active:scale-95"
             >
               [ Exit ]
             </button>
-            <button 
-              disabled={localStatus === 'Escalated'}
-              onClick={() => setShowEscalateModal(true)}
-              className={`flex items-center gap-2 px-8 py-3.5 rounded-2xl text-xs font-black transition-all border outline-none ${localStatus === 'Escalated' ? 'bg-purple-50 dark:bg-purple-900/20 text-purple-600 border-purple-100 cursor-not-allowed opacity-60' : 'bg-purple-500/10 hover:bg-purple-600 text-purple-600 hover:text-white border-purple-200 hover:border-purple-600 shadow-lg shadow-purple-500/5 hover:scale-105 active:scale-95'}`}
-            >
-              <ShieldAlert size={16} /> [ Escalate ]
-            </button>
+
+            {localStatus !== 'Escalated' && (
+              <button 
+                onClick={() => setShowEscalateModal(true)}
+                className="flex items-center gap-2 px-8 py-3.5 rounded-2xl text-xs font-black transition-all border outline-none bg-purple-500/10 hover:bg-purple-600 text-purple-600 hover:text-white border-purple-200 hover:border-purple-600 shadow-lg shadow-purple-500/5 hover:scale-105 active:scale-95"
+              >
+                <ShieldAlert size={16} /> [ Escalate ]
+              </button>
+            )}
           </div>
         </div>
+
+        {localStatus === 'Escalated' && (
+          <div className="w-full flex items-center gap-3 text-purple-600 font-black text-xs uppercase tracking-widest bg-purple-50 dark:bg-purple-900/20 px-8 py-4 rounded-2xl border border-purple-100 dark:border-purple-500/30 shadow-lg shadow-purple-500/5 mt-2 transition-all animate-in slide-in-from-top-2">
+            <ShieldAlert size={18} /> ⚠ Escalated to Super Admin
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
