@@ -1,64 +1,85 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, LayoutDashboard, User, Briefcase, FileText, Activity, Mail, Phone, MapPin, MoreVertical, ShieldCheck, TrendingUp, ShoppingBag, Map as MapIcon, Clock, HeartPulse, Building, Shield, UserCheck, Calendar, CheckCircle, Download, ExternalLink, Navigation, Store, LogIn } from 'lucide-react';
+import { ArrowLeft, LayoutDashboard, User, Briefcase, FileText, Activity, Mail, Phone, MapPin, MoreVertical, ShieldCheck, TrendingUp, ShoppingBag, Map as MapIcon, Clock, HeartPulse, Building, Shield, UserCheck, Calendar, CheckCircle, Download, ExternalLink, Navigation, Store, LogIn, Linkedin, GraduationCap } from 'lucide-react';
 import { mockEmployees } from '../../utils/mockData';
 import Button from '../../components/Button';
 
 // --- Internal Section Components (Manager View) ---
 
 const ProfileHeader = ({ employee }) => (
-  <div className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-blue-600 to-blue-800 p-8 text-white shadow-2xl">
-    <div className="absolute top-0 right-0 -mr-20 -mt-20 h-64 w-64 rounded-full bg-white/10 blur-3xl opacity-50" />
-    <div className="absolute bottom-0 left-0 -ml-20 -mb-20 h-64 w-64 rounded-full bg-blue-400/20 blur-3xl opacity-30" />
-    <div className="relative flex flex-col md:flex-row md:items-center gap-8">
-      <div className="flex-shrink-0">
-        <div className="relative">
+  <div className="bg-white dark:bg-gray-900 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 p-8 shadow-sm">
+    <div className="flex flex-col md:flex-row md:items-center gap-8">
+      <div className="flex-shrink-0 relative">
+        <div className="w-36 h-36 rounded-[2.5rem] overflow-hidden border-2 border-white shadow-xl ring-1 ring-gray-100 dark:ring-gray-800">
           <img 
             src={employee.avatar || "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix"} 
             alt={employee.name} 
-            className="h-32 w-32 rounded-3xl border-4 border-white/20 object-cover shadow-xl backdrop-blur-sm"
+            className="w-full h-full object-cover"
           />
-          <div className={`absolute -bottom-2 -right-2 h-8 w-8 rounded-full border-4 border-white flex items-center justify-center ${
-            employee.status === 'On Duty' ? 'bg-emerald-500' : 'bg-gray-400'
-          }`}>
-            <div className="h-2 w-2 rounded-full bg-white animate-pulse" />
-          </div>
+        </div>
+        <div className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full border-4 border-white dark:border-gray-900 bg-emerald-500 flex items-center justify-center">
+            <div className="h-2 w-2 rounded-full bg-white" />
         </div>
       </div>
+
       <div className="flex-grow">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-4xl font-black tracking-tight">{employee.name}</h1>
-              <span className="flex items-center gap-1 rounded-full bg-white/20 px-3 py-1 text-xs font-bold uppercase tracking-widest backdrop-blur-md">
-                <ShieldCheck size={14} />
-                Verified Executive
+              <h1 className="text-4xl font-black text-gray-900 dark:text-white capitalize tracking-tight">
+                {employee.name.toLowerCase()}
+              </h1>
+              <span className="flex items-center gap-1.5 rounded-full bg-blue-50 text-blue-600 px-3 py-1 text-[10px] font-black uppercase tracking-wider">
+                <CheckCircle size={14} strokeWidth={3} />
+                VERIFIED
               </span>
             </div>
-            <p className="mt-2 text-lg font-medium text-blue-100/80">{employee.designation} • {employee.team}</p>
+            <p className="mt-2 text-lg font-bold text-gray-500 dark:text-gray-400">
+              {employee.designation} • {employee.team}
+            </p>
+
+            <div className="mt-6 flex flex-wrap items-center gap-8">
+              <div className="flex items-center gap-2.5 text-gray-500 font-semibold">
+                <Phone size={18} className="text-gray-400" />
+                <span>+91 91234 56789</span>
+              </div>
+              <div className="flex items-center gap-2.5 text-gray-500 font-semibold">
+                <MapPin size={18} className="text-gray-400" />
+                <span>Bengaluru Hub</span>
+              </div>
+            </div>
           </div>
-          <div className="flex items-center gap-3">
-            <button className="bg-white text-blue-600 hover:bg-blue-50 px-6 py-2.5 rounded-2xl font-bold transition-all hover:scale-105 active:scale-95 shadow-lg whitespace-nowrap">
+
+          <div className="flex items-center gap-3 no-print">
+            <button className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-800 text-blue-600 px-8 py-3 rounded-2xl font-black text-sm tracking-wide shadow-lg shadow-blue-500/5 hover:scale-105 active:scale-95 transition-all">
               Manage Access
             </button>
-            <button className="p-3 rounded-2xl bg-white/10 hover:bg-white/20 transition-all backdrop-blur-md">
+            <button className="p-3 rounded-2xl bg-blue-600 text-white hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20 hover:scale-105 active:scale-90">
               <MoreVertical size={20} />
             </button>
           </div>
         </div>
-        <div className="mt-6 flex flex-wrap items-center gap-6 text-sm">
-          <div className="flex items-center gap-2 text-blue-100/90">
-            <Mail size={16} className="text-white" />
-            <span>{employee.email}</span>
-          </div>
-          <div className="flex items-center gap-2 text-blue-100/90">
-            <Phone size={16} className="text-white" />
-            <span>+91 91234 56789</span>
-          </div>
-          <div className="flex items-center gap-2 text-blue-100/90">
-            <MapPin size={16} className="text-white" />
-            <span>Bengaluru Hub</span>
-          </div>
+
+        {/* Real Profile Info - No Skeletons */}
+        <div className="mt-8 pt-8 border-t border-gray-50 dark:border-gray-800 flex flex-wrap items-center gap-10">
+           <div className="flex items-center gap-3 group cursor-pointer">
+             <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-blue-600 transition-transform group-hover:scale-110">
+                <Mail size={16} />
+             </div>
+             <div>
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-1">Email Address</p>
+                <p className="text-sm font-bold text-gray-700 dark:text-gray-200">{employee.email}</p>
+             </div>
+           </div>
+           <div className="flex items-center gap-3 group cursor-pointer">
+             <div className="w-9 h-9 rounded-xl bg-purple-50 dark:bg-purple-900/20 flex items-center justify-center text-purple-600 transition-transform group-hover:scale-110">
+                <LayoutDashboard size={16} />
+             </div>
+             <div>
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-1">Operational Role</p>
+                <p className="text-sm font-bold text-gray-700 dark:text-gray-200">Field Lead • Zone A</p>
+             </div>
+           </div>
         </div>
       </div>
     </div>
@@ -207,6 +228,101 @@ const DocumentsSection = () => (
   </div>
 );
 
+// --- Simplified Print-Only Layout (Single Page Summary) ---
+const PrintOnlyLayout = ({ employee }) => (
+  <div className="hidden print:block w-full text-gray-900 bg-white p-12">
+    <style>{`
+      @media print {
+        @page { size: A4; margin: 1cm; }
+        body { -webkit-print-color-adjust: exact; }
+      }
+    `}</style>
+
+    {/* Header */}
+    <div className="border-b-4 border-gray-900 pb-6 mb-10 flex justify-between items-end">
+      <div>
+        <h1 className="text-4xl font-black uppercase tracking-tight">{employee.name}</h1>
+        <p className="text-xl font-bold text-gray-500 uppercase tracking-widest">{employee.designation}</p>
+      </div>
+      <div className="text-right">
+        <p className="text-sm font-black text-gray-400 uppercase tracking-widest">Profile Report</p>
+        <p className="text-lg font-bold">Ref: TF-{employee.id}-{new Date().getFullYear()}</p>
+      </div>
+    </div>
+
+    <div className="space-y-12">
+      {/* 1. Employment Details */}
+      <section>
+        <h2 className="text-sm font-black uppercase tracking-[0.3em] text-blue-600 mb-6 border-l-4 border-blue-600 pl-4 bg-blue-50/50 py-2">
+          Employment Details
+        </h2>
+        <div className="grid grid-cols-2 gap-y-6 gap-x-12 px-4">
+          {[
+            { label: 'Employee ID', value: `TF-EXE-${employee.id}` },
+            { label: 'Department', value: 'Field Operations' },
+            { label: 'Current Designation', value: employee.designation },
+            { label: 'Team/Zone', value: employee.team },
+            { label: 'Base Location', value: 'Central Bengaluru Hub' },
+            { label: 'Reporting Structure', value: 'Management Level 1' }
+          ].map((item, i) => (
+            <div key={i} className="border-b border-gray-100 pb-2">
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{item.label}</p>
+              <p className="font-bold text-gray-800 text-sm">{item.value}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* 2. Personal Information */}
+      <section>
+        <h2 className="text-sm font-black uppercase tracking-[0.3em] text-emerald-600 mb-6 border-l-4 border-emerald-600 pl-4 bg-emerald-50/50 py-2">
+          Personal Information
+        </h2>
+        <div className="grid grid-cols-2 gap-y-6 gap-x-12 px-4">
+          {[
+            { label: 'Contact Number', value: '+91 91234 56789' },
+            { label: 'Official Email', value: employee.email },
+            { label: 'Residential Address', value: 'Indiranagar, Bengaluru, KA' },
+            { label: 'Nationality', value: 'Indian' },
+            { label: 'Emergency Contact', value: '+91 98765 43210' },
+            { label: 'Gender', value: 'Male' }
+          ].map((item, i) => (
+            <div key={i} className="border-b border-gray-100 pb-2">
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{item.label}</p>
+              <p className="font-bold text-gray-800 text-sm">{item.value}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* 3. Document Details */}
+      <section>
+        <h2 className="text-sm font-black uppercase tracking-[0.3em] text-purple-600 mb-6 border-l-4 border-purple-600 pl-4 bg-purple-50/50 py-2">
+          Document Details
+        </h2>
+        <div className="grid grid-cols-3 gap-6 px-4">
+          {['Government ID Card', 'Tax Compliance ID', 'Background Verification', 'Operational Permit', 'Health Clearance'].map((doc, i) => (
+            <div key={i} className="p-4 bg-gray-50 rounded-2xl border border-gray-100 flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center shadow-sm">
+                <FileText size={16} className="text-purple-600" />
+              </div>
+              <div>
+                <p className="text-[10px] font-black text-gray-900 uppercase leading-none mb-1">{doc}</p>
+                <p className="text-[9px] font-bold text-emerald-600 uppercase">Verified</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+    </div>
+
+    {/* Footer */}
+    <div className="mt-20 pt-8 border-t border-gray-100 text-center opacity-30">
+       <p className="text-[9px] font-black uppercase tracking-[0.4em] text-gray-400">Internal Administration • Confidential Documentation</p>
+    </div>
+  </div>
+);
+
 const TimelineSection = () => {
   const activities = [
     { type: 'CHECKIN', title: 'Route Started: Zone 04', time: '09:00 AM', desc: 'Starting daily coverage.', icon: Store, bg: 'bg-blue-100 text-blue-600' },
@@ -240,6 +356,10 @@ const EmployeeDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
+
+  const handleGeneratePDF = () => {
+    window.print();
+  };
 
   // Find employee from mock data
   const employee = mockEmployees.find(emp => emp.id === parseInt(id)) || mockEmployees[0];
@@ -281,51 +401,74 @@ const EmployeeDetails = () => {
   };
 
   return (
-    <div className="min-h-screen pb-20">
-      {/* Navigation Header */}
-      <div className="flex items-center justify-between mb-8">
-        <button 
-          onClick={() => navigate(-1)}
-          className="group flex items-center gap-3 text-gray-500 hover:text-blue-600 transition-all"
-        >
-          <div className="p-2 rounded-xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-sm group-hover:scale-110 transition-transform">
-            <ArrowLeft size={18} />
+    <div className="min-h-screen pb-20 print:p-0">
+      <style>
+        {`
+          @media print {
+            .no-print { display: none !important; }
+            body { background: white !important; margin: 0; padding: 0; }
+            .print-container { width: 100%; border: none !important; box-shadow: none !important; border-radius: 0 !important; }
+            .print-shadow-none { box-shadow: none !important; }
+            @page { margin: 2cm; }
+          }
+        `}
+      </style>
+      
+      <div className="print:hidden">
+        {/* Navigation Header */}
+        <div className="flex items-center justify-between mb-8">
+          <button 
+            onClick={() => navigate(-1)}
+            className="group flex items-center gap-3 text-gray-500 hover:text-blue-600 transition-all"
+          >
+            <div className="p-2 rounded-xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-sm group-hover:scale-110 transition-transform">
+              <ArrowLeft size={18} />
+            </div>
+            <span className="font-bold text-sm tracking-widest uppercase">Back to Team</span>
+          </button>
+
+          <div className="flex items-center gap-3">
+             <Button 
+              variant="outline" 
+              className="rounded-2xl border-gray-200 dark:border-gray-700 dark:text-white dark:bg-gray-800/50 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all font-bold px-6 py-2.5"
+              onClick={handleGeneratePDF}
+             >
+               Generate PDF Profile
+             </Button>
           </div>
-          <span className="font-bold text-sm tracking-widest uppercase">Back to Team</span>
-        </button>
+        </div>
 
-        <div className="flex items-center gap-3">
-           <Button variant="outline" className="rounded-2xl border-gray-200 dark:border-gray-800">
-             Generate PDF Profile
-           </Button>
+        {/* Profile Header Card */}
+        <ProfileHeader employee={employee} />
+
+        {/* Tab Navigation */}
+        <div className="mt-12 mb-10 overflow-x-auto">
+          <div className="flex items-center gap-2 p-1.5 bg-gray-100/50 dark:bg-gray-800/40 backdrop-blur-md rounded-[2rem] w-fit border border-gray-100 dark:border-gray-800">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-3 px-6 py-3 rounded-[1.5rem] text-sm font-black transition-all ${
+                  activeTab === tab.id
+                    ? 'bg-white dark:bg-gray-900 text-blue-600 shadow-lg scale-105'
+                    : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+                }`}
+              >
+                <tab.icon size={18} className={activeTab === tab.id ? 'text-blue-600' : 'text-gray-400'} />
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Main Content Area */}
+        <div>
+          {renderContent()}
         </div>
       </div>
 
-      {/* Profile Header Card */}
-      <ProfileHeader employee={employee} />
-
-      {/* Tab Navigation */}
-      <div className="mt-12 mb-10 overflow-x-auto">
-        <div className="flex items-center gap-2 p-1.5 bg-gray-100/50 dark:bg-gray-800/40 backdrop-blur-md rounded-[2rem] w-fit border border-gray-100 dark:border-gray-800">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-3 px-6 py-3 rounded-[1.5rem] text-sm font-black transition-all ${
-                activeTab === tab.id
-                  ? 'bg-white dark:bg-gray-900 text-blue-600 shadow-lg scale-105'
-                  : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
-              }`}
-            >
-              <tab.icon size={18} className={activeTab === tab.id ? 'text-blue-600' : 'text-gray-400'} />
-              {tab.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Main Content Area */}
-      {renderContent()}
+      {/* Print-Only Layout */}
+      <PrintOnlyLayout employee={employee} />
     </div>
   );
 };

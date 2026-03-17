@@ -22,21 +22,27 @@ const DashboardLayout = ({ allowedRole }) => {
 
   return (
     <div className="min-h-screen bg-gray-50/50 dark:bg-gray-950 flex transition-colors duration-300">
-      <Sidebar 
-        role={storedRole} 
-        user={storedUser} 
-        isCollapsed={isSidebarCollapsed} 
-        onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)} 
-      />
-      <div className={`flex-1 ${isSidebarCollapsed ? 'ml-20' : 'ml-64'} flex flex-col min-h-screen transition-all duration-300`}>
-        <Navbar user={storedUser} />
-        <main className="flex-1 p-8 overflow-y-auto text-gray-900 dark:text-gray-100">
-          <div className="max-w-7xl mx-auto">
+      <div className="print:hidden">
+        <Sidebar 
+          role={storedRole} 
+          user={storedUser} 
+          isCollapsed={isSidebarCollapsed} 
+          onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)} 
+        />
+      </div>
+      <div className={`flex-1 ${isSidebarCollapsed ? 'ml-20' : 'ml-64'} flex flex-col min-h-screen transition-all duration-300 print:ml-0 print:p-0`}>
+        <div className="print:hidden">
+          <Navbar user={storedUser} />
+        </div>
+        <main className="flex-1 p-8 overflow-y-auto text-gray-900 dark:text-gray-100 print:p-0">
+          <div className="max-w-7xl mx-auto print:max-w-none print:m-0">
             <Outlet context={{ workStatus, setWorkStatus }} />
           </div>
         </main>
       </div>
-      <HelpCenter role={storedRole} />
+      <div className="print:hidden">
+        <HelpCenter role={storedRole} />
+      </div>
     </div>
   );
 };
