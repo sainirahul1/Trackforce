@@ -33,15 +33,16 @@ const TeamPrintLayout = ({ stats, members }) => (
       </div>
     </div>
 
-    <div className="space-y-12">
+    <div className="space-y-10">
+
       {/* 1. Performance Overview (KPI Blocks) */}
       <section>
-        <h2 className="text-sm font-black uppercase tracking-[0.3em] text-blue-600 mb-6 border-b-2 border-blue-600 pb-2 inline-block">
+        <h2 className="text-sm font-black uppercase tracking-[0.3em] text-blue-600 mb-5 border-b-2 border-blue-600 pb-2 inline-block">
           Performance Overview
         </h2>
-        <div className="grid grid-cols-4 gap-6">
+        <div className="grid grid-cols-4 gap-4">
           {stats.map((stat, i) => (
-            <div key={i} className="bg-gray-50 p-6 rounded-2xl border border-gray-100">
+            <div key={i} className="bg-gray-50 p-5 rounded-2xl border border-gray-100">
               <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2 leading-none">{stat.label}</p>
               <p className="text-2xl font-black text-gray-900 mb-2">{stat.value}</p>
               <div className="w-full h-1 bg-white rounded-full overflow-hidden">
@@ -52,45 +53,160 @@ const TeamPrintLayout = ({ stats, members }) => (
         </div>
       </section>
 
-      {/* 2. Operational Regions */}
+      {/* 2. Zone Distribution */}
       <section>
-        <h2 className="text-sm font-black uppercase tracking-[0.3em] text-gray-900 mb-6 border-b-2 border-gray-900 pb-2 inline-block">
-          Personnel Registry
+        <h2 className="text-sm font-black uppercase tracking-[0.3em] text-purple-600 mb-5 border-b-2 border-purple-600 pb-2 inline-block">
+          Zone Distribution
         </h2>
-        <div className="border-2 border-gray-900 rounded-3xl overflow-hidden">
+        <div className="border-2 border-gray-100 rounded-2xl overflow-hidden">
           <table className="w-full text-left border-collapse">
             <thead className="bg-gray-900 text-white">
               <tr>
-                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest">Full Name</th>
-                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-center">Operational Zone</th>
-                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-center">Status</th>
-                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-right">Yield Score</th>
+                <th className="px-5 py-3 text-[10px] font-black uppercase tracking-widest">Zone</th>
+                <th className="px-5 py-3 text-[10px] font-black uppercase tracking-widest">Personnel</th>
+                <th className="px-5 py-3 text-[10px] font-black uppercase tracking-widest">Designation</th>
+                <th className="px-5 py-3 text-[10px] font-black uppercase tracking-widest text-center">Coverage</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {members.map((member, i) => (
-                <tr key={i}>
-                  <td className="px-6 py-4">
-                    <p className="font-black text-sm">{member.name}</p>
-                    <p className="text-[9px] font-bold text-gray-400 uppercase tracking-tighter">{member.designation}</p>
-                  </td>
-                  <td className="px-6 py-4 text-center">
-                    <span className="text-[10px] font-black text-gray-600 border border-gray-200 px-3 py-1 rounded bg-gray-50 uppercase">{member.team}</span>
-                  </td>
-                  <td className="px-6 py-4 text-center">
-                     <p className={`text-[9px] font-black uppercase ${member.status === 'On Duty' ? 'text-emerald-600' : 'text-gray-400'}`}>{member.status}</p>
-                  </td>
-                  <td className="px-6 py-4 text-right font-black text-sm">
-                     {(member.visitsToday / 8 * 100).toFixed(0)}%
-                  </td>
-                </tr>
-              ))}
+              {members.map((member, i) => {
+                const totalMembers = members.length;
+                const coveragePct = Math.round((1 / totalMembers) * 100);
+                return (
+                  <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50/60'}>
+                    <td className="px-5 py-3">
+                      <span className="text-[10px] font-black text-purple-700 border border-purple-200 px-3 py-1 rounded-full bg-purple-50 uppercase tracking-widest">
+                        {member.team}
+                      </span>
+                    </td>
+                    <td className="px-5 py-3 font-bold text-sm text-gray-900">{member.name}</td>
+                    <td className="px-5 py-3 text-[10px] text-gray-500 font-semibold uppercase tracking-wide">{member.designation}</td>
+                    <td className="px-5 py-3">
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                          <div className="h-full bg-purple-500 rounded-full" style={{ width: `${Math.min(coveragePct * (i + 1), 100)}%` }}></div>
+                        </div>
+                        <span className="text-[10px] font-black text-gray-400 w-8 text-right">{coveragePct}%</span>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
       </section>
 
-      {/* 3. Authentication & Compliance */}
+      {/* 3. Performance Breakdown */}
+      <section>
+        <h2 className="text-sm font-black uppercase tracking-[0.3em] text-emerald-600 mb-5 border-b-2 border-emerald-600 pb-2 inline-block">
+          Performance Breakdown
+        </h2>
+        <div className="border-2 border-gray-100 rounded-2xl overflow-hidden">
+          <table className="w-full text-left border-collapse">
+            <thead className="bg-gray-900 text-white">
+              <tr>
+                <th className="px-5 py-3 text-[10px] font-black uppercase tracking-widest">Member</th>
+                <th className="px-5 py-3 text-[10px] font-black uppercase tracking-widest text-center">Visits Today</th>
+                <th className="px-5 py-3 text-[10px] font-black uppercase tracking-widest text-center">Target</th>
+                <th className="px-5 py-3 text-[10px] font-black uppercase tracking-widest">Achievement</th>
+                <th className="px-5 py-3 text-[10px] font-black uppercase tracking-widest text-right">Grade</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {members.map((member, i) => {
+                const target = 8;
+                const pct = Math.min((member.visitsToday / target) * 100, 100);
+                const isHigh = pct >= 80;
+                const isMid = pct >= 40 && pct < 80;
+                const barColor = isHigh ? 'bg-emerald-500' : isMid ? 'bg-yellow-400' : 'bg-red-400';
+                const scoreColor = isHigh ? 'text-emerald-600' : isMid ? 'text-yellow-600' : 'text-red-500';
+                return (
+                  <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50/60'}>
+                    <td className="px-5 py-3">
+                      <p className="font-black text-sm text-gray-900">{member.name}</p>
+                      <p className="text-[9px] font-bold text-gray-400 uppercase tracking-tighter">{member.designation}</p>
+                    </td>
+                    <td className="px-5 py-3 text-center font-black text-sm">{member.visitsToday}</td>
+                    <td className="px-5 py-3 text-center text-[10px] text-gray-400 font-bold">{target}</td>
+                    <td className="px-5 py-3">
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+                          <div className={`h-full ${barColor} rounded-full`} style={{ width: `${pct}%` }}></div>
+                        </div>
+                        <span className="text-[10px] font-black text-gray-400 w-8 text-right">{pct.toFixed(0)}%</span>
+                      </div>
+                    </td>
+                    <td className={`px-5 py-3 text-right font-black text-sm ${scoreColor}`}>
+                      {pct >= 80 ? 'A' : pct >= 60 ? 'B' : pct >= 40 ? 'C' : 'D'}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      {/* 4. Status Summary */}
+      <section>
+        <h2 className="text-sm font-black uppercase tracking-[0.3em] text-gray-900 mb-5 border-b-2 border-gray-900 pb-2 inline-block">
+          Status Summary
+        </h2>
+        <div className="grid grid-cols-3 gap-5">
+          {[
+            {
+              label: 'On Duty',
+              count: members.filter(m => m.status === 'On Duty').length,
+              names: members.filter(m => m.status === 'On Duty').map(m => m.name),
+              dot: 'bg-emerald-500',
+              border: 'border-emerald-200',
+              bg: 'bg-emerald-50',
+              text: 'text-emerald-700',
+              badge: 'bg-emerald-100 text-emerald-700',
+            },
+            {
+              label: 'Off Duty',
+              count: members.filter(m => m.status === 'Off Duty').length,
+              names: members.filter(m => m.status === 'Off Duty').map(m => m.name),
+              dot: 'bg-gray-400',
+              border: 'border-gray-200',
+              bg: 'bg-gray-50',
+              text: 'text-gray-600',
+              badge: 'bg-gray-100 text-gray-600',
+            },
+            {
+              label: 'On Leave',
+              count: members.filter(m => m.status === 'On Leave').length,
+              names: members.filter(m => m.status === 'On Leave').map(m => m.name),
+              dot: 'bg-orange-400',
+              border: 'border-orange-200',
+              bg: 'bg-orange-50',
+              text: 'text-orange-700',
+              badge: 'bg-orange-100 text-orange-700',
+            },
+          ].map((group, i) => (
+            <div key={i} className={`p-5 rounded-2xl border ${group.border} ${group.bg}`}>
+              <div className="flex items-center gap-2 mb-3">
+                <span className={`w-2.5 h-2.5 rounded-full ${group.dot}`}></span>
+                <p className={`text-[10px] font-black uppercase tracking-widest ${group.text}`}>{group.label}</p>
+              </div>
+              <p className={`text-4xl font-black mb-3 ${group.text}`}>{group.count}</p>
+              <div className="flex flex-wrap gap-1">
+                {group.names.length > 0 ? group.names.map((name, j) => (
+                  <span key={j} className={`text-[9px] font-bold px-2 py-0.5 rounded ${group.badge}`}>
+                    {name}
+                  </span>
+                )) : (
+                  <p className="text-[9px] text-gray-400 italic font-medium">No members</p>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* 5. Authentication & Compliance */}
       <section className="grid grid-cols-2 gap-8">
         <div className="bg-gray-50/50 p-8 rounded-[2rem] border border-dashed border-gray-300">
            <p className="flex items-center gap-2 mb-4 font-black text-gray-400 uppercase tracking-widest text-[10px]"><Activity size={12} /> System Status</p>
@@ -106,8 +222,8 @@ const TeamPrintLayout = ({ stats, members }) => (
       </section>
     </div>
 
-    {/* Footer Branding Removed or Moved to subtle bottom */}
-    <div className="mt-20 pt-8 border-t border-gray-100 text-center">
+    {/* Footer */}
+    <div className="mt-16 pt-8 border-t border-gray-100 text-center">
        <p className="text-[9px] font-black uppercase tracking-[0.4em] text-gray-300">Internal Administration • Confidential Documentation</p>
     </div>
   </div>

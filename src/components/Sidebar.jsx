@@ -40,7 +40,7 @@ const Sidebar = ({ role, user, isCollapsed, onToggle }) => {
   const currentMenu = menuItems[role] || [];
 
   return (
-    <aside className={`${isCollapsed ? 'w-20' : 'w-64'} h-screen bg-white dark:bg-gray-900 border-r border-gray-100 dark:border-gray-800 flex flex-col fixed left-0 top-0 z-30 transition-all duration-300 ease-in-out`}>
+    <aside className={`${isCollapsed ? 'w-20' : 'w-64'} h-screen bg-white dark:bg-gray-900 border-r border-gray-100 dark:border-gray-800 flex flex-col fixed left-0 top-0 z-[110] transition-all duration-300 ease-in-out`}>
       <div className={`p-6 flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} border-b border-gray-50 dark:border-gray-800`}>
         {!isCollapsed && (
           <div className="flex items-center gap-2.5 animate-in fade-in duration-300">
