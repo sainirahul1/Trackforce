@@ -22,10 +22,10 @@ const Sidebar = ({ role, user, isCollapsed, onToggle }) => {
       { name: 'Visits', icon: Camera, path: '/manager/visits' },
       { name: 'Inventory/Orders', icon: ShoppingBag, path: '/manager/inventory' },
       { name: 'Analytics', icon: Activity, path: '/manager/analytics' },
-      { name: 'Activity Log', icon: Clock, path: '/manager/activity' },
-      { name: 'Profile', icon: User, path: '/manager/profile' },
       { name: 'Team', icon: Users, path: '/manager/team' },
+      { name: 'Activity Log', icon: Clock, path: '/manager/activity' },
       { name: 'Issues', icon: AlertCircle, path: '/manager/issues' },
+      { name: 'Profile', icon: User, path: '/manager/profile' },
     ],
     employee: [
       { name: 'Dashboard', icon: LayoutDashboard, path: '/employee/dashboard' },
