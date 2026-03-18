@@ -2,14 +2,14 @@ import React, { useState, useEffect } from 'react';
 import IssueStats from '../../components/issues/IssueStats';
 import IssueFilters from '../../components/issues/IssueFilters';
 import { mockIssues as initialIssues } from '../../utils/mockData';
-import { 
-  CheckCircle2, 
-  Clock, 
-  AlertCircle, 
-  MessageSquare, 
-  Paperclip, 
-  User, 
-  MoreVertical, 
+import {
+  CheckCircle2,
+  Clock,
+  AlertCircle,
+  MessageSquare,
+  Paperclip,
+  User,
+  MoreVertical,
   ChevronLeft,
   ChevronRight,
   Reply,
@@ -27,16 +27,16 @@ const ImageModal = ({ src, onClose }) => {
   if (!src) return null;
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/95 animate-in fade-in duration-300 backdrop-blur-sm">
-      <button 
+      <button
         onClick={onClose}
         className="absolute top-8 right-8 p-3 bg-white/10 hover:bg-rose-500 text-white rounded-2xl transition-all hover:rotate-90"
       >
         <X size={24} />
       </button>
-      <img 
-        src={src} 
-        className="max-w-full max-h-[85vh] rounded-3xl shadow-2xl animate-in zoom-in-95 duration-300 ring-1 ring-white/20" 
-        alt="Enlarged proof" 
+      <img
+        src={src}
+        className="max-w-full max-h-[85vh] rounded-3xl shadow-2xl animate-in zoom-in-95 duration-300 ring-1 ring-white/20"
+        alt="Enlarged proof"
       />
     </div>
   );
@@ -62,13 +62,13 @@ const IssueCard = ({ issue, onClick }) => {
   };
 
   return (
-    <div 
+    <div
       onClick={() => onClick(issue)}
       className="group relative bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-[2.5rem] p-8 transition-all duration-700 hover:shadow-[0_40px_80px_-20px_rgba(79,70,229,0.15)] hover:-translate-y-2 overflow-hidden cursor-pointer active:scale-[0.98]"
     >
       <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-indigo-500/10 to-transparent blur-3xl rounded-full -mr-32 -mt-32 group-hover:scale-110 transition-transform duration-1000"></div>
       <div className="absolute bottom-0 left-0 w-32 h-32 bg-purple-500/5 blur-2xl rounded-full -ml-16 -mb-16"></div>
-      
+
       {/* Top Section */}
       <div className="relative z-10 flex flex-wrap items-center justify-between gap-4 mb-4">
         <div className="flex flex-wrap items-center gap-4">
@@ -98,14 +98,14 @@ const IssueCard = ({ issue, onClick }) => {
           </p>
         </div>
         <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest opacity-60 bg-gray-50/50 dark:bg-gray-800/40 px-3 py-2 rounded-xl">
-           Ref: #TF-{String(issue.id).slice(-6).toUpperCase()}
+          Ref: #TF-{String(issue.id).slice(-6).toUpperCase()}
         </div>
       </div>
 
       {/* Description */}
       <div className="relative z-10 p-4 bg-indigo-50/30 dark:bg-indigo-950/10 rounded-2xl border border-indigo-100/50 dark:border-indigo-500/10 mb-6 group-hover:bg-indigo-50/50 transition-colors duration-500">
         <p className="text-xs text-gray-600 dark:text-gray-400 font-medium leading-relaxed italic pr-2">
-          "{issue.subject === 'Device Malfunction' 
+          "{issue.subject === 'Device Malfunction'
             ? "Critical core failure detected on node 7. System latency has spiked beyond acceptable thresholds."
             : "Update 4.2.0 caused an authentication loop. User is unable to bypass initial handshake."}"
         </p>
@@ -124,7 +124,7 @@ const IssueCard = ({ issue, onClick }) => {
             </span>
           </div>
           <div className="w-full h-2.5 bg-gray-100 dark:bg-gray-800 rounded-full p-0.5 overflow-hidden ring-1 ring-gray-100 dark:ring-gray-700">
-            <div 
+            <div
               className={`h-full bg-gradient-to-r ${issue.status === 'Resolved' ? 'from-emerald-400 via-teal-500 to-emerald-600' : 'from-indigo-500 via-purple-500 to-indigo-600'} transition-all duration-1000 rounded-full relative overflow-hidden shadow-[0_0_15px_rgba(79,70,229,0.3)]`}
               style={{ width: issue.status === 'Resolved' ? '100%' : (issue.status === 'In Progress' ? '68%' : '12%') }}
             >
@@ -133,7 +133,7 @@ const IssueCard = ({ issue, onClick }) => {
           </div>
         </div>
 
-        <button 
+        <button
           className="p-3 bg-gray-50 dark:bg-gray-800 hover:bg-indigo-600 hover:text-white dark:hover:bg-indigo-600 rounded-xl transition-all duration-300 shadow-sm hover:shadow-indigo-500/30 active:scale-90 border border-gray-100 dark:border-gray-700"
         >
           <MoreVertical size={16} />
@@ -207,57 +207,57 @@ const IssueDetails = ({ issue, onBack, onStatusUpdate, onUpdatePriority, onDelet
   return (
     <div className="animate-in slide-in-from-right duration-700">
       <ImageModal src={previewImage} onClose={() => setPreviewImage(null)} />
-      
+
       {/* Escalation Confirmation Modal */}
       {showEscalateModal && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-300">
-           <div className="bg-white dark:bg-gray-900 w-full max-w-md rounded-[2.5rem] p-10 shadow-2xl border border-gray-100 dark:border-gray-800 animate-in zoom-in-95 duration-300">
-              <div className="w-16 h-16 bg-purple-500/10 rounded-2xl flex items-center justify-center mb-6">
-                <ShieldAlert size={32} className="text-purple-600" />
-              </div>
-              <h3 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tighter mb-2">Escalate Case</h3>
-              <p className="text-sm text-gray-500 font-bold mb-10 leading-relaxed uppercase tracking-widest text-[10px]">
-                Are you sure you want to escalate this to <span className="text-purple-600 font-black">Super Admin</span>?
-              </p>
-              
-              <div className="grid grid-cols-2 gap-4 mb-4">
-                <button 
-                  onClick={() => setShowEscalateModal(false)}
-                  className="py-4 bg-gray-50 dark:bg-gray-800 text-gray-500 hover:text-gray-900 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all"
-                >
-                  Cancel
-                </button>
-                <button 
-                  onClick={handleEscalateConfirm}
-                  className="py-4 bg-purple-600 text-white hover:bg-purple-700 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-purple-500/30 transition-all active:scale-95"
-                >
-                  Confirm
-                </button>
-              </div>
-              <button 
-                onClick={onBack}
-                className="w-full py-4 bg-rose-50/50 dark:bg-rose-900/10 text-rose-500 hover:bg-rose-500 hover:text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border border-rose-100 dark:border-rose-500/20"
+          <div className="bg-white dark:bg-gray-900 w-full max-w-md rounded-[2.5rem] p-10 shadow-2xl border border-gray-100 dark:border-gray-800 animate-in zoom-in-95 duration-300">
+            <div className="w-16 h-16 bg-purple-500/10 rounded-2xl flex items-center justify-center mb-6">
+              <ShieldAlert size={32} className="text-purple-600" />
+            </div>
+            <h3 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tighter mb-2">Escalate Case</h3>
+            <p className="text-sm text-gray-500 font-bold mb-10 leading-relaxed uppercase tracking-widest text-[10px]">
+              Are you sure you want to escalate this to <span className="text-purple-600 font-black">Super Admin</span>?
+            </p>
+
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <button
+                onClick={() => setShowEscalateModal(false)}
+                className="py-4 bg-gray-50 dark:bg-gray-800 text-gray-500 hover:text-gray-900 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all"
               >
-                [ Abort & Exit to Issues ]
+                Cancel
               </button>
-           </div>
+              <button
+                onClick={handleEscalateConfirm}
+                className="py-4 bg-purple-600 text-white hover:bg-purple-700 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-purple-500/30 transition-all active:scale-95"
+              >
+                Confirm
+              </button>
+            </div>
+            <button
+              onClick={onBack}
+              className="w-full py-4 bg-rose-50/50 dark:bg-rose-900/10 text-rose-500 hover:bg-rose-500 hover:text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border border-rose-100 dark:border-rose-500/20"
+            >
+              [ Abort & Exit to Issues ]
+            </button>
+          </div>
         </div>
       )}
 
-      <input 
-        type="file" 
-        ref={fileInputRef} 
-        onChange={handleFileChange} 
-        className="hidden" 
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileChange}
+        className="hidden"
         accept="image/*,.pdf,.doc,.docx"
       />
 
       {/* Detail Header */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-4 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl px-8 py-4 rounded-[2.5rem] border border-white/20 dark:border-gray-800 shadow-[0_15px_40px_-15px_rgba(0,0,0,0.1)] relative overflow-hidden group/header ring-1 ring-black/5">
         <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-transparent opacity-0 group-hover/header:opacity-100 transition-opacity duration-700 pointer-events-none"></div>
-        
+
         <div className="flex flex-wrap items-center gap-6 relative z-10 w-full lg:w-auto">
-          <button 
+          <button
             onClick={handleExit}
             className="group flex items-center gap-2.5 text-gray-500 hover:text-indigo-600 transition-all font-black"
           >
@@ -270,42 +270,42 @@ const IssueDetails = ({ issue, onBack, onStatusUpdate, onUpdatePriority, onDelet
           <div className="h-8 w-[1.5px] bg-gray-100 dark:bg-gray-800 hidden md:block opacity-50"></div>
 
           <div className="flex items-center gap-4">
-             <label className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em]">Lifecycle</label>
-             <div className="flex items-center gap-3">
-                <div className="relative group/select">
-                  <select 
-                    value={localStatus}
-                    onChange={(e) => handleStatusChange(e.target.value)}
-                    className={`appearance-none bg-gray-50/50 dark:bg-gray-800/50 px-4 py-2 pr-10 rounded-xl text-[9px] font-black uppercase tracking-[0.1em] border-2 transition-all outline-none cursor-pointer focus:ring-8 focus:ring-indigo-500/5 ${localStatus === 'Resolved' ? 'border-emerald-500 text-emerald-600' : (localStatus === 'Escalated' ? 'border-purple-500 text-purple-600' : 'border-indigo-500 text-indigo-600')}`}
-                  >
-                    <option value="Open">Open</option>
-                    <option value="In Progress">In Progress</option>
-                    <option value="Resolved">Resolved</option>
-                    <option value="Escalated">Escalated</option>
-                  </select>
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 group-hover/select:text-indigo-500 transition-colors">
-                    <ArrowUpRight size={12} className="rotate-90" />
-                  </div>
+            <label className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em]">Lifecycle</label>
+            <div className="flex items-center gap-3">
+              <div className="relative group/select">
+                <select
+                  value={localStatus}
+                  onChange={(e) => handleStatusChange(e.target.value)}
+                  className={`appearance-none bg-gray-50/50 dark:bg-gray-800/50 px-4 py-2 pr-10 rounded-xl text-[9px] font-black uppercase tracking-[0.1em] border-2 transition-all outline-none cursor-pointer focus:ring-8 focus:ring-indigo-500/5 ${localStatus === 'Resolved' ? 'border-emerald-500 text-emerald-600' : (localStatus === 'Escalated' ? 'border-purple-500 text-purple-600' : 'border-indigo-500 text-indigo-600')}`}
+                >
+                  <option value="Open">Open</option>
+                  <option value="In Progress">In Progress</option>
+                  <option value="Resolved">Resolved</option>
+                  <option value="Escalated">Escalated</option>
+                </select>
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 group-hover/select:text-indigo-500 transition-colors">
+                  <ArrowUpRight size={12} className="rotate-90" />
                 </div>
+              </div>
 
-                {localStatus === 'Escalated' && (
-                  <button 
-                    onClick={() => {
-                      onStatusUpdate(issue.id, 'In Progress');
-                      triggerToast('Issue retrieved to Manager successfully');
-                    }}
-                    className="px-6 py-3 bg-purple-600 text-white hover:bg-purple-700 rounded-2xl text-[10px] font-black uppercase tracking-[0.15em] transition-all shadow-[0_15px_30px_-10px_rgba(168,85,247,0.4)] active:scale-95 flex items-center gap-3 border border-purple-400/30"
-                  >
-                    <Reply size={14} /> [ Return back ]
-                  </button>
-                )}
-             </div>
+              {localStatus === 'Escalated' && (
+                <button
+                  onClick={() => {
+                    onStatusUpdate(issue.id, 'In Progress');
+                    triggerToast('Issue retrieved to Manager successfully');
+                  }}
+                  className="px-6 py-3 bg-purple-600 text-white hover:bg-purple-700 rounded-2xl text-[10px] font-black uppercase tracking-[0.15em] transition-all shadow-[0_15px_30px_-10px_rgba(168,85,247,0.4)] active:scale-95 flex items-center gap-3 border border-purple-400/30"
+                >
+                  <Reply size={14} /> [ Return back ]
+                </button>
+              )}
+            </div>
           </div>
         </div>
-        
+
         <div className="flex items-center gap-3 relative z-10">
           {localStatus !== 'Escalated' && (
-            <button 
+            <button
               onClick={handleExit}
               className="px-5 py-2.5 bg-white dark:bg-gray-800 text-gray-500 hover:text-gray-900 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all border border-gray-100 dark:border-gray-700 active:scale-95 shadow-sm"
             >
@@ -314,7 +314,7 @@ const IssueDetails = ({ issue, onBack, onStatusUpdate, onUpdatePriority, onDelet
           )}
 
           {localStatus !== 'Escalated' && (
-            <button 
+            <button
               onClick={() => setShowEscalateModal(true)}
               className="flex items-center gap-2 px-4 py-2 rounded-lg text-[9px] font-black transition-all border outline-none bg-purple-500/10 hover:bg-purple-600 text-purple-600 hover:text-white border-purple-200 hover:border-purple-600 shadow-lg shadow-purple-500/5 active:scale-95"
             >
@@ -327,7 +327,7 @@ const IssueDetails = ({ issue, onBack, onStatusUpdate, onUpdatePriority, onDelet
       {localStatus === 'Escalated' && (
         <div className="w-full flex items-center justify-between text-purple-600 font-black text-[10px] uppercase tracking-widest bg-purple-50 dark:bg-purple-900/20 px-8 py-4 rounded-2xl border border-purple-100 dark:border-purple-500/30 shadow-lg shadow-purple-500/5 mb-8 transition-all animate-in slide-in-from-top-2">
           <div className="flex items-center gap-3">
-            <ShieldAlert size={16} /> 
+            <ShieldAlert size={16} />
             <span>⚠ Escalated to</span>
           </div>
           <div className="flex items-center gap-2">
@@ -347,15 +347,15 @@ const IssueDetails = ({ issue, onBack, onStatusUpdate, onUpdatePriority, onDelet
 
             <div className="mb-10">
               <div className="flex items-center gap-2 mb-6">
-                 <div className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-gray-100 dark:border-gray-800 flex items-center gap-2 ${localStatus === 'Resolved' ? 'bg-emerald-50 text-emerald-600' : 'bg-gray-50 text-rose-600'}`}>
-                    <span className={`w-2 h-2 rounded-full animate-ping ${localStatus === 'Resolved' ? 'bg-emerald-500' : 'bg-rose-500'}`}></span>
-                    {localStatus}
-                 </div>
+                <div className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-gray-100 dark:border-gray-800 flex items-center gap-2 ${localStatus === 'Resolved' ? 'bg-emerald-50 text-emerald-600' : 'bg-gray-50 text-rose-600'}`}>
+                  <span className={`w-2 h-2 rounded-full animate-ping ${localStatus === 'Resolved' ? 'bg-emerald-500' : 'bg-rose-500'}`}></span>
+                  {localStatus}
+                </div>
               </div>
               <h1 className="text-4xl font-black text-gray-900 dark:text-white mb-6 uppercase tracking-tighter">[ {issue.subject} ]</h1>
               <div className="flex flex-wrap items-center gap-6 text-xs font-bold text-gray-400">
                 <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-800/50 px-4 py-2.5 rounded-2xl border border-gray-100 dark:border-gray-700">
-                  <User size={16} className="text-indigo-500" /> 
+                  <User size={16} className="text-indigo-500" />
                   <span className="text-gray-400">Raised by:</span>
                   <span className="text-gray-900 dark:text-white uppercase tracking-widest ml-1">{issue.from}</span>
                 </div>
@@ -368,11 +368,11 @@ const IssueDetails = ({ issue, onBack, onStatusUpdate, onUpdatePriority, onDelet
             <div className="space-y-10">
               <div className="group">
                 <h4 className="text-[9px] font-black text-indigo-500 uppercase tracking-[0.2em] mb-3 flex items-center gap-2">
-                   <div className="w-5 h-[2px] bg-indigo-500"></div> Problem Context
+                  <div className="w-5 h-[2px] bg-indigo-500"></div> Problem Context
                 </h4>
                 <div className="p-6 bg-gray-50/50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-800 group-hover:bg-white dark:group-hover:bg-gray-900 group-hover:shadow-xl transition-all duration-500">
                   <p className="text-gray-600 dark:text-gray-400 leading-relaxed font-semibold italic text-sm">
-                    "{issue.subject === 'Device Malfunction' 
+                    "{issue.subject === 'Device Malfunction'
                       ? "The employee portal app crashes immediately upon opening on Android 13 devices. We've tried clearing cache and re-installing but the issue persists. This is affecting multiple staff members during clock-in."
                       : "I am unable to login after the latest app update. It just hangs on the splash screen. No error message is shown, it just stays stuck on the logo."}"
                   </p>
@@ -381,19 +381,19 @@ const IssueDetails = ({ issue, onBack, onStatusUpdate, onUpdatePriority, onDelet
 
               <div>
                 <h4 className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.3em] mb-6 flex items-center gap-2">
-                   <div className="w-6 h-[2px] bg-indigo-500"></div> Proofs & Attachments
+                  <div className="w-6 h-[2px] bg-indigo-500"></div> Proofs & Attachments
                 </h4>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-5">
                   {[1, 2].map(img => (
-                    <div 
-                      key={img} 
+                    <div
+                      key={img}
                       onClick={() => setPreviewImage(`https://images.unsplash.com/photo-1555774698-0b77e0d5fac6?w=1000&id=${img}`)}
                       className="group relative aspect-video rounded-3xl overflow-hidden border-2 border-white dark:border-gray-800 hover:border-indigo-500 shadow-lg hover:shadow-indigo-500/20 transition-all cursor-pointer"
                     >
-                      <img 
-                        src={`https://images.unsplash.com/photo-1555774698-0b77e0d5fac6?w=600&id=${img}`} 
+                      <img
+                        src={`https://images.unsplash.com/photo-1555774698-0b77e0d5fac6?w=600&id=${img}`}
                         className="w-full h-full object-cover grayscale group-hover:grayscale-0 group-hover:scale-110 transition-all duration-700"
-                        alt="attachment proof" 
+                        alt="attachment proof"
                       />
                       <div className="absolute inset-0 bg-indigo-600/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all duration-500 backdrop-blur-[2px]">
                         <div className="p-3 bg-white/20 rounded-2xl backdrop-blur-md">
@@ -402,7 +402,7 @@ const IssueDetails = ({ issue, onBack, onStatusUpdate, onUpdatePriority, onDelet
                       </div>
                     </div>
                   ))}
-                  <div 
+                  <div
                     onClick={handleRequestProofClick}
                     className="aspect-video rounded-3xl border-2 border-dashed border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/20 flex flex-col items-center justify-center text-gray-400 hover:text-indigo-500 hover:border-indigo-500 transition-all cursor-pointer group"
                   >
@@ -417,7 +417,7 @@ const IssueDetails = ({ issue, onBack, onStatusUpdate, onUpdatePriority, onDelet
 
         {/* Right Column: Controls */}
         <div className="space-y-8">
-          <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-[2rem] p-6 shadow-2xl shadow-indigo-500/5 ring-1 ring-gray-100/50 dark:ring-gray-800">
+          {/* <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-[2rem] p-6 shadow-2xl shadow-indigo-500/5 ring-1 ring-gray-100/50 dark:ring-gray-800">
             <h4 className="text-[9px] font-black text-indigo-500 uppercase tracking-[0.2em] mb-6">Management Center</h4>
             
             <div className="space-y-6">
@@ -449,7 +449,7 @@ const IssueDetails = ({ issue, onBack, onStatusUpdate, onUpdatePriority, onDelet
                 </button>
               </div>
             </div>
-          </div>
+          </div> */}
 
           <div className="bg-gradient-to-br from-indigo-600 to-indigo-700 rounded-[2rem] p-6 text-white relative overflow-hidden shadow-2xl shadow-indigo-500/20 ring-1 ring-white/10">
             <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
@@ -523,7 +523,7 @@ const Issues = () => {
 
   // Persistence Logic
   const handleStatusUpdate = (id, newStatus, escalatedTo = null) => {
-    setIssuesList(prev => prev.map(issue => 
+    setIssuesList(prev => prev.map(issue =>
       issue.id === id ? { ...issue, status: newStatus, escalatedTo } : issue
     ));
     // Sync current detail view if open
@@ -533,7 +533,7 @@ const Issues = () => {
   };
 
   const handlePriorityUpdate = (id, newPriority) => {
-    setIssuesList(prev => prev.map(issue => 
+    setIssuesList(prev => prev.map(issue =>
       issue.id === id ? { ...issue, priority: newPriority } : issue
     ));
   };
@@ -548,8 +548,8 @@ const Issues = () => {
   const filteredIssues = issuesList.filter(issue => {
     const isForMe = issue.to === role;
     const matchesStatus = filterStatus === 'All' || issue.status === filterStatus;
-    const matchesSearch = issue.subject.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          issue.from.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = issue.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      issue.from.toLowerCase().includes(searchTerm.toLowerCase());
     return isForMe && matchesStatus && matchesSearch;
   });
 
@@ -572,25 +572,25 @@ const Issues = () => {
           <IssueStats issues={issuesList.filter(i => i.to === role)} />
 
           <div className="relative group">
-             <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500/20 to-purple-500/20 rounded-[2.5rem] blur opacity-0 group-hover:opacity-100 transition duration-1000"></div>
-             <div className="relative text-gray-900">
-                <IssueFilters 
-                  filterStatus={filterStatus} 
-                  setFilterStatus={setFilterStatus}
-                  searchTerm={searchTerm}
-                  setSearchTerm={setSearchTerm}
-                />
-             </div>
+            <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500/20 to-purple-500/20 rounded-[2.5rem] blur opacity-0 group-hover:opacity-100 transition duration-1000"></div>
+            <div className="relative text-gray-900">
+              <IssueFilters
+                filterStatus={filterStatus}
+                setFilterStatus={setFilterStatus}
+                searchTerm={searchTerm}
+                setSearchTerm={setSearchTerm}
+              />
+            </div>
           </div>
 
           <div className="grid grid-cols-1 gap-12">
             {filteredIssues.length > 0 ? (
               filteredIssues.map((issue) => (
-                <IssueCard 
-                  key={issue.id} 
-                  issue={issue} 
+                <IssueCard
+                  key={issue.id}
+                  issue={issue}
                   onStatusUpdate={handleStatusUpdate}
-                  onClick={() => setSelectedIssue(issue)} 
+                  onClick={() => setSelectedIssue(issue)}
                 />
               ))
             ) : (
@@ -605,9 +605,9 @@ const Issues = () => {
           </div>
         </>
       ) : (
-        <IssueDetails 
-          issue={selectedIssue} 
-          onBack={() => setSelectedIssue(null)} 
+        <IssueDetails
+          issue={selectedIssue}
+          onBack={() => setSelectedIssue(null)}
           onStatusUpdate={handleStatusUpdate}
           onUpdatePriority={handlePriorityUpdate}
           onDelete={handleDelete}
