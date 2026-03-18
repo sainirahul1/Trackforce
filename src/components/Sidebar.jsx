@@ -13,7 +13,15 @@ const Sidebar = ({ role, user, isCollapsed, onToggle }) => {
     tenant: [
       { name: 'Dashboard', icon: LayoutDashboard, path: '/tenant/dashboard' },
       { name: 'Employees', icon: Users, path: '/tenant/employees' },
+      { name: 'Live Tracking', icon: Map, path: '/tenant/live' },
+      { name: 'Visits', icon: Camera, path: '/tenant/visits' },
+      { name: 'Orders & Revenue', icon: ShoppingBag, path: '/tenant/orders' },
+      { name: 'Analytics', icon: Activity, path: '/tenant/analytics' },
+      { name: 'Activity Log', icon: Clock, path: '/tenant/activity' },
+      { name: 'Subscription', icon: ShieldCheck, path: '/tenant/subscription' },
+      { name: 'Notifications', icon: Bell, path: '/tenant/notifications' },
       { name: 'Issues', icon: AlertCircle, path: '/tenant/issues' },
+      { name: 'Settings', icon: Settings, path: '/tenant/settings' },
     ],
     manager: [
       { name: 'Dashboard', icon: LayoutDashboard, path: '/manager/dashboard' },

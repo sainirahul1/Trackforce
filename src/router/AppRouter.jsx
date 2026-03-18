@@ -22,6 +22,14 @@ import ManagerActivityLog from '../pages/manager/ActivityLog';
 import ManagerProfile from '../pages/manager/Profile';
 import ManagerIssues from '../pages/manager/Issues';
 import TenantIssues from '../pages/tenant/Issues';
+import LiveTrackingTenant from '../pages/tenant/LiveTracking';
+import VisitsTenant from '../pages/tenant/Visits';
+import OrdersTenant from '../pages/tenant/Orders';
+import SubscriptionTenant from '../pages/tenant/Subscription';
+import AnalyticsTenant from '../pages/tenant/Analytics';
+import ActivityTenant from '../pages/tenant/Activity';
+import SettingsTenant from '../pages/tenant/Settings';
+import NotificationsTenant from '../pages/tenant/Notifications';
 import SuperAdminIssues from '../pages/superadmin/Issues';
 
 // Employee Portal
@@ -54,6 +62,14 @@ const AppRouter = () => (
     <Route path="/tenant" element={<DashboardLayout allowedRole="tenant" />}>
       <Route path="dashboard" element={<TenantDashboard />} />
       <Route path="employees" element={<TenantEmployees />} />
+      <Route path="live" element={<LiveTrackingTenant />} />
+      <Route path="visits" element={<VisitsTenant />} />
+      <Route path="orders" element={<OrdersTenant />} />
+      <Route path="subscription" element={<SubscriptionTenant />} />
+      <Route path="analytics" element={<AnalyticsTenant />} />
+      <Route path="activity" element={<ActivityTenant />} />
+      <Route path="settings" element={<SettingsTenant />} />
+      <Route path="notifications" element={<NotificationsTenant />} />
       <Route path="issues" element={<TenantIssues />} />
       <Route index element={<Navigate to="dashboard" replace />} />
     </Route>
