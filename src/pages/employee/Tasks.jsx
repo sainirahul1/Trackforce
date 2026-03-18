@@ -512,6 +512,128 @@ const TaskDetailOverlay = ({ task, onClose, onUpdateOperationalData, onStartTask
   );
 };
 
+// --- Modals & Overlays ---
+const CreateTaskOverlay = ({ onClose, onCreate }) => {
+  const [formData, setFormData] = useState({
+    title: '',
+    description: '',
+    type: '',
+    date: '',
+    priority: 'LOW',
+    initialStatus: 'INCOMING'
+  });
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onCreate(formData);
+  };
+
+  return (
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 md:p-8 animate-in fade-in duration-300">
+      <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-md" onClick={onClose} />
+      <div className="relative bg-white dark:bg-gray-900 w-full max-w-2xl max-h-[90vh] rounded-[2.5rem] border border-gray-100 dark:border-gray-800 shadow-2xl overflow-y-auto animate-in zoom-in-95 slide-in-from-bottom-10 duration-500">
+        <div className="p-8 md:p-10">
+          <div className="flex items-center justify-between mb-2">
+            <div>
+              <h2 className="text-3xl font-black text-gray-900 dark:text-white tracking-tighter">Create New Task</h2>
+              <p className="text-[10px] font-black uppercase text-indigo-600 tracking-widest mt-1">FILL IN THE MISSION DETAILS BELOW</p>
+            </div>
+            <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-all text-gray-400 hover:text-gray-900 dark:hover:text-white">
+              <X size={24} />
+            </button>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-6 mt-8">
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest ml-1">TASK TITLE</label>
+              <input
+                type="text"
+                required
+                placeholder="e.g. Quarterly Route Audit - North Zone"
+                value={formData.title}
+                onChange={e => setFormData({ ...formData, title: e.target.value })}
+                className="w-full bg-gray-50 dark:bg-gray-800 border border-transparent dark:border-gray-700 rounded-2xl px-5 py-4 text-sm font-bold focus:ring-2 focus:ring-indigo-500 outline-none text-gray-900 dark:text-white shadow-inner"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest ml-1">DESCRIPTION</label>
+              <textarea
+                required
+                placeholder="Describe the objective, scope, and expected deliverables..."
+                value={formData.description}
+                onChange={e => setFormData({ ...formData, description: e.target.value })}
+                className="w-full bg-gray-50 dark:bg-gray-800 border border-transparent dark:border-gray-700 rounded-2xl px-5 py-4 text-sm font-medium h-24 resize-none focus:ring-2 focus:ring-indigo-500 outline-none text-gray-900 dark:text-white shadow-inner"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest ml-1">CATEGORY / MISSION TYPE</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Supplier Onboarding, Route Planning..."
+                  value={formData.type}
+                  onChange={e => setFormData({ ...formData, type: e.target.value })}
+                  className="w-full bg-gray-50 dark:bg-gray-800 border border-transparent dark:border-gray-700 rounded-2xl px-5 py-4 text-sm font-bold focus:ring-2 focus:ring-indigo-500 outline-none text-gray-900 dark:text-white shadow-inner"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest ml-1">DATE</label>
+                <input
+                  type="date"
+                  required
+                  value={formData.date}
+                  onChange={e => setFormData({ ...formData, date: e.target.value })}
+                  className="w-full bg-gray-50 dark:bg-gray-800 border border-transparent dark:border-gray-700 rounded-2xl px-5 py-4 text-sm font-bold focus:ring-2 focus:ring-indigo-500 outline-none text-gray-900 dark:text-white shadow-inner"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest ml-1">PRIORITY</label>
+                <select
+                  value={formData.priority}
+                  onChange={e => setFormData({ ...formData, priority: e.target.value })}
+                  className="w-full bg-gray-50 dark:bg-gray-800 border border-transparent dark:border-gray-700 rounded-2xl px-5 py-4 text-xs font-black uppercase tracking-widest focus:ring-2 focus:ring-indigo-500 outline-none text-gray-900 dark:text-white shadow-inner cursor-pointer"
+                >
+                  <option value="LOW">LOW</option>
+                  <option value="MEDIUM">MEDIUM</option>
+                  <option value="HIGH">HIGH</option>
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest ml-1">INITIAL STATUS</label>
+                <select
+                  value={formData.initialStatus}
+                  onChange={e => setFormData({ ...formData, initialStatus: e.target.value })}
+                  className="w-full bg-gray-50 dark:bg-gray-800 border border-transparent dark:border-gray-700 rounded-2xl px-5 py-4 text-xs font-black uppercase tracking-widest focus:ring-2 focus:ring-indigo-500 outline-none text-gray-900 dark:text-white shadow-inner cursor-pointer"
+                >
+                  <option value="INCOMING">INCOMING</option>
+                  <option value="IN PROGRESS">IN PROGRESS</option>
+                  <option value="CRITICAL">CRITICAL</option>
+                  <option value="UNDER REVIEW">UNDER REVIEW</option>
+                  <option value="BLOCKED">BLOCKED</option>
+                  <option value="COMPLETED">COMPLETED</option>
+                  <option value="CANCEL">CANCEL</option>
+                </select>
+              </div>
+            </div>
+
+            <button type="submit" className="w-full mt-6 py-5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-indigo-200 dark:shadow-none hover:scale-[1.02] active:scale-95 transition-all">
+              + CREATE TASK
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // --- Main Component ---
 const EmployeeTasks = () => {
   const [view, setView] = useState('grid');
@@ -523,6 +645,7 @@ const EmployeeTasks = () => {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
   const [collapsedCategories, setCollapsedCategories] = useState({});
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   const toggleCategory = (category) => {
     setCollapsedCategories(prev => ({ ...prev, [category]: !prev[category] }));
@@ -934,6 +1057,38 @@ const EmployeeTasks = () => {
     updateTaskOperationalData(taskId, { isTaskStarted: true, status: 'in-progress' });
   };
 
+  const handleCreateNewTask = (taskData) => {
+    const newTask = {
+      id: taskList.length > 0 ? Math.max(...taskList.map(t => t.id)) + 1 : 1,
+      title: taskData.title || 'New Task',
+      store: 'New Operational Required',
+      companyName: 'Internal Ops',
+      companyContact: 'N/A',
+      companyEmail: 'N/A',
+      companyInsight: 'Ad-hoc Mission',
+      description: taskData.description,
+      type: taskData.type,
+      priority: taskData.priority.toLowerCase(),
+      status: taskData.initialStatus === 'IN PROGRESS' ? 'in-progress' : (taskData.initialStatus === 'COMPLETED' ? 'completed' : 'pending'),
+      visitStatus: 'Pending',
+      missionStatus: 'Pending',
+      isTaskStarted: taskData.initialStatus === 'IN PROGRESS',
+      date: taskData.date ? new Date(taskData.date) : new Date(),
+      dueDate: taskData.date ? new Date(taskData.date).toLocaleDateString() : new Date().toLocaleDateString(),
+      address: 'Internal Delivery',
+      distance: '0.0 km',
+      distanceVal: 0,
+      eta: '0 mins',
+      coords: { x: 50, y: 50 },
+      evidence: { storeFront: null, selfie: null, productDisplay: null, officialDoc: null },
+      checklist: [],
+      incentive: "₹0",
+      incentiveVal: 0,
+    };
+    setTaskList(prev => [newTask, ...prev]);
+    setIsCreateModalOpen(false);
+  };
+
   const handleFileUpload = (taskId, evidenceType, file) => {
     // In a real app, you'd upload the file here. 
     // For now, we'll store the filename or a dummy value.
@@ -1076,10 +1231,31 @@ const EmployeeTasks = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto py-12 px-8 h-full">
+    <div className="w-full h-full py-8 px-4 md:px-10 overflow-x-hidden">
       <div className="space-y-12 animate-in duration-500">
       {/* <PerformanceStatsOverview /> */}
       <style>{`
+        ::-webkit-scrollbar {
+          width: 6px;
+          height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+          background-color: rgba(156, 163, 175, 0.4);
+          border-radius: 10px;
+        }
+        .dark ::-webkit-scrollbar-thumb {
+          background-color: rgba(75, 85, 99, 0.4);
+        }
+        ::-webkit-scrollbar-thumb:hover {
+          background-color: rgba(156, 163, 175, 0.6);
+        }
+        .dark ::-webkit-scrollbar-thumb:hover {
+          background-color: rgba(75, 85, 99, 0.6);
+        }
+
         @keyframes dash {
           to { stroke-dashoffset: -20; }
         }
@@ -1104,17 +1280,25 @@ const EmployeeTasks = () => {
             <LayoutGrid size={14} className="text-indigo-600 dark:text-indigo-400" />
             <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600 dark:text-indigo-400">Assignment Hub</span>
           </div>
-          <div>
-            <h2 className="text-4xl md:text-5xl font-black text-gray-900 dark:text-white tracking-tight leading-none mb-2 mt-1">
-              Active <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 to-purple-500">Tasks</span>
-            </h2>
-            <p className="text-sm font-bold text-gray-500 dark:text-gray-400 flex items-center gap-2">
-              Manage your operational queue
-              <span className="hidden sm:inline w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-700" />
-              <span className="text-xs uppercase tracking-widest">
-                Sorted by <span className="text-indigo-600 dark:text-indigo-400 font-black">{sortBy.replace('_', ' ')}</span>
-              </span>
-            </p>
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+            <div>
+              <h2 className="text-4xl md:text-5xl font-black text-gray-900 dark:text-white tracking-tight leading-none mb-2 mt-1">
+                Active <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 to-purple-500">Tasks</span>
+              </h2>
+              <p className="text-sm font-bold text-gray-500 dark:text-gray-400 flex items-center gap-2">
+                Manage your operational queue
+                <span className="hidden sm:inline w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-700" />
+                <span className="text-xs uppercase tracking-widest">
+                  Sorted by <span className="text-indigo-600 dark:text-indigo-400 font-black">{sortBy.replace('_', ' ')}</span>
+                </span>
+              </p>
+            </div>
+            <button
+              onClick={() => setIsCreateModalOpen(true)}
+              className="flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-indigo-200 dark:shadow-none hover:scale-[1.02] active:scale-95 transition-all whitespace-nowrap"
+            >
+              + Create New Task
+            </button>
           </div>
         </div>
 
@@ -1418,6 +1602,13 @@ const EmployeeTasks = () => {
         onStartTask={handleStartTask}
         onFileUpload={handleFileUpload}
       />
+
+      {isCreateModalOpen && (
+        <CreateTaskOverlay
+          onClose={() => setIsCreateModalOpen(false)}
+          onCreate={handleCreateNewTask}
+        />
+      )}
     </div>
   );
 };
