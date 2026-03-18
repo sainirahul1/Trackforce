@@ -15,8 +15,6 @@ import {
   Reply,
   CheckCircle,
   Layers,
-  Flame,
-  Send,
   ShieldAlert,
   ArrowUpRight,
   Maximize2,
@@ -44,99 +42,102 @@ const ImageModal = ({ src, onClose }) => {
   );
 };
 
-const IssueCard = ({ issue, onClick, onStatusUpdate }) => {
+const IssueCard = ({ issue, onClick }) => {
   const getPriorityStyles = (priority) => {
     switch (priority) {
-      case 'Critical': return 'bg-rose-500/10 text-rose-600 border-rose-200 dark:border-rose-500/30';
-      case 'High': return 'bg-orange-500/10 text-orange-600 border-orange-200 dark:border-orange-500/30';
-      case 'Medium': return 'bg-blue-500/10 text-blue-600 border-blue-200 dark:border-blue-500/30';
+      case 'Critical': return 'bg-rose-500/10 text-rose-600 border-rose-200 dark:border-rose-500/30 shadow-[0_4px_12px_-4px_rgba(244,63,94,0.3)]';
+      case 'High': return 'bg-orange-500/10 text-orange-600 border-orange-200 dark:border-orange-500/30 shadow-[0_4px_12px_-4px_rgba(249,115,22,0.3)]';
+      case 'Medium': return 'bg-blue-500/10 text-blue-600 border-blue-200 dark:border-blue-500/30 shadow-[0_4px_12px_-4px_rgba(59,130,246,0.3)]';
       default: return 'bg-gray-500/10 text-gray-600 border-gray-200 dark:border-gray-500/30';
     }
   };
 
   const getStatusStyles = (status) => {
     switch (status) {
-      case 'Resolved': return 'bg-emerald-50 text-emerald-600 border-emerald-100 dark:bg-emerald-900/10 dark:text-emerald-400 dark:border-emerald-500/20';
-      case 'In Progress': return 'bg-amber-50 text-amber-600 border-amber-100 dark:bg-amber-900/10 dark:text-amber-400 dark:border-amber-500/20';
-      case 'Escalated': return 'bg-purple-50 text-purple-600 border-purple-100 dark:bg-purple-900/10 dark:text-purple-400 dark:border-purple-500/20';
-      default: return 'bg-rose-50 text-rose-600 border-rose-100 dark:bg-rose-900/10 dark:text-rose-400 dark:border-rose-500/20';
+      case 'Resolved': return 'bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-500/30';
+      case 'In Progress': return 'bg-indigo-50 text-indigo-600 border-indigo-200 dark:bg-indigo-950/20 dark:text-indigo-400 dark:border-indigo-500/30';
+      case 'Escalated': return 'bg-purple-50 text-purple-600 border-purple-200 dark:bg-purple-950/20 dark:text-purple-400 dark:border-purple-500/30';
+      default: return 'bg-rose-50 text-rose-600 border-rose-200 dark:bg-rose-950/20 dark:text-rose-400 dark:border-rose-500/30';
     }
   };
 
   return (
     <div 
       onClick={() => onClick(issue)}
-      className="group relative bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-[2rem] p-6 transition-all duration-500 hover:shadow-xl hover:-translate-y-1 overflow-hidden cursor-pointer"
+      className="group relative bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-[2.5rem] p-8 transition-all duration-700 hover:shadow-[0_40px_80px_-20px_rgba(79,70,229,0.15)] hover:-translate-y-2 overflow-hidden cursor-pointer active:scale-[0.98]"
     >
-      <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 blur-3xl rounded-full -mr-16 -mt-16 group-hover:bg-indigo-500/10 transition-all duration-700"></div>
+      <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-indigo-500/10 to-transparent blur-3xl rounded-full -mr-32 -mt-32 group-hover:scale-110 transition-transform duration-1000"></div>
+      <div className="absolute bottom-0 left-0 w-32 h-32 bg-purple-500/5 blur-2xl rounded-full -ml-16 -mb-16"></div>
       
       {/* Top Section */}
-      <div className="relative z-10 flex flex-wrap items-center justify-between gap-3 mb-4">
-        <div className="flex items-center gap-3">
-          <h3 className="text-lg font-black text-gray-900 dark:text-white uppercase tracking-tighter hover:text-indigo-600 transition-colors">
+      <div className="relative z-10 flex flex-wrap items-center justify-between gap-4 mb-4">
+        <div className="flex flex-wrap items-center gap-4">
+          <h3 className="text-lg font-black text-gray-900 dark:text-white uppercase tracking-tighter group-hover:text-indigo-600 transition-colors duration-300">
             [ {issue.subject} ]
           </h3>
-          <div className="flex items-center gap-1.5">
-            <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest border ${getPriorityStyles(issue.priority)}`}>
-              🔴 {issue.priority}
+          <div className="flex items-center gap-2">
+            <span className={`px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-widest border-2 ${getPriorityStyles(issue.priority)} transform group-hover:scale-105 transition-transform`}>
+              {issue.priority}
             </span>
-            <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest border ${getStatusStyles(issue.status)}`}>
-              • {issue.status}
+            <span className={`px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-widest border-2 ${getStatusStyles(issue.status)}`}>
+              {issue.status}
             </span>
           </div>
-        </div>
-        <div className="flex items-center gap-1.5 text-gray-400">
-          <Clock size={12} className="text-rose-500" />
-          <span className="text-[9px] font-black text-rose-500 uppercase tracking-widest">2h left</span>
         </div>
       </div>
 
       {/* Meta Info */}
-      <div className="relative z-10 flex items-center gap-3 mb-4 text-[10px] font-bold text-gray-400">
-        <div className="flex items-center gap-2">
-          <img src={`https://i.pravatar.cc/100?u=${issue.id}`} className="w-5 h-5 rounded-lg shadow-sm" alt="user" />
-          <span className="opacity-60">Assigned to:</span>
-          <span className="text-gray-900 dark:text-gray-200 font-black">{issue.from}</span>
+      <div className="relative z-10 flex items-center gap-3 mb-4">
+        <div className="flex items-center gap-2.5 bg-gray-50 dark:bg-gray-800/50 px-3 py-1.5 rounded-xl border border-gray-100 dark:border-gray-700">
+          <div className="relative">
+            <img src={`https://i.pravatar.cc/150?u=${issue.id}`} className="w-5 h-5 rounded-lg border border-white dark:border-gray-800 shadow-sm" alt="user" />
+            <div className="absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-emerald-500 border border-white dark:border-gray-900 rounded-full"></div>
+          </div>
+          <p className="text-[10px] font-bold text-gray-400">
+            Raised by: <span className="text-gray-900 dark:text-gray-100 font-black uppercase tracking-widest">{issue.from}</span>
+          </p>
         </div>
-        <span>•</span>
-        <div className="flex items-center gap-2">
-          <span>Updated 2h ago</span>
+        <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest opacity-60 bg-gray-50/50 dark:bg-gray-800/40 px-3 py-2 rounded-xl">
+           Ref: #TF-{String(issue.id).slice(-6).toUpperCase()}
         </div>
       </div>
 
       {/* Description */}
-      <p className="relative z-10 text-xs text-gray-500 dark:text-gray-400 line-clamp-1 mb-6 font-medium leading-relaxed italic pr-8">
-        {issue.subject === 'Device Malfunction' 
-          ? "System encountered a critical error. User reported a significant performance lag."
-          : "Unable to login after update. User is stuck on the splash screen."}
-      </p>
+      <div className="relative z-10 p-4 bg-indigo-50/30 dark:bg-indigo-950/10 rounded-2xl border border-indigo-100/50 dark:border-indigo-500/10 mb-6 group-hover:bg-indigo-50/50 transition-colors duration-500">
+        <p className="text-xs text-gray-600 dark:text-gray-400 font-medium leading-relaxed italic pr-2">
+          "{issue.subject === 'Device Malfunction' 
+            ? "Critical core failure detected on node 7. System latency has spiked beyond acceptable thresholds."
+            : "Update 4.2.0 caused an authentication loop. User is unable to bypass initial handshake."}"
+        </p>
+      </div>
 
       {/* Footer: Progress & Actions */}
-      <div className="relative z-10 flex items-center gap-6">
-        <div className="flex-1">
-          <div className="flex justify-between items-center mb-1.5">
-            <div className="flex items-center gap-1.5">
-              <Layers size={12} className="text-indigo-500" />
-              <span className="text-[8px] font-black text-gray-400 uppercase tracking-wider">Resolution</span>
+      <div className="relative z-10 flex items-center gap-8">
+        <div className="flex-1 space-y-3">
+          <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
+            <div className="flex items-center gap-2 text-indigo-500">
+              <Layers size={14} />
+              <span>Fix Progress</span>
             </div>
-            <span className="text-[8px] font-black text-indigo-500">60%</span>
+            <span className="text-indigo-600 bg-indigo-50 dark:bg-indigo-950/40 px-3 py-1 rounded-lg border border-indigo-100 dark:border-indigo-500/20">
+              {issue.status === 'Resolved' ? '100%' : (issue.status === 'In Progress' ? '68%' : '12%')}
+            </span>
           </div>
-          <div className="w-full h-1 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+          <div className="w-full h-2.5 bg-gray-100 dark:bg-gray-800 rounded-full p-0.5 overflow-hidden ring-1 ring-gray-100 dark:ring-gray-700">
             <div 
-              className={`h-full bg-gradient-to-r ${issue.status === 'Resolved' ? 'from-emerald-500 to-teal-500' : 'from-indigo-500 to-indigo-600'} transition-all duration-1000`}
-              style={{ width: issue.status === 'Resolved' ? '100%' : (issue.status === 'In Progress' ? '60%' : '15%') }}
-            />
+              className={`h-full bg-gradient-to-r ${issue.status === 'Resolved' ? 'from-emerald-400 via-teal-500 to-emerald-600' : 'from-indigo-500 via-purple-500 to-indigo-600'} transition-all duration-1000 rounded-full relative overflow-hidden shadow-[0_0_15px_rgba(79,70,229,0.3)]`}
+              style={{ width: issue.status === 'Resolved' ? '100%' : (issue.status === 'In Progress' ? '68%' : '12%') }}
+            >
+              <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.2)_50%,transparent_75%)] bg-[length:250%_250%] animate-[shimmer_2s_infinite]"></div>
+            </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <button 
-            onClick={(e) => { e.stopPropagation(); /* Logic for more vertical if needed */ }}
-            className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-xl transition-all"
-          >
-            <MoreVertical size={16} />
-          </button>
-        </div>
+        <button 
+          className="p-3 bg-gray-50 dark:bg-gray-800 hover:bg-indigo-600 hover:text-white dark:hover:bg-indigo-600 rounded-xl transition-all duration-300 shadow-sm hover:shadow-indigo-500/30 active:scale-90 border border-gray-100 dark:border-gray-700"
+        >
+          <MoreVertical size={16} />
+        </button>
       </div>
     </div>
   );
@@ -145,7 +146,7 @@ const IssueCard = ({ issue, onClick, onStatusUpdate }) => {
 
 
 
-const IssueDetails = ({ issue, onBack, onStatusUpdate, onUpdatePriority, onDelete }) => {
+const IssueDetails = ({ issue, onBack, onStatusUpdate, onUpdatePriority, onDelete, triggerToast }) => {
   const [localStatus, setLocalStatus] = useState(issue.status);
   const [localPriority, setLocalPriority] = useState(issue.priority);
   const [escalatedTo, setEscalatedTo] = useState(issue.status === 'Escalated' ? (issue.escalatedTo || 'Super Admin') : null);
@@ -176,7 +177,7 @@ const IssueDetails = ({ issue, onBack, onStatusUpdate, onUpdatePriority, onDelet
     setEscalatedTo(selectedEscalateTarget);
     onStatusUpdate(issue.id, 'Escalated', selectedEscalateTarget);
     setShowEscalateModal(false);
-    onBack(); // Return to dashboard after escalation
+    triggerToast('Issue escalated to Super Admin successfully', 'success');
   };
 
   const handleDelete = () => {
@@ -184,9 +185,7 @@ const IssueDetails = ({ issue, onBack, onStatusUpdate, onUpdatePriority, onDelet
   };
 
   const handleExit = () => {
-    if (localStatus === 'Escalated') {
-      onStatusUpdate(issue.id, 'In Progress');
-    }
+    // PRESERVE ESCALATION: Don't revert status when backing out
     onBack();
   };
 
@@ -239,7 +238,7 @@ const IssueDetails = ({ issue, onBack, onStatusUpdate, onUpdatePriority, onDelet
                 onClick={onBack}
                 className="w-full py-4 bg-rose-50/50 dark:bg-rose-900/10 text-rose-500 hover:bg-rose-500 hover:text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border border-rose-100 dark:border-rose-500/20"
               >
-                [ Abort & Exit to Dashboard ]
+                [ Abort & Exit to Issues ]
               </button>
            </div>
         </div>
@@ -252,81 +251,96 @@ const IssueDetails = ({ issue, onBack, onStatusUpdate, onUpdatePriority, onDelet
         className="hidden" 
         accept="image/*,.pdf,.doc,.docx"
       />
-      
+
       {/* Detail Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 mb-10">
-        <button 
-          onClick={handleExit}
-          className="group flex items-center gap-3 text-gray-500 hover:text-indigo-600 transition-all font-black"
-        >
-          <div className="p-3 bg-white dark:bg-gray-800 rounded-2xl group-hover:bg-indigo-600 group-hover:text-white group-hover:scale-110 shadow-sm transition-all duration-300 ring-1 ring-gray-100 dark:ring-gray-700">
-            <ChevronLeft size={20} />
-          </div>
-          <span className="font-black text-xs uppercase tracking-[0.2em]">{localStatus === 'Escalated' ? 'Return to Dashboard' : 'Back to Dashboard'}</span>
-        </button>
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-4 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl px-8 py-4 rounded-[2.5rem] border border-white/20 dark:border-gray-800 shadow-[0_15px_40px_-15px_rgba(0,0,0,0.1)] relative overflow-hidden group/header ring-1 ring-black/5">
+        <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-transparent opacity-0 group-hover/header:opacity-100 transition-opacity duration-700 pointer-events-none"></div>
         
-        <div className="flex flex-wrap items-center gap-4">
-          <div className="flex flex-col gap-1.5">
-             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Status</label>
-             <div className="relative">
-                <select 
-                  value={localStatus}
-                  onChange={(e) => handleStatusChange(e.target.value)}
-                  className={`appearance-none bg-white dark:bg-gray-900 px-6 py-3.5 pr-12 rounded-2xl text-xs font-black uppercase tracking-widest border-2 transition-all outline-none cursor-pointer focus:ring-4 focus:ring-indigo-500/10 ${localStatus === 'Resolved' ? 'border-emerald-500 text-emerald-600' : (localStatus === 'Escalated' ? 'border-purple-500 text-purple-600' : 'border-indigo-500 text-indigo-600')}`}
-                >
-                  <option value="Open">Open</option>
-                  <option value="In Progress">In Progress</option>
-                  <option value="Resolved">Resolved</option>
-                  <option value="Escalated">Escalated</option>
-                </select>
-                <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
-                  <ArrowUpRight size={14} className="rotate-90" />
+        <div className="flex flex-wrap items-center gap-6 relative z-10 w-full lg:w-auto">
+          <button 
+            onClick={handleExit}
+            className="group flex items-center gap-2.5 text-gray-500 hover:text-indigo-600 transition-all font-black"
+          >
+            <div className="p-2 bg-gray-50 dark:bg-gray-800 rounded-xl group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-sm">
+              <ChevronLeft size={16} className="group-hover:-translate-x-0.5 transition-transform" />
+            </div>
+            <span className="font-black text-[10px] uppercase tracking-[0.15em]">{localStatus === 'Escalated' ? 'Return' : 'Back to Issues'}</span>
+          </button>
+
+          <div className="h-8 w-[1.5px] bg-gray-100 dark:bg-gray-800 hidden md:block opacity-50"></div>
+
+          <div className="flex items-center gap-4">
+             <label className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em]">Lifecycle</label>
+             <div className="flex items-center gap-3">
+                <div className="relative group/select">
+                  <select 
+                    value={localStatus}
+                    onChange={(e) => handleStatusChange(e.target.value)}
+                    className={`appearance-none bg-gray-50/50 dark:bg-gray-800/50 px-4 py-2 pr-10 rounded-xl text-[9px] font-black uppercase tracking-[0.1em] border-2 transition-all outline-none cursor-pointer focus:ring-8 focus:ring-indigo-500/5 ${localStatus === 'Resolved' ? 'border-emerald-500 text-emerald-600' : (localStatus === 'Escalated' ? 'border-purple-500 text-purple-600' : 'border-indigo-500 text-indigo-600')}`}
+                  >
+                    <option value="Open">Open</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Resolved">Resolved</option>
+                    <option value="Escalated">Escalated</option>
+                  </select>
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 group-hover/select:text-indigo-500 transition-colors">
+                    <ArrowUpRight size={12} className="rotate-90" />
+                  </div>
                 </div>
+
+                {localStatus === 'Escalated' && (
+                  <button 
+                    onClick={() => {
+                      onStatusUpdate(issue.id, 'In Progress');
+                      triggerToast('Issue retrieved to Manager successfully');
+                    }}
+                    className="px-6 py-3 bg-purple-600 text-white hover:bg-purple-700 rounded-2xl text-[10px] font-black uppercase tracking-[0.15em] transition-all shadow-[0_15px_30px_-10px_rgba(168,85,247,0.4)] active:scale-95 flex items-center gap-3 border border-purple-400/30"
+                  >
+                    <Reply size={14} /> [ Return back ]
+                  </button>
+                )}
              </div>
           </div>
-
-          <div className="flex items-center gap-3 mt-5">
-            {localStatus === 'Escalated' && (
-              <button 
-                onClick={() => {
-                  onStatusUpdate(issue.id, 'In Progress');
-                  onBack();
-                }}
-                className="px-6 py-3.5 bg-purple-600 text-white hover:bg-purple-700 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-purple-500/30 active:scale-95 flex items-center gap-2"
-              >
-                <Reply size={14} /> [ Return back ]
-              </button>
-            )}
-            
+        </div>
+        
+        <div className="flex items-center gap-3 relative z-10">
+          {localStatus !== 'Escalated' && (
             <button 
               onClick={handleExit}
-              className="px-8 py-3.5 bg-gray-100 dark:bg-gray-800 text-gray-500 hover:text-gray-900 rounded-2xl text-xs font-black uppercase tracking-widest transition-all border border-gray-200 dark:border-gray-700 active:scale-95"
+              className="px-5 py-2.5 bg-white dark:bg-gray-800 text-gray-500 hover:text-gray-900 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all border border-gray-100 dark:border-gray-700 active:scale-95 shadow-sm"
             >
               [ Exit ]
             </button>
+          )}
 
-            {localStatus !== 'Escalated' && (
-              <button 
-                onClick={() => setShowEscalateModal(true)}
-                className="flex items-center gap-2 px-8 py-3.5 rounded-2xl text-xs font-black transition-all border outline-none bg-purple-500/10 hover:bg-purple-600 text-purple-600 hover:text-white border-purple-200 hover:border-purple-600 shadow-lg shadow-purple-500/5 hover:scale-105 active:scale-95"
-              >
-                <ShieldAlert size={16} /> [ Escalate ]
-              </button>
-            )}
+          {localStatus !== 'Escalated' && (
+            <button 
+              onClick={() => setShowEscalateModal(true)}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-[9px] font-black transition-all border outline-none bg-purple-500/10 hover:bg-purple-600 text-purple-600 hover:text-white border-purple-200 hover:border-purple-600 shadow-lg shadow-purple-500/5 active:scale-95"
+            >
+              <ShieldAlert size={10} /> [ Escalate ]
+            </button>
+          )}
+        </div>
+      </div>
+
+      {localStatus === 'Escalated' && (
+        <div className="w-full flex items-center justify-between text-purple-600 font-black text-[10px] uppercase tracking-widest bg-purple-50 dark:bg-purple-900/20 px-8 py-4 rounded-2xl border border-purple-100 dark:border-purple-500/30 shadow-lg shadow-purple-500/5 mb-8 transition-all animate-in slide-in-from-top-2">
+          <div className="flex items-center gap-3">
+            <ShieldAlert size={16} /> 
+            <span>⚠ Escalated to</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="opacity-50">Target:</span>
+            <span className="bg-purple-600 text-white px-3 py-1 rounded-lg shadow-md shadow-purple-500/20 font-black">Super Admin</span>
           </div>
         </div>
-
-        {localStatus === 'Escalated' && (
-          <div className="w-full flex items-center gap-3 text-purple-600 font-black text-xs uppercase tracking-widest bg-purple-50 dark:bg-purple-900/20 px-8 py-4 rounded-2xl border border-purple-100 dark:border-purple-500/30 shadow-lg shadow-purple-500/5 mt-2 transition-all animate-in slide-in-from-top-2">
-            <ShieldAlert size={18} /> ⚠ Escalated to Super Admin
-          </div>
-        )}
-      </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
         {/* Left Column: Info */}
-        <div className="lg:col-span-2 space-y-10">
-          <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-[3rem] p-12 overflow-hidden relative shadow-2xl shadow-indigo-500/5 ring-1 ring-gray-100/50 dark:ring-gray-800">
+        <div className="lg:col-span-2 space-y-8">
+          <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-[2rem] p-8 overflow-hidden relative shadow-2xl shadow-indigo-500/5 ring-1 ring-gray-100/50 dark:ring-gray-800">
             <div className="absolute top-0 right-0 p-10 opacity-5">
               <History size={180} />
             </div>
@@ -353,11 +367,11 @@ const IssueDetails = ({ issue, onBack, onStatusUpdate, onUpdatePriority, onDelet
 
             <div className="space-y-10">
               <div className="group">
-                <h4 className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.3em] mb-4 flex items-center gap-2">
-                   <div className="w-6 h-[2px] bg-indigo-500"></div> Problem Context
+                <h4 className="text-[9px] font-black text-indigo-500 uppercase tracking-[0.2em] mb-3 flex items-center gap-2">
+                   <div className="w-5 h-[2px] bg-indigo-500"></div> Problem Context
                 </h4>
-                <div className="p-8 bg-gray-50/50 dark:bg-gray-800/50 rounded-3xl border border-gray-100 dark:border-gray-800 group-hover:bg-white dark:group-hover:bg-gray-900 group-hover:shadow-xl transition-all duration-500">
-                  <p className="text-gray-600 dark:text-gray-400 leading-relaxed font-semibold italic text-base">
+                <div className="p-6 bg-gray-50/50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-800 group-hover:bg-white dark:group-hover:bg-gray-900 group-hover:shadow-xl transition-all duration-500">
+                  <p className="text-gray-600 dark:text-gray-400 leading-relaxed font-semibold italic text-sm">
                     "{issue.subject === 'Device Malfunction' 
                       ? "The employee portal app crashes immediately upon opening on Android 13 devices. We've tried clearing cache and re-installing but the issue persists. This is affecting multiple staff members during clock-in."
                       : "I am unable to login after the latest app update. It just hangs on the splash screen. No error message is shown, it just stays stuck on the logo."}"
@@ -402,19 +416,23 @@ const IssueDetails = ({ issue, onBack, onStatusUpdate, onUpdatePriority, onDelet
         </div>
 
         {/* Right Column: Controls */}
-        <div className="space-y-10">
-          <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-[3rem] p-10 shadow-2xl shadow-indigo-500/5 ring-1 ring-gray-100/50 dark:ring-gray-800">
-            <h4 className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.2em] mb-8">Management Center</h4>
+        <div className="space-y-8">
+          <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-[2rem] p-6 shadow-2xl shadow-indigo-500/5 ring-1 ring-gray-100/50 dark:ring-gray-800">
+            <h4 className="text-[9px] font-black text-indigo-500 uppercase tracking-[0.2em] mb-6">Management Center</h4>
             
-            <div className="space-y-8">
+            <div className="space-y-6">
               <div>
                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-4">Urgency Level</label>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-4">
                   {['Low', 'Medium', 'High', 'Critical'].map(level => (
                     <button 
                       key={level}
                       onClick={() => handlePriorityUpdate(level)}
-                      className={`px-3 py-3 rounded-2xl text-[10px] font-black uppercase tracking-tighter border-2 transition-all duration-300 ${localPriority === level ? 'bg-indigo-600 border-indigo-600 text-white shadow-xl shadow-indigo-500/20 scale-105' : 'bg-transparent border-gray-50 dark:border-gray-800 text-gray-500 hover:border-indigo-500/30 font-black'}`}
+                      className={`px-3 py-4 rounded-3xl text-[10px] font-black uppercase tracking-tighter border-2 transition-all duration-500 transform active:scale-90 ${localPriority === level 
+                        ? (level === 'Critical' ? 'bg-rose-600 border-rose-600 text-white shadow-[0_15px_30px_-10px_rgba(225,29,72,0.4)] scale-105' 
+                          : level === 'High' ? 'bg-orange-600 border-orange-600 text-white shadow-[0_15px_30px_-10px_rgba(234,88,12,0.4)] scale-105'
+                          : 'bg-indigo-600 border-indigo-600 text-white shadow-[0_15px_30px_-10px_rgba(79,70,229,0.4)] scale-105')
+                        : 'bg-white dark:bg-gray-800/10 border-gray-100 dark:border-gray-800 text-gray-500 hover:border-indigo-500/50'}`}
                     >
                       {level}
                     </button>
@@ -433,11 +451,11 @@ const IssueDetails = ({ issue, onBack, onStatusUpdate, onUpdatePriority, onDelet
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-indigo-600 to-indigo-700 rounded-[3rem] p-10 text-white relative overflow-hidden shadow-2xl shadow-indigo-500/20 ring-1 ring-white/10">
+          <div className="bg-gradient-to-br from-indigo-600 to-indigo-700 rounded-[2rem] p-6 text-white relative overflow-hidden shadow-2xl shadow-indigo-500/20 ring-1 ring-white/10">
             <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
-              <ShieldAlert size={140} />
+              <ShieldAlert size={100} />
             </div>
-            <h4 className="text-[10px] font-black uppercase tracking-[0.3em] mb-6 text-indigo-200">Session Logs</h4>
+            <h4 className="text-[9px] font-black uppercase tracking-[0.2em] mb-4 text-indigo-200">Session Logs</h4>
             <div className="space-y-6 relative z-10">
               {/* Always show Issue Logged */}
               <div className="flex items-start gap-4 group">
@@ -494,6 +512,14 @@ const Issues = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedIssue, setSelectedIssue] = useState(null);
   const [issuesList, setIssuesList] = useState(initialIssues);
+  const [showToast, setShowToast] = useState({ show: false, message: '', type: 'success' });
+
+  const triggerToast = (message, type = 'success') => {
+    setShowToast({ show: true, message, type });
+    if (type === 'success') {
+      setTimeout(() => setShowToast({ show: false, message: '', type: 'success' }), 2000);
+    }
+  };
 
   // Persistence Logic
   const handleStatusUpdate = (id, newStatus, escalatedTo = null) => {
@@ -585,7 +611,20 @@ const Issues = () => {
           onStatusUpdate={handleStatusUpdate}
           onUpdatePriority={handlePriorityUpdate}
           onDelete={handleDelete}
+          triggerToast={triggerToast}
         />
+      )}
+
+      {/* Top-Center Compact Toast - GLOBAL - Ultra Compact */}
+      {showToast.show && (
+        <div className="fixed inset-x-0 top-4 z-[250] flex justify-center p-4 pointer-events-none animate-in slide-in-from-top-2 fade-in duration-700">
+          <div className="bg-emerald-600/90 text-white px-4 py-2 rounded-2xl shadow-[0_10px_20px_-5px_rgba(16,185,129,0.3)] flex items-center gap-2.5 border border-emerald-400/20 backdrop-blur-2xl pointer-events-auto ring-4 ring-emerald-500/5 active:scale-95 transition-all scale-[0.85]">
+            <div className="bg-white/20 p-1 rounded-lg">
+              <CheckCircle size={12} className="text-white" />
+            </div>
+            <span className="text-[8px] font-black uppercase tracking-[0.3em]">{showToast.message}</span>
+          </div>
+        </div>
       )}
     </div>
   );
