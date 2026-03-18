@@ -244,7 +244,7 @@ const LiveTracking = () => {
                 <div className={`absolute left-1/2 -translate-x-1/2 transition-all duration-300 pointer-events-none p-4 bg-white dark:bg-gray-900 rounded-[1.5rem] shadow-2xl border border-gray-100 dark:border-gray-800 min-w-[180px] z-[100] ${
                   emp.y < 35 ? 'top-full mt-4' : 'bottom-full mb-4'
                 } ${
-                  selectedId === emp.id ? 'opacity-100 translate-y-0 visible' : 'opacity-0 translate-y-2 invisible group-hover/marker:opacity-100 group-hover/marker:translate-y-0 group-hover/marker:visible'
+                  selectedId === emp.id ? 'opacity-100 translate-y-0 visible shadow-indigo-500/10' : 'opacity-0 translate-y-2 invisible group-hover/marker:opacity-100 group-hover/marker:translate-y-0 group-hover/marker:visible'
                 }`}>
                   <div className="flex items-center justify-between mb-3">
                     <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-full ${
