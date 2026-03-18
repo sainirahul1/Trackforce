@@ -1369,7 +1369,7 @@ const EmployeeTasks = () => {
               <div className="absolute inset-0 opacity-20 pointer-events-none" style={{ backgroundImage: 'radial-gradient(#6366F1 1.5px, transparent 1.5px)', backgroundSize: '40px 40px' }} />
 
               {taskList.map((task) => (
-                <div key={task.id} className="absolute transition-all hover:scale-110 cursor-pointer z-10 group/marker" style={{ left: `${task.coords.x}%`, top: `${task.coords.y}%` }}>
+                <div key={task.id} className="absolute transition-all hover:scale-110 cursor-pointer z-10 hover:z-[60] group/marker" style={{ left: `${task.coords.x}%`, top: `${task.coords.y}%` }}>
                   <div className="relative">
                     {/* Ripple Effect */}
                     <div className={`absolute inset-0 scale-[2.5] opacity-20 animate-ping rounded-full ${task.priority === 'high' ? 'bg-red-500' : 'bg-indigo-500'
@@ -1379,7 +1379,7 @@ const EmployeeTasks = () => {
                       <MapPin size={24} className="fill-current" />
 
                       {/* Rich Tooltip */}
-                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 opacity-0 group-hover/marker:opacity-100 transition-all pointer-events-none p-4 bg-white dark:bg-gray-900 rounded-[1.5rem] shadow-2xl border border-gray-100 dark:border-gray-700 min-w-[200px]">
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 opacity-0 group-hover/marker:opacity-100 transition-all pointer-events-none p-4 bg-white dark:bg-gray-900 rounded-[1.5rem] shadow-2xl border border-gray-100 dark:border-gray-700 min-w-[200px] z-[70]">
                         <p className="text-[9px] font-black text-indigo-600 uppercase tracking-widest">{task.type} • {task.distance}</p>
                         <h4 className="text-xs font-black text-gray-900 dark:text-white mt-1 leading-tight">{task.store}</h4>
                         <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-50 dark:border-gray-800">
@@ -1393,7 +1393,7 @@ const EmployeeTasks = () => {
               ))}
 
               {/* Floating Map Intel */}
-              <div className="absolute top-8 right-8 bg-white/90 dark:bg-gray-900/90 backdrop-blur-3xl p-5 rounded-[2rem] border border-white/20 shadow-2xl flex flex-col gap-4">
+              <div className="absolute top-8 right-8 bg-white/90 dark:bg-gray-900/90 backdrop-blur-3xl p-5 rounded-[2rem] border border-white/20 shadow-2xl flex flex-col gap-4 z-20">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 flex items-center justify-center text-indigo-600">
                     <TrendingUpIcon size={16} />
@@ -1405,7 +1405,7 @@ const EmployeeTasks = () => {
                 </div>
               </div>
 
-              <div className="absolute bottom-8 left-8 bg-white/90 dark:bg-gray-900/90 backdrop-blur-3xl p-5 rounded-[2rem] border border-white/20 shadow-2xl flex items-center gap-6">
+              <div className="absolute bottom-8 left-8 bg-white/90 dark:bg-gray-900/90 backdrop-blur-3xl p-5 rounded-[2rem] border border-white/20 shadow-2xl flex items-center gap-6 z-20">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-lg">
                     <Navigation size={20} />
