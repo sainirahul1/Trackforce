@@ -20,29 +20,29 @@ const LoginPage = () => {
       const u = await login(email, password);
       // u.role will determine where we go
       navigate(`/${u.role}/dashboard`);
-    } catch (err) { 
-      setError(err.message); 
-    } finally { 
-      setLoading(false); 
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
   const quickLogins = [
     { label: 'Select Test Account', email: '', password: '' },
-    { label: 'Global Super Admin', email: 'superadmin@trackforce.com', password: 'admin123' },
-    
+    { label: 'Super Admin', email: 'superadmin@trackforce.com', password: 'admin123' },
+
     { label: '--- ReatchAll ---', email: '', password: '' },
-    { label: 'ReatchAll Admin', email: 'admin@reatchall.com', password: 'password123' },
+    { label: 'ReatchAll Tenant', email: 'admin@reatchall.com', password: 'password123' },
     { label: 'ReatchAll Manager', email: 'manager@reatchall.com', password: 'password123' },
     { label: 'ReatchAll Employee', email: 'employee@reatchall.com', password: 'password123' },
 
     { label: '--- MetaLogistics ---', email: '', password: '' },
-    { label: 'MetaLogistics Admin', email: 'admin@metalogistics.com', password: 'password123' },
+    { label: 'MetaLogistics Tenant', email: 'admin@metalogistics.com', password: 'password123' },
     { label: 'MetaLogistics Manager', email: 'manager@metalogistics.com', password: 'password123' },
     { label: 'MetaLogistics Employee', email: 'employee@metalogistics.com', password: 'password123' },
 
     { label: '--- SwiftDelivery ---', email: '', password: '' },
-    { label: 'SwiftDelivery Admin', email: 'admin@swiftdelivery.com', password: 'password123' },
+    { label: 'SwiftDelivery Tenant', email: 'admin@swiftdelivery.com', password: 'password123' },
     { label: 'SwiftDelivery Manager', email: 'manager@swiftdelivery.com', password: 'password123' },
     { label: 'SwiftDelivery Employee', email: 'employee@swiftdelivery.com', password: 'password123' },
   ];
@@ -75,7 +75,7 @@ const LoginPage = () => {
         {/* Quick Login Dropdown */}
         <div className="mb-8 p-4 bg-primary-main/5 dark:bg-primary-main/10 border border-primary-main/10 dark:border-primary-main/20 rounded-2xl">
           <p className="text-[10px] font-black text-primary-main uppercase tracking-widest mb-2 px-1">Quick Login (Testing)</p>
-          <select 
+          <select
             className="w-full bg-white dark:bg-gray-800 border-2 border-primary-main/10 dark:border-primary-main/20 rounded-xl px-4 py-2.5 text-xs font-bold text-gray-700 dark:text-gray-200 outline-none focus:border-primary-main/30 transition-all cursor-pointer"
             onChange={handleQuickLogin}
             value={quickLogins.find(l => l.email === email)?.label || 'Select Test Account'}
@@ -93,12 +93,12 @@ const LoginPage = () => {
               <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Email</label>
               <div className="relative">
                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
-                <input 
-                  required 
-                  type="email" 
-                  value={email} 
-                  onChange={e => setEmail(e.target.value)} 
-                  className="w-full pl-12 pr-4 py-4 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl text-sm text-gray-900 dark:text-white font-bold focus:ring-2 focus:ring-primary-main/10 outline-none" 
+                <input
+                  required
+                  type="email"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  className="w-full pl-12 pr-4 py-4 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl text-sm text-gray-900 dark:text-white font-bold focus:ring-2 focus:ring-primary-main/10 outline-none"
                 />
               </div>
             </div>
@@ -106,12 +106,12 @@ const LoginPage = () => {
               <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Password</label>
               <div className="relative">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
-                <input 
-                  required 
-                  type="password" 
-                  value={password} 
-                  onChange={e => setPassword(e.target.value)} 
-                  className="w-full pl-12 pr-4 py-4 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl text-sm text-gray-900 dark:text-white font-bold focus:ring-2 focus:ring-primary-main/10 outline-none" 
+                <input
+                  required
+                  type="password"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  className="w-full pl-12 pr-4 py-4 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl text-sm text-gray-900 dark:text-white font-bold focus:ring-2 focus:ring-primary-main/10 outline-none"
                 />
               </div>
             </div>

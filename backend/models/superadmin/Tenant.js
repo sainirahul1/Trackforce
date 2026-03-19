@@ -10,6 +10,10 @@ const tenantSchema = new mongoose.Schema({
     unique: true,
     sparse: true,
   },
+  industry: {
+    type: String,
+    default: 'Technology',
+  },
   onboardingStatus: {
     type: String,
     enum: ['pending', 'active', 'suspended'],

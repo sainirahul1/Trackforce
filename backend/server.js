@@ -23,13 +23,25 @@ app.use('/api/activity', require('./routes/activityRoutes'));
 app.use('/api/tracking', require('./routes/trackingRoutes'));
 app.use('/api/stats', require('./routes/statsRoutes'));
 
-// Database Connection
+// Super Admin Routes
+app.use('/api/superadmin/companies', require('./routes/superadmin/companyRoutes'));
+app.use('/api/superadmin/subscriptions', require('./routes/superadmin/subscriptionRoutes'));
+app.use('/api/superadmin/analytics', require('./routes/superadmin/analyticsRoutes'));
+app.use('/api/superadmin/notifications', require('./routes/superadmin/notificationRoutes'));
+app.use('/api/superadmin/settings', require('./routes/superadmin/settingsRoutes'));
+
+// Database Connection — start server only after DB is ready
+const PORT = process.env.PORT || 5001;
+
 mongoose
   .connect(process.env.MONGO_URI)
-  .then(() => console.log('MongoDB Connected'))
-  .catch((err) => console.log('MongoDB Connection Error:', err));
-
-const PORT = process.env.PORT || 5001;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+  .then(() => {
+    console.log('MongoDB Connected');
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+    });
+  })
+  .catch((err) => {
+    console.error('MongoDB Connection Error:', err);
+    process.exit(1);
+  });

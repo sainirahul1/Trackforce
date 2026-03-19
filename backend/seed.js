@@ -1,8 +1,8 @@
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const User = require('./models/tenant/User');
-
-dotenv.config();
+const path = require('path');
+dotenv.config({ path: path.join(__dirname, '.env') });
 
 const users = [
   {
@@ -36,9 +36,9 @@ const users = [
 ];
 
 const companies = [
-  { name: 'ReatchAll', plan: 'enterprise' },
-  { name: 'MetaLogistics', plan: 'premium' },
-  { name: 'SwiftDelivery', plan: 'basic' }
+  { name: 'ReatchAll', plan: 'enterprise', industry: 'Logistics', logo: 'https://images.unsplash.com/photo-1599305090598-fe179d501c27?w=100&h=100&fit=crop' },
+  { name: 'MetaLogistics', plan: 'premium', industry: 'Supply Chain', logo: 'https://images.unsplash.com/photo-1549923746-c502d488b3ea?w=100&h=100&fit=crop' },
+  { name: 'SwiftDelivery', plan: 'basic', industry: 'E-commerce', logo: 'https://images.unsplash.com/photo-1531297484001-80022131f5a1?w=100&h=100&fit=crop' }
 ];
 
 const seedDB = async () => {
@@ -50,18 +50,67 @@ const seedDB = async () => {
     await User.deleteMany({});
     const Tenant = require('./models/superadmin/Tenant');
     const StoreVisit = require('./models/employee/StoreVisit');
-    const Order = require('./models/employee/Order');
-    const Location = require('./models/employee/Location');
-    const ActivityLog = require('./models/employee/ActivityLog');
-
+const Order = require('./models/employee/Order');
+const Location = require('./models/employee/Location');
+const ActivityLog = require('./models/employee/ActivityLog');
+const Subscription = require('./models/superadmin/Subscription');
+const SystemSetting = require('./models/superadmin/SystemSetting');
+const Notification = require('./models/tenant/Notification');
     await Tenant.deleteMany({});
     await StoreVisit.deleteMany({});
     await Order.deleteMany({});
     await Location.deleteMany({});
     await ActivityLog.deleteMany({});
+    await Subscription.deleteMany({});
+    await SystemSetting.deleteMany({});
     console.log('Cleared all existing database records.');
 
-    // 2. Create Global SuperAdmin
+    // 2. Create Global Subscriptions
+    const subs = await Subscription.insertMany([
+      {
+        name: 'Basic',
+        price: '49',
+        description: 'Ideal for small startups or local agencies.',
+        features: ['Up to 10 Employees', 'Basic GPS Tracking', 'Daily Reports', 'Email Support'],
+        employeeLimit: 10,
+        icon: 'Zap',
+        color: 'blue'
+      },
+      {
+        name: 'Premium',
+        price: '149',
+        description: 'Best for growing businesses with multiple teams.',
+        features: ['Up to 50 Employees', 'Real-time Tracking', 'Advanced Analytics', 'Priority Support', 'Geo-fencing'],
+        employeeLimit: 50,
+        isPopular: true,
+        icon: 'Shield',
+        color: 'indigo'
+      },
+      {
+        name: 'Enterprise',
+        price: '499',
+        description: 'Full-featured solution for large organizations.',
+        features: ['Unlimited Employees', 'White-labeling', 'API Access', 'Dedicated Manager', 'Custom Integration'],
+        employeeLimit: 1000,
+        icon: 'Crown',
+        color: 'purple'
+      }
+    ]);
+    console.log('Created Subscription Plans.');
+
+    // 3. Create Global Settings
+    await SystemSetting.create({
+      platformName: 'TrackForce SaaS',
+      currency: 'USD',
+      maintenanceMode: false,
+      globalNotifications: true,
+      integrations: {
+        googleMaps: { status: 'inactive' }
+      }
+    });
+    console.log('Created System Settings.');
+
+    // 4. Create Global SuperAdmin
     await User.create({
       name: 'Super Admin',
       company: 'Platform',
@@ -75,7 +124,9 @@ const seedDB = async () => {
     for (const comp of companies) {
       const tenant = await Tenant.create({
         name: comp.name,
-        subscription: { plan: comp.plan, status: 'active' }
+        industry: comp.industry,
+        subscription: { plan: comp.plan, status: 'active', employeeLimit: comp.plan === 'enterprise' ? 1000 : 50 },
+        settings: { logo: comp.logo }
       });
 
       const companySlug = comp.name.toLowerCase().replace(/\s/g, '');

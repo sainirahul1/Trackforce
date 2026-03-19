@@ -1,15 +1,38 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Building2, Users, MonitorSmartphone, Activity, TrendingUp, Globe, ShieldCheck, Zap } from 'lucide-react';
 import DashboardCard from '../../components/DashboardCard';
 import DataTable from '../../components/DataTable';
-import { mockCompanies } from '../../utils/mockData';
+import superadminService from '../../services/superadminService';
 
 const SuperAdminDashboard = () => {
+  const [statsData, setStatsData] = useState(null);
+  const [companies, setCompanies] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  const fetchDashboardData = async () => {
+    try {
+      const [stats, comps] = await Promise.all([
+        superadminService.getAnalyticsStats(),
+        superadminService.getCompanies()
+      ]);
+      setStatsData(stats);
+      setCompanies(comps.slice(0, 5)); // Just show recent 5
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const stats = [
-    { title: 'Total Companies', value: '124', icon: Building2, trend: 'up', trendValue: 12, color: 'text-indigo-600' },
-    { title: 'Total Employees', value: '15,420', icon: Users, trend: 'up', trendValue: 8, color: 'text-blue-600' },
-    { title: 'Active Sessions', value: '3,102', icon: MonitorSmartphone, color: 'text-emerald-600', trend: 'up', trendValue: 5 },
-    { title: 'Platform Health', value: '99.9%', icon: Activity, color: 'text-rose-600' },
+    { title: 'Total Companies', value: statsData?.totalTenants || '0', icon: Building2, trend: 'up', trendValue: 12, color: 'text-indigo-600' },
+    { title: 'Platform Users', value: statsData?.totalUsers?.toLocaleString() || '0', icon: Users, trend: 'up', trendValue: 8, color: 'text-blue-600' },
+    { title: 'Global Visits', value: statsData?.totalVisits?.toLocaleString() || '0', icon: MonitorSmartphone, color: 'text-emerald-600', trend: 'up', trendValue: 5 },
+    { title: 'Est. Revenue', value: `$${statsData?.totalMRR?.toLocaleString() || '0'}`, icon: Activity, color: 'text-rose-600' },
   ];
 
   const globalMetrics = [
@@ -24,7 +47,7 @@ const SuperAdminDashboard = () => {
       accessor: 'name',
       render: (r) => (
         <div className="flex items-center space-x-3">
-          <img src={r.logo} className="w-8 h-8 rounded-lg object-cover border border-gray-100 dark:border-gray-800" />
+          <img src={r.settings?.logo || `https://ui-avatars.com/api/?name=${r.name}&background=random`} className="w-8 h-8 rounded-lg object-cover border border-gray-100 dark:border-gray-800" />
           <span className="font-bold text-gray-900 dark:text-gray-100">{r.name}</span>
         </div>
       ),
@@ -33,27 +56,31 @@ const SuperAdminDashboard = () => {
       header: 'Industry',
       accessor: 'industry',
       render: (r) => (
-        <span className="text-gray-600 dark:text-gray-300 font-medium">{r.industry}</span>
+        <span className="text-gray-600 dark:text-gray-300 font-medium">{r.industry || 'Technology'}</span>
       ),
     },
     {
       header: 'Status',
-      accessor: 'status',
+      accessor: 'onboardingStatus',
       render: (r) => (
-        <span className="px-2 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 text-[10px] font-black uppercase tracking-wider">
-          {r.status}
+        <span className={`px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider ${
+          r.onboardingStatus === 'active' ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400' :
+          r.onboardingStatus === 'pending' ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400' :
+          'bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400'
+        }`}>
+          {r.onboardingStatus}
         </span>
       ),
     },
     {
       header: 'Usage',
-      accessor: 'employees',
+      accessor: 'subscription',
       render: (r) => (
         <div className="flex items-center space-x-2">
           <div className="flex-1 h-1.5 w-16 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
             <div className="h-full bg-indigo-500 rounded-full" style={{ width: '70%' }} />
           </div>
-          <span className="text-xs font-bold text-gray-500 dark:text-gray-400">{r.employees}</span>
+          <span className="text-xs font-bold text-gray-500 dark:text-gray-400">{r.subscription?.employeeLimit?.toLocaleString() || '1,000'}</span>
         </div>
       ),
     },
@@ -148,7 +175,7 @@ const SuperAdminDashboard = () => {
           <h2 className="text-xl font-black text-gray-900 dark:text-white tracking-tight">Recent Onboarding</h2>
           <button className="text-sm font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 transition-colors">View All Partners</button>
         </div>
-        <DataTable columns={columns} data={mockCompanies} />
+        <DataTable columns={columns} data={companies} loading={loading} />
       </div>
     </div>
   );

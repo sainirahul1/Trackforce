@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   BarChart3, 
   TrendingUp, 
@@ -14,13 +14,37 @@ import {
   Activity
 } from 'lucide-react';
 import Button from '../../components/Button';
+import superadminService from '../../services/superadminService';
 
 const Analytics = () => {
+  const [statsData, setStatsData] = useState(null);
+  const [growthData, setGrowthData] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchAnalytics();
+  }, []);
+
+  const fetchAnalytics = async () => {
+    try {
+      const [stats, growth] = await Promise.all([
+        superadminService.getAnalyticsStats(),
+        superadminService.getGrowthData()
+      ]);
+      setStatsData(stats);
+      setGrowthData(growth);
+    } catch (error) {
+      console.error('Error fetching analytics:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const stats = [
-    { label: 'Total Companies', value: '142', change: '+12.5%', isUp: true, icon: Globe, color: 'blue' },
-    { label: 'Active Executives', value: '4,289', change: '+8.2%', isUp: true, icon: Users, color: 'indigo' },
-    { label: 'Monthly Revenue', value: '$84,250', change: '+15.3%', isUp: true, icon: TrendingUp, color: 'emerald' },
-    { label: 'Avg. Visits / Day', value: '12,450', change: '-2.4%', isUp: false, icon: Activity, color: 'amber' },
+    { label: 'Total Companies', value: statsData?.totalTenants || '0', change: statsData?.growth || '+0%', isUp: true, icon: Globe, color: 'blue' },
+    { label: 'Platform Users', value: statsData?.totalUsers?.toLocaleString() || '0', change: '+5.2%', isUp: true, icon: Users, color: 'indigo' },
+    { label: 'Monthly Revenue', value: `$${statsData?.totalMRR?.toLocaleString() || '0'}`, change: '+15.3%', isUp: true, icon: TrendingUp, color: 'emerald' },
+    { label: 'Global Visits', value: statsData?.totalVisits?.toLocaleString() || '0', change: '-2.4%', isUp: false, icon: Activity, color: 'amber' },
   ];
 
   return (
@@ -156,12 +180,8 @@ const Analytics = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
-              {[
-                { name: 'ReatchAll Logistics', plan: 'Enterprise', users: 1205, date: 'Mar 12, 2026', color: 'purple' },
-                { name: 'MetaLogistics Corp', plan: 'Premium', users: 450, date: 'Mar 10, 2026', color: 'emerald' },
-                { name: 'SwiftDelivery Inc', plan: 'Basic', users: 45, date: 'Mar 08, 2026', color: 'indigo' },
-              ].map((comp, i) => (
-                <tr key={i} className="group hover:bg-gray-50/50 dark:hover:bg-gray-800/20 transition-colors">
+              {(statsData?.recentCompanies || []).map((comp, i) => (
+                <tr key={comp._id} className="group hover:bg-gray-50/50 dark:hover:bg-gray-800/20 transition-colors">
                   <td className="py-5 px-4">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-xl bg-gray-50 dark:bg-gray-800 flex items-center justify-center font-black text-gray-400">
@@ -171,15 +191,19 @@ const Analytics = () => {
                     </div>
                   </td>
                   <td className="py-5 px-4">
-                    <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest bg-${comp.color}-50 dark:bg-${comp.color}-500/10 text-${comp.color}-600 dark:text-${comp.color}-400 border border-${comp.color}-100 dark:border-${comp.color}-500/20`}>
-                      {comp.plan}
+                    <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest ${
+                      comp.subscription?.plan === 'enterprise' ? 'bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-100' :
+                      comp.subscription?.plan === 'premium' ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-100' :
+                      'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-100'
+                    } border`}>
+                      {comp.subscription?.plan}
                     </span>
                   </td>
                   <td className="py-5 px-4 text-center">
-                    <span className="text-sm font-black text-gray-900 dark:text-white italic">{comp.users.toLocaleString()}</span>
+                    <span className="text-sm font-black text-gray-900 dark:text-white italic">{comp.subscription?.employeeLimit?.toLocaleString() || '1,000'}</span>
                   </td>
                   <td className="py-5 px-4">
-                    <span className="text-xs font-bold text-gray-400">{comp.date}</span>
+                    <span className="text-xs font-bold text-gray-400">{new Date(comp.createdAt).toLocaleDateString()}</span>
                   </td>
                 </tr>
               ))}
