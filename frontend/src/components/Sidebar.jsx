@@ -1,14 +1,19 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, Building2, ClipboardList, Map, Settings, LogOut, ShieldCheck, Bell, ShoppingBag, Camera, Clock, AlertCircle, ChevronLeft, ChevronRight, Menu, Activity, User } from 'lucide-react';
+import { LayoutDashboard, Users, Building2, ClipboardList, Map, Settings, LogOut, ShieldCheck, Bell, ShoppingBag, Camera, Clock, AlertCircle, ChevronLeft, ChevronRight, Menu, Activity, User, Lock } from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
 
 const Sidebar = ({ role, user, isCollapsed, onToggle }) => {
   const menuItems = {
     superadmin: [
       { name: 'Dashboard', icon: LayoutDashboard, path: '/superadmin/dashboard' },
-      { name: 'Companies', icon: Building2, path: '/superadmin/companies' },
-      { name: 'Issues', icon: AlertCircle, path: '/superadmin/issues' },
+      { name: 'Organizations', icon: Building2, path: '/superadmin/companies' },
+      { name: 'Subscriptions', icon: ShieldCheck, path: '/superadmin/subscriptions' },
+      { name: 'Roles & Access', icon: Lock, path: '/superadmin/roles' },
+      { name: 'Global Analytics', icon: Activity, path: '/superadmin/analytics' },
+      { name: 'System Alerts', icon: Bell, path: '/superadmin/notifications' },
+      { name: 'Platform Settings', icon: Settings, path: '/superadmin/settings' },
+      { name: 'Support Issues', icon: AlertCircle, path: '/superadmin/issues' },
     ],
     tenant: [
       { name: 'Dashboard', icon: LayoutDashboard, path: '/tenant/dashboard' },
