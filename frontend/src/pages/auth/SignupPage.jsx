@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { register } from '../../services/authService';
 import { ShieldCheck, Lock, Mail, User, Building2, ChevronRight, Loader2, CheckCircle2 } from 'lucide-react';
 import Button from '../../components/Button';
 import ThemeToggle from '../../components/ThemeToggle';
@@ -13,7 +14,7 @@ const SignupPage = () => {
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
-  const handleSignup = (e) => {
+  const handleSignup = async (e) => {
     e.preventDefault();
     setError('');
 
@@ -27,12 +28,16 @@ const SignupPage = () => {
     }
 
     setLoading(true);
-    // Simulate async signup (mock — real implementation would call an API)
-    setTimeout(() => {
+    try {
+      const { confirm, ...signupData } = form; // Remove confirm from data sent to server
+      await register(signupData);
       setLoading(false);
       setSuccess(true);
       setTimeout(() => navigate('/login'), 2000);
-    }, 1000);
+    } catch (err) {
+      setLoading(false);
+      setError(err.message || 'Registration failed');
+    }
   };
 
   return (

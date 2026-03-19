@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import {
   MapPin, Calendar, TrendingUp, Clock, ClipboardList,
   Map as MapIcon, ShoppingBag, ShoppingBasket, ChevronRight, Activity,
-  CheckCircle2, ArrowRight, Navigation2, Camera, Bell, IndianRupee
+  CheckCircle2, ArrowRight, Navigation2, Camera, Bell, IndianRupee, Loader2
 } from 'lucide-react';
 import {
   Chart as ChartJS, CategoryScale, LinearScale, PointElement,
@@ -313,28 +313,73 @@ const ActivityItem = ({ activity, isLast }) => (
 // MAIN COMPONENT: EmployeeDashboard
 // =============================================================================
 
+import { getDashboardStats, startTracking, stopTracking } from '../../services/trackingService';
+import { getActivities } from '../../services/activityService';
+
 const EmployeeDashboard = () => {
   // --- State Hooks ---
   const [isOnDuty, setIsOnDuty] = useState(false);
+  const [statsData, setStatsData] = useState({ visitsToday: 0, ordersToday: 0, tasksToday: 0 });
+  const [activities, setActivities] = useState([]);
+  const [loading, setLoading] = useState(true);
+  
+  const user = JSON.parse(localStorage.getItem('user')) || {};
 
   // --- Effects ---
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [stats, logs] = await Promise.all([
+          getDashboardStats(),
+          getActivities()
+        ]);
+        setStatsData(stats);
+        setActivities(logs.map(log => {
+          const logDate = new Date(log.timestamp || log.createdAt);
+          const isValidDate = !isNaN(logDate.getTime());
+          
+          return {
+            title: log.type.replace('_', ' ').toUpperCase(),
+            desc: log.details,
+            time: isValidDate ? logDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '---',
+            type: log.type.includes('start') ? 'success' : 'default'
+          };
+        }));
+        setIsOnDuty(user.isTracking || false);
+      } catch (err) {
+        console.error('Error fetching dashboard data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 
-  // --- Utilities ---
+  const handleToggleShift = async () => {
+    try {
+      if (isOnDuty) {
+        await stopTracking();
+      } else {
+        await startTracking();
+      }
+      setIsOnDuty(!isOnDuty);
+      
+      // Update local user object tracking status
+      const updatedUser = { ...user, isTracking: !isOnDuty };
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+    } catch (err) {
+      alert(err.message);
+    }
+  };
 
   // --- Mock Data ---
   const stats = [
-    { label: "Visits", value: '12', color: 'from-blue-500 to-cyan-400' },
-    { label: "Active", value: '0h', color: 'from-emerald-500 to-teal-400' },
-    { label: "Tasks", value: '04', trend: '2 High Priority', color: 'from-purple-500 to-indigo-400' }
+    { label: "Visits", value: statsData.visitsToday.toString(), color: 'from-blue-500 to-cyan-400' },
+    { label: "Duty", value: isOnDuty ? 'ON' : 'OFF', color: 'from-emerald-500 to-teal-400' },
+    { label: "Orders", value: statsData.ordersToday.toString(), color: 'from-purple-500 to-indigo-400' }
   ];
 
-
-  const recentActivities = [
-    { title: 'Visit Completed', desc: 'Global Tech HQ', time: '10 mins ago', type: 'success' },
-    { title: 'Order Placed', desc: '#ORD-7829', time: '1 hour ago', type: 'info' },
-    { title: 'Started Shift', desc: 'Location verified', time: '6.5 hours ago', type: 'default' },
-  ];
-
+  if (loading) return <div className="flex items-center justify-center min-h-screen"><Loader2 className="animate-spin text-primary-main" size={48} /></div>;
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-10 px-4 md:px-0">
@@ -348,15 +393,15 @@ const EmployeeDashboard = () => {
             <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/20 mb-1">
               <Calendar size={12} className="text-white/80" />
               <span className="text-xs font-black text-white/90 tracking-wide uppercase">
-                Saturday, Mar 14
+                {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
               </span>
             </div>
             <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight leading-tight">
-              Good Afternoon,<br className="hidden md:block" />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-200 to-emerald-200 drop-shadow-sm">Person</span>
+              Good {new Date().getHours() < 12 ? 'Morning' : new Date().getHours() < 18 ? 'Afternoon' : 'Evening'},<br className="hidden md:block" />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-200 to-emerald-200 drop-shadow-sm">{user.name || 'User'}</span>
             </h1>
-            <p className="flex items-center text-indigo-100/90 font-medium text-base md:text-lg mt-2">
-              Senior Field Executive
+            <p className="flex items-center text-indigo-100/90 font-medium text-base md:text-lg mt-2 uppercase tracking-widest text-[10px]">
+              {user.role} Portal - {user.company}
             </p>
           </div>
 
@@ -374,11 +419,11 @@ const EmployeeDashboard = () => {
                   </div>
 
                   {/* Integrated Toggle for "Active" (Shift Control) */}
-                  {stat.label === "Active" && (
+                  {stat.label === "Duty" && (
                     <div className="mt-4 flex flex-col items-center space-y-3 pt-4 border-t border-white/10 w-full animate-in fade-in slide-in-from-top-2 duration-500">
                       <div className="flex flex-col items-center">
                         <span className={`text-[10px] font-black uppercase tracking-widest leading-none mb-1 ${isOnDuty ? 'text-green-300 shadow-green-500/50' : 'text-slate-400'}`}>
-                          {isOnDuty ? 'On Duty' : 'Off Duty'}
+                          {isOnDuty ? 'Active Tracking' : 'Tracking Off'}
                         </span>
                         {isOnDuty && (
                           <div className="absolute top-2 right-2 flex h-2 w-2">
@@ -388,7 +433,7 @@ const EmployeeDashboard = () => {
                         )}
                       </div>
                       <button
-                        onClick={() => setIsOnDuty(!isOnDuty)}
+                        onClick={handleToggleShift}
                         className={`relative inline-flex h-7 w-12 items-center rounded-full transition-all duration-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 scale-90 ${isOnDuty ? 'bg-gradient-to-r from-green-500 to-emerald-500' : 'bg-slate-700'}`}
                         role="switch"
                         aria-checked={isOnDuty}
@@ -526,13 +571,17 @@ const EmployeeDashboard = () => {
 
           {/* Timeline List */}
           <div className="space-y-8 relative z-10 px-1">
-            {recentActivities.map((activity, i) => (
+            {activities.length > 0 ? activities.map((activity, i) => (
               <ActivityItem
                 key={i}
                 activity={activity}
-                isLast={i === recentActivities.length - 1}
+                isLast={i === activities.length - 1}
               />
-            ))}
+            )) : (
+              <div className="text-center py-10">
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">No recent operations</p>
+              </div>
+            )}
           </div>
 
           {/* Mini Insights Footer */}

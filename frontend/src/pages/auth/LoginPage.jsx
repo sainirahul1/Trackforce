@@ -29,10 +29,22 @@ const LoginPage = () => {
 
   const quickLogins = [
     { label: 'Select Test Account', email: '', password: '' },
-    { label: 'Super Admin', email: 'superadmin@trackforce.com', password: 'admin123' },
-    { label: 'Tenant Admin', email: 'tenant@company.com', password: 'tenant123' },
-    { label: 'Team Manager', email: 'manager@company.com', password: 'manager123' },
-    { label: 'Field Executive', email: 'employee@company.com', password: 'employee123' },
+    { label: 'Global Super Admin', email: 'superadmin@trackforce.com', password: 'admin123' },
+    
+    { label: '--- ReatchAll ---', email: '', password: '' },
+    { label: 'ReatchAll Admin', email: 'admin@reatchall.com', password: 'password123' },
+    { label: 'ReatchAll Manager', email: 'manager@reatchall.com', password: 'password123' },
+    { label: 'ReatchAll Employee', email: 'employee@reatchall.com', password: 'password123' },
+
+    { label: '--- MetaLogistics ---', email: '', password: '' },
+    { label: 'MetaLogistics Admin', email: 'admin@metalogistics.com', password: 'password123' },
+    { label: 'MetaLogistics Manager', email: 'manager@metalogistics.com', password: 'password123' },
+    { label: 'MetaLogistics Employee', email: 'employee@metalogistics.com', password: 'password123' },
+
+    { label: '--- SwiftDelivery ---', email: '', password: '' },
+    { label: 'SwiftDelivery Admin', email: 'admin@swiftdelivery.com', password: 'password123' },
+    { label: 'SwiftDelivery Manager', email: 'manager@swiftdelivery.com', password: 'password123' },
+    { label: 'SwiftDelivery Employee', email: 'employee@swiftdelivery.com', password: 'password123' },
   ];
 
   const handleQuickLogin = (e) => {

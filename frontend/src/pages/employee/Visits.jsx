@@ -1,67 +1,45 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MapPin, Navigation, Clock, CheckCircle2, ChevronRight, Calendar, AlertCircle, Phone, Image as ImageIcon, Camera, Map, X, Users, Store, FileText, MessageSquare } from 'lucide-react';
 import Button from '../../components/Button';
+
+import { getVisits } from '../../services/visitService';
 
 const EmployeeVisits = () => {
   const [selectedVisit, setSelectedVisit] = useState(null);
   const [filterStatus, setFilterStatus] = useState('All');
   const [filterDate, setFilterDate] = useState('');
+  const [visits, setVisits] = useState([]);
+  const [loading, setLoading] = useState(true);
   const dateInputRef = React.useRef(null);
 
-  const visits = [
-    {
-      id: 1,
-      store: 'Reliance Fresh - HSR',
-      address: 'Sector 2, HSR Layout, BLR',
-      time: '10:00 AM',
-      status: 'Completed',
-      distance: '1.2 km',
-      date: new Date().toISOString().split('T')[0],
-      companyDescription: 'Reliance Fresh is a chain of convenience stores operated by Reliance Retail. They offer fresh fruits, vegetables, and daily groceries.',
-      companyLink: 'https://relianceretail.com',
-      feedback: 'Store manager was busy, but managed to check stock levels. Competitor presence is high in this area.',
-      uploadedImages: ['https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=200&h=200', 'https://images.unsplash.com/photo-1604719312566-8912e9227c6a?auto=format&fit=crop&q=80&w=200&h=200']
-    },
-    {
-      id: 2,
-      store: 'More Megamart - Koramangala',
-      address: '8th Block, Koramangala, BLR',
-      time: '12:30 PM',
-      status: 'In Progress',
-      distance: '3.5 km',
-      date: new Date().toISOString().split('T')[0],
-      companyDescription: 'More Megamart provides a hypermarket shopping experience with a wide range of products including apparel, groceries, and electronics.',
-      companyLink: 'https://www.moreretail.in',
-      feedback: 'Currently auditing the beverage aisle. Display looks good.',
-      uploadedImages: []
-    },
-    {
-      id: 3,
-      store: 'Big Bazaar - Central',
-      address: 'MG Road, Bengaluru',
-      time: '03:00 PM',
-      status: 'Not Visit',
-      distance: '5.0 km',
-      date: new Date(new Date().setDate(new Date().getDate() + 1)).toISOString().split('T')[0],
-      companyDescription: 'Big Bazaar is one of the oldest hypermarket chains, known for value-for-money products.',
-      companyLink: 'https://www.bigbazaar.com',
-      feedback: 'Store was closed due to local holiday. Will reschedule.',
-      uploadedImages: []
-    },
-    {
-      id: 4,
-      store: 'Star Bazar - Indiranagar',
-      address: '100ft Road, Indiranagar, BLR',
-      time: '05:30 PM',
-      status: 'Follow Up',
-      distance: '8.2 km',
-      date: new Date().toISOString().split('T')[0],
-      companyDescription: 'Star Bazar offers a modern retail environment focusing on fresh produce, meat, and private labels.',
-      companyLink: 'https://www.starbazaarindia.com',
-      feedback: 'Met with the owner. Needs catalog for new summer products. Going back tomorrow.',
-      uploadedImages: []
-    },
-  ];
+  useEffect(() => {
+    const fetchVisits = async () => {
+      try {
+        const data = await getVisits();
+        setVisits(data.map(v => {
+          const visitDate = new Date(v.timestamp || v.createdAt);
+          const isValidDate = !isNaN(visitDate.getTime());
+          
+          return {
+            ...v,
+            store: v.storeName,
+            time: isValidDate ? visitDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '---',
+            date: isValidDate ? visitDate.toISOString().split('T')[0] : '---',
+            address: v.address || 'Location data not available',
+            distance: '---', 
+            status: v.status ? v.status.charAt(0).toUpperCase() + v.status.slice(1) : 'Unknown',
+            companyDescription: 'Organization Partner',
+            uploadedImages: v.photos || []
+          };
+        }));
+      } catch (err) {
+        console.error('Error fetching visits:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchVisits();
+  }, []);
 
   const statuses = ['All', 'Completed', 'In Progress', 'Not Visit', 'Follow Up'];
 
@@ -181,7 +159,7 @@ const EmployeeVisits = () => {
               const styles = getStatusStyles(visit.status);
               return (
                 <div
-                  key={visit.id}
+                  key={visit._id || idx}
                   onClick={() => setSelectedVisit(visit)}
                   className={`bg-white dark:bg-gray-900 p-4 sm:p-5 rounded-[2rem] border ${styles.border} shadow-sm hover:shadow-md hover:border-indigo-200 dark:hover:border-indigo-500/30 transition-all duration-300 group relative overflow-hidden cursor-pointer`}
                 >
