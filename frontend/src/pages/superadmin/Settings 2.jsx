@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   Settings as SettingsIcon, 
   Globe, 
@@ -16,52 +16,10 @@ import {
   RefreshCw
 } from 'lucide-react';
 import Button from '../../components/Button';
-import superadminService from '../../services/superadminService';
 
 const Settings = () => {
   const [activeSection, setActiveSection] = useState('General');
-  const [settings, setSettings] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    fetchSettings();
-  }, []);
-
-  const fetchSettings = async () => {
-    try {
-      const data = await superadminService.getSettings();
-      setSettings(data);
-    } catch (error) {
-      console.error('Error fetching settings:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSave = async () => {
-    setSaving(true);
-    try {
-      await superadminService.updateSettings(settings);
-      alert('Settings saved successfully!');
-    } catch (error) {
-      alert('Error saving settings: ' + error.message);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const updateNestedSetting = (path, value) => {
-    const newSettings = { ...settings };
-    const keys = path.split('.');
-    let last = newSettings;
-    for (let i = 0; i < keys.length - 1; i++) {
-      last = last[keys[i]];
-    }
-    last[keys[keys.length - 1]] = value;
-    setSettings(newSettings);
-  };
-
+  
   const sections = [
     { id: 'General', icon: Globe, label: 'General Configuration' },
     { id: 'Integrations', icon: Cpu, label: 'API & Integrations' },
@@ -69,29 +27,6 @@ const Settings = () => {
     { id: 'Mobile', icon: Smartphone, label: 'Mobile App Settings' },
     { id: 'Storage', icon: Database, label: 'Data & Storage' },
   ];
-
-  if (loading) return (
-    <div className="min-h-[60vh] flex flex-col items-center justify-center p-20 text-center">
-      <div className="w-16 h-16 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mb-6"></div>
-      <p className="font-black text-gray-900 dark:text-white uppercase tracking-[0.3em] animate-pulse">Initializing System Engine...</p>
-    </div>
-  );
-
-  if (!settings) return (
-    <div className="min-h-[60vh] flex flex-col items-center justify-center p-20 text-center space-y-6">
-      <div className="p-6 bg-rose-50 dark:bg-rose-500/10 rounded-3xl text-rose-500 shadow-sm border border-rose-100 dark:border-rose-500/20">
-        <Database size={48} strokeWidth={1.5} />
-      </div>
-      <div>
-        <h3 className="text-xl font-black text-gray-900 dark:text-white uppercase tracking-wider">System Link Failure</h3>
-        <p className="text-gray-500 dark:text-gray-400 mt-2 font-medium italic">Unable to retrieve global configuration from the core database.</p>
-      </div>
-      <Button onClick={fetchSettings} variant="primary" className="rounded-2xl py-3 px-8 flex items-center gap-2">
-        <RefreshCw size={18} />
-        <span className="font-bold">Retry Connection</span>
-      </Button>
-    </div>
-  );
 
   return (
     <div className="space-y-10 animate-in fade-in duration-700">
@@ -111,9 +46,9 @@ const Settings = () => {
             <RefreshCw size={16} />
             Reset Defaults
           </Button>
-          <Button onClick={handleSave} disabled={saving} variant="primary" className="rounded-2xl py-3 px-8 shadow-xl shadow-indigo-100 dark:shadow-none flex items-center gap-2">
-            {saving ? <RefreshCw className="animate-spin" size={18} /> : <Save size={18} />}
-            <span className="font-bold">{saving ? 'Syncing...' : 'Save All Changes'}</span>
+          <Button variant="primary" className="rounded-2xl py-3 px-8 shadow-xl shadow-indigo-100 dark:shadow-none flex items-center gap-2">
+            <Save size={18} />
+            <span className="font-bold">Save All Changes</span>
           </Button>
         </div>
       </div>
@@ -156,23 +91,14 @@ const Settings = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div className="space-y-2">
                       <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">Platform Name</label>
-                      <input 
-                        type="text" 
-                        value={settings.platformName} 
-                        onChange={(e) => setSettings({...settings, platformName: e.target.value})}
-                        className="w-full px-6 py-4 bg-gray-50 dark:bg-gray-800/50 border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all" 
-                      />
+                      <input type="text" defaultValue="TrackForce SaaS" className="w-full px-6 py-4 bg-gray-50 dark:bg-gray-800/50 border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all" />
                     </div>
                     <div className="space-y-2">
                       <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">Default Platform Currency</label>
-                      <select 
-                        value={settings.currency}
-                        onChange={(e) => setSettings({...settings, currency: e.target.value})}
-                        className="w-full px-6 py-4 bg-gray-50 dark:bg-gray-800/50 border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all appearance-none cursor-pointer"
-                      >
-                        <option value="USD">USD ($)</option>
-                        <option value="INR">INR (₹)</option>
-                        <option value="EUR">EUR (€)</option>
+                      <select className="w-full px-6 py-4 bg-gray-50 dark:bg-gray-800/50 border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all appearance-none cursor-pointer">
+                        <option>USD ($)</option>
+                        <option>INR (₹)</option>
+                        <option>EUR (€)</option>
                       </select>
                     </div>
                   </div>
@@ -188,11 +114,8 @@ const Settings = () => {
                           <p className="text-xs text-gray-400 font-medium mt-0.5">Disables access for all non-admin users across the platform.</p>
                         </div>
                       </div>
-                      <div 
-                        onClick={() => setSettings({...settings, maintenanceMode: !settings.maintenanceMode})}
-                        className={`relative w-12 h-6 rounded-full cursor-pointer transition-colors p-1 ${settings.maintenanceMode ? 'bg-indigo-600' : 'bg-gray-200 dark:bg-gray-700'}`}
-                      >
-                        <div className={`w-4 h-4 bg-white rounded-full transition-transform ${settings.maintenanceMode ? 'translate-x-6' : 'translate-x-0'}`}></div>
+                      <div className="relative w-12 h-6 bg-gray-200 dark:bg-gray-700 rounded-full cursor-pointer transition-colors p-1">
+                        <div className="w-4 h-4 bg-white rounded-full transition-transform translate-x-0"></div>
                       </div>
                     </div>
 
@@ -206,11 +129,8 @@ const Settings = () => {
                           <p className="text-xs text-gray-400 font-medium mt-0.5">Allows platform to send welcome emails and daily reports automatically.</p>
                         </div>
                       </div>
-                      <div 
-                        onClick={() => setSettings({...settings, globalNotifications: !settings.globalNotifications})}
-                        className={`relative w-12 h-6 rounded-full cursor-pointer transition-colors p-1 ${settings.globalNotifications ? 'bg-emerald-500' : 'bg-gray-200 dark:bg-gray-700'}`}
-                      >
-                        <div className={`w-4 h-4 bg-white rounded-full transition-transform ${settings.globalNotifications ? 'translate-x-6' : 'translate-x-0'}`}></div>
+                      <div className="relative w-12 h-6 bg-emerald-500 rounded-full cursor-pointer transition-colors p-1">
+                        <div className="w-4 h-4 bg-white rounded-full transition-transform translate-x-6"></div>
                       </div>
                     </div>
                   </div>

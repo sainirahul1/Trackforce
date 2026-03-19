@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   CreditCard, 
   Check, 
@@ -13,41 +13,46 @@ import {
   ArrowRight
 } from 'lucide-react';
 import Button from '../../components/Button';
-import superadminService from '../../services/superadminService';
 
 const Subscriptions = () => {
-  const [plans, setPlans] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({
-    mrr: '$0',
-    activeSubscribers: '0',
-    retention: '0%'
-  });
-
-  const iconMap = { Zap, Shield, Crown };
-
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
-    try {
-      const [plansData, statsData] = await Promise.all([
-        superadminService.getSubscriptions(),
-        superadminService.getAnalyticsStats()
-      ]);
-      setPlans(plansData);
-      setStats({
-        mrr: `$${statsData.totalMRR.toLocaleString()}`,
-        activeSubscribers: statsData.totalTenants.toString(),
-        retention: '98.5%' // Mocked for now
-      });
-    } catch (error) {
-      console.error('Error fetching subscriptions:', error);
-    } finally {
-      setLoading(false);
+  const [plans, setPlans] = useState([
+    {
+      id: 1,
+      name: 'Basic',
+      price: '49',
+      interval: 'month',
+      description: 'Ideal for small startups or local agencies.',
+      features: ['Up to 10 Employees', 'Basic GPS Tracking', 'Daily Reports', 'Email Support'],
+      active: true,
+      popular: false,
+      icon: Zap,
+      color: 'blue'
+    },
+    {
+      id: 2,
+      name: 'Premium',
+      price: '149',
+      interval: 'month',
+      description: 'Best for growing businesses with multiple teams.',
+      features: ['Up to 50 Employees', 'Real-time Tracking', 'Advanced Analytics', 'Priority Support', 'Geo-fencing'],
+      active: true,
+      popular: true,
+      icon: Shield,
+      color: 'indigo'
+    },
+    {
+      id: 3,
+      name: 'Enterprise',
+      price: '499',
+      interval: 'month',
+      description: 'Full-featured solution for large organizations.',
+      features: ['Unlimited Employees', 'White-labeling', 'API Access', 'Dedicated Manager', 'Custom Integration'],
+      active: true,
+      popular: false,
+      icon: Crown,
+      color: 'purple'
     }
-  };
+  ]);
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
@@ -67,23 +72,20 @@ const Subscriptions = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {plans.map((plan) => (
           <div 
-            key={plan._id}
+            key={plan.id}
             className={`relative bg-white dark:bg-gray-900 rounded-[2.5rem] border-2 ${
-              plan.isPopular ? 'border-indigo-500 shadow-2xl shadow-indigo-100 dark:shadow-none' : 'border-gray-100 dark:border-gray-800'
+              plan.popular ? 'border-indigo-500 shadow-2xl shadow-indigo-100 dark:shadow-none' : 'border-gray-100 dark:border-gray-800'
             } p-8 transition-all duration-300 hover:translate-y-[-4px] group`}
           >
-            {plan.isPopular && (
+            {plan.popular && (
               <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-indigo-500 text-white px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg">
                 Most Popular
               </div>
             )}
 
             <div className="flex justify-between items-start mb-6">
-              <div className={`p-4 rounded-2xl bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400`}>
-                {(() => {
-                  const IconComp = iconMap[plan.icon] || Zap;
-                  return <IconComp size={24} />;
-                })()}
+              <div className={`p-3 rounded-2xl bg-${plan.color}-50 dark:bg-${plan.color}-500/10 text-${plan.color}-600 dark:text-${plan.color}-400`}>
+                <plan.icon size={24} />
               </div>
               <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button className="p-2 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-xl text-gray-400 hover:text-indigo-600 transition-colors">
@@ -117,7 +119,7 @@ const Subscriptions = () => {
             </div>
 
             <Button 
-              variant={plan.isPopular ? 'primary' : 'outline'} 
+              variant={plan.popular ? 'primary' : 'outline'} 
               className="w-full py-4 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 group/btn"
             >
               Manage Tier
@@ -130,16 +132,16 @@ const Subscriptions = () => {
       {/* Stats Summary */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {[
-          { label: 'Total MRR', value: stats.mrr, change: '+12%', icon: CreditCard, color: 'blue' },
-          { label: 'Active Subscriptions', value: stats.activeSubscribers, icon: Users, color: 'indigo' },
-          { label: 'Avg. Retention', value: stats.retention, change: '+0.4%', icon: Settings, color: 'emerald' },
+          { label: 'Total MRR', value: '$12,450', change: '+12%', icon: CreditCard, color: 'blue' },
+          { label: 'Active Subscriptions', value: '142', change: '+5%', icon: Users, color: 'indigo' },
+          { label: 'Avg. Retention', value: '98.2%', change: '+0.4%', icon: Settings, color: 'emerald' },
         ].map((stat, i) => (
           <div key={i} className="bg-white dark:bg-gray-900 p-6 rounded-[2rem] border border-gray-100 dark:border-gray-800 shadow-sm">
             <div className="flex justify-between items-start mb-4">
               <div className={`p-3 rounded-2xl bg-${stat.color}-50 dark:bg-${stat.color}-500/10 text-${stat.color}-600 dark:text-${stat.color}-400`}>
                 <stat.icon size={20} />
               </div>
-              {stat.change && <span className="text-emerald-500 text-xs font-black">{stat.change}</span>}
+              <span className="text-emerald-500 text-xs font-black">{stat.change}</span>
             </div>
             <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-1">{stat.label}</p>
             <h3 className="text-2xl font-black text-gray-900 dark:text-white">{stat.value}</h3>

@@ -24,6 +24,18 @@ const superadminService = {
     const response = await axios.patch(`${API_URL}/companies/${id}/status`, { status }, { headers: getAuthHeader() });
     return response.data;
   },
+  updateCompany: async (id, companyData) => {
+    const response = await axios.put(`${API_URL}/companies/${id}`, companyData, { headers: getAuthHeader() });
+    return response.data;
+  },
+  toggleCompanySuspension: async (id) => {
+    const response = await axios.patch(`${API_URL}/companies/${id}/suspend`, {}, { headers: getAuthHeader() });
+    return response.data;
+  },
+  deleteCompany: async (id) => {
+    const response = await axios.delete(`${API_URL}/companies/${id}`, { headers: getAuthHeader() });
+    return response.data;
+  },
 
   // Subscriptions
   getSubscriptions: async () => {

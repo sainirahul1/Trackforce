@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   BarChart3, 
   TrendingUp, 
@@ -15,10 +15,22 @@ import {
 } from 'lucide-react';
 import Button from '../../components/Button';
 import superadminService from '../../services/superadminService';
+import { 
+  AreaChart, 
+  Area, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip as RechartsTooltip, 
+  ResponsiveContainer,
+  PieChart as RechartsPie,
+  Pie,
+  Cell
+} from 'recharts';
 
 const Analytics = () => {
   const [statsData, setStatsData] = useState(null);
-  const [growthData, setGrowthData] = useState([]);
+  const [growthData, setGrowthData] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -40,12 +52,34 @@ const Analytics = () => {
     }
   };
 
+  const chartData = useMemo(() => {
+    if (!growthData) return [];
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return (growthData.labels || months).map((label, i) => ({
+      name: label,
+      tenants: (growthData.data || [])[i] || 0
+    }));
+  }, [growthData]);
+
+  const pieData = [
+    { name: 'Basic', value: 45, color: '#6366f1' },
+    { name: 'Premium', value: 35, color: '#10b981' },
+    { name: 'Enterprise', value: 20, color: '#f59e0b' },
+  ];
+
   const stats = [
-    { label: 'Total Companies', value: statsData?.totalTenants || '0', change: statsData?.growth || '+0%', isUp: true, icon: Globe, color: 'blue' },
+    { label: 'Total Companies', value: statsData?.totalTenants?.toString() || '0', change: statsData?.growth || '+0%', isUp: true, icon: Globe, color: 'blue' },
     { label: 'Platform Users', value: statsData?.totalUsers?.toLocaleString() || '0', change: '+5.2%', isUp: true, icon: Users, color: 'indigo' },
-    { label: 'Monthly Revenue', value: `$${statsData?.totalMRR?.toLocaleString() || '0'}`, change: '+15.3%', isUp: true, icon: TrendingUp, color: 'emerald' },
+    { label: 'Monthly Revenue', value: statsData?.totalMRR ? `$${statsData.totalMRR.toLocaleString()}` : '$0', change: '+15.3%', isUp: true, icon: TrendingUp, color: 'emerald' },
     { label: 'Global Visits', value: statsData?.totalVisits?.toLocaleString() || '0', change: '-2.4%', isUp: false, icon: Activity, color: 'amber' },
   ];
+
+  if (loading) return (
+    <div className="min-h-[60vh] flex flex-col items-center justify-center p-20 text-center">
+      <div className="w-16 h-16 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mb-6"></div>
+      <p className="font-black text-gray-900 dark:text-white uppercase tracking-[0.3em] animate-pulse">Analyzing Global Data Stream...</p>
+    </div>
+  );
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
@@ -72,7 +106,7 @@ const Analytics = () => {
         {stats.map((stat, i) => (
           <div key={i} className="bg-white dark:bg-gray-900 p-6 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-md transition-all">
             <div className="flex justify-between items-start mb-4">
-              <div className={`p-4 rounded-2xl bg-${stat.color}-50 dark:bg-${stat.color}-500/10 text-${stat.color}-600 dark:text-${stat.color}-400`}>
+              <div className={`p-4 rounded-2xl bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400`}>
                 <stat.icon size={24} />
               </div>
               <div className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest ${
@@ -88,9 +122,9 @@ const Analytics = () => {
         ))}
       </div>
 
-      {/* Charts Placeholder Section */}
+      {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Growth Chart Placeholder */}
+        {/* Growth Chart */}
         <div className="bg-white dark:bg-gray-900 p-8 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 shadow-sm relative overflow-hidden group">
           <div className="flex justify-between items-center mb-8">
             <h3 className="text-lg font-black text-gray-900 dark:text-white flex items-center gap-2">
@@ -103,23 +137,58 @@ const Analytics = () => {
             </select>
           </div>
           
-          <div className="h-64 flex items-end justify-between gap-4 mt-4 px-2">
-            {[45, 62, 58, 75, 90, 82, 95, 110, 105, 128, 135, 142].map((height, i) => (
-              <div key={i} className="flex-1 flex flex-col items-center gap-2">
-                <div 
-                  className="w-full bg-gradient-to-t from-indigo-600/80 to-indigo-400 rounded-t-lg transition-all duration-700 group-hover:opacity-100 opacity-70"
-                  style={{ height: `${(height / 150) * 100}%` }}
-                ></div>
-                <span className="text-[9px] font-bold text-gray-400 uppercase">{['J','F','M','A','M','J','J','A','S','O','N','D'][i]}</span>
-              </div>
-            ))}
+          <div className="h-64 mt-4">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={chartData}>
+                <defs>
+                  <linearGradient id="colorTenants" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis 
+                  dataKey="name" 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fontSize: 10, fontWeight: 700, fill: '#94a3b8' }} 
+                  dy={10}
+                />
+                <YAxis 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fontSize: 10, fontWeight: 700, fill: '#94a3b8' }} 
+                />
+                <RechartsTooltip 
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      return (
+                        <div className="bg-white dark:bg-gray-900 p-3 rounded-xl border border-gray-100 dark:border-gray-800 shadow-xl">
+                          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{payload[0].payload.name}</p>
+                          <p className="text-lg font-black text-indigo-600 dark:text-indigo-400">{payload[0].value} Tenants</p>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+                <Area 
+                  type="monotone" 
+                  dataKey="tenants" 
+                  stroke="#6366f1" 
+                  strokeWidth={4}
+                  fillOpacity={1} 
+                  fill="url(#colorTenants)" 
+                />
+              </AreaChart>
+            </ResponsiveContainer>
           </div>
-          <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
+          <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity pointer-events-none">
             <Zap size={120} className="text-indigo-500 rotate-12" />
           </div>
         </div>
 
-        {/* Distribution Chart Placeholder */}
+        {/* Distribution Chart */}
         <div className="bg-white dark:bg-gray-900 p-8 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 shadow-sm relative overflow-hidden group">
           <div className="flex justify-between items-center mb-8">
             <h3 className="text-lg font-black text-gray-900 dark:text-white flex items-center gap-2">
@@ -128,27 +197,47 @@ const Analytics = () => {
             </h3>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-center justify-around gap-8 py-8">
-            <div className="relative w-48 h-48 rounded-full border-[16px] border-indigo-500 flex items-center justify-center">
-              <div className="absolute inset-0 rounded-full border-[16px] border-emerald-500 border-t-transparent border-r-transparent border-b-transparent -rotate-45 shrink-0"></div>
-              <div className="absolute inset-0 rounded-full border-[16px] border-amber-500 border-t-transparent border-l-transparent border-b-transparent rotate-90 shrink-0"></div>
-              <div className="text-center">
-                <span className="block text-2xl font-black text-gray-900 dark:text-white">142</span>
-                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Tenants</span>
-              </div>
+          <div className="flex flex-col sm:flex-row items-center justify-around gap-8 py-2">
+            <div className="w-64 h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <RechartsPie>
+                  <Pie
+                    data={pieData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={80}
+                    paddingAngle={8}
+                    dataKey="value"
+                  >
+                    {pieData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
+                    ))}
+                  </Pie>
+                  <RechartsTooltip 
+                    content={({ active, payload }) => {
+                      if (active && payload && payload.length) {
+                        return (
+                          <div className="bg-white dark:bg-gray-900 p-3 rounded-xl border border-gray-100 dark:border-gray-800 shadow-xl">
+                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{payload[0].name}</p>
+                            <p className="text-lg font-black text-gray-900 dark:text-white">{payload[0].value}% Share</p>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+                </RechartsPie>
+              </ResponsiveContainer>
             </div>
 
             <div className="space-y-4">
-              {[
-                { label: 'Basic Plan', color: 'indigo', percent: '45%' },
-                { label: 'Premium Plan', color: 'emerald', percent: '35%' },
-                { label: 'Enterprise', color: 'amber', percent: '20%' },
-              ].map((item, i) => (
+              {pieData.map((item, i) => (
                 <div key={i} className="flex items-center gap-4">
-                  <div className={`w-3 h-3 rounded-full bg-${item.color}-500 shadow-lg shadow-${item.color}-200 dark:shadow-none`}></div>
+                  <div className={`w-3 h-3 rounded-full`} style={{ backgroundColor: item.color }}></div>
                   <div className="flex flex-col">
-                    <span className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-widest">{item.label}</span>
-                    <span className="text-xs text-gray-400 font-bold">{item.percent}</span>
+                    <span className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-widest">{item.name} Plan</span>
+                    <span className="text-xs text-gray-400 font-bold">{item.value}%</span>
                   </div>
                 </div>
               ))}

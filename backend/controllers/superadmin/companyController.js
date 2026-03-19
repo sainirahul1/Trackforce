@@ -7,8 +7,17 @@ const bcrypt = require('bcryptjs');
 // @access  Private/SuperAdmin
 exports.getAllTenants = async (req, res) => {
   try {
-    const tenants = await Tenant.find().sort({ createdAt: -1 });
-    res.json(tenants);
+    const tenants = await Tenant.find().sort({ createdAt: -1 }).lean();
+    
+    // Enrich with user counts
+    const enrichedTenants = await Promise.all(
+      tenants.map(async (tenant) => {
+        const userCount = await User.countDocuments({ tenant: tenant._id });
+        return { ...tenant, userCount };
+      })
+    );
+    
+    res.json(enrichedTenants);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -18,25 +27,30 @@ exports.getAllTenants = async (req, res) => {
 // @route   POST /api/superadmin/companies
 // @access  Private/SuperAdmin
 exports.provisionTenant = async (req, res) => {
-  const { name, domain, adminEmail, password, plan } = req.body;
+  const { name, domain, adminEmail, password, plan, industry } = req.body;
 
   try {
+    // Determine employee limit based on plan
+    const planLimits = { basic: 10, premium: 50, enterprise: 1000 };
+    const normalizedPlan = plan.toLowerCase();
+
     // 1. Create Tenant
     const tenant = await Tenant.create({
       name,
       domain,
+      industry: industry || 'Technology',
       subscription: {
-        plan: plan.toLowerCase(),
-        status: 'active'
+        plan: normalizedPlan,
+        status: 'active',
+        employeeLimit: planLimits[normalizedPlan] || 50
       }
     });
 
-    // 2. Create Tenant Admin User
-    const hashedPassword = await bcrypt.hash(password || 'admin123', 10);
+    // 2. Create Tenant Admin User (password is auto-hashed by User model's pre-save hook)
     const adminUser = await User.create({
       name: `${name} Admin`,
       email: adminEmail,
-      password: hashedPassword,
+      password: password || 'admin123',
       role: 'tenant',
       company: name,
       tenant: tenant._id
@@ -64,6 +78,52 @@ exports.updateTenantStatus = async (req, res) => {
     );
     if (!tenant) return res.status(404).json({ message: 'Tenant not found' });
     res.json(tenant);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+// @desc    Update tenant details
+// @route   PUT /api/superadmin/companies/:id
+// @access  Private/SuperAdmin
+exports.updateTenant = async (req, res) => {
+  try {
+    const tenant = await Tenant.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (!tenant) return res.status(404).json({ message: 'Tenant not found' });
+    res.json(tenant);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+// @desc    Toggle tenant suspension
+// @route   PATCH /api/superadmin/companies/:id/suspend
+// @access  Private/SuperAdmin
+exports.toggleTenantSuspension = async (req, res) => {
+  try {
+    const tenant = await Tenant.findById(req.params.id);
+    if (!tenant) return res.status(404).json({ message: 'Tenant not found' });
+    
+    tenant.onboardingStatus = tenant.onboardingStatus === 'suspended' ? 'active' : 'suspended';
+    await tenant.save();
+    
+    res.json(tenant);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+// @desc    Delete tenant
+// @route   DELETE /api/superadmin/companies/:id
+// @access  Private/SuperAdmin
+exports.deleteTenant = async (req, res) => {
+  try {
+    const tenant = await Tenant.findByIdAndDelete(req.params.id);
+    if (!tenant) return res.status(404).json({ message: 'Tenant not found' });
+    
+    // Optionally delete associated users
+    await User.deleteMany({ tenant: req.params.id });
+    
+    res.json({ message: 'Tenant and associated users deleted successfully' });
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
