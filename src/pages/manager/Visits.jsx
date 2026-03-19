@@ -1,214 +1,694 @@
+/**
+ * @file Visits.jsx
+ * @description High-fidelity Manager Dashboard for reviewing Field Visits and Proofs.
+ * Features include high-density row layouts, dynamic status-based UI, 
+ * and a React Portal-based Lightbox for 100% viewport coverage.
+ */
+
 import React from 'react';
-import { 
-  Camera, MapPin, CheckCircle2, Clock, AlertCircle, 
+import { createPortal } from 'react-dom';
+import {
+  Camera, MapPin, CheckCircle2, Clock, AlertCircle,
   ExternalLink, Maximize2, ShieldCheck, User, Store,
-  Search, Filter, Calendar, ArrowRight
+  Search, Filter, Calendar, ArrowRight, XCircle, RotateCcw,
+  Check, X, MessageSquare, MoreHorizontal, Mail, Phone, ArrowLeft,
+  ChevronDown, History
 } from 'lucide-react';
 
 /**
- * Visits Component
- * Specialized monitoring for field visits, proofs, and GPS validation.
+ * VisitRow Component
+ * Renders a high-density, horizontal entry for the visits feed.
+ * 
+ * @param {Object} props
+ * @param {Object} props.visit - The visit data object.
+ * @param {Function} props.onReview - Callback to trigger the detail view.
  */
+const VisitRow = ({ visit, onReview }) => (
+  <div
+    onClick={onReview}
+    className="group bg-white dark:bg-gray-900 px-4 py-2.5 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-xl transition-all cursor-pointer flex flex-col lg:flex-row items-center gap-4 border-l-[4px] border-l-transparent hover:border-l-indigo-600"
+  >
+    {/* Identification */}
+    <div className="flex items-center gap-3 w-full lg:w-[20%] shrink-0">
+      <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-black text-xs shadow-md shrink-0 group-hover:scale-105 transition-transform">
+        {visit.avatar}
+      </div>
+      <div className="min-w-0">
+        <h4 className="text-[13px] font-black text-gray-900 dark:text-white truncate tracking-tight">{visit.executive}</h4>
+        <p className="text-[8px] font-black text-gray-400 uppercase tracking-[0.1em] truncate">{visit.designation}</p>
+      </div>
+    </div>
+
+    {/* Location & Store Metadata */}
+    <div className="flex items-center gap-5 w-full lg:w-[40%]">
+      <div className="flex items-center gap-2 min-w-[110px]">
+        <Store size={12} className="text-indigo-400" />
+        <span className="text-[11px] font-bold text-gray-600 dark:text-gray-300 truncate">{visit.store}</span>
+      </div>
+
+      <div className="hidden xl:flex items-center gap-5">
+        <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md border ${visit.location.includes('Warning') ? 'bg-rose-50 border-rose-100 text-rose-500' : 'bg-emerald-50 border-emerald-100 text-emerald-500'} dark:bg-opacity-5 dark:border-opacity-10 text-[8px] font-black uppercase tracking-tight`}>
+          <MapPin size={9} className="shrink-0" fill="currentColor" fillOpacity={0.2} />
+          {visit.location.split(' ')[0]}
+        </div>
+        <div className="flex items-center gap-1.5 text-gray-400 text-[9px] font-bold tabular-nums">
+          <Clock size={11} />
+          {visit.time}
+        </div>
+      </div>
+    </div>
+
+    {/* Assets & Status Control */}
+    <div className="flex items-center justify-between lg:justify-end gap-5 w-full lg:flex-1">
+      <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-lg text-gray-400">
+        <Camera size={11} />
+        <span className="text-[8px] font-black uppercase tracking-widest">{visit.photos} Proofs</span>
+      </div>
+
+      <div className={`px-3 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest border ${visit.status === 'Accepted' || visit.status === 'Verified' ? 'text-emerald-500 bg-emerald-50 border-emerald-100 dark:bg-emerald-500/5' :
+        visit.status === 'Rejected' ? 'text-rose-500 bg-rose-50 border-rose-100 dark:bg-rose-500/5' :
+          'text-amber-500 bg-amber-50 border-amber-100 dark:bg-amber-500/5'
+        }`}>
+        {visit.status}
+      </div>
+
+      <button
+        onClick={(e) => { e.stopPropagation(); onReview(); }}
+        className="px-4 py-1.5 bg-indigo-600 text-white rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-indigo-500 transition-all shadow-md flex items-center justify-center gap-1.5 shrink-0"
+      >
+        Review <ArrowRight size={11} />
+      </button>
+    </div>
+  </div>
+);
+/**
+ * ManagerVisits Main Component
+ * Orchestrates the overall Field Visits dashboard, including statistics,
+ * filtered lists, and the comprehensive Detail Review mode.
+ */
+
 const ManagerVisits = () => {
-  const visits = [
-    { 
-      id: 'VST-9021', 
-      store: 'Global Tech Solutions HQ', 
-      executive: 'John Doe', 
-      type: 'Store Visit', 
-      status: 'Verified', 
+  // --- State Initialization ---
+  const [filterStatus, setFilterStatus] = React.useState('Total');       // Active status filter (Total, Accepted, Rejected, etc.)
+  const [selectedVisit, setSelectedVisit] = React.useState(null);       // Tracks the visit currently being reviewed in Detail mode
+  const [isPendingExpanded, setIsPendingExpanded] = React.useState(true); // Toggles 'Awaiting Action' accordion
+  const [isHistoryExpanded, setIsHistoryExpanded] = React.useState(true); // Toggles 'Operational Intelligence' accordion
+  const [isRejecting, setIsRejecting] = React.useState(false);           // Controls the showing of the rejection remark textarea
+  const [rejectionReasonInput, setRejectionReasonInput] = React.useState(''); // Buffer for user-entered rejection text
+  const [activePhoto, setActivePhoto] = React.useState(null);           // Holds the photo object for the Portal-based Lightbox
+  const [observationCategory, setObservationCategory] = React.useState('General Overview'); // Active category for observation notes
+
+  const categoryContent = {
+    'General Overview': "The store inventory was mostly organized, however, some discrepancies were noted in the inward goods section. Client was cooperative and provided all necessary documentation for the audit trail. No major issues faced during the field protocol execution.",
+    'Inventory Compliance': "Stock levels for premium SKUs are maintained at 85%. End-cap displays are correctly positioned as per the planogram. Inward goods documentation is complete and verified.",
+    'Staff Performance': "Executive SW demonstrated excellent product knowledge and client engagement. Store manager noted the promptness and professionalism of the field officer during the audit.",
+    'Client Feedback': "Client expressed satisfaction with the real-time reporting capabilities. Requested a follow-up on the promotional display efficacy by next week's visit.",
+    'Protocol Variance': "Minor variance noted in the geo-tagging at the entrance (0.05km). Site-path protocols were strictly followed otherwise, with all checkpoints covered accurately."
+  };
+
+  const [visits, setVisits] = React.useState([
+    {
+      id: 'VST-9021',
+      store: 'Global Tech Solutions HQ',
+      executive: 'John Doe',
+      designation: 'Sales Executive',
+      team: 'North Sales',
+      type: 'Store Visit',
+      status: 'Accepted',
       time: '10:45 AM',
       location: 'Verified (0.02km variance)',
-      photos: 3,
-      avatar: 'JD'
+      photos: 4,
+      avatar: 'JD',
+      employeeId: 101,
+      proofs: [
+        { id: 1, title: 'Store Front', img: 'https://images.unsplash.com/photo-1534452203293-494d7ddbf7e0?w=500&auto=format&fit=crop&q=60' },
+        { id: 2, title: 'Shelf Check', img: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=500&auto=format&fit=crop&q=60' },
+        { id: 3, title: 'Compliance Poster', img: 'https://images.unsplash.com/photo-1506784983877-45594efa4cbe?w=500&auto=format&fit=crop&q=60' },
+        { id: 4, title: 'Visual Merchandising', img: 'https://images.unsplash.com/photo-1534452203293-494d7ddbf7e0?w=500&auto=format&fit=crop&q=60' }
+      ]
     },
-    { 
-      id: 'VST-9022', 
-      store: 'North Star Retail', 
-      executive: 'Sarah Wilson', 
-      type: 'Supplier Visit', 
-      status: 'Pending Review', 
+    {
+      id: 'VST-9022',
+      store: 'North Star Retail',
+      executive: 'Sarah',
+      designation: 'Field Officer',
+      team: 'Retail Team',
+      type: 'Supplier Visit',
+      status: 'Pending Review',
       time: '11:15 AM',
-      location: 'Warning (0.15km variance)',
-      photos: 2,
-      avatar: 'SW'
+      location: 'Verified (0.05km variance)',
+      photos: 4,
+      avatar: 'SW',
+      employeeId: 102,
+      proofs: [
+        { id: 1, title: 'Main Entrance', img: 'https://images.unsplash.com/photo-1472851294608-062f824d29cc?w=800&auto=format&fit=crop&q=80' },
+        { id: 2, title: 'Inventory Shelf', img: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&auto=format&fit=crop&q=80' },
+        { id: 3, title: 'Store Display', img: 'https://images.unsplash.com/photo-1534452203293-494d7ddbf7e0?w=800&auto=format&fit=crop&q=80' },
+        { id: 4, title: 'Product Check', img: 'https://images.unsplash.com/photo-1506784983877-45594efa4cbe?w=800&auto=format&fit=crop&q=80' }
+      ]
     },
-    { 
-      id: 'VST-9023', 
-      store: 'Prime Logistics Hub', 
-      executive: 'Mike Johnson', 
-      type: 'Routine Check', 
-      status: 'Verified', 
+    {
+      id: 'VST-9023',
+      store: 'Prime Logistics Hub',
+      executive: 'Mike Johnson',
+      designation: 'Logistics Supervisor',
+      team: 'Logistics A',
+      type: 'Routine Check',
+      status: 'Accepted',
       time: '09:30 AM',
       location: 'Verified (0.01km variance)',
       photos: 4,
-      avatar: 'MJ'
+      avatar: 'MJ',
+      employeeId: 103,
+      proofs: [
+        { id: 1, title: 'Logistics Bay', img: 'https://images.unsplash.com/photo-1586528116311-ad86d51b90f8?w=500&auto=format&fit=crop&q=60' },
+        { id: 2, title: 'Inward Goods', img: 'https://images.unsplash.com/photo-1553413077-190dd305871c?w=500&auto=format&fit=crop&q=60' },
+        { id: 3, title: 'Quality Check', img: 'https://images.unsplash.com/photo-1542744094-3a31f272c490?w=500&auto=format&fit=crop&q=60' },
+        { id: 4, title: 'Audit Label', img: 'https://images.unsplash.com/photo-1506784983877-45594efa4cbe?w=500&auto=format&fit=crop&q=60' }
+      ]
     },
+    {
+      id: 'VST-9024',
+      store: 'City Mall Store',
+      executive: 'Emma Davis',
+      designation: 'Brand Ambassador',
+      team: 'Promotions',
+      type: 'Promotion Check',
+      status: 'Rejected',
+      rejectionReason: 'Promotional display did not meet the brand compliance guidelines. End-cap alignment is off by 15 degrees.',
+      time: '12:00 PM',
+      location: 'Warning (0.5km variance)',
+      photos: 4,
+      avatar: 'ED',
+      employeeId: 104,
+      proofs: [
+        { id: 1, title: 'Site Entrance', img: 'https://images.unsplash.com/photo-1472851294608-062f824d29cc?w=800&auto=format&fit=crop&q=80' },
+        { id: 2, title: 'Area Overview', img: 'https://images.unsplash.com/photo-1534452203293-494d7ddbf7e0?w=800&auto=format&fit=crop&q=80' },
+        { id: 3, title: 'Marker Point', img: 'https://images.unsplash.com/photo-1506784983877-45594efa4cbe?w=800&auto=format&fit=crop&q=80' },
+        { id: 4, title: 'Final Receipt', img: 'https://images.unsplash.com/photo-1553413077-190dd305871c?w=800&auto=format&fit=crop&q=80' }
+      ],
+    },
+    {
+      id: 'VST-9025',
+      store: 'Wellness Pharmacy',
+      executive: 'Alex Brown',
+      designation: 'Medical Rep',
+      team: 'Pharma West',
+      type: 'Visit',
+      status: 'Follow-up',
+      time: '01:30 PM',
+      location: 'Verified (0.05km variance)',
+      photos: 4,
+      avatar: 'AB',
+      employeeId: 105,
+      proofs: [
+        { id: 1, title: 'Main Display', img: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&auto=format&fit=crop&q=80' },
+        { id: 2, title: 'Shelf Alignment', img: 'https://images.unsplash.com/photo-1534452203293-494d7ddbf7e0?w=800&auto=format&fit=crop&q=80' },
+        { id: 3, title: 'Lighting Check', img: 'https://images.unsplash.com/photo-1506784983877-45594efa4cbe?w=800&auto=format&fit=crop&q=80' },
+        { id: 4, title: 'Floor Hygiene', img: 'https://images.unsplash.com/photo-1553413077-190dd305871c?w=800&auto=format&fit=crop&q=80' }
+      ]
+    },
+    {
+      id: 'VST-9026',
+      store: 'Big Bazaar Town',
+      executive: 'Rahul Sharma',
+      designation: 'Field Supervisor',
+      team: 'Operations',
+      type: 'Audit Visit',
+      status: 'Pending Review',
+      time: '02:15 PM',
+      location: 'Verified (0.02km variance)',
+      photos: 4,
+      avatar: 'RS',
+      employeeId: 106,
+      proofs: [
+        { id: 1, title: 'Entrance Guard', img: 'https://images.unsplash.com/photo-1541829070764-84a7d30dee62?w=800&auto=format&fit=crop&q=80' },
+        { id: 2, title: 'Main Aisle 1', img: 'https://images.unsplash.com/photo-1578916171728-46686eac8d58?w=800&auto=format&fit=crop&q=80' },
+        { id: 3, title: 'Back Storage', img: 'https://images.unsplash.com/photo-1586528116311-ad86d51b90f8?w=800&auto=format&fit=crop&q=80' },
+        { id: 4, title: 'Compliance Sign', img: 'https://images.unsplash.com/photo-1506784983877-45594efa4cbe?w=800&auto=format&fit=crop&q=80' }
+      ]
+    },
+    {
+      id: 'VST-9027',
+      store: 'Metro Mega Mart',
+      executive: 'Priya Singh',
+      designation: 'Audit Executive',
+      team: 'Quality Control',
+      type: 'Compliance Check',
+      status: 'Pending Review',
+      time: '03:30 PM',
+      location: 'Verified (0.01km variance)',
+      photos: 4,
+      avatar: 'PS',
+      employeeId: 107,
+      proofs: [
+        { id: 1, title: 'Billing Counter', img: 'https://images.unsplash.com/photo-1556742049-02e4d46cfb70?w=800&auto=format&fit=crop&q=80' },
+        { id: 2, title: 'Safety Exit', img: 'https://images.unsplash.com/photo-1506784983877-45594efa4cbe?w=800&auto=format&fit=crop&q=80' },
+        { id: 3, title: 'Stock Register', img: 'https://images.unsplash.com/photo-1553413077-190dd305871c?w=800&auto=format&fit=crop&q=80' },
+        { id: 4, title: 'Team Briefing', img: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800&auto=format&fit=crop&q=80' }
+      ]
+    },
+  ]);
+
+  const stats = [
+    { label: 'Total Visits', value: visits.length.toString(), icon: Camera, color: 'text-indigo-600', bg: 'bg-indigo-50', status: 'Total' },
+    { label: 'Accepted Visits', value: visits.filter(v => v.status === 'Accepted').length.toString(), icon: CheckCircle2, color: 'text-emerald-600', bg: 'bg-emerald-50', status: 'Accepted' },
+    { label: 'Rejected Visits', value: visits.filter(v => v.status === 'Rejected').length.toString(), icon: XCircle, color: 'text-rose-600', bg: 'bg-rose-50', status: 'Rejected' },
+    { label: 'Follow-up Visits', value: visits.filter(v => v.status === 'Follow-up' || v.status === 'Pending Review').length.toString(), icon: RotateCcw, color: 'text-amber-600', bg: 'bg-amber-50', status: 'Follow-up' },
   ];
 
-  const proofs = [
-    { id: 1, title: 'Store Front', img: 'https://images.unsplash.com/photo-1534452203293-494d7ddbf7e0?w=500&auto=format&fit=crop&q=60', tag: 'Exterior' },
-    { id: 2, title: 'Inventory Shelf', img: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=500&auto=format&fit=crop&q=60', tag: 'Stock' },
-    { id: 3, title: 'Banner Verification', img: 'https://images.unsplash.com/photo-1472851294608-062f824d29cc?w=500&auto=format&fit=crop&q=60', tag: 'Branding' },
-  ];
+  const filteredVisits = filterStatus === 'Total'
+    ? visits
+    : visits.filter(v => {
+      if (filterStatus === 'Follow-up') return v.status === 'Follow-up' || v.status === 'Pending Review';
+      return v.status === filterStatus;
+    });
+
+  /**
+   * Finalizes an audit action (Approve/Reject)
+   * Updates local state and resets the UI buffers.
+   */
+  const handleAction = (id, newStatus, reason = null) => {
+    setVisits(prev => prev.map(v => v.id === id ? { ...v, status: newStatus, rejectionReason: reason } : v));
+    setSelectedVisit(null);
+    setIsRejecting(false);
+    setRejectionReasonInput('');
+  };
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      {/* --- DASHBOARD HEADER ---
+          Provides context and global navigation controls. */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h1 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">Visit Intelligence HQ</h1>
-          <p className="text-gray-500 dark:text-gray-400 font-medium mt-1">Real-time geospatial audit and physical proof verification system.</p>
+          <div className="flex items-center gap-3 mb-1">
+            <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
+            <span className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.2em]">Operational Intelligence</span>
+          </div>
+          <h1 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">Field Visits & Proofs</h1>
+          <p className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] mt-2">Monitor, review, and validate real-time visit requests and geospatial evidence.</p>
         </div>
-        <div className="flex flex-wrap items-center gap-4">
-           <div className="flex items-center gap-3 px-6 py-3 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl shadow-sm">
-              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">System Online</span>
-           </div>
-           <div className="flex items-center gap-2 px-6 py-3 bg-emerald-50 dark:bg-emerald-500/10 rounded-2xl border border-emerald-100 dark:border-emerald-500/20 shadow-sm">
-             <ShieldCheck size={18} className="text-emerald-600" />
-             <span className="text-xs font-black text-emerald-700 dark:text-emerald-400 uppercase tracking-widest">98.4% Accuracy</span>
-           </div>
-        </div>
+
+        {selectedVisit && (
+          <button
+            onClick={() => setSelectedVisit(null)}
+            className="flex items-center gap-3 px-6 py-3 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl shadow-sm hover:scale-105 transition-all text-gray-500 hover:text-indigo-600 font-bold text-sm uppercase tracking-widest"
+          >
+            <ArrowLeft size={18} />
+            Back to Overview
+          </button>
+        )}
       </div>
 
-      {/* Quick Ops Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        {[
-          { label: 'Active Audits', value: '18', icon: Camera, color: 'text-indigo-600', bg: 'bg-indigo-50' },
-          { label: 'GPS Variance', value: '< 50m', icon: MapPin, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-          { label: 'Photos today', value: '842', icon: Maximize2, color: 'text-blue-600', bg: 'bg-blue-50' },
-          { label: 'Alerts', value: '03', icon: AlertCircle, color: 'text-rose-600', bg: 'bg-rose-50' },
-        ].map((stat, i) => (
-          <div key={i} className="bg-white dark:bg-gray-900 p-6 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-xl transition-all">
-             <div className={`w-12 h-12 rounded-xl ${stat.bg} ${stat.color} dark:bg-opacity-10 flex items-center justify-center mb-4`}>
-                <stat.icon size={20} />
-             </div>
-             <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">{stat.label}</p>
-             <p className="text-2xl font-black text-gray-900 dark:text-white tracking-tighter">{stat.value}</p>
-          </div>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left: Live Feed of Visits */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="flex items-center justify-between px-2">
-            <h3 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-[0.2em] flex items-center gap-2">
-               <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
-               Current Operations
-            </h3>
-            <div className="flex items-center gap-3">
-               <button className="p-2 bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 text-gray-400 hover:text-indigo-600">
-                 <Filter size={16} />
-               </button>
-               <button className="p-2 bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 text-gray-400 hover:text-indigo-600">
-                 <Calendar size={16} />
-               </button>
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            {visits.map((visit) => (
-              <div key={visit.id} className="group bg-white dark:bg-gray-900 p-6 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all">
-                <div className="flex flex-col md:flex-row gap-6 items-start md:items-center">
-                  {/* Executive Info */}
-                  <div className="flex items-center gap-4 min-w-[180px]">
-                    <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center text-indigo-600 font-black text-sm border border-indigo-100 dark:border-indigo-500/20">
-                      {visit.avatar}
-                    </div>
-                    <div>
-                      <h4 className="text-[15px] font-black text-gray-900 dark:text-white">{visit.executive}</h4>
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{visit.type}</p>
-                    </div>
-                  </div>
-
-                  {/* Visit Details */}
-                  <div className="flex-1 space-y-3">
-                    <div className="flex items-center gap-2">
-                      <Store size={14} className="text-gray-400" />
-                      <span className="text-sm font-black text-gray-700 dark:text-gray-200">{visit.store}</span>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-4">
-                      <div className="flex items-center gap-1.5 px-3 py-1 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                        <MapPin size={10} className={visit.location.includes('Warning') ? 'text-rose-500' : 'text-emerald-500'} />
-                        <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">{visit.location}</span>
-                      </div>
-                      <div className="flex items-center gap-1.5 px-3 py-1 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                        <Camera size={10} className="text-indigo-500" />
-                        <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">{visit.photos} Proofs</span>
-                      </div>
-                      <div className="flex items-center gap-1.5 px-3 py-1 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                        <Clock size={10} className="text-blue-500" />
-                        <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">{visit.time}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex flex-row md:flex-col gap-2 w-full md:w-auto">
-                    <span className={`px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-center border ${
-                      visit.status === 'Verified' ? 'text-emerald-600 bg-emerald-50 border-emerald-100 dark:bg-emerald-500/10 dark:border-emerald-500/20' : 
-                      'text-indigo-600 bg-indigo-50 border-indigo-100 dark:bg-indigo-500/10 dark:border-indigo-500/20'
-                    }`}>
-                      {visit.status}
-                    </span>
-                    <button className="flex items-center justify-center gap-2 px-4 py-1.5 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-xl text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all">
-                      Review <ArrowRight size={12} />
-                    </button>
-                  </div>
+      {!selectedVisit ? (
+        <>
+          {/* --- KPI QUICK OPS GRID ---
+              Dynamic summary of visit counts with quick-filter capabilities. */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            {stats.map((stat, i) => (
+              <button
+                key={i}
+                onClick={() => setFilterStatus(stat.status)}
+                className={`text-left bg-white dark:bg-gray-900 p-6 rounded-[2.5rem] border shadow-sm hover:shadow-xl transition-all ${filterStatus === stat.status ? 'border-indigo-500 ring-2 ring-indigo-500/20 shadow-indigo-500/10' : 'border-gray-100 dark:border-gray-800'
+                  }`}
+              >
+                <div className={`w-12 h-12 rounded-xl ${stat.bg} ${stat.color} dark:bg-opacity-10 flex items-center justify-center mb-4`}>
+                  <stat.icon size={20} />
                 </div>
-              </div>
+                <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">{stat.label}</p>
+                <p className="text-2xl font-black text-gray-900 dark:text-white tracking-tighter">{stat.value}</p>
+              </button>
             ))}
           </div>
-        </div>
 
-        {/* Right: Visual Proofs Gallery */}
-        <div className="lg:col-span-1 space-y-6">
-           <h3 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-[0.2em] px-2 flex items-center justify-between">
-              Recent Proofs
-              <Maximize2 size={16} className="text-gray-400 cursor-pointer hover:text-indigo-600" />
-           </h3>
-           
-           <div className="grid grid-cols-1 gap-4">
-              {proofs.map((proof) => (
-                <div key={proof.id} className="relative group overflow-hidden rounded-[2rem] border-2 border-white dark:border-gray-900 shadow-xl aspect-video cursor-pointer">
-                  <img src={proof.img} alt={proof.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-6">
-                    <span className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] mb-1">{proof.tag}</span>
-                    <h5 className="text-white font-black text-lg">{proof.title}</h5>
+          <div className="space-y-12">
+            {/* --- SECTION 1: AWAITING ACTION ---
+                Renders pending review requests with a blink-status indicator. */}
+            {(filterStatus === 'Total' || filterStatus === 'Follow-up') && filteredVisits.some(v => v.status === 'Pending Review') && (
+              <div className="space-y-4">
+                <button
+                  onClick={() => setIsPendingExpanded(!isPendingExpanded)}
+                  className="w-full flex items-center justify-between p-6 bg-rose-50/50 dark:bg-rose-500/5 rounded-[2rem] border border-rose-100 dark:border-rose-500/10 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-all group"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-rose-500 text-white flex items-center justify-center shadow-lg shadow-rose-500/20">
+                      <Clock size={18} />
+                    </div>
+                    <div className="text-left">
+                      <h3 className="text-sm font-black text-rose-500 dark:text-rose-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                        Awaiting Action
+                        <div className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
+                      </h3>
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-0.5">{filteredVisits.filter(v => v.status === 'Pending Review').length} NEW REQUESTS PENDING</p>
+                    </div>
                   </div>
-                  <div className="absolute top-4 right-4 p-2 bg-white/20 backdrop-blur-md rounded-xl border border-white/20 group-hover:bg-indigo-600 group-hover:border-indigo-500 transition-all">
-                    <ExternalLink size={14} className="text-white" />
+                  <div className={`p-2 rounded-xl bg-white dark:bg-gray-900 border border-rose-100 dark:border-rose-500/20 text-rose-500 transition-transform duration-300 ${isPendingExpanded ? 'rotate-180' : ''}`}>
+                    <ChevronDown size={20} />
                   </div>
-                </div>
-              ))}
-           </div>
+                </button>
 
-           {/* Metadata Summary */}
-           <div className="bg-indigo-600 rounded-[2.5rem] p-8 text-white shadow-2xl shadow-indigo-600/20 relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16 blur-2xl" />
-              <h4 className="text-xs font-black uppercase tracking-[0.2em] opacity-60 mb-6">Execution Summary</h4>
-              <div className="grid grid-cols-2 gap-8">
-                <div>
-                  <p className="text-2xl font-black">124</p>
-                  <p className="text-[10px] font-bold uppercase tracking-widest opacity-60 mt-1">Total Visits</p>
+                {isPendingExpanded && (
+                  <div className="flex flex-col gap-4 animate-in slide-in-from-top-4 duration-500">
+                    {filteredVisits.filter(v => v.status === 'Pending Review').map((visit) => (
+                      <VisitRow key={visit.id} visit={visit} onReview={() => setSelectedVisit(visit)} />
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* --- SECTION 2: OPERATIONAL INTELLIGENCE ---
+                Renders the history of processed visits (Accepted, Rejected, etc.) */}
+            <div className="space-y-4">
+              <button
+                onClick={() => setIsHistoryExpanded(!isHistoryExpanded)}
+                className="w-full flex items-center justify-between p-6 bg-indigo-50/50 dark:bg-indigo-500/5 rounded-[2rem] border border-indigo-100 dark:border-indigo-500/10 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 transition-all group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-lg shadow-indigo-600/20">
+                    <History size={18} />
+                  </div>
+                  <div className="text-left">
+                    <h3 className="text-sm font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                      Operational History
+                    </h3>
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-0.5">VIEWING {filteredVisits.filter(v => v.status !== 'Pending Review').length} RECORDED ENTRIES</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-2xl font-black">94%</p>
-                  <p className="text-[10px] font-bold uppercase tracking-widest opacity-60 mt-1">Verified</p>
+                <div className={`p-2 rounded-xl bg-white dark:bg-gray-900 border border-indigo-100 dark:border-indigo-500/20 text-indigo-600 transition-transform duration-300 ${isHistoryExpanded ? 'rotate-180' : ''}`}>
+                  <ChevronDown size={20} />
                 </div>
-                <div>
-                  <p className="text-2xl font-black">0.8 km</p>
-                  <p className="text-[10px] font-bold uppercase tracking-widest opacity-60 mt-1">Avg. Variance</p>
+              </button>
+
+              {isHistoryExpanded && (
+                <div className="flex flex-col gap-4 animate-in slide-in-from-top-4 duration-500">
+                  {filteredVisits.filter(v => v.status !== 'Pending Review').length > 0 ? (
+                    filteredVisits.filter(v => v.status !== 'Pending Review').map((visit) => (
+                      <VisitRow key={visit.id} visit={visit} onReview={() => setSelectedVisit(visit)} />
+                    ))
+                  ) : (
+                    <div className="col-span-full py-24 text-center bg-gray-50/50 dark:bg-gray-800/10 rounded-[3rem] border-2 border-dashed border-gray-100 dark:border-gray-800">
+                      <div className="mx-auto w-16 h-16 rounded-full bg-gray-50 dark:bg-gray-800 flex items-center justify-center mb-6">
+                        <History size={32} className="text-gray-300 dark:text-gray-600" />
+                      </div>
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">No historical data found for this filter</p>
+                    </div>
+                  )}
                 </div>
-                <div>
-                  <p className="text-2xl font-black">412</p>
-                  <p className="text-[10px] font-bold uppercase tracking-widest opacity-60 mt-1">Photo Proofs</p>
+              )}
+            </div>
+          </div>
+        </>
+      ) : (
+        <div className="animate-in slide-in-from-bottom-12 [animation-duration:1000ms] [animation-timing-function:cubic-bezier(0.16,1,0.3,1)] max-w-[1400px] mx-auto">
+          {/* --- COMPREHENSIVE DETAIL REVIEW MODE ---
+              A dual-column layout for deep-dive analysis of a specific visit. */}
+          <div className="bg-white dark:bg-gray-950 rounded-[3rem] border border-gray-100 dark:border-gray-800 shadow-[0_32px_128px_-16px_rgba(0,0,0,0.1)] overflow-hidden flex flex-col min-h-[85vh]">
+
+            {/* 1. DYNAMIC REPORT HEADER
+                Displays the executive's profile, contact info, and current audit status. */}
+            <div className="bg-gray-50/50 dark:bg-white/5 border-b border-gray-100 dark:border-gray-800 p-8 lg:p-12 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-[400px] h-full bg-indigo-500/5 blur-[100px] -mr-32 pointer-events-none" />
+
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-10 relative z-10">
+                {/* Executive Profile Section */}
+                <div className="flex items-center gap-8">
+                  <div className="relative shrink-0">
+                    <div className="w-24 h-24 rounded-[2.5rem] bg-indigo-600 flex items-center justify-center text-white font-black text-4xl shadow-2xl border-4 border-white dark:border-gray-900">
+                      {selectedVisit.avatar}
+                    </div>
+                    <div className="absolute -bottom-1 -right-1 w-10 h-10 bg-emerald-500 rounded-2xl flex items-center justify-center text-white border-4 border-white dark:border-gray-950 shadow-lg">
+                      <ShieldCheck size={20} />
+                    </div>
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-3 mb-2">
+                      <h2 className="text-4xl font-black text-gray-900 dark:text-white tracking-tighter">{selectedVisit.executive}</h2>
+                      <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border ${selectedVisit.status === 'Accepted' || selectedVisit.status === 'Verified' ? 'text-emerald-600 bg-emerald-50 border-emerald-100 dark:bg-emerald-500/10 dark:border-emerald-500/20' :
+                        selectedVisit.status === 'Rejected' ? 'text-rose-600 bg-rose-50 border-rose-100 dark:bg-rose-500/10 dark:border-rose-500/20' :
+                          'text-amber-600 bg-amber-50 border-amber-100 dark:bg-amber-500/10 dark:border-amber-500/20'
+                        }`}>
+                        {selectedVisit.status}
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-6">
+                      <div className="flex items-center gap-2 text-xs font-bold text-gray-400 uppercase tracking-widest">
+                        <User size={14} className="text-indigo-500" />
+                        {selectedVisit.designation} • #{selectedVisit.employeeId}
+                      </div>
+                      <div className="flex items-center gap-2 text-xs font-bold text-gray-400 lowercase tracking-tight">
+                        <Mail size={14} className="text-emerald-500" />
+                        {selectedVisit.executive.toLowerCase().replace(' ', '.')}@trackforce.com
+                      </div>
+                      <div className="flex items-center gap-2 text-xs font-bold text-gray-400">
+                        <Phone size={14} className="text-blue-500" />
+                        +91 98765 43210
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
-           </div>
+            </div>
+
+            {/* 2. Main content Grid (50/50 Split) */}
+            <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 overflow-hidden">
+
+              {/* LEFT COLUMN: Data-Driven Intelligence 
+                  Houses the mission description, audit stats, and review protocols. */}
+              <div className="p-8 lg:p-12 border-r border-gray-100 dark:border-gray-800 bg-gray-50/30 dark:bg-black/10 overflow-y-auto custom-scrollbar">
+                <div className="space-y-12">
+                  {/* Audit Title & Mission Description */}
+                  <div>
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-1.5 h-6 bg-indigo-600 rounded-full" />
+                      <h5 className="text-[11px] font-black text-gray-400 uppercase tracking-[0.3em]">Operational Mission</h5>
+                    </div>
+                    <h3 className="text-2xl font-black text-gray-950 dark:text-white tracking-tighter mb-4">Store Inventory Audit</h3>
+                    <p className="text-[13px] font-bold text-gray-500 leading-relaxed max-w-xl">
+                      Complete a thorough audit of Big Bazaar Central's inventory. Ensure all field protocols are followed and evidence is recorded accurately for compliance validation.
+                    </p>
+                  </div>
+
+
+                  {/* Audit Intelligence Grid */}
+                  <div>
+                    <h5 className="text-[11px] font-black text-gray-400 uppercase tracking-[0.3em] mb-8">Audit Intelligence Report</h5>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {[
+                        { label: 'Target Location', value: selectedVisit.store, icon: Store, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+                        { label: 'Audit Timestamp', value: selectedVisit.time, icon: Clock, color: 'text-blue-600', bg: 'bg-blue-50' },
+                        { label: 'Geospatial Delta', value: selectedVisit.location, icon: MapPin, color: selectedVisit.location.includes('Warning') ? 'text-rose-600' : 'text-emerald-600', bg: selectedVisit.location.includes('Warning') ? 'bg-rose-50' : 'bg-emerald-50' },
+                        { label: 'Visual Evidence', value: `${selectedVisit.photos} HD Assets`, icon: Camera, color: 'text-indigo-600', bg: 'bg-indigo-50' }
+                      ].map((item, id) => (
+                        <div key={id} className="p-5 bg-white dark:bg-gray-900 rounded-[1.5rem] border border-gray-100 dark:border-gray-800 shadow-sm flex flex-col gap-4 group transition-all hover:shadow-lg hover:border-indigo-100 dark:hover:border-indigo-500/20">
+                          <div className={`w-12 h-12 rounded-xl ${item.bg} dark:bg-opacity-10 flex items-center justify-center ${item.color} shadow-inner group-hover:scale-110 transition-transform`}>
+                            <item.icon size={20} />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">{item.label}</p>
+                            <p className="text-[13px] font-black text-gray-950 dark:text-white leading-tight tracking-tight">{item.value}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+
+                  {/* Protocol Action Panel */}
+                  <div className="mt-12 pt-10 border-t border-gray-100 dark:border-gray-800">
+                    <h5 className="text-[11px] font-black text-gray-400 uppercase tracking-[0.3em] mb-6">Review Protocol</h5>
+                    {selectedVisit.status === 'Pending Review' || selectedVisit.status === 'Follow-up' ? (
+                      !isRejecting ? (
+                        <div className="grid grid-cols-1 gap-3">
+                          {selectedVisit.status === 'Pending Review' && (
+                            <button onClick={() => handleAction(selectedVisit.id, 'Accepted')} className="w-full py-5 bg-indigo-600 text-white rounded-[1.5rem] font-black text-[11px] uppercase tracking-widest hover:bg-indigo-500 shadow-2xl shadow-indigo-600/30 transition-all flex items-center justify-center gap-3">
+                              <CheckCircle2 size={18} /> Approve Field Audit
+                            </button>
+                          )}
+                          <button onClick={() => setIsRejecting(true)} className="w-full py-5 bg-white dark:bg-gray-900 text-rose-500 border border-rose-100 dark:border-gray-800 rounded-[1.5rem] font-black text-[11px] uppercase tracking-widest hover:border-rose-500 transition-all flex items-center justify-center gap-3">
+                            <XCircle size={18} /> Reject Submission
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="space-y-3 animate-in fade-in zoom-in-95">
+                          <textarea value={rejectionReasonInput} onChange={(e) => setRejectionReasonInput(e.target.value)} placeholder="Enter detailed rejection remark..." className="w-full h-32 p-6 bg-white dark:bg-gray-950 border border-rose-500/20 rounded-[2rem] text-[13px] font-bold focus:ring-2 focus:ring-rose-500/10 transition-all resize-none dark:text-white" />
+                          <div className="flex gap-3">
+                            <button onClick={() => handleAction(selectedVisit.id, 'Rejected', rejectionReasonInput)} disabled={!rejectionReasonInput.trim()} className="flex-[2] py-4 bg-rose-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-rose-500 transition-all">Confirm Rejection</button>
+                            <button onClick={() => { setIsRejecting(false); setRejectionReasonInput(''); }} className="flex-1 py-4 bg-white dark:bg-gray-900 text-gray-500 rounded-2xl font-black text-[10px] uppercase tracking-widest border border-gray-100 dark:border-gray-800">Cancel</button>
+                          </div>
+                        </div>
+                      )
+                    ) : (
+                      <div className={`rounded-[2.5rem] border p-8 flex items-center justify-between group overflow-hidden relative ${selectedVisit.status === 'Rejected'
+                          ? 'bg-rose-50/50 dark:bg-rose-500/5 border-rose-100 dark:border-rose-500/10'
+                          : 'bg-emerald-50/50 dark:bg-emerald-500/5 border-emerald-100 dark:border-emerald-500/10'
+                        }`}>
+                        <div className={`absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-48 h-48 rounded-full blur-3xl transition-colors ${selectedVisit.status === 'Rejected' ? 'bg-rose-500/5 group-hover:bg-rose-500/10' : 'bg-emerald-500/5 group-hover:bg-emerald-500/10'
+                          }`} />
+                        <div className="flex items-center gap-6 md:gap-8 relative z-10">
+                          <div className={`w-16 h-16 rounded-[1.5rem] flex items-center justify-center text-white shadow-xl transition-transform duration-500 group-hover:scale-110 ${selectedVisit.status === 'Rejected' ? 'bg-rose-500 shadow-rose-500/20' : 'bg-emerald-500 shadow-emerald-500/20'
+                            }`}>
+                            {selectedVisit.status === 'Rejected' ? <XCircle size={32} strokeWidth={2.5} /> : <CheckCircle2 size={32} strokeWidth={2.5} />}
+                          </div>
+                          <div>
+                            <p className={`text-[11px] font-black uppercase tracking-[0.3em] mb-2 ${selectedVisit.status === 'Rejected' ? 'text-rose-600/60' : 'text-emerald-600/60'
+                              }`}>Audit Intelligence {selectedVisit.status === 'Rejected' ? 'Flagged' : 'Verified'}</p>
+                            <h4 className={`text-xl md:text-2xl font-black tracking-tighter ${selectedVisit.status === 'Rejected' ? 'text-rose-600' : 'text-emerald-600'
+                              }`}>
+                              {selectedVisit.status === 'Rejected' ? 'Rejected' : 'Accepted'}
+                              <span className={`font-medium ml-2 uppercase text-[12px] md:text-[15px] tracking-[0.1em] ${selectedVisit.status === 'Rejected' ? 'text-rose-400' : 'text-emerald-400'
+                                }`}>ON {selectedVisit.time}</span>
+                            </h4>
+                            {/* Display rejection reason only if the visit was explicitly flagged */}
+                            {selectedVisit.status === 'Rejected' && selectedVisit.rejectionReason && (
+                              <p className="mt-4 p-4 bg-rose-50/50 dark:bg-rose-500/10 rounded-2xl border border-rose-100 dark:border-rose-500/20 text-[11px] font-bold text-rose-600 leading-relaxed italic animate-in slide-in-from-top-2 duration-500">
+                                "{selectedVisit.rejectionReason}"
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="hidden md:flex flex-col items-end relative z-10">
+                          <div className={`px-5 py-2.5 bg-white dark:bg-gray-900 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] border shadow-sm ${selectedVisit.status === 'Rejected' ? 'text-rose-600 border-rose-100 dark:border-rose-500/20' : 'text-gray-400 border-gray-100 dark:border-gray-800'
+                            }`}>
+                            {selectedVisit.status === 'Rejected' ? 'Audit Terminated' : 'Audit Trail Complete'}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* RIGHT COLUMN: Visual Evidence Discovery 
+                  Interactive image gallery for physical proof validation. */}
+              <div className="p-6 lg:p-10 overflow-y-auto custom-scrollbar flex flex-col h-full bg-white dark:bg-gray-950">
+                <div className="flex items-center justify-between mb-4 shrink-0">
+                  <div className="flex items-center gap-4">
+                    <div className="w-1.5 h-6 bg-indigo-500 rounded-full shadow-lg shadow-indigo-500/20" />
+                    <div>
+                      <h5 className="text-[12px] font-black text-gray-900 dark:text-white uppercase tracking-[0.3em]">Visual Evidence Discovery</h5>
+                      <p className="text-[8px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">High-Fidelity Proofs for Integrity Validation</p>
+                    </div>
+                  </div>
+                  <div className="px-4 py-2 bg-indigo-50 dark:bg-indigo-500/10 rounded-lg text-[10px] font-black text-indigo-600 tracking-widest border border-indigo-100 dark:border-indigo-500/20">
+                    {selectedVisit.photos} ASSETS
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 flex-1 content-start pb-10">
+                  {selectedVisit.proofs && selectedVisit.proofs.length > 0 ? (
+                    <>
+                      {selectedVisit.proofs.map((proof) => (
+                        <div
+                          key={proof.id}
+                          onClick={() => setActivePhoto(proof)}
+                          className="group relative overflow-hidden rounded-[2rem] border-[4px] border-white dark:border-gray-900 shadow-2xl aspect-square cursor-pointer hover:shadow-indigo-500/20 hover:-translate-y-2 transition-all duration-700"
+                        >
+                          <img src={proof.img} alt={proof.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000" />
+                          <div className="absolute inset-0 bg-gradient-to-t from-gray-950/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500 flex flex-col justify-end p-6">
+                            <div className="translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+                              <p className="text-white font-bold text-sm tracking-tight mb-2">{proof.title}</p>
+                              <div className="flex items-center gap-2">
+                                <div className="px-2 py-1 bg-indigo-600 rounded text-[8px] font-black text-white uppercase tracking-widest">Full HD Proof</div>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="absolute top-4 right-4 w-8 h-8 bg-white/10 backdrop-blur-md rounded-lg flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-all scale-75 group-hover:scale-100">
+                            <Maximize2 size={16} />
+                          </div>
+                        </div>
+                      ))}
+                      {selectedVisit.proofs.length < 4 && Array.from({ length: 4 - selectedVisit.proofs.length }).map((_, i) => (
+                        <div key={`empty-${i}`} className="rounded-[2rem] border-4 border-dashed border-gray-100 dark:border-gray-900 flex flex-col items-center justify-center aspect-square bg-gray-50/50 dark:bg-white/5 opacity-50 group transition-all hover:bg-indigo-50/20">
+                          <Camera size={24} className="text-gray-200 dark:text-gray-700 mb-4 group-hover:scale-110 transition-transform" />
+                          <p className="text-[8px] font-black text-gray-300 dark:text-gray-700 uppercase tracking-[0.2em]">Pending asset</p>
+                        </div>
+                      ))}
+                    </>
+                  ) : (
+                    <div className="col-span-full py-24 flex flex-col items-center justify-center border-4 border-dashed border-gray-100 dark:border-gray-800 rounded-[3rem] bg-gray-50/50 dark:bg-gray-800/10">
+                      <Camera size={48} className="text-gray-200 dark:text-gray-800 mb-6 animate-pulse" />
+                      <p className="text-[10px] font-black text-gray-400 dark:text-gray-600 uppercase tracking-[0.4em] text-center">No visual assets available</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Observation Intel & Notes */}
+                <div className="mt-12 pt-10 border-t border-gray-100 dark:border-gray-800 space-y-8 animate-in slide-in-from-bottom-5 duration-700">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h5 className="text-[11px] font-black text-gray-400 uppercase tracking-[0.3em]">Observation Intelligence</h5>
+                      <div className="px-3 py-1 bg-indigo-50 dark:bg-indigo-500/10 rounded-lg text-[8px] font-black text-indigo-600 uppercase tracking-widest border border-indigo-100 dark:border-indigo-500/20">Configurable</div>
+                    </div>
+                    <div className="relative group">
+                      <select
+                        value={observationCategory}
+                        onChange={(e) => setObservationCategory(e.target.value)}
+                        className="w-full bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-800 rounded-2xl px-6 py-4 text-xs font-black uppercase tracking-widest focus:ring-2 focus:ring-indigo-500 transition-all outline-none appearance-none cursor-pointer hover:border-indigo-200 dark:hover:border-indigo-500/30"
+                      >
+                        <option>General Overview</option>
+                        <option>Inventory Compliance</option>
+                        <option>Staff Performance</option>
+                        <option>Client Feedback</option>
+                        <option>Protocol Variance</option>
+                      </select>
+                      <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 group-hover:text-indigo-500 transition-colors">
+                        <ChevronDown size={18} />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-8 bg-white dark:bg-gray-900 rounded-[3rem] border border-gray-100 dark:border-gray-800 shadow-sm group hover:shadow-2xl transition-all duration-500">
+                    <div className="flex items-center justify-between mb-8">
+                      <div className="flex items-center gap-3">
+                        <div className="w-1.5 h-6 bg-indigo-500 rounded-full" />
+                        <h5 className="text-[11px] font-black text-gray-400 uppercase tracking-[0.3em]">Visit Notes & Observations</h5>
+                      </div>
+                      <div className="px-4 py-1.5 bg-gray-50 dark:bg-gray-800 rounded-full text-[9px] font-black text-gray-400 uppercase tracking-widest border border-gray-100 dark:border-gray-700">Employee Log</div>
+                    </div>
+                    <div className="relative">
+                      <div className="absolute left-0 top-0 w-1.5 h-full bg-indigo-500/20 dark:bg-indigo-500/10 rounded-full overflow-hidden">
+                        <div className="absolute top-0 w-full h-1/2 bg-indigo-500" />
+                      </div>
+                      <p className="pl-8 text-[14px] font-bold text-gray-600 dark:text-gray-400 leading-relaxed italic">
+                        "{categoryContent[observationCategory]}"
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* --- GLOBAL LIGHTBOX PORTAL ---
+          Renders the modal at the document body level to ensure absolute
+          top-level layering, overlaying the global Navbar and Sidebar regardless
+          of parent layout stacking contexts. */}
+      {activePhoto && createPortal(
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-0 animate-in fade-in duration-300">
+          <div className="absolute inset-0 bg-gray-950/90 backdrop-blur-3xl" onClick={() => setActivePhoto(null)} />
+          <div className="relative max-w-5xl w-full h-full flex flex-col items-center justify-center">
+            <button
+              onClick={(e) => { e.stopPropagation(); setActivePhoto(null); }}
+              className="absolute top-4 right-4 md:top-6 md:right-6 p-4 text-white hover:scale-110 transition-all z-[100000] group"
+              aria-label="Close Lightbox"
+            >
+              <div className="bg-gray-800 rounded-full p-2.5 shadow-2xl border-2 border-gray-700 group-hover:bg-rose-500 group-hover:text-white transition-all">
+                <X size={28} strokeWidth={3} />
+              </div>
+            </button>
+            <div className="w-full h-full relative group flex items-center justify-center p-6">
+              <img src={activePhoto.img} alt={activePhoto.title} className="max-w-full max-h-[88vh] object-contain rounded-3xl shadow-[0_32px_128px_rgba(0,0,0,0.5)] border-4 border-white/20" />
+              <div className="absolute bottom-8 left-8 p-6 bg-black/40 backdrop-blur-3xl rounded-[2rem] border border-white/10 shadow-2xl animate-in slide-in-from-left-8 duration-1000">
+                <p className="text-[9px] font-black text-indigo-400 uppercase tracking-[0.3em] mb-1">Evidence Discovery Asset</p>
+                <h3 className="text-xl font-black text-white tracking-tighter">{activePhoto.title}</h3>
+              </div>
+            </div>
+          </div>
+        </div>
+        , document.body)}
     </div>
   );
 };
