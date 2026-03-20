@@ -18,6 +18,7 @@ app.get('/', (req, res) => {
 });
 
 // Routes
+app.use('/api/public', require('./routes/publicRoutes'));
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/visits', require('./routes/visitRoutes'));
 app.use('/api/activity', require('./routes/activityRoutes'));

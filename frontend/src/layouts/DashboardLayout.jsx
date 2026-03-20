@@ -4,11 +4,15 @@ import Sidebar from '../components/Sidebar';
 import Navbar from '../components/Navbar';
 import HelpCenter from '../components/HelpCenter';
 import SuspendedOverlay from '../components/SuspendedOverlay';
+import MaintenanceOverlay from '../components/MaintenanceOverlay';
 import * as authService from '../services/authService';
+import { getPublicSettings } from '../services/publicService';
 
 const DashboardLayout = ({ allowedRole }) => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = React.useState(false);
   const [workStatus, setWorkStatus] = React.useState('Offline'); // Offline, Active, Paused
+  const [maintenanceMode, setMaintenanceMode] = React.useState(false);
+  const [isCheckingMaintenance, setIsCheckingMaintenance] = React.useState(true);
   
   const storedRole = localStorage.getItem('role');
   let storedUser = {};
@@ -29,13 +33,47 @@ const DashboardLayout = ({ allowedRole }) => {
         console.error("Failed to fetch user status", e);
       }
     };
+
+    const fetchMaintenanceStatus = async () => {
+      try {
+        const settings = await getPublicSettings();
+        if (settings?.maintenanceMode) {
+          setMaintenanceMode(true);
+        } else {
+          setMaintenanceMode(false);
+        }
+      } catch (err) {
+        console.error("Failed to fetch maintenance status", err);
+      } finally {
+        setIsCheckingMaintenance(false);
+      }
+    };
+
     if (storedRole && storedRole !== 'superadmin') {
       fetchStatus();
+      fetchMaintenanceStatus();
+      
+      // Real-time polling every 15 seconds
+      const intervalId = setInterval(() => {
+        fetchMaintenanceStatus();
+      }, 15000);
+
+      return () => clearInterval(intervalId);
+    } else {
+      setIsCheckingMaintenance(false);
     }
   }, [storedRole]);
 
   if (!storedRole || (allowedRole && storedRole !== allowedRole)) {
     return <Navigate to="/login" replace />;
+  }
+
+  if (isCheckingMaintenance && storedRole !== 'superadmin') {
+    return <div className="min-h-screen flex items-center justify-center bg-gray-50/50 dark:bg-gray-950"><div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div></div>;
+  }
+
+  if (maintenanceMode && storedRole !== 'superadmin') {
+    return <MaintenanceOverlay />;
   }
 
   const isSuspended = localUser.tenantStatus === 'suspended';

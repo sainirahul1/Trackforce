@@ -20,9 +20,15 @@ exports.getSettings = async (req, res) => {
 // @access  Private/SuperAdmin
 exports.updateSettings = async (req, res) => {
   try {
+    const updateData = { ...req.body };
+    delete updateData._id;
+    delete updateData.__v;
+    delete updateData.createdAt;
+    delete updateData.updatedAt;
+
     const settings = await SystemSetting.findOneAndUpdate(
       {},
-      req.body,
+      { $set: updateData },
       { new: true, upsert: true, runValidators: true }
     );
     res.json(settings);

@@ -10,7 +10,6 @@ const Sidebar = ({ role, user, isCollapsed, onToggle }) => {
       { name: 'Organizations', icon: Building2, path: '/superadmin/companies' },
       { name: 'Subscriptions', icon: ShieldCheck, path: '/superadmin/subscriptions' },
       { name: 'Roles & Access', icon: Lock, path: '/superadmin/roles' },
-      { name: 'Global Analytics', icon: Activity, path: '/superadmin/analytics' },
       { name: 'System Alerts', icon: Bell, path: '/superadmin/notifications' },
       { name: 'Platform Settings', icon: Settings, path: '/superadmin/settings' },
       { name: 'Support Issues', icon: AlertCircle, path: '/superadmin/issues' },

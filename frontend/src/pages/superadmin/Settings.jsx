@@ -45,7 +45,8 @@ const Settings = () => {
       await superadminService.updateSettings(settings);
       alert('Settings saved successfully!');
     } catch (error) {
-      alert('Error saving settings: ' + error.message);
+      const serverMsg = error.response?.data?.message || '';
+      alert(`Error saving settings: ${error.message} \nServer said: ${serverMsg}`);
     } finally {
       setSaving(false);
     }
@@ -60,6 +61,23 @@ const Settings = () => {
     }
     last[keys[keys.length - 1]] = value;
     setSettings(newSettings);
+  };
+
+  const updateToggle = async (key, currentValue) => {
+    const newValue = !currentValue;
+    const newSettings = { ...settings, [key]: newValue };
+    setSettings(newSettings);
+    
+    setSaving(true);
+    try {
+      await superadminService.updateSettings(newSettings);
+    } catch (error) {
+      const serverMsg = error.response?.data?.message || '';
+      alert(`Error auto-saving settings: ${error.message} \nServer said: ${serverMsg}`);
+      setSettings(settings); // Revert on error
+    } finally {
+      setSaving(false);
+    }
   };
 
   const sections = [
@@ -189,7 +207,7 @@ const Settings = () => {
                         </div>
                       </div>
                       <div 
-                        onClick={() => setSettings({...settings, maintenanceMode: !settings.maintenanceMode})}
+                        onClick={() => updateToggle('maintenanceMode', settings.maintenanceMode)}
                         className={`relative w-12 h-6 rounded-full cursor-pointer transition-colors p-1 ${settings.maintenanceMode ? 'bg-indigo-600' : 'bg-gray-200 dark:bg-gray-700'}`}
                       >
                         <div className={`w-4 h-4 bg-white rounded-full transition-transform ${settings.maintenanceMode ? 'translate-x-6' : 'translate-x-0'}`}></div>
@@ -207,7 +225,7 @@ const Settings = () => {
                         </div>
                       </div>
                       <div 
-                        onClick={() => setSettings({...settings, globalNotifications: !settings.globalNotifications})}
+                        onClick={() => updateToggle('globalNotifications', settings.globalNotifications)}
                         className={`relative w-12 h-6 rounded-full cursor-pointer transition-colors p-1 ${settings.globalNotifications ? 'bg-emerald-500' : 'bg-gray-200 dark:bg-gray-700'}`}
                       >
                         <div className={`w-4 h-4 bg-white rounded-full transition-transform ${settings.globalNotifications ? 'translate-x-6' : 'translate-x-0'}`}></div>

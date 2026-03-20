@@ -3,9 +3,9 @@ import axios from 'axios';
 const API_URL = 'http://localhost:5001/api/superadmin';
 
 const getAuthHeader = () => {
-  const user = JSON.parse(localStorage.getItem('user'));
-  if (user && user.token) {
-    return { Authorization: `Bearer ${user.token}` };
+  const token = localStorage.getItem('token');
+  if (token) {
+    return { Authorization: `Bearer ${token}` };
   }
   return {};
 };

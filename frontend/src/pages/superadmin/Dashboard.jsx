@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Building2, Users, MonitorSmartphone, Activity, TrendingUp, Globe, ShieldCheck, Zap } from 'lucide-react';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { Building2, Users, MonitorSmartphone, Activity, TrendingUp, Globe, ShieldCheck, Zap, PieChart as PieChartIcon, Download } from 'lucide-react';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import DashboardCard from '../../components/DashboardCard';
 import DataTable from '../../components/DataTable';
 import superadminService from '../../services/superadminService';
@@ -53,17 +53,17 @@ const SuperAdminDashboard = () => {
     tenants: (growthData?.data || defaultData)[i] || 0,
   }));
 
+  const pieData = [
+    { name: 'Basic', value: 45, color: '#6366f1' },
+    { name: 'Premium', value: 35, color: '#10b981' },
+    { name: 'Enterprise', value: 20, color: '#f59e0b' },
+  ];
+
   const stats = [
     { title: 'Total Companies', value: statsData?.totalTenants || '0', icon: Building2, trend: 'up', trendValue: 12, color: 'text-indigo-600' },
     { title: 'Platform Users', value: statsData?.totalUsers?.toLocaleString() || '0', icon: Users, trend: 'up', trendValue: 8, color: 'text-blue-600' },
     { title: 'Global Visits', value: statsData?.totalVisits?.toLocaleString() || '0', icon: MonitorSmartphone, color: 'text-emerald-600', trend: 'up', trendValue: 5 },
     { title: 'Est. Revenue', value: `$${statsData?.totalMRR?.toLocaleString() || '0'}`, icon: Activity, color: 'text-rose-600' },
-  ];
-
-  const globalMetricsList = [
-    { label: 'Data Processed', value: statsData?.globalMetrics?.dataProcessed || '4.2 TB', icon: Zap, color: 'text-amber-600', bg: 'bg-amber-50' },
-    { label: 'Global Regions', value: statsData?.globalMetrics?.globalRegions || '6', icon: Globe, color: 'text-blue-600', bg: 'bg-blue-50' },
-    { label: 'Security Score', value: statsData?.globalMetrics?.securityScore || 'A+', icon: ShieldCheck, color: 'text-emerald-600', bg: 'bg-emerald-50' },
   ];
 
   const columns = [
@@ -113,18 +113,22 @@ const SuperAdminDashboard = () => {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
-      <div className="flex justify-between items-end">
+      <div className="flex flex-col sm:flex-row justify-between sm:items-end gap-4">
         <div>
           <h1 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">Platform Intelligence</h1>
-          <p className="text-gray-500 dark:text-gray-400 font-medium mt-1">Multi-tenant infrastructure &amp; global performance metrics</p>
+          <p className="text-gray-500 dark:text-gray-400 font-medium mt-1">Multi-tenant infrastructure &amp; performance metrics</p>
         </div>
-        <div className="hidden md:flex space-x-3">
-          {globalMetricsList.map((metric, i) => (
-            <div key={i} className="flex items-center space-x-2 bg-white dark:bg-gray-900 px-4 py-2 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm">
-              <metric.icon size={14} className={metric.color} />
-              <span className="text-xs font-bold text-gray-700 dark:text-gray-300">{metric.value}</span>
-            </div>
-          ))}
+        <div className="hidden md:flex items-center space-x-3">
+          <select className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2.5 text-sm font-bold text-gray-700 dark:text-gray-300 outline-none shadow-sm cursor-pointer appearance-none">
+            <option>Today</option>
+            <option>Yesterday</option>
+            <option>Last Week</option>
+            <option>Last 30 Days</option>
+          </select>
+          <button className="flex items-center space-x-2 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl transition-colors font-bold text-sm shadow-sm opacity-90 hover:opacity-100">
+            <Download size={16} />
+            <span>Export</span>
+          </button>
         </div>
       </div>
 
@@ -134,9 +138,9 @@ const SuperAdminDashboard = () => {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Platform Growth Chart */}
-        <div className="lg:col-span-2 bg-white dark:bg-gray-900 rounded-[2rem] border border-gray-100 dark:border-gray-800 p-8 shadow-sm">
+        <div className="bg-white dark:bg-gray-900 rounded-[2rem] border border-gray-100 dark:border-gray-800 p-8 shadow-sm flex flex-col">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-black text-gray-900 dark:text-white">Platform Growth</h2>
             <div className="flex space-x-2">
@@ -146,7 +150,7 @@ const SuperAdminDashboard = () => {
               </select>
             </div>
           </div>
-          <div className="h-72">
+          <div className="h-64 flex-grow">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <defs>
@@ -184,36 +188,59 @@ const SuperAdminDashboard = () => {
           </div>
         </div>
 
-        {/* System Health */}
-        <div className="bg-white dark:bg-gray-900 rounded-[2rem] border border-gray-100 dark:border-gray-800 p-8 shadow-sm overflow-hidden">
-          <h2 className="text-xl font-black text-gray-900 dark:text-white mb-8">System Health</h2>
-          <div className="space-y-6">
-            <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-100 dark:border-emerald-900/20">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400">API Gateway</span>
-                <span className="text-[10px] font-black text-emerald-600 dark:text-emerald-500">{statsData?.systemHealth?.apiGateway?.status || 'OPERATIONAL'}</span>
-              </div>
-              <div className="h-1 bg-emerald-200 dark:bg-emerald-900/30 rounded-full overflow-hidden">
-                <div className="h-full bg-emerald-500 w-full" style={{ width: `${statsData?.systemHealth?.apiGateway?.value || 100}%` }} />
-              </div>
+        {/* Subscription Distribution */}
+        <div className="bg-white dark:bg-gray-900 rounded-[2rem] border border-gray-100 dark:border-gray-800 p-8 shadow-sm flex flex-col justify-between">
+          <div className="flex justify-between items-center mb-8">
+            <h2 className="text-xl font-black text-gray-900 dark:text-white flex items-center gap-2">
+              <PieChartIcon size={20} className="text-emerald-500" />
+              Subscription Distribution
+            </h2>
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-center justify-around gap-8 py-2 flex-grow">
+            <div className="w-56 h-56 xl:w-64 xl:h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={pieData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={80}
+                    paddingAngle={8}
+                    dataKey="value"
+                  >
+                    {pieData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
+                    ))}
+                  </Pie>
+                  <Tooltip 
+                    content={({ active, payload }) => {
+                      if (active && payload && payload.length) {
+                        return (
+                          <div className="bg-white dark:bg-gray-900 p-3 rounded-xl border border-gray-100 dark:border-gray-800 shadow-xl">
+                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{payload[0].name}</p>
+                            <p className="text-lg font-black text-gray-900 dark:text-white">{payload[0].value}% Share</p>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
             </div>
-            <div className="p-4 rounded-2xl bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/20">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold text-blue-700 dark:text-blue-400">Storage Clusters</span>
-                <span className="text-[10px] font-black text-blue-600 dark:text-blue-500">{statsData?.systemHealth?.storageClusters?.status || '84% CAPACITY'}</span>
-              </div>
-              <div className="h-1 bg-blue-200 dark:bg-blue-900/30 rounded-full overflow-hidden">
-                <div className="h-full bg-blue-500" style={{ width: `${statsData?.systemHealth?.storageClusters?.value || 84}%` }} />
-              </div>
-            </div>
-            <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-900/20">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold text-amber-700 dark:text-amber-400">Auth Services</span>
-                <span className="text-[10px] font-black text-amber-600 dark:text-amber-500">{statsData?.systemHealth?.authServices?.status || 'STABLE'}</span>
-              </div>
-              <div className="h-1 bg-amber-200 dark:bg-amber-900/30 rounded-full overflow-hidden">
-                <div className="h-full bg-amber-500 w-full" style={{ width: `${statsData?.systemHealth?.authServices?.value || 100}%` }} />
-              </div>
+
+            <div className="space-y-4">
+              {pieData.map((item, i) => (
+                <div key={i} className="flex items-center gap-4">
+                  <div className={`w-3 h-3 rounded-full`} style={{ backgroundColor: item.color }}></div>
+                  <div className="flex flex-col">
+                    <span className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-widest">{item.name} Plan</span>
+                    <span className="text-xs text-gray-400 font-bold">{item.value}%</span>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>

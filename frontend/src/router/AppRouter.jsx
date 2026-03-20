@@ -10,7 +10,6 @@ import SuperAdminDashboard from '../pages/superadmin/Dashboard';
 import CompaniesList from '../pages/superadmin/Companies';
 import Subscriptions from '../pages/superadmin/Subscriptions';
 import RolesPermissions from '../pages/superadmin/RolesPermissions';
-import AnalyticsSuperAdmin from '../pages/superadmin/Analytics';
 import NotificationsSuperAdmin from '../pages/superadmin/Notifications';
 import SettingsSuperAdmin from '../pages/superadmin/Settings';
 import TenantDashboard from '../pages/tenant/Dashboard';
@@ -61,7 +60,6 @@ const AppRouter = () => (
       <Route path="companies" element={<CompaniesList />} />
       <Route path="subscriptions" element={<Subscriptions />} />
       <Route path="roles" element={<RolesPermissions />} />
-      <Route path="analytics" element={<AnalyticsSuperAdmin />} />
       <Route path="notifications" element={<NotificationsSuperAdmin />} />
       <Route path="settings" element={<SettingsSuperAdmin />} />
       <Route path="issues" element={<SuperAdminIssues />} />
