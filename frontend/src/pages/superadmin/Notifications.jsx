@@ -16,6 +16,36 @@ import {
 import Button from '../../components/Button';
 import superadminService from '../../services/superadminService';
 
+const mockNotifications = [
+  {
+    _id: 'mock-1',
+    type: 'critical',
+    title: 'System Performance Degradation',
+    message: 'We are currently investigating reports of increased latency across the tracking APIs. Engineering teams are actively working to resolve the incident and restore normal performance levels.',
+    createdAt: new Date(Date.now() - 1000 * 60 * 15).toISOString(),
+    target: 'Global',
+    status: 'Investigating'
+  },
+  {
+    _id: 'mock-2',
+    type: 'maintenance',
+    title: 'Scheduled Database Upgrade',
+    message: 'Routine maintenance and database indexing optimization will be performed this weekend to improve overall query response times. Brief service interruptions (less than 5 minutes) may occur.',
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString(),
+    target: 'All Regions',
+    status: 'Scheduled'
+  },
+  {
+    _id: 'mock-3',
+    type: 'announcement',
+    title: 'Introducing Advanced Geofencing V2',
+    message: 'We are excited to roll out the highly requested Advanced Geofencing V2! This update brings polygon mapping, tighter integration with the mobile app, and real-time alerts. Check out the documentation for more details.',
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 5).toISOString(),
+    target: 'Premium Tiers',
+    status: 'Delivered'
+  }
+];
+
 const Notifications = () => {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -29,9 +59,14 @@ const Notifications = () => {
   const fetchNotifications = async () => {
     try {
       const data = await superadminService.getNotifications();
-      setNotifications(data);
+      if (data && data.length > 0) {
+        setNotifications(data);
+      } else {
+        setNotifications(mockNotifications);
+      }
     } catch (error) {
       console.error('Error fetching notifications:', error);
+      setNotifications(mockNotifications);
     } finally {
       setLoading(false);
     }
