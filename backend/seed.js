@@ -56,7 +56,6 @@ const ActivityLog = require('./models/employee/ActivityLog');
 const Subscription = require('./models/superadmin/Subscription');
 const SystemSetting = require('./models/superadmin/SystemSetting');
 const PlatformMetric = require('./models/superadmin/PlatformMetric');
-const SuperAdmin = require('./models/superadmin/SuperAdmin');
 const Notification = require('./models/tenant/Notification');
     await Tenant.deleteMany({});
     await StoreVisit.deleteMany({});
@@ -66,7 +65,6 @@ const Notification = require('./models/tenant/Notification');
     await Subscription.deleteMany({});
     await SystemSetting.deleteMany({});
     await PlatformMetric.deleteMany({});
-    await SuperAdmin.deleteMany({});
     console.log('Cleared all existing database records.');
 
     // New: Seed Platform Metrics for Dashboard
@@ -135,20 +133,29 @@ const Notification = require('./models/tenant/Notification');
     });
     console.log('Created System Settings.');
 
-    // 4. Create Global SuperAdmin (in superadmin.users collection)
-    await SuperAdmin.create({
+    // 4. Create Global SuperAdmin (in tenant.users collection)
+    await User.create({
       name: 'Super Admin',
       email: 'superadmin@trackforce.com',
+      company: 'TrackForce',
       password: 'admin123',
+      role: 'superadmin'
     });
-    console.log('Created Global SuperAdmin (in superadmin.users).');
+    console.log('Created Global SuperAdmin (in tenant.users).');
 
     // 3. Create Organizations and their Users
     for (const comp of companies) {
+      const subscription = subs.find(s => s.name.toLowerCase() === comp.plan.toLowerCase());
+      
       const tenant = await Tenant.create({
         name: comp.name,
         industry: comp.industry,
-        subscription: { plan: comp.plan, status: 'active', employeeLimit: comp.plan === 'enterprise' ? 1000 : 50 },
+        subscription: { 
+          planId: subscription ? subscription._id : null,
+          plan: comp.plan, 
+          status: 'active', 
+          employeeLimit: subscription ? subscription.employeeLimit : (comp.plan === 'enterprise' ? 1000 : 50)
+        },
         settings: { logo: comp.logo }
       });
 

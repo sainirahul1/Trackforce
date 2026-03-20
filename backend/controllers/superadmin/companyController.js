@@ -1,4 +1,5 @@
 const Tenant = require('../../models/superadmin/Tenant');
+const Subscription = require('../../models/superadmin/Subscription');
 const User = require('../../models/tenant/User');
 const bcrypt = require('bcryptjs');
 
@@ -7,7 +8,7 @@ const bcrypt = require('bcryptjs');
 // @access  Private/SuperAdmin
 exports.getAllTenants = async (req, res) => {
   try {
-    const tenants = await Tenant.find().sort({ createdAt: -1 }).lean();
+    const tenants = await Tenant.find().sort({ createdAt: -1 }).populate('subscription.planId').lean();
     
     // Enrich with user and role counts
     const enrichedTenants = await Promise.all(
@@ -45,12 +46,18 @@ exports.getAllTenants = async (req, res) => {
 // @route   POST /api/superadmin/companies
 // @access  Private/SuperAdmin
 exports.provisionTenant = async (req, res) => {
-  const { name, domain, adminEmail, password, plan, industry } = req.body;
+  const { name, domain, adminEmail, password, plan, planId, industry } = req.body;
 
   try {
     // Determine employee limit based on plan
-    const planLimits = { basic: 10, premium: 50, enterprise: 1000 };
-    const normalizedPlan = plan.toLowerCase();
+    let employeeLimit = 50;
+    if (planId) {
+      const sub = await Subscription.findById(planId);
+      if (sub) employeeLimit = sub.employeeLimit;
+    } else {
+      const planLimits = { basic: 10, premium: 50, enterprise: 1000 };
+      employeeLimit = planLimits[plan?.toLowerCase()] || 50;
+    }
 
     // 1. Create Tenant
     const tenant = await Tenant.create({
@@ -58,9 +65,10 @@ exports.provisionTenant = async (req, res) => {
       domain,
       industry: industry || 'Technology',
       subscription: {
-        plan: normalizedPlan,
+        planId: planId || null,
+        plan: plan || 'basic',
         status: 'active',
-        employeeLimit: planLimits[normalizedPlan] || 50
+        employeeLimit
       }
     });
 
@@ -104,17 +112,25 @@ exports.updateTenantStatus = async (req, res) => {
 // @route   PUT /api/superadmin/companies/:id
 // @access  Private/SuperAdmin
 exports.updateTenant = async (req, res) => {
-  const { name, domain, industry, plan } = req.body;
+  const { name, domain, industry, plan, planId } = req.body;
   
   try {
     const updateData = { name, domain, industry };
     
-    if (plan) {
-      const planLimits = { basic: 10, premium: 50, enterprise: 1000 };
-      const normalizedPlan = plan.toLowerCase();
+    if (plan || planId) {
+      let employeeLimit = 50;
+      if (planId) {
+        const sub = await Subscription.findById(planId);
+        if (sub) employeeLimit = sub.employeeLimit;
+      } else {
+        const planLimits = { basic: 10, premium: 50, enterprise: 1000 };
+        employeeLimit = planLimits[plan?.toLowerCase()] || 50;
+      }
+
       updateData.subscription = {
-        plan: normalizedPlan,
-        employeeLimit: planLimits[normalizedPlan] || 50
+        planId: planId || null,
+        plan: plan || 'basic',
+        employeeLimit
       };
     }
 

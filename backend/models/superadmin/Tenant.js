@@ -20,9 +20,12 @@ const tenantSchema = new mongoose.Schema({
     default: 'active',
   },
   subscription: {
+    planId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Subscription',
+    },
     plan: {
-      type: String,
-      enum: ['basic', 'premium', 'enterprise'],
+      type: String, // Keeping this for backwards compatibility/display name caching
       default: 'basic',
     },
     status: {

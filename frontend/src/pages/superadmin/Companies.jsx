@@ -24,6 +24,7 @@ import {
 const CompaniesList = () => {
   const navigate = useNavigate();
   const [companies, setCompanies] = useState([]);
+  const [subscriptions, setSubscriptions] = useState([]);
   const [backendStats, setBackendStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -46,6 +47,7 @@ const CompaniesList = () => {
     adminEmail: '',
     password: '',
     plan: 'Premium',
+    planId: '',
     industry: ''
   });
 
@@ -55,9 +57,13 @@ const CompaniesList = () => {
 
   const fetchCompanies = async () => {
     try {
-      const response = await superadminService.getCompanies();
-      setCompanies(response.data || []);
-      if (response.stats) setBackendStats(response.stats);
+      const [compResponse, subsResponse] = await Promise.all([
+        superadminService.getCompanies(),
+        superadminService.getSubscriptions()
+      ]);
+      setCompanies(compResponse.data || []);
+      setSubscriptions(subsResponse || []);
+      if (compResponse.stats) setBackendStats(compResponse.stats);
     } catch (error) {
       console.error('Error fetching companies:', error);
     } finally {
@@ -174,7 +180,13 @@ const CompaniesList = () => {
     setIsProvisioning(true);
     try {
       if (editingTenant) {
-        await superadminService.updateCompany(editingTenant._id, formData);
+        // Re-calculate employee limit if plan changed manually (fallback for old system)
+        const selectedSub = subscriptions.find(s => s._id === formData.subscription?.planId);
+        
+        await superadminService.updateCompany(editingTenant._id, {
+          ...formData,
+          planId: formData.subscription?.planId
+        });
       } else {
         await superadminService.provisionTenant(formData);
       }
@@ -184,7 +196,7 @@ const CompaniesList = () => {
         setSuccess(false);
         setShowModal(false);
         setEditingTenant(null);
-        setFormData({ name: '', domain: '', adminEmail: '', password: '', plan: 'Premium', industry: '' });
+        setFormData({ name: '', domain: '', adminEmail: '', password: '', plan: 'Premium', planId: '', industry: '' });
       }, 2000);
     } catch (error) {
       alert('Error provisioning tenant: ' + error.message);
@@ -218,7 +230,7 @@ const CompaniesList = () => {
           row.subscription?.plan === 'premium' ? 'bg-indigo-100 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400' :
             'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
           }`}>
-          {row.subscription?.plan || 'basic'}
+          {row.subscription?.planId?.name || row.subscription?.plan || 'basic'}
         </span>
       ),
     },
@@ -300,7 +312,8 @@ const CompaniesList = () => {
                             domain: row.domain || '',
                             adminEmail: row.adminEmail || '',
                             password: '',
-                            plan: row.subscription?.plan || 'Premium',
+                            plan: row.subscription?.planId?.name || row.subscription?.plan || 'Premium',
+                            planId: row.subscription?.planId?._id || row.subscription?.planId || '',
                             industry: row.industry || ''
                           });
                           setShowModal(true);
@@ -467,17 +480,17 @@ const CompaniesList = () => {
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Subscription Plan</label>
                     <div className="grid grid-cols-3 gap-2">
-                      {['Basic', 'Premium', 'Enterprise'].map(plan => (
+                      {subscriptions.map(sub => (
                         <button
-                          key={plan}
+                          key={sub._id}
                           type="button"
-                          onClick={() => setFormData({ ...formData, plan })}
-                          className={`py-3 rounded-xl border text-[10px] font-black uppercase tracking-widest transition-all ${formData.plan === plan ? 'bg-indigo-600 text-white border-indigo-600 shadow-lg' : 'bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-800 text-gray-400'
+                          onClick={() => setFormData({ ...formData, plan: sub.name, planId: sub._id })}
+                          className={`py-3 px-2 rounded-xl border text-[10px] font-black uppercase tracking-widest transition-all ${formData.planId === sub._id || (formData.plan === sub.name && !formData.planId) ? 'bg-indigo-600 text-white border-indigo-600 shadow-lg' : 'bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-800 text-gray-400'
                             }`}
                         >
-                          {plan}
+                          {sub.name}
                           <span className="block text-[9px] font-bold mt-0.5 opacity-60">
-                            {plan === 'Basic' ? '10 users' : plan === 'Premium' ? '50 users' : '1,000 users'}
+                            {sub.employeeLimit?.toLocaleString()} users
                           </span>
                         </button>
                       ))}
@@ -609,16 +622,16 @@ const CompaniesList = () => {
               {/* Plan Filter */}
               <div className="flex items-center space-x-1.5">
                 <span className="text-[10px] font-bold text-gray-500">Plan:</span>
-                {['basic', 'premium', 'enterprise'].map(plan => (
+                {subscriptions.map(sub => (
                   <button
-                    key={plan}
-                    onClick={() => setPlanFilter(planFilter === plan ? '' : plan)}
-                    className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all ${planFilter === plan
+                    key={sub._id}
+                    onClick={() => setPlanFilter(planFilter === sub.name ? '' : sub.name)}
+                    className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all ${planFilter === sub.name
                       ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100'
                       : 'bg-gray-50 dark:bg-gray-800 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700'
                       }`}
                   >
-                    {plan}
+                    {sub.name}
                   </button>
                 ))}
               </div>

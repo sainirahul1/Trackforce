@@ -46,6 +46,14 @@ const superadminService = {
     const response = await axios.post(`${API_URL}/subscriptions`, subData, { headers: getAuthHeader() });
     return response.data;
   },
+  updateSubscription: async (id, subData) => {
+    const response = await axios.put(`${API_URL}/subscriptions/${id}`, subData, { headers: getAuthHeader() });
+    return response.data;
+  },
+  deleteSubscription: async (id) => {
+    const response = await axios.delete(`${API_URL}/subscriptions/${id}`, { headers: getAuthHeader() });
+    return response.data;
+  },
 
   // Analytics
   getAnalyticsStats: async () => {

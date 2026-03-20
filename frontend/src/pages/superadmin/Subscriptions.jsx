@@ -11,7 +11,11 @@ import {
   Users,
   Settings,
   ArrowRight,
-  Building2
+  Building2,
+  X,
+  Target,
+  Layers,
+  ArrowUpRight
 } from 'lucide-react';
 import Button from '../../components/Button';
 import superadminService from '../../services/superadminService';
@@ -21,8 +25,24 @@ const Subscriptions = () => {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     mrr: '$0',
+    totalTenants: '0',
     activeSubscribers: '0',
     retention: '0%'
+  });
+  const [showModal, setShowModal] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [selectedPlanId, setSelectedPlanId] = useState(null);
+  const [isCreating, setIsCreating] = useState(false);
+  const [subFormData, setSubFormData] = useState({
+    name: '',
+    price: '',
+    interval: 'month',
+    description: '',
+    features: [''],
+    employeeLimit: 50,
+    isPopular: false,
+    icon: 'Zap',
+    color: 'blue'
   });
 
   const iconMap = { Zap, Shield, Crown };
@@ -49,6 +69,92 @@ const Subscriptions = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSubmitPlan = async (e) => {
+    e.preventDefault();
+    setIsCreating(true);
+    try {
+      const cleanedData = {
+        ...subFormData,
+        features: subFormData.features.filter(f => f.trim() !== '')
+      };
+
+      if (isEditing && selectedPlanId) {
+        await superadminService.updateSubscription(selectedPlanId, cleanedData);
+      } else {
+        await superadminService.createSubscription(cleanedData);
+      }
+
+      handleCloseModal();
+      fetchData();
+    } catch (error) {
+      console.error('Error saving plan:', error);
+      alert('Failed to save plan: ' + (error.response?.data?.message || error.message));
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  const handleEditClick = (plan) => {
+    setSubFormData({
+      name: plan.name,
+      price: plan.price.toString(),
+      interval: plan.interval,
+      description: plan.description,
+      features: plan.features.length ? plan.features : [''],
+      employeeLimit: plan.employeeLimit,
+      isPopular: plan.isPopular,
+      icon: plan.icon || 'Zap',
+      color: plan.color || 'blue'
+    });
+    setSelectedPlanId(plan._id);
+    setIsEditing(true);
+    setShowModal(true);
+  };
+
+  const handleDeletePlan = async (id) => {
+    if (window.confirm('Are you sure you want to delete this subscription plan? This action cannot be undone.')) {
+      try {
+        await superadminService.deleteSubscription(id);
+        fetchData();
+      } catch (error) {
+        console.error('Error deleting plan:', error);
+        alert('Failed to delete plan: ' + error.message);
+      }
+    }
+  };
+
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setIsEditing(false);
+    setSelectedPlanId(null);
+    setSubFormData({
+      name: '',
+      price: '',
+      interval: 'month',
+      description: '',
+      features: [''],
+      employeeLimit: 50,
+      isPopular: false,
+      icon: 'Zap',
+      color: 'blue'
+    });
+  };
+
+  const addFeature = () => {
+    setSubFormData({ ...subFormData, features: [...subFormData.features, ''] });
+  };
+
+  const updateFeature = (index, value) => {
+    const newFeatures = [...subFormData.features];
+    newFeatures[index] = value;
+    setSubFormData({ ...subFormData, features: newFeatures });
+  };
+
+  const removeFeature = (index) => {
+    const newFeatures = subFormData.features.filter((_, i) => i !== index);
+    setSubFormData({ ...subFormData, features: newFeatures.length ? newFeatures : [''] });
   };
 
   return (
@@ -81,7 +187,11 @@ const Subscriptions = () => {
           <h1 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">Subscription Plans</h1>
           <p className="text-gray-500 dark:text-gray-400 mt-1 font-medium">Manage platform pricing, feature limits, and subscription tiers.</p>
         </div>
-        <Button variant="primary" className="rounded-2xl py-3 px-6 shadow-xl shadow-indigo-100 dark:shadow-none flex items-center gap-2">
+        <Button
+          variant="primary"
+          onClick={() => setShowModal(true)}
+          className="rounded-2xl py-3 px-6 shadow-xl shadow-indigo-100 dark:shadow-none flex items-center gap-2"
+        >
           <Plus size={18} />
           <span className="font-bold">Create New Plan</span>
         </Button>
@@ -93,8 +203,8 @@ const Subscriptions = () => {
         {plans.map((plan) => (
           <div
             key={plan._id}
-            className={`relative bg-white dark:bg-gray-900 rounded-[2.5rem] border-2 ${plan.isPopular ? 'border-indigo-500 shadow-2xl shadow-indigo-100 dark:shadow-none' : 'border-gray-100 dark:border-gray-800'
-              } p-8 transition-all duration-300 hover:translate-y-[-4px] group`}
+            className={`relative bg-white dark:bg-gray-900 rounded-[2.5rem] border-2 transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl hover:shadow-indigo-800/10 ${plan.isPopular ? 'border-indigo-900' : 'border-gray-100 dark:border-gray-800 hover:border-indigo-900 dark:hover:border-indigo-900'
+              } p-8 group`}
           >
             {plan.isPopular && (
               <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-indigo-500 text-white px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg">
@@ -103,17 +213,23 @@ const Subscriptions = () => {
             )}
 
             <div className="flex justify-between items-start mb-6">
-              <div className={`p-4 rounded-2xl bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400`}>
+              <div className={`p-4 rounded-2xl bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3`}>
                 {(() => {
                   const IconComp = iconMap[plan.icon] || Zap;
                   return <IconComp size={24} />;
                 })()}
               </div>
               <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button className="p-2 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-xl text-gray-400 hover:text-indigo-600 transition-colors">
-                  <Edit2 size={16} />
+                <button
+                  onClick={() => handleEditClick(plan)}
+                  className="p-2 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-xl text-gray-400 hover:text-indigo-600 transition-colors"
+                >
+                  {/* <Edit2 size={16} /> */}
                 </button>
-                <button className="p-2 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl text-gray-400 hover:text-red-600 transition-colors">
+                <button
+                  onClick={() => handleDeletePlan(plan._id)}
+                  className="p-2 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl text-gray-400 hover:text-red-600 transition-colors"
+                >
                   <Trash2 size={16} />
                 </button>
               </div>
@@ -142,6 +258,7 @@ const Subscriptions = () => {
 
             <Button
               variant={plan.isPopular ? 'primary' : 'outline'}
+              onClick={() => handleEditClick(plan)}
               className="w-full py-4 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 group/btn"
             >
               Manage Tier
@@ -150,6 +267,143 @@ const Subscriptions = () => {
           </div>
         ))}
       </div>
+
+      {/* Create Plan Modal */}
+      {showModal && (
+        <div className="fixed inset-0 z-[300] flex items-center justify-center p-4">
+          <div
+            className="fixed inset-0 bg-gray-950/60 backdrop-blur-xl animate-in fade-in duration-500"
+            onClick={handleCloseModal}
+          />
+          <div className="relative bg-white dark:bg-gray-900 w-full max-w-2xl rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-gray-100 dark:border-gray-800">
+            <form onSubmit={handleSubmitPlan}>
+              <div className="p-8 border-b border-gray-50 dark:border-gray-800 flex justify-between items-center bg-gray-50/50 dark:bg-gray-800/50">
+                <div>
+                  <h2 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">
+                    {isEditing ? 'Update Plan' : 'New Subscription Tier'}
+                  </h2>
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">
+                    {isEditing ? `Modifying ${subFormData.name} parameters` : 'Define platform features and pricing'}
+                  </p>
+                </div>
+                <button type="button" onClick={handleCloseModal} className="p-3 hover:bg-white dark:hover:bg-gray-800 rounded-2xl text-gray-400 transition-colors shadow-sm">
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className="p-8 space-y-6 max-h-[60vh] overflow-y-auto">
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Plan Name</label>
+                    <input
+                      required
+                      value={subFormData.name}
+                      onChange={(e) => setSubFormData({ ...subFormData, name: e.target.value })}
+                      placeholder="e.g. Professional"
+                      className="w-full px-4 py-4 bg-gray-50 dark:bg-gray-800/50 border-none rounded-2xl text-sm font-bold outline-none ring-offset-white dark:ring-offset-gray-900 focus:ring-2 focus:ring-indigo-500/20"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Price (USD)</label>
+                    <div className="relative">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold">$</span>
+                      <input
+                        required
+                        value={subFormData.price}
+                        onChange={(e) => setSubFormData({ ...subFormData, price: e.target.value })}
+                        placeholder="49"
+                        className="w-full pl-8 pr-4 py-4 bg-gray-50 dark:bg-gray-800/50 border-none rounded-2xl text-sm font-bold outline-none ring-offset-white dark:ring-offset-gray-900 focus:ring-2 focus:ring-indigo-500/20"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Billing Interval</label>
+                    <select
+                      value={subFormData.interval}
+                      onChange={(e) => setSubFormData({ ...subFormData, interval: e.target.value })}
+                      className="w-full px-4 py-4 bg-gray-50 dark:bg-gray-800/50 border-none rounded-2xl text-sm font-bold outline-none appearance-none cursor-pointer ring-offset-white dark:ring-offset-gray-900 focus:ring-2 focus:ring-indigo-500/20"
+                    >
+                      <option value="month">Per Month</option>
+                      <option value="year">Per Year</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">User Limit</label>
+                    <input
+                      required
+                      type="number"
+                      value={subFormData.employeeLimit}
+                      onChange={(e) => setSubFormData({ ...subFormData, employeeLimit: parseInt(e.target.value) })}
+                      placeholder="50"
+                      className="w-full px-4 py-4 bg-gray-50 dark:bg-gray-800/50 border-none rounded-2xl text-sm font-bold outline-none ring-offset-white dark:ring-offset-gray-900 focus:ring-2 focus:ring-indigo-500/20"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Short Description</label>
+                  <textarea
+                    required
+                    rows="2"
+                    value={subFormData.description}
+                    onChange={(e) => setSubFormData({ ...subFormData, description: e.target.value })}
+                    placeholder="Perfect for growing teams..."
+                    className="w-full px-4 py-4 bg-gray-50 dark:bg-gray-800/50 border-none rounded-2xl text-sm font-bold outline-none ring-offset-white dark:ring-offset-gray-900 focus:ring-2 focus:ring-indigo-500/20 resize-none"
+                  />
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Key Features</label>
+                    <button type="button" onClick={addFeature} className="text-[10px] font-black text-indigo-600 uppercase tracking-widest hover:text-indigo-700">Add Feature</button>
+                  </div>
+                  <div className="space-y-2">
+                    {subFormData.features.map((feature, index) => (
+                      <div key={index} className="flex gap-2">
+                        <input
+                          value={feature}
+                          onChange={(e) => updateFeature(index, e.target.value)}
+                          placeholder={`Feature #${index + 1}`}
+                          className="flex-1 px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border-none rounded-xl text-xs font-bold outline-none"
+                        />
+                        <button type="button" onClick={() => removeFeature(index)} className="p-3 bg-gray-50 dark:bg-gray-800/50 text-gray-400 hover:text-rose-500 rounded-xl">
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-6 p-4 bg-indigo-50/30 dark:bg-indigo-500/5 rounded-2xl border border-indigo-50 dark:border-indigo-500/10">
+                  <div className="flex-1">
+                    <p className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-wider">Highlight as Popular</p>
+                    <p className="text-[10px] font-bold text-gray-400 mt-0.5">Will display a badge and highlight the card</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSubFormData({ ...subFormData, isPopular: !subFormData.isPopular })}
+                    className={`w-12 h-6 rounded-full transition-colors relative ${subFormData.isPopular ? 'bg-indigo-600' : 'bg-gray-200 dark:bg-gray-700'}`}
+                  >
+                    <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${subFormData.isPopular ? 'left-7' : 'left-1'}`} />
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-8 bg-gray-50/50 dark:bg-gray-800/20 flex gap-3 border-t border-gray-50 dark:border-gray-800">
+                <Button type="button" onClick={handleCloseModal} variant="outline" className="flex-1 py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest border-gray-200">
+                  Cancel
+                </Button>
+                <Button disabled={isCreating} variant="primary" className="flex-1 py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl shadow-indigo-100 dark:shadow-none">
+                  {isCreating ? 'Processing...' : (isEditing ? 'Save Changes' : 'Launch Tier')}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
 
     </div>
