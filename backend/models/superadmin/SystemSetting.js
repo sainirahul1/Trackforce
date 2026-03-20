@@ -35,14 +35,6 @@ const systemSettingSchema = new mongoose.Schema({
         default: 'inactive'
       }
     }
-  },
-  securityPolicies: {
-    passwordComplexity: {
-      uppercase: { type: Boolean, default: true },
-      symbols: { type: Boolean, default: true },
-      minLength: { type: Number, default: 8 },
-      numbers: { type: Boolean, default: true }
-    }
   }
 }, { timestamps: true, collection: 'superadmin.settings' });
 

@@ -83,6 +83,10 @@ const superadminService = {
   updateSettings: async (settingsData) => {
     const response = await axios.put(`${API_URL}/settings`, settingsData, { headers: getAuthHeader() });
     return response.data;
+  },
+  getDatabaseAnalytics: async () => {
+    const response = await axios.get(`${API_URL}/settings/analytics`, { headers: getAuthHeader() });
+    return response.data;
   }
 };
 
