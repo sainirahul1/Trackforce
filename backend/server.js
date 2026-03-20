@@ -30,6 +30,7 @@ app.use('/api/superadmin/subscriptions', require('./routes/superadmin/subscripti
 app.use('/api/superadmin/analytics', require('./routes/superadmin/analyticsRoutes'));
 app.use('/api/superadmin/notifications', require('./routes/superadmin/notificationRoutes'));
 app.use('/api/superadmin/settings', require('./routes/superadmin/settingsRoutes'));
+app.use('/api/superadmin/manage', require('./routes/superadmin/roleManagementRoutes'));
 
 // Database Connection — start server only after DB is ready
 const PORT = process.env.PORT || 5001;
