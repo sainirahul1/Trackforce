@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  CreditCard, 
-  Check, 
-  Plus, 
-  Edit2, 
-  Trash2, 
-  Zap, 
-  Shield, 
+import {
+  CreditCard,
+  Check,
+  Plus,
+  Edit2,
+  Trash2,
+  Zap,
+  Shield,
   Crown,
   Users,
   Settings,
-  ArrowRight
+  ArrowRight,
+  Building2
 } from 'lucide-react';
 import Button from '../../components/Button';
 import superadminService from '../../services/superadminService';
@@ -39,6 +40,7 @@ const Subscriptions = () => {
       setPlans(plansData);
       setStats({
         mrr: `$${statsData.totalMRR.toLocaleString()}`,
+        totalTenants: statsData.totalTenants.toString(),
         activeSubscribers: statsData.totalTenants.toString(),
         retention: '98.5%' // Mocked for now
       });
@@ -51,6 +53,28 @@ const Subscriptions = () => {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
+      {/* Stats Summary */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {[
+          { label: 'Total MRR', value: stats.mrr, change: '+12%', icon: CreditCard, color: 'blue' },
+          { label: 'Total Tenants', value: stats.totalTenants, icon: Building2, color: 'indigo' },
+          { label: 'Active Subs', value: stats.activeSubscribers, icon: Users, color: 'purple' },
+          { label: 'Avg. Retention', value: stats.retention, change: '+0.4%', icon: Settings, color: 'emerald' },
+        ].map((stat, i) => (
+          <div key={i} className="bg-white dark:bg-gray-900 p-5 rounded-[2rem] border border-gray-100 dark:border-gray-800 shadow-sm flex items-center gap-5 transition-transform hover:-translate-y-1">
+            <div className={`p-4 rounded-2xl bg-${stat.color}-50 dark:bg-${stat.color}-500/10 text-${stat.color}-600 dark:text-${stat.color}-400 flex-shrink-0`}>
+              <stat.icon size={24} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex justify-between items-center mb-1.5">
+                <p className="text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest truncate">{stat.label}</p>
+                {stat.change && <span className="text-emerald-600 dark:text-emerald-400 text-[10px] font-black px-1.5 py-0.5 bg-emerald-50 dark:bg-emerald-500/10 rounded border border-emerald-100 dark:border-emerald-800">{stat.change}</span>}
+              </div>
+              <h3 className="text-2xl font-black text-gray-900 dark:text-white leading-none">{stat.value}</h3>
+            </div>
+          </div>
+        ))}
+      </div>
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -63,14 +87,14 @@ const Subscriptions = () => {
         </Button>
       </div>
 
+
       {/* Plan Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {plans.map((plan) => (
-          <div 
+          <div
             key={plan._id}
-            className={`relative bg-white dark:bg-gray-900 rounded-[2.5rem] border-2 ${
-              plan.isPopular ? 'border-indigo-500 shadow-2xl shadow-indigo-100 dark:shadow-none' : 'border-gray-100 dark:border-gray-800'
-            } p-8 transition-all duration-300 hover:translate-y-[-4px] group`}
+            className={`relative bg-white dark:bg-gray-900 rounded-[2.5rem] border-2 ${plan.isPopular ? 'border-indigo-500 shadow-2xl shadow-indigo-100 dark:shadow-none' : 'border-gray-100 dark:border-gray-800'
+              } p-8 transition-all duration-300 hover:translate-y-[-4px] group`}
           >
             {plan.isPopular && (
               <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-indigo-500 text-white px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg">
@@ -116,8 +140,8 @@ const Subscriptions = () => {
               ))}
             </div>
 
-            <Button 
-              variant={plan.isPopular ? 'primary' : 'outline'} 
+            <Button
+              variant={plan.isPopular ? 'primary' : 'outline'}
               className="w-full py-4 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 group/btn"
             >
               Manage Tier
@@ -127,25 +151,7 @@ const Subscriptions = () => {
         ))}
       </div>
 
-      {/* Stats Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {[
-          { label: 'Total MRR', value: stats.mrr, change: '+12%', icon: CreditCard, color: 'blue' },
-          { label: 'Active Subscriptions', value: stats.activeSubscribers, icon: Users, color: 'indigo' },
-          { label: 'Avg. Retention', value: stats.retention, change: '+0.4%', icon: Settings, color: 'emerald' },
-        ].map((stat, i) => (
-          <div key={i} className="bg-white dark:bg-gray-900 p-6 rounded-[2rem] border border-gray-100 dark:border-gray-800 shadow-sm">
-            <div className="flex justify-between items-start mb-4">
-              <div className={`p-3 rounded-2xl bg-${stat.color}-50 dark:bg-${stat.color}-500/10 text-${stat.color}-600 dark:text-${stat.color}-400`}>
-                <stat.icon size={20} />
-              </div>
-              {stat.change && <span className="text-emerald-500 text-xs font-black">{stat.change}</span>}
-            </div>
-            <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-1">{stat.label}</p>
-            <h3 className="text-2xl font-black text-gray-900 dark:text-white">{stat.value}</h3>
-          </div>
-        ))}
-      </div>
+
     </div>
   );
 };
