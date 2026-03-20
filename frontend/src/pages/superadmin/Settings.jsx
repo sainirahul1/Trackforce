@@ -97,7 +97,7 @@ const Settings = () => {
     const newValue = !currentValue;
     const newSettings = { ...settings, [key]: newValue };
     setSettings(newSettings);
-    
+
     setSaving(true);
     try {
       await superadminService.updateSettings(newSettings);
@@ -173,8 +173,8 @@ const Settings = () => {
               key={section.id}
               onClick={() => setActiveSection(section.id)}
               className={`flex items-center gap-3 px-6 py-3.5 rounded-[1.5rem] font-black text-sm transition-all duration-300 ${activeSection === section.id
-                  ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-100 dark:shadow-none scale-[1.02]'
-                  : 'text-gray-400 hover:bg-white dark:hover:bg-gray-900 hover:text-gray-900 dark:hover:text-white'
+                ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-100 dark:shadow-none scale-[1.02]'
+                : 'text-gray-400 hover:bg-white dark:hover:bg-gray-900 hover:text-gray-900 dark:hover:text-white'
                 }`}
             >
               <section.icon size={18} />
@@ -234,13 +234,8 @@ const Settings = () => {
                           <p className="text-xs text-gray-400 font-medium mt-0.5">Disables access for all non-admin users across the platform.</p>
                         </div>
                       </div>
-<<<<<<< HEAD
-                      <div 
-                        onClick={() => updateToggle('maintenanceMode', settings.maintenanceMode)}
-=======
                       <div
-                        onClick={() => setSettings({ ...settings, maintenanceMode: !settings.maintenanceMode })}
->>>>>>> feature/Global-Platform-Settings
+                        onClick={() => updateToggle('maintenanceMode', settings.maintenanceMode)}
                         className={`relative w-12 h-6 rounded-full cursor-pointer transition-colors p-1 ${settings.maintenanceMode ? 'bg-indigo-600' : 'bg-gray-200 dark:bg-gray-700'}`}
                       >
                         <div className={`w-4 h-4 bg-white rounded-full transition-transform ${settings.maintenanceMode ? 'translate-x-6' : 'translate-x-0'}`}></div>
@@ -257,13 +252,8 @@ const Settings = () => {
                           <p className="text-xs text-gray-400 font-medium mt-0.5">Allows platform to send welcome emails and daily reports automatically.</p>
                         </div>
                       </div>
-<<<<<<< HEAD
-                      <div 
-                        onClick={() => updateToggle('globalNotifications', settings.globalNotifications)}
-=======
                       <div
-                        onClick={() => setSettings({ ...settings, globalNotifications: !settings.globalNotifications })}
->>>>>>> feature/Global-Platform-Settings
+                        onClick={() => updateToggle('globalNotifications', settings.globalNotifications)}
                         className={`relative w-12 h-6 rounded-full cursor-pointer transition-colors p-1 ${settings.globalNotifications ? 'bg-emerald-500' : 'bg-gray-200 dark:bg-gray-700'}`}
                       >
                         <div className={`w-4 h-4 bg-white rounded-full transition-transform ${settings.globalNotifications ? 'translate-x-6' : 'translate-x-0'}`}></div>
