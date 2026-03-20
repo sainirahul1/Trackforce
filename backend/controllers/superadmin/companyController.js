@@ -86,8 +86,26 @@ exports.updateTenantStatus = async (req, res) => {
 // @route   PUT /api/superadmin/companies/:id
 // @access  Private/SuperAdmin
 exports.updateTenant = async (req, res) => {
+  const { name, domain, industry, plan } = req.body;
+  
   try {
-    const tenant = await Tenant.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const updateData = { name, domain, industry };
+    
+    if (plan) {
+      const planLimits = { basic: 10, premium: 50, enterprise: 1000 };
+      const normalizedPlan = plan.toLowerCase();
+      updateData.subscription = {
+        plan: normalizedPlan,
+        employeeLimit: planLimits[normalizedPlan] || 50
+      };
+    }
+
+    const tenant = await Tenant.findByIdAndUpdate(
+      req.params.id, 
+      { $set: updateData }, 
+      { new: true }
+    );
+    
     if (!tenant) return res.status(404).json({ message: 'Tenant not found' });
     res.json(tenant);
   } catch (error) {

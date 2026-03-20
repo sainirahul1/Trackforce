@@ -3,6 +3,8 @@ import { Outlet, Navigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import Navbar from '../components/Navbar';
 import HelpCenter from '../components/HelpCenter';
+import SuspendedOverlay from '../components/SuspendedOverlay';
+import * as authService from '../services/authService';
 
 const DashboardLayout = ({ allowedRole }) => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = React.useState(false);
@@ -16,12 +18,31 @@ const DashboardLayout = ({ allowedRole }) => {
     console.error("Failed to parse user from localStorage", e);
   }
 
+  const [localUser, setLocalUser] = React.useState(storedUser);
+
+  React.useEffect(() => {
+    const fetchStatus = async () => {
+      try {
+        const freshUser = await authService.getMe();
+        setLocalUser(freshUser);
+      } catch (e) {
+        console.error("Failed to fetch user status", e);
+      }
+    };
+    if (storedRole && storedRole !== 'superadmin') {
+      fetchStatus();
+    }
+  }, [storedRole]);
+
   if (!storedRole || (allowedRole && storedRole !== allowedRole)) {
     return <Navigate to="/login" replace />;
   }
 
+  const isSuspended = localUser.tenantStatus === 'suspended';
+
   return (
-    <div className="min-h-screen bg-gray-50/50 dark:bg-gray-950 flex transition-colors duration-300">
+    <div className="min-h-screen bg-gray-50/50 dark:bg-gray-950 flex transition-colors duration-300 relative">
+      {isSuspended && <SuspendedOverlay />}
       <div className="print:hidden">
         <Sidebar 
           role={storedRole} 

@@ -54,6 +54,23 @@ export const register = async (userData) => {
   return data;
 };
 
+export const getMe = async () => {
+  const response = await fetch(`${API_URL}/me`, {
+    headers: {
+      ...getAuthHeader(),
+    },
+  });
+
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.message);
+  
+  // Update local storage with fresh status
+  const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+  localStorage.setItem('user', JSON.stringify({ ...storedUser, ...data }));
+  
+  return data;
+};
+
 export const getAuthHeader = () => {
   const token = localStorage.getItem('token');
   return token ? { Authorization: `Bearer ${token}` } : {};

@@ -40,6 +40,7 @@ exports.register = async (req, res) => {
     });
 
     if (user) {
+      const populatedUser = await User.findById(user._id).populate('tenant');
       res.status(201).json({
         _id: user._id,
         name: user.name,
@@ -47,6 +48,7 @@ exports.register = async (req, res) => {
         company: user.company,
         role: user.role,
         tenant: user.tenant,
+        tenantStatus: populatedUser.tenant?.onboardingStatus || 'active',
         token: generateToken(user._id),
       });
     } else {
@@ -57,7 +59,27 @@ exports.register = async (req, res) => {
   }
 };
 
-// @desc    Auth user & get token
+// @desc    Get current user profile
+// @route   GET /api/auth/me
+// @access  Private
+exports.getMe = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).populate('tenant');
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    
+    res.json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      company: user.company,
+      role: user.role,
+      tenant: user.tenant?._id,
+      tenantStatus: user.tenant?.onboardingStatus || 'active',
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 // @route   POST /api/auth/login
 // @access  Public
 exports.login = async (req, res) => {
@@ -67,6 +89,7 @@ exports.login = async (req, res) => {
     const user = await User.findOne({ email });
 
     if (user && (await user.matchPassword(password))) {
+      const populatedUser = await User.findById(user._id).populate('tenant');
       res.json({
         _id: user._id,
         name: user.name,
@@ -74,6 +97,7 @@ exports.login = async (req, res) => {
         company: user.company,
         role: user.role,
         tenant: user.tenant,
+        tenantStatus: populatedUser.tenant?.onboardingStatus || 'active',
         token: generateToken(user._id),
       });
     } else {

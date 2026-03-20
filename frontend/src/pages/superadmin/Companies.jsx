@@ -28,6 +28,7 @@ import {
   const [showModal, setShowModal] = useState(false);
   const [isProvisioning, setIsProvisioning] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [editingTenant, setEditingTenant] = useState(null);
 
   // Search & Filter State
   const [searchQuery, setSearchQuery] = useState('');
@@ -139,12 +140,17 @@ import {
     e.preventDefault();
     setIsProvisioning(true);
     try {
-      await superadminService.provisionTenant(formData);
+      if (editingTenant) {
+        await superadminService.updateCompany(editingTenant._id, formData);
+      } else {
+        await superadminService.provisionTenant(formData);
+      }
       setSuccess(true);
       fetchCompanies();
       setTimeout(() => {
         setSuccess(false);
         setShowModal(false);
+        setEditingTenant(null);
         setFormData({ name: '', domain: '', adminEmail: '', password: '', plan: 'Premium', industry: '' });
       }, 2000);
     } catch (error) {
@@ -209,60 +215,74 @@ import {
     {
       header: 'Actions',
       accessor: 'id',
-      render: (row) => (
-        <div className="flex items-center space-x-3 relative">
-          <button 
-            onClick={(e) => { e.stopPropagation(); navigate('/superadmin/analytics'); }}
-            className="p-2 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-xl text-gray-400 hover:text-indigo-600 transition-all"
-            title="Analytics"
-          >
-            <PieChart size={18} />
-          </button>
-          <button 
-            onClick={(e) => { e.stopPropagation(); setSelectedTenant(row); }}
-            className="px-4 py-2 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-200 text-xs font-bold rounded-xl transition-all"
-          >
-            Manage
-          </button>
-          <div className="relative">
+      render: (row, ri) => {
+        const isLastRow = ri >= filteredCompanies.length - 2 && filteredCompanies.length > 2;
+        return (
+          <div className="flex items-center space-x-3 relative">
             <button 
-              onClick={(e) => { e.stopPropagation(); setActiveMenuId(activeMenuId === row._id ? null : row._id); }}
-              className={`p-2 rounded-xl transition-all ${activeMenuId === row._id ? 'bg-rose-50 dark:bg-rose-500/10 text-rose-600' : 'text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
+              onClick={(e) => { e.stopPropagation(); navigate('/superadmin/analytics'); }}
+              className="p-2 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-xl text-gray-400 hover:text-indigo-600 transition-all"
+              title="Analytics"
             >
-              <MoreVertical size={18} />
+              <PieChart size={18} />
             </button>
-            
-            {activeMenuId === row._id && (
-              <>
-                <div 
-                  className="fixed inset-0 z-40" 
-                  onClick={() => setActiveMenuId(null)}
-                ></div>
-                <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-800 py-2 z-50 animate-in fade-in zoom-in duration-200">
-                  {[
-                    { label: 'Edit Details', icon: RotateCcw, color: 'indigo', onClick: (row) => setSelectedTenant(row) },
-                    { label: 'Suspend Tenant', icon: X, color: 'amber', onClick: (row) => handleSuspend(row._id) },
-                    { label: 'Delete Record', icon: X, color: 'rose', onClick: (row) => handleDelete(row._id) },
-                  ].map((action, i) => (
-                    <button 
-                      key={i}
-                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 text-left transition-colors group"
-                      onClick={(e) => { 
-                        e.stopPropagation(); 
-                        action.onClick(row);
-                        setActiveMenuId(null); 
-                      }}
-                    >
-                      <action.icon size={16} className={`text-gray-400 group-hover:text-${action.color}-500`} />
-                      <span className="text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-widest">{action.label}</span>
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
+            <button 
+              onClick={(e) => { e.stopPropagation(); setSelectedTenant(row); }}
+              className="px-4 py-2 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-200 text-xs font-bold rounded-xl transition-all"
+            >
+              Manage
+            </button>
+            <div className="relative">
+              <button 
+                onClick={(e) => { e.stopPropagation(); setActiveMenuId(activeMenuId === row._id ? null : row._id); }}
+                className={`p-2 rounded-xl transition-all ${activeMenuId === row._id ? 'bg-rose-50 dark:bg-rose-500/10 text-rose-600' : 'text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
+              >
+                <MoreVertical size={18} />
+              </button>
+              
+              {activeMenuId === row._id && (
+                <>
+                  <div 
+                    className="fixed inset-0 z-40" 
+                    onClick={() => setActiveMenuId(null)}
+                  ></div>
+                  <div className={`absolute right-0 ${isLastRow ? 'bottom-full mb-2' : 'top-full mt-2'} w-48 bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-800 py-2 z-50 animate-in fade-in zoom-in duration-200`}>
+                    {[
+                      { label: 'Edit Details', icon: RotateCcw, color: 'indigo', onClick: (row) => {
+                        setEditingTenant(row);
+                        setFormData({
+                          name: row.name,
+                          domain: row.domain || '',
+                          adminEmail: row.adminEmail || '',
+                          password: '',
+                          plan: row.subscription?.plan || 'Premium',
+                          industry: row.industry || ''
+                        });
+                        setShowModal(true);
+                      } },
+                      { label: row.onboardingStatus === 'suspended' ? 'Unsuspend Tenant' : 'Suspend Tenant', icon: row.onboardingStatus === 'suspended' ? CheckCircle2 : X, color: row.onboardingStatus === 'suspended' ? 'emerald' : 'amber', onClick: (row) => handleSuspend(row._id) },
+                      { label: 'Delete Record', icon: X, color: 'rose', onClick: (row) => handleDelete(row._id) },
+                    ].map((action, i) => (
+                      <button 
+                        key={i}
+                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 text-left transition-colors group"
+                        onClick={(e) => { 
+                          e.stopPropagation(); 
+                          action.onClick(row);
+                          setActiveMenuId(null); 
+                        }}
+                      >
+                        <action.icon size={16} className={`text-gray-400 group-hover:text-${action.color}-500`} />
+                        <span className="text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-widest">{action.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
           </div>
-        </div>
-      ),
+        );
+      },
     },
   ];
 
@@ -299,10 +319,10 @@ import {
               <form onSubmit={handleProvision}>
                 <div className="p-8 border-b border-gray-50 dark:border-gray-800 flex justify-between items-center bg-gray-50/50 dark:bg-gray-800/20">
                   <div>
-                    <h3 className="text-xl font-black text-gray-900 dark:text-white">New Organization</h3>
-                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-0.5">SaaS Onboarding Workflow</p>
+                    <h3 className="text-xl font-black text-gray-900 dark:text-white">{editingTenant ? 'Update Organization' : 'New Organization'}</h3>
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-0.5">{editingTenant ? 'Infrastructure Update' : 'SaaS Onboarding Workflow'}</p>
                   </div>
-                  <button type="button" onClick={() => setShowModal(false)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl text-gray-400 transition-colors">
+                  <button type="button" onClick={() => { setShowModal(false); setEditingTenant(null); }} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl text-gray-400 transition-colors">
                     <X size={20} />
                   </button>
                 </div>
@@ -376,12 +396,12 @@ import {
                       <div className="relative">
                         <ShieldCheck className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
                         <input
-                          required
+                          required={!editingTenant}
                           type="password"
                           value={formData.password}
                           onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                          placeholder="Min 6 characters"
-                          minLength={6}
+                          placeholder={editingTenant ? "Leave empty to keep current" : "Min 6 characters"}
+                          minLength={editingTenant ? 0 : 6}
                           className="w-full pl-12 pr-4 py-4 bg-gray-50 dark:bg-gray-800/50 border-none rounded-2xl text-sm font-bold outline-none"
                         />
                       </div>
@@ -410,11 +430,11 @@ import {
                 </div>
 
                 <div className="p-8 bg-gray-50/50 dark:bg-gray-800/20 flex gap-3 border-t border-gray-50 dark:border-gray-800">
-                  <Button type="button" onClick={() => setShowModal(false)} variant="outline" className="flex-1 py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest border-gray-200">
+                  <Button type="button" onClick={() => { setShowModal(false); setEditingTenant(null); }} variant="outline" className="flex-1 py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest border-gray-200">
                     Cancel
                   </Button>
                   <Button disabled={isProvisioning} variant="primary" className="flex-1 py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl shadow-indigo-100 dark:shadow-none">
-                    {isProvisioning ? 'Working...' : 'Add Now'}
+                    {isProvisioning ? 'Working...' : (editingTenant ? 'Save Changes' : 'Add Now')}
                   </Button>
                 </div>
               </form>

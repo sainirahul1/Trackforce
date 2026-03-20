@@ -20,7 +20,7 @@ const DataTable = ({ columns, data, isLoading = false, onRowClick }) => {
               onClick={() => onRowClick && onRowClick(r)}
             >
               {columns.map((c, ci) => (
-                <td key={ci} className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300 font-medium">{c.render ? c.render(r) : r[c.accessor]}</td>
+                <td key={ci} className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300 font-medium">{c.render ? c.render(r, ri) : r[c.accessor]}</td>
               ))}
             </tr>
           )) : <tr><td colSpan={columns.length} className="px-6 py-12 text-center text-sm font-bold text-gray-300 dark:text-gray-500">No records found</td></tr>}
