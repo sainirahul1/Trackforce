@@ -9,15 +9,33 @@ exports.getAllTenants = async (req, res) => {
   try {
     const tenants = await Tenant.find().sort({ createdAt: -1 }).lean();
     
-    // Enrich with user counts
+    // Enrich with user and role counts
     const enrichedTenants = await Promise.all(
       tenants.map(async (tenant) => {
-        const userCount = await User.countDocuments({ tenant: tenant._id });
-        return { ...tenant, userCount };
+        const [userCount, managerCount, employeeCount] = await Promise.all([
+          User.countDocuments({ tenant: tenant._id }),
+          User.countDocuments({ tenant: tenant._id, role: 'manager' }),
+          User.countDocuments({ tenant: tenant._id, role: 'employee' })
+        ]);
+        return { ...tenant, userCount, managerCount, employeeCount };
       })
     );
-    
-    res.json(enrichedTenants);
+    // Compute Global Stats from enriched tenants
+    const totalOrganizations = enrichedTenants.length;
+    const activeOrganizations = enrichedTenants.filter(t => t.onboardingStatus === 'active').length;
+    const globalWorkforceNodes = enrichedTenants.reduce((sum, t) => sum + (t.userCount || 0), 0);
+    const avgUtilization = enrichedTenants.length ? 
+      (enrichedTenants.reduce((sum, t) => sum + ((t.userCount || 0) / (t.subscription?.employeeLimit || 50)), 0) / enrichedTenants.length * 100).toFixed(1) : '0.0';
+
+    res.json({
+      stats: {
+        totalOrganizations,
+        activeOrganizations,
+        globalWorkforceNodes,
+        avgUtilization
+      },
+      data: enrichedTenants
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

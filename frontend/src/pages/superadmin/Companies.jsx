@@ -21,9 +21,10 @@ import {
   ArrowRight
 } from 'lucide-react';
 
-  const CompaniesList = () => {
+const CompaniesList = () => {
   const navigate = useNavigate();
   const [companies, setCompanies] = useState([]);
+  const [backendStats, setBackendStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [isProvisioning, setIsProvisioning] = useState(false);
@@ -54,8 +55,9 @@ import {
 
   const fetchCompanies = async () => {
     try {
-      const data = await superadminService.getCompanies();
-      setCompanies(data);
+      const response = await superadminService.getCompanies();
+      setCompanies(response.data || []);
+      if (response.stats) setBackendStats(response.stats);
     } catch (error) {
       console.error('Error fetching companies:', error);
     } finally {
@@ -80,6 +82,31 @@ import {
       } catch (error) {
         console.error('Error deleting tenant:', error);
       }
+    }
+  };
+
+  const handlePlanChange = async (e) => {
+    const newPlan = e.target.value.toLowerCase();
+
+    // Optimistic UI Update locally on the modal
+    const planLimits = { basic: 10, premium: 50, enterprise: 1000 };
+    const newLimit = planLimits[newPlan] || 50;
+
+    setSelectedTenant({
+      ...selectedTenant,
+      subscription: {
+        ...selectedTenant.subscription,
+        plan: newPlan,
+        employeeLimit: newLimit
+      }
+    });
+
+    try {
+      await superadminService.updateCompany(selectedTenant._id, { plan: newPlan });
+      fetchCompanies(); // Background resync for the main table
+    } catch (error) {
+      console.error('Error updating plan:', error);
+      fetchCompanies(); // Revert on crash
     }
   };
 
@@ -130,10 +157,16 @@ import {
     setPlanFilter('');
   };
 
-  const stats = [
-    { label: 'Active Tenants', value: companies.filter(c => c.onboardingStatus === 'active').length.toString(), icon: Building2, color: 'text-indigo-600', bg: 'bg-indigo-50' },
-    { label: 'Global Coverage', value: '14 Countries', icon: Globe, color: 'text-blue-600', bg: 'bg-blue-50' },
-    { label: 'Compliance Rate', value: '99.2%', icon: ShieldCheck, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+  const stats = backendStats ? [
+    { label: 'Total Organizations', value: backendStats.totalOrganizations?.toString() || '0', icon: Building2, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+    { label: 'Active Organizations', value: backendStats.activeOrganizations?.toString() || '0', icon: ShieldCheck, color: 'text-blue-600', bg: 'bg-blue-50' },
+    { label: 'Global Workforce Nodes', value: backendStats.globalWorkforceNodes?.toString() || '0', icon: Users, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+    { label: 'Avg System Utilization', value: `${backendStats.avgUtilization || '0.0'}%`, icon: PieChart, color: 'text-purple-600', bg: 'bg-purple-50' },
+  ] : [
+    { label: 'Total Organizations', value: '...', icon: Building2, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+    { label: 'Active Organizations', value: '...', icon: ShieldCheck, color: 'text-blue-600', bg: 'bg-blue-50' },
+    { label: 'Global Workforce Nodes', value: '...', icon: Users, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+    { label: 'Avg System Utilization', value: '...', icon: PieChart, color: 'text-purple-600', bg: 'bg-purple-50' }
   ];
 
   const handleProvision = async (e) => {
@@ -192,21 +225,38 @@ import {
     {
       header: 'Scale',
       accessor: 'userCount',
-      render: (row) => (
-        <div className="flex flex-col">
-          <span className="text-sm font-black text-gray-900 dark:text-white italic">{row.userCount || 0}</span>
-          <span className="text-[10px] text-gray-400 font-bold uppercase tracking-tight">Active Users</span>
-        </div>
-      )
+      render: (row) => {
+        const total = row.userCount || 0;
+        const limit = row.subscription?.employeeLimit || 50;
+        const percent = Math.min((total / limit) * 100, 100);
+        const isWarning = percent > 90;
+
+        return (
+          <div className="flex flex-col w-32">
+            <div className="flex justify-between items-center mb-1.5">
+              <span className="text-xs font-black text-gray-900 dark:text-white leading-none tracking-tight">
+                {total} <span className="text-[10px] text-gray-400 font-bold">/ {limit}</span>
+              </span>
+              <span className={`text-[9px] font-black ${isWarning ? 'text-rose-500' : 'text-blue-500'}`}>{percent.toFixed(0)}%</span>
+            </div>
+            <div className="h-1.5 w-full bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all duration-500 ${isWarning ? 'bg-rose-500' : 'bg-blue-500'}`}
+                style={{ width: `${percent}%` }}
+              />
+            </div>
+          </div>
+        );
+      }
     },
     {
       header: 'Status',
       accessor: 'onboardingStatus',
       render: (row) => (
         <span className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider ${row.onboardingStatus === 'active' ? 'bg-emerald-100 text-emerald-700' :
-          row.onboardingStatus === 'pending' ? 'bg-amber-100 text-amber-700' : 
-          row.onboardingStatus === 'suspended' ? 'bg-rose-100 text-rose-700' :
-          'bg-gray-100 text-gray-700'
+          row.onboardingStatus === 'pending' ? 'bg-amber-100 text-amber-700' :
+            row.onboardingStatus === 'suspended' ? 'bg-rose-100 text-rose-700' :
+              'bg-gray-100 text-gray-700'
           }`}>
           {row.onboardingStatus}
         </span>
@@ -219,57 +269,53 @@ import {
         const isLastRow = ri >= filteredCompanies.length - 2 && filteredCompanies.length > 2;
         return (
           <div className="flex items-center space-x-3 relative">
-            <button 
+            <button
               onClick={(e) => { e.stopPropagation(); navigate('/superadmin/analytics'); }}
               className="p-2 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-xl text-gray-400 hover:text-indigo-600 transition-all"
               title="Analytics"
             >
               <PieChart size={18} />
             </button>
-            <button 
-              onClick={(e) => { e.stopPropagation(); setSelectedTenant(row); }}
-              className="px-4 py-2 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-200 text-xs font-bold rounded-xl transition-all"
-            >
-              Manage
-            </button>
             <div className="relative">
-              <button 
+              <button
                 onClick={(e) => { e.stopPropagation(); setActiveMenuId(activeMenuId === row._id ? null : row._id); }}
                 className={`p-2 rounded-xl transition-all ${activeMenuId === row._id ? 'bg-rose-50 dark:bg-rose-500/10 text-rose-600' : 'text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
               >
                 <MoreVertical size={18} />
               </button>
-              
+
               {activeMenuId === row._id && (
                 <>
-                  <div 
-                    className="fixed inset-0 z-40" 
+                  <div
+                    className="fixed inset-0 z-40"
                     onClick={() => setActiveMenuId(null)}
                   ></div>
                   <div className={`absolute right-0 ${isLastRow ? 'bottom-full mb-2' : 'top-full mt-2'} w-48 bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-800 py-2 z-50 animate-in fade-in zoom-in duration-200`}>
                     {[
-                      { label: 'Edit Details', icon: RotateCcw, color: 'indigo', onClick: (row) => {
-                        setEditingTenant(row);
-                        setFormData({
-                          name: row.name,
-                          domain: row.domain || '',
-                          adminEmail: row.adminEmail || '',
-                          password: '',
-                          plan: row.subscription?.plan || 'Premium',
-                          industry: row.industry || ''
-                        });
-                        setShowModal(true);
-                      } },
+                      {
+                        label: 'Edit Details', icon: RotateCcw, color: 'indigo', onClick: (row) => {
+                          setEditingTenant(row);
+                          setFormData({
+                            name: row.name,
+                            domain: row.domain || '',
+                            adminEmail: row.adminEmail || '',
+                            password: '',
+                            plan: row.subscription?.plan || 'Premium',
+                            industry: row.industry || ''
+                          });
+                          setShowModal(true);
+                        }
+                      },
                       { label: row.onboardingStatus === 'suspended' ? 'Unsuspend Tenant' : 'Suspend Tenant', icon: row.onboardingStatus === 'suspended' ? CheckCircle2 : X, color: row.onboardingStatus === 'suspended' ? 'emerald' : 'amber', onClick: (row) => handleSuspend(row._id) },
                       { label: 'Delete Record', icon: X, color: 'rose', onClick: (row) => handleDelete(row._id) },
                     ].map((action, i) => (
-                      <button 
+                      <button
                         key={i}
                         className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 text-left transition-colors group"
-                        onClick={(e) => { 
-                          e.stopPropagation(); 
+                        onClick={(e) => {
+                          e.stopPropagation();
                           action.onClick(row);
-                          setActiveMenuId(null); 
+                          setActiveMenuId(null);
                         }}
                       >
                         <action.icon size={16} className={`text-gray-400 group-hover:text-${action.color}-500`} />
@@ -305,8 +351,18 @@ import {
 
       {/* Provisioning Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-xl animate-in fade-in duration-300">
-          <div className="bg-white dark:bg-gray-900 w-full max-w-lg rounded-[3rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 border border-gray-100 dark:border-gray-800">
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 overflow-hidden">
+          <div
+            className="fixed inset-0 bg-gray-950/60 backdrop-blur-xl animate-in fade-in duration-300"
+            onClick={() => {
+              if (!isProvisioning && !success) {
+                setShowModal(false);
+                setEditingTenant(null);
+                setFormData({ name: '', domain: '', adminEmail: '', password: '', plan: 'Premium', industry: '' });
+              }
+            }}
+          ></div>
+          <div className="bg-white dark:bg-gray-900 w-full max-w-lg rounded-[3rem] shadow-2xl relative z-10 overflow-hidden animate-in zoom-in-95 duration-300 border border-gray-100 dark:border-gray-800">
             {success ? (
               <div className="p-12 text-center space-y-4">
                 <div className="w-20 h-20 bg-emerald-100 dark:bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto text-emerald-600">
@@ -444,7 +500,7 @@ import {
       )}
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
         {stats.map((stat, i) => (
           <div key={i} className="bg-white dark:bg-gray-900 p-6 rounded-[2rem] border border-gray-100 dark:border-gray-800 flex items-center space-x-5 shadow-sm">
             <div className={`p-4 rounded-2xl ${stat.bg} ${stat.color} dark:bg-opacity-10 shadow-sm border border-transparent hover:border-white/20 transition-all`}>
@@ -601,97 +657,173 @@ import {
         </div>
 
         <div className="px-4 pb-4">
-          <DataTable columns={columns} data={filteredCompanies} loading={loading} />
+          <DataTable columns={columns} data={filteredCompanies} loading={loading} onRowClick={(row) => setSelectedTenant(row)} />
         </div>
       </div>
       {/* Detailed Tenant Modal */}
       {selectedTenant && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 sm:p-6 overflow-hidden">
           <div className="fixed inset-0 bg-gray-950/60 backdrop-blur-xl animate-in fade-in duration-300" onClick={() => setSelectedTenant(null)}></div>
-          <div className="bg-white dark:bg-gray-900 w-full max-w-2xl rounded-[3.5rem] shadow-2xl relative overflow-hidden animate-in zoom-in-95 duration-300 border border-white/20 my-auto">
-            {/* Header / Banner */}
-            <div className="h-32 bg-gradient-to-r from-indigo-600 to-indigo-800 relative">
-               <div className="absolute -bottom-10 left-10 p-1.5 bg-white dark:bg-gray-900 rounded-3xl shadow-xl">
-                  <div className="w-24 h-24 rounded-[1.5rem] bg-gray-50 dark:bg-gray-800 flex items-center justify-center text-3xl font-black text-indigo-600">
-                     {selectedTenant.name.charAt(0)}
-                  </div>
-               </div>
-               <button 
-                onClick={() => setSelectedTenant(null)}
-                className="absolute top-6 right-6 p-2 bg-white/10 hover:bg-white/20 rounded-full text-white transition-all backdrop-blur-md"
-              >
-                <X size={20} />
-              </button>
-            </div>
+          <div className="bg-white dark:bg-gray-900 w-full max-w-5xl rounded-[2.5rem] shadow-2xl relative overflow-hidden animate-in zoom-in-95 duration-300 border border-white/20 flex flex-col md:flex-row h-auto max-h-[90vh]">
 
-            <div className="pt-16 pb-12 px-10">
-               <div className="flex justify-between items-start mb-10">
+            {/* Left Sidebar Pane */}
+            <div className={`md:w-1/3 relative p-8 md:p-10 flex flex-col ${selectedTenant.onboardingStatus === 'suspended'
+              ? 'bg-gradient-to-b from-[#4a4a4a] to-[#1f1f1f]'
+              : 'bg-gradient-to-b from-[#3a3a3a] to-[#0f0f0f]'
+              } text-white`}>
+              <div className="absolute inset-0 bg-gray-700 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-20"></div>
+              <div className="relative z-10 flex flex-col h-full">
+                <div className="flex justify-between items-start mb-8">
+                  <div className="w-16 h-16 rounded-[1.2rem] bg-white/10 backdrop-blur-md flex items-center justify-center text-3xl font-black text-white shadow-inner border border-white/20">
+                    {selectedTenant.name.charAt(0)}
+                  </div>
+                  <span className={`px-3 py-1 text-[9px] uppercase font-black rounded-lg backdrop-blur-md border ${selectedTenant.onboardingStatus === 'suspended' ? 'bg-white/10 text-white border-white/20' : 'bg-emerald-400/20 text-emerald-100 border-emerald-400/30'}`}>
+                    {selectedTenant.onboardingStatus}
+                  </span>
+                </div>
+
+                <h2 className="text-3xl font-black mb-1 leading-tight">{selectedTenant.name}</h2>
+                <p className="text-white/70 text-sm font-medium mb-10 flex items-center gap-2">
+                  <Globe size={14} className="opacity-80" />
+                  {selectedTenant.domain || 'No custom domain'}
+                </p>
+
+                <div className="space-y-6 mt-auto">
                   <div>
-                    <h2 className="text-3xl font-black text-gray-900 dark:text-white flex items-center gap-3">
-                      {selectedTenant.name}
-                      <span className="px-3 py-1 bg-emerald-100 text-emerald-700 text-[10px] uppercase font-black rounded-lg">Active</span>
-                    </h2>
-                    <p className="text-gray-500 font-medium mt-1 italic italic flex items-center gap-2">
-                       <Globe size={14} className="text-indigo-500" />
-                       {selectedTenant.domain} • {selectedTenant.industry}
-                    </p>
+                    <p className="text-[10px] uppercase font-black tracking-widest text-white/50 mb-1 leading-none">Entity ID</p>
+                    <p className="text-xs font-bold font-mono opacity-90 truncate">{selectedTenant._id}</p>
                   </div>
-                  <div className="text-right">
-                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">Registered Since</p>
-                    <p className="text-sm font-bold text-gray-900 dark:text-white mt-1">
-                      {new Date(selectedTenant.createdAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
-                    </p>
+                  <div>
+                    <p className="text-[10px] uppercase font-black tracking-widest text-white/50 mb-1 leading-none">Industry Cluster</p>
+                    <p className="text-sm font-bold opacity-90">{selectedTenant.industry || 'Technology'}</p>
                   </div>
-               </div>
-
-               <div className="grid grid-cols-2 gap-6 mb-10">
-                  <div className="bg-gray-50 dark:bg-gray-800/50 p-6 rounded-[2rem] border border-gray-100 dark:border-gray-800">
-                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Subscription Plan</p>
-                    <div className="flex items-center gap-4">
-                      <div className="p-3 bg-indigo-600 rounded-2xl text-white shadow-lg">
-                        <ShieldCheck size={20} />
-                      </div>
-                      <div>
-                        <h4 className="text-lg font-black text-gray-900 dark:text-white uppercase">{selectedTenant.subscription?.plan}</h4>
-                        <p className="text-xs text-indigo-600 dark:text-indigo-400 font-bold">Auto-renew active</p>
-                      </div>
-                    </div>
+                  <div>
+                    <p className="text-[10px] uppercase font-black tracking-widest text-white/50 mb-1 leading-none">Origin Date</p>
+                    <p className="text-sm font-bold opacity-90">{new Date(selectedTenant.createdAt).toLocaleDateString()}</p>
                   </div>
-
-                  <div className="bg-gray-50 dark:bg-gray-800/50 p-6 rounded-[2rem] border border-gray-100 dark:border-gray-800">
-                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Operational Scale</p>
-                    <div className="flex items-center gap-4">
-                      <div className="p-3 bg-emerald-500 rounded-2xl text-white shadow-lg">
-                        <Users size={20} />
-                      </div>
-                      <div>
-                        <h4 className="text-lg font-black text-gray-900 dark:text-white">{selectedTenant.userCount || 0}</h4>
-                        <p className="text-xs text-emerald-600 dark:text-emerald-400 font-bold">Active Licenses</p>
-                      </div>
-                    </div>
-                  </div>
-               </div>
-
-               <div className="space-y-4">
-                  <div className="flex items-center justify-between p-6 bg-gray-50 dark:bg-gray-800/30 rounded-3xl group hover:bg-white dark:hover:bg-gray-800 transition-all cursor-pointer border border-transparent hover:border-gray-100 dark:hover:border-gray-700">
-                     <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-xl bg-white dark:bg-gray-900 flex items-center justify-center text-indigo-500 shadow-sm">
-                           <Mail size={18} />
-                        </div>
-                        <div>
-                          <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Contact Primary Admin</p>
-                          <p className="text-sm font-black text-gray-900 dark:text-white italic">Click here to open terminal</p>
-                        </div>
-                     </div>
-                     <ArrowRight className="text-gray-300 group-hover:text-indigo-500 transition-colors" size={18} />
-                  </div>
-               </div>
-
-               <div className="mt-12 flex gap-4">
-                  <Button variant="primary" className="flex-1 py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-xl shadow-indigo-100 dark:shadow-none">Manage Cloud Infrastructure</Button>
-                  <Button variant="outline" className="py-4 px-8 rounded-2xl font-black uppercase tracking-widest text-[10px]">Audit Logs</Button>
-               </div>
+                </div>
+              </div>
             </div>
+
+            {/* Right Content Pane */}
+            <div className="md:w-2/3 p-8 md:p-10 flex flex-col bg-gray-50/50 dark:bg-gray-900/50 overflow-y-auto relative">
+              <button
+                onClick={() => setSelectedTenant(null)}
+                className="absolute top-8 right-8 p-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full text-gray-500 transition-all z-10"
+              >
+                <X size={18} />
+              </button>
+
+              <div className="flex-1 mt-2">
+                <div className="mb-6">
+                  <h3 className="text-lg font-black text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+                    <ShieldCheck className="text-blue-500" size={20} /> License & Capacity Metrics
+                  </h3>
+
+                  {/* Dynamic License Utilization */}
+                  <div className="bg-white dark:bg-gray-800 p-6 rounded-[1.5rem] border border-gray-100 dark:border-gray-700 shadow-sm mb-6">
+                    <div className="flex justify-between items-end mb-4">
+                      <div>
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Total Active Nodes</p>
+                        <h4 className="text-2xl font-black text-gray-900 dark:text-white">
+                          {selectedTenant.userCount || 0} <span className="text-sm text-gray-400 font-medium">/ {selectedTenant.subscription?.employeeLimit || 50} licensed</span>
+                        </h4>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs font-bold text-blue-600 dark:text-blue-400">
+                          {((selectedTenant.userCount || 0) / (selectedTenant.subscription?.employeeLimit || 50) * 100).toFixed(1)}% Bound
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Progress Bar Container */}
+                    <div className="h-2 w-full bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden flex">
+                      <div
+                        className={`h-full transition-all duration-1000 ${((selectedTenant.userCount || 0) / (selectedTenant.subscription?.employeeLimit || 50) * 100) > 90 ? 'bg-rose-500' : 'bg-blue-500'}`}
+                        style={{ width: `${Math.min(((selectedTenant.userCount || 0) / (selectedTenant.subscription?.employeeLimit || 50) * 100), 100)}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Compact 2x2 Grid */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-white dark:bg-gray-800 p-5 rounded-[1.5rem] border border-gray-100 dark:border-gray-700 shadow-sm flex items-center gap-4 hover:border-gray-200 dark:hover:border-gray-600 transition-colors">
+                      <div className="p-3 bg-blue-50 dark:bg-blue-900/30 rounded-xl text-blue-600">
+                        <Users size={18} />
+                      </div>
+                      <div>
+                        <p className="text-[10px] uppercase font-black tracking-widest text-gray-400 mb-0.5 leading-none">Management</p>
+                        <p className="text-sm font-bold text-gray-900 dark:text-white">{selectedTenant.managerCount || 0} Active Staff</p>
+                      </div>
+                    </div>
+
+                    <div className="bg-white dark:bg-gray-800 p-5 rounded-[1.5rem] border border-gray-100 dark:border-gray-700 shadow-sm flex items-center gap-4 hover:border-gray-200 dark:hover:border-gray-600 transition-colors">
+                      <div className="p-3 bg-emerald-50 dark:bg-emerald-900/30 rounded-xl text-emerald-600">
+                        <Globe size={18} />
+                      </div>
+                      <div>
+                        <p className="text-[10px] uppercase font-black tracking-widest text-gray-400 mb-0.5 leading-none">Field Force</p>
+                        <p className="text-sm font-bold text-gray-900 dark:text-white">{selectedTenant.employeeCount || 0} Ground Agents</p>
+                      </div>
+                    </div>
+
+                    <div className="bg-white dark:bg-gray-800 p-5 rounded-[1.5rem] border border-gray-100 dark:border-gray-700 shadow-sm flex items-center gap-4 hover:border-gray-200 dark:hover:border-gray-600 transition-colors">
+                      <div className="p-3 bg-purple-50 dark:bg-purple-900/30 rounded-xl text-purple-600">
+                        <ShieldCheck size={18} />
+                      </div>
+                      <div className="w-full">
+                        <p className="text-[10px] uppercase font-black tracking-widest text-gray-400 mb-0.5 leading-none">Billing Tier</p>
+                        <select
+                          value={selectedTenant.subscription?.plan || 'premium'}
+                          onChange={handlePlanChange}
+                          className="w-full bg-transparent text-sm font-bold text-gray-900 dark:text-white capitalize border-none p-0 focus:ring-0 cursor-pointer outline-none appearance-none"
+                        >
+                          <option className="text-gray-900" value="basic">Basic (10 Nodes)</option>
+                          <option className="text-gray-900" value="premium">Premium (50 Nodes)</option>
+                          <option className="text-gray-900" value="enterprise">Enterprise (1000 Nodes)</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="bg-white dark:bg-gray-800 p-5 rounded-[1.5rem] border border-gray-100 dark:border-gray-700 shadow-sm flex items-center gap-4 hover:border-gray-200 dark:hover:border-gray-600 transition-colors">
+                      <div className="p-3 bg-rose-50 dark:bg-rose-900/30 rounded-xl text-rose-600">
+                        <X size={18} />
+                      </div>
+                      <div>
+                        <p className="text-[10px] uppercase font-black tracking-widest text-gray-400 mb-0.5 leading-none">Renewal Status</p>
+                        <p className="text-sm font-bold text-gray-900 dark:text-white">{selectedTenant.subscription?.expiry ? new Date(selectedTenant.subscription.expiry).toLocaleDateString() : 'Auto-renewing'}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Functional Footer Actions */}
+              <div className="mt-6 flex justify-end gap-3 pt-6 border-t border-gray-200 dark:border-gray-800">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    handleSuspend(selectedTenant._id);
+                    setSelectedTenant({ ...selectedTenant, onboardingStatus: selectedTenant.onboardingStatus === 'suspended' ? 'active' : 'suspended' });
+                  }}
+                  className={`px-5 py-3 rounded-xl font-black flex items-center justify-center gap-2 uppercase tracking-widest text-[10px] border-gray-200 dark:border-gray-700 ${selectedTenant.onboardingStatus === 'suspended' ? 'text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20' : 'text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20'}`}
+                >
+                  {selectedTenant.onboardingStatus === 'suspended' ? <><CheckCircle2 size={16} /> Restore Operation</> : <><X size={16} /> Halt Operations</>}
+                </Button>
+
+                <Button
+                  variant="primary"
+                  onClick={() => {
+                    setSelectedTenant(null);
+                    navigate('/superadmin/analytics');
+                  }}
+                  className="px-6 py-3 rounded-xl font-black flex items-center justify-center gap-2 uppercase tracking-widest text-[10px] shadow-lg shadow-blue-200 dark:shadow-none bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  Data & Analytics <ArrowRight size={14} />
+                </Button>
+              </div>
+            </div>
+
           </div>
         </div>
       )}
