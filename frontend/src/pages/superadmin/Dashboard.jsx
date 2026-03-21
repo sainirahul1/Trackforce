@@ -26,6 +26,11 @@ const SuperAdminDashboard = () => {
 
   useEffect(() => {
     fetchDashboardData();
+    // Poll every 5 seconds for real-time data visualization
+    const interval = setInterval(() => {
+      fetchDashboardData();
+    }, 5000);
+    return () => clearInterval(interval);
   }, []);
 
   const fetchDashboardData = async () => {
@@ -53,7 +58,7 @@ const SuperAdminDashboard = () => {
     tenants: (growthData?.data || defaultData)[i] || 0,
   }));
 
-  const pieData = [
+  const pieData = statsData?.subscriptionDistribution || [
     { name: 'Basic', value: 45, color: '#6366f1' },
     { name: 'Premium', value: 35, color: '#10b981' },
     { name: 'Enterprise', value: 20, color: '#f59e0b' },
