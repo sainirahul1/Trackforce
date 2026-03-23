@@ -286,6 +286,10 @@ const ProgressCircle = ({ label, current, target, unit = '', color }) => {
 
 
 const TaskDetailOverlay = ({ task, onClose, onUpdateOperationalData, onStartTask, onFileUpload }) => {
+  // Local draft state — changes here don't hit the API until submit
+  const [localVisitStatus, setLocalVisitStatus] = React.useState(task?.visitStatus || 'Reached Client');
+  const [localMissionStatus, setLocalMissionStatus] = React.useState(task?.missionStatus || 'In Progress');
+  const [localNotes, setLocalNotes] = React.useState(task?.visitNotes || '');
   if (!task) return null;
 
   const handleOpenMaps = () => {
@@ -414,13 +418,13 @@ const TaskDetailOverlay = ({ task, onClose, onUpdateOperationalData, onStartTask
             </div>
           ) : (
             <div className="space-y-8 animate-in slide-in-from-bottom-5 duration-500">
-              {/* Dual Dropdowns */}
-              <div className={`grid grid-cols-1 ${task.visitStatus !== 'Unavailable' ? 'sm:grid-cols-2' : ''} gap-4`}>
+              {/* Dual Dropdowns — local state only, no API call on change */}
+              <div className={`grid grid-cols-1 ${localVisitStatus !== 'Unavailable' ? 'sm:grid-cols-2' : ''} gap-4`}>
                 <div className="space-y-2">
                   <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest ml-1">Visit Status</label>
                   <select
-                    value={task.visitStatus}
-                    onChange={(e) => onUpdateOperationalData(task._id || task.id, { visitStatus: e.target.value })}
+                    value={localVisitStatus}
+                    onChange={(e) => setLocalVisitStatus(e.target.value)}
                     className="w-full bg-gray-50 dark:bg-gray-800 border border-transparent dark:border-gray-700 rounded-2xl px-5 py-4 text-xs font-black uppercase tracking-widest focus:ring-2 focus:ring-indigo-500 transition-all outline-none"
                   >
                     <option>Reached Client</option>
@@ -429,12 +433,12 @@ const TaskDetailOverlay = ({ task, onClose, onUpdateOperationalData, onStartTask
                     <option>Delayed</option>
                   </select>
                 </div>
-                {task.visitStatus !== 'Unavailable' && (
+                {localVisitStatus !== 'Unavailable' && (
                   <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest ml-1">Mission Update</label>
                     <select
-                      value={task.missionStatus}
-                      onChange={(e) => onUpdateOperationalData(task._id || task.id, { missionStatus: e.target.value })}
+                      value={localMissionStatus}
+                      onChange={(e) => setLocalMissionStatus(e.target.value)}
                       className="w-full bg-gray-50 dark:bg-gray-800 border border-transparent dark:border-gray-700 rounded-2xl px-5 py-4 text-xs font-black uppercase tracking-widest focus:ring-2 focus:ring-indigo-500 transition-all outline-none"
                     >
                       <option>In Progress</option>
@@ -490,35 +494,45 @@ const TaskDetailOverlay = ({ task, onClose, onUpdateOperationalData, onStartTask
                   <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest ml-1">Visit Notes & Observations</label>
                 </div>
                 <textarea
-                  value={task.visitNotes || ''}
-                  onChange={(e) => onUpdateOperationalData(task._id || task.id, { visitNotes: e.target.value })}
+                  value={localNotes}
+                  onChange={(e) => setLocalNotes(e.target.value)}
                   placeholder="Enter any specific observations, client feedback, or issues faced during the visit..."
                   className="w-full bg-gray-50 dark:bg-gray-800 border border-transparent dark:border-gray-700 rounded-2xl px-5 py-4 text-xs font-medium focus:ring-2 focus:ring-indigo-500 transition-all outline-none resize-none h-24 shadow-inner"
                 />
               </div>
 
               <div className="pt-6 grid grid-cols-2 gap-4">
+                {/* Save & Exit: only saves notes, no terminal action */}
                 <button
-                  onClick={onClose}
+                  onClick={async () => {
+                    await onUpdateOperationalData(task._id || task.id, {
+                      visitStatus: localVisitStatus,
+                      visitNotes: localNotes,
+                    }, false /* not terminal */);
+                    onClose();
+                  }}
                   className="w-full py-4 bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-gray-200 transition-all"
                 >
                   Save & Exit
                 </button>
+                {/* Submit button: sends all buffered values and triggers visit creation */}
                 <button
                   onClick={async () => {
+                    await onUpdateOperationalData(task._id || task.id, {
+                      visitStatus: localVisitStatus,
+                      missionStatus: localMissionStatus,
+                      visitNotes: localNotes,
+                      status: localMissionStatus === 'Complete' ? 'completed' : task.status,
+                    }, true /* terminal */);
                     onClose();
-                    await onUpdateOperationalData(task._id || task.id, { 
-                      status: task.missionStatus === 'Complete' ? 'completed' : task.status, 
-                      missionStatus: task.missionStatus 
-                    });
                   }}
-                  className={`w-full py-4 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl transition-all hover:scale-[1.02] active:scale-95 ${task.missionStatus === 'Complete' 
+                  className={`w-full py-4 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl transition-all hover:scale-[1.02] active:scale-95 ${localMissionStatus === 'Complete' 
                     ? 'bg-emerald-600 shadow-emerald-100 dark:shadow-none' 
                     : 'bg-indigo-600 shadow-indigo-100 dark:shadow-none'}`}
                 >
-                  {task.missionStatus === 'Complete' 
+                  {localMissionStatus === 'Complete' 
                     ? 'Complete Mission' 
-                    : (['Follow Up', 'Rejected'].includes(task.missionStatus) 
+                    : (['Follow Up', 'Rejected'].includes(localMissionStatus) 
                       ? 'Submit & Reschedule' 
                       : 'Update & Save')}
                 </button>
@@ -1093,12 +1107,19 @@ const EmployeeTasks = () => {
     }
   };
 
-  const updateTaskOperationalData = async (taskId, data) => {
+  const updateTaskOperationalData = async (taskId, data, isTerminal = false) => {
     try {
       const updatedTask = await taskService.updateTask(taskId, data);
-      setTaskList(prev => prev.map(t => t._id === taskId ? updatedTask : t));
-      if (selectedTask && selectedTask._id === taskId) {
-        setSelectedTask(updatedTask);
+      
+      // Only remove from list when caller explicitly marks this as a terminal action
+      if (isTerminal) {
+        setTaskList(prev => prev.filter(t => t._id !== taskId));
+        setSelectedTask(null);
+      } else {
+        setTaskList(prev => prev.map(t => t._id === taskId ? updatedTask : t));
+        if (selectedTask && selectedTask._id === taskId) {
+          setSelectedTask(updatedTask);
+        }
       }
     } catch (err) {
       console.error('Failed to update task data:', err);
@@ -1572,6 +1593,30 @@ const EmployeeTasks = () => {
                     </select>
                   </div>
                 </div>
+              </div>
+
+              {/* Collapse All / Expand All */}
+              <div className="flex items-center justify-between">
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                  {filteredTasks.length} Active Missions
+                </p>
+                <button
+                  onClick={() => {
+                    const categories = ['Today', 'Yesterday', 'This Week', 'This Month'];
+                    const allCollapsed = categories.every(c => collapsedCategories[c]);
+                    if (allCollapsed) {
+                      setCollapsedCategories({});
+                    } else {
+                      setCollapsedCategories({ Today: true, Yesterday: true, 'This Week': true, 'This Month': true });
+                    }
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400 hover:text-indigo-600 hover:border-indigo-200 dark:hover:text-indigo-400 dark:hover:border-indigo-900/50 transition-all shadow-sm"
+                >
+                  {['Today', 'Yesterday', 'This Week', 'This Month'].every(c => collapsedCategories[c])
+                    ? <><ChevronDown size={12} /> Expand All</>
+                    : <><ChevronUp size={12} /> Collapse All</>
+                  }
+                </button>
               </div>
 
               <div className="space-y-6">

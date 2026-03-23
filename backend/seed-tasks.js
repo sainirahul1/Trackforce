@@ -7,72 +7,98 @@ dotenv.config({ path: path.join(__dirname, '.env') });
 const EMPLOYEE_ID = '69c0fbbe60763acca36b8dc4';
 const TENANT_ID = '69c0fbbe60763acca36b8dbe';
 
+// Helper dates
+const now = new Date();
+const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 9, 0, 0);
+const yesterday = new Date(today); yesterday.setDate(today.getDate() - 1);
+const daysFromNow = (d) => { const dt = new Date(today); dt.setDate(today.getDate() + d); return dt; };
+
+const base = { employee: EMPLOYEE_ID, tenant: TENANT_ID, isTaskStarted: false, visitStatus: 'Reached Client', missionStatus: 'Pending', status: 'pending', evidence: { storeFront: null, selfie: null, productDisplay: null, officialDoc: null } };
+
 const tasks = [
-  {
-    employee: EMPLOYEE_ID,
-    tenant: TENANT_ID,
-    title: 'Store Inventory Audit',
-    store: 'Big Bazaar Central',
-    companyName: 'Future Group Retail',
-    companyContact: 'Rajesh Kumar',
-    companyEmail: 'ops@futuregroup.in',
-    companyInsight: 'Premium Partner • 12 Months',
-    companyDescription: 'Flagship hypermarket location with high daily footfall. Focus intensely on premium product placement.',
-    address: 'MG Road, Bengaluru',
-    distance: '1.2 km',
-    distanceVal: 1.2,
-    eta: '20 mins',
-    priority: 'high',
-    status: 'pending',
-    visitStatus: 'Reached Client',
-    missionStatus: 'Pending',
-    isTaskStarted: false,
-    dueDate: 'Today, 05:00 PM',
-    type: 'Audit',
-    incentive: '₹250',
-    incentiveVal: 250,
-    difficulty: 'Medium',
-    coords: { x: 45, y: 30 },
-    evidence: { storeFront: null, selfie: null, productDisplay: null, officialDoc: null },
-    checklist: [
-      { id: 1, text: 'Verify store check-in with GPS verification', completed: false },
-      { id: 2, text: 'Upload 4 photos of main aisle displays', completed: false },
-      { id: 3, text: 'Log stock count for Tier 1 SKUs', completed: false },
-      { id: 4, text: 'Collect manager digital signature', completed: false }
-    ]
-  },
-  {
-    employee: EMPLOYEE_ID,
-    tenant: TENANT_ID,
-    title: 'Merchandise Display',
-    store: 'Reliance Fresh',
-    companyName: 'Reliance Retail Ltd',
-    companyContact: 'Anjali Sharma',
-    companyEmail: 'store.support@reliance.com',
-    companyInsight: 'Top Tier Client • High Volume',
-    companyDescription: 'Core retail partner for daily essentials. Ensure correct pricing tags and promotional banners.',
-    address: 'Indiranagar, Bengaluru',
-    distance: '3.4 km',
-    distanceVal: 3.4,
-    eta: '25 mins',
-    priority: 'medium',
-    status: 'in-progress',
-    visitStatus: 'Discussing',
-    missionStatus: 'In Progress',
-    isTaskStarted: true,
-    dueDate: 'Today, 07:00 PM',
-    type: 'Retail',
-    incentive: '₹150',
-    incentiveVal: 150,
-    difficulty: 'Hard',
-    coords: { x: 70, y: 50 },
-    evidence: { storeFront: 'mock-file.jpg', selfie: null, productDisplay: null, officialDoc: null },
-    checklist: [
-      { id: 1, text: 'Clean primary display shelf', completed: true },
-      { id: 2, text: 'Arrange promotional banners', completed: false },
-      { id: 3, text: 'Verify price tag accuracy', completed: false }
-    ]
-  }
+  // ==================== TODAY (10 tasks) ====================
+  { ...base, title: 'Store Inventory Audit', store: 'Big Bazaar Central', companyName: 'Future Group Retail', companyContact: 'Rajesh Kumar', companyEmail: 'ops@futuregroup.in', companyInsight: 'Premium Partner • 12 Months', companyDescription: 'Flagship hypermarket location with high daily footfall. Focus on premium product placement.', address: 'MG Road, Bengaluru', distance: '1.2 km', distanceVal: 1.2, eta: '20 mins', priority: 'high', dueDate: 'Today, 10:00 AM', date: today, type: 'Audit', incentive: '₹250', incentiveVal: 250, difficulty: 'Medium', coords: { x: 12.97, y: 77.59 }, checklist: [{ id: 1, text: 'Verify store check-in with GPS', completed: false }, { id: 2, text: 'Upload 4 photos of aisle displays', completed: false }, { id: 3, text: 'Log stock count for Tier 1 SKUs', completed: false }, { id: 4, text: 'Collect manager signature', completed: false }] },
+
+  { ...base, title: 'Merchandise Display Setup', store: 'Reliance Fresh', companyName: 'Reliance Retail Ltd', companyContact: 'Anjali Sharma', companyEmail: 'store.support@reliance.com', companyInsight: 'Top Tier Client • High Volume', companyDescription: 'Core retail partner for daily essentials. Ensure correct pricing tags and banners.', address: 'Indiranagar, Bengaluru', distance: '3.4 km', distanceVal: 3.4, eta: '25 mins', priority: 'medium', status: 'in-progress', isTaskStarted: true, visitStatus: 'Discussing', missionStatus: 'In Progress', dueDate: 'Today, 11:30 AM', date: today, type: 'Retail', incentive: '₹150', incentiveVal: 150, difficulty: 'Hard', coords: { x: 12.98, y: 77.64 }, evidence: { storeFront: 'mock-file.jpg', selfie: null, productDisplay: null, officialDoc: null }, checklist: [{ id: 1, text: 'Clean primary display shelf', completed: true }, { id: 2, text: 'Arrange promotional banners', completed: false }, { id: 3, text: 'Verify price tag accuracy', completed: false }] },
+
+  { ...base, title: 'Payment Collection', store: 'More Megamart', companyName: 'Aditya Birla Fashion', companyContact: 'Suresh Raina', companyEmail: 'finance@adityabirla.com', companyInsight: 'Enterprise Account • Active', companyDescription: 'Major enterprise account requiring strict compliance with payment collection protocols.', address: 'Koramangala, Bengaluru', distance: '0.8 km', distanceVal: 0.8, eta: '10 mins', priority: 'high', dueDate: 'Today, 12:00 PM', date: today, type: 'Finance', incentive: '₹300', incentiveVal: 300, difficulty: 'Easy', coords: { x: 12.93, y: 77.62 }, checklist: [{ id: 1, text: 'Collect signed invoice copy', completed: false }, { id: 2, text: 'Verify payment mode (Cheque/NEFT)', completed: false }] },
+
+  { ...base, title: 'Feedback Survey', store: 'Spar Hypermarket', companyName: 'Spar International', companyContact: 'Vikram Singh', companyEmail: 'quality@spar.com', companyInsight: 'New Client • Pilot Phase', companyDescription: 'New pilot partner for in-store customer feedback collection.', address: 'Bannerghatta Road, Bengaluru', distance: '5.6 km', distanceVal: 5.6, eta: '35 mins', priority: 'medium', dueDate: 'Today, 01:00 PM', date: today, type: 'Survey', incentive: '₹100', incentiveVal: 100, difficulty: 'Easy', coords: { x: 12.89, y: 77.60 }, checklist: [{ id: 1, text: 'Interview 5 random customers', completed: false }, { id: 2, text: 'Score customer service level', completed: false }, { id: 3, text: 'Submit final report draft', completed: false }] },
+
+  { ...base, title: 'Planogram Compliance Check', store: 'Spencer\'s Retail', companyName: 'Spencer\'s Retail Ltd', companyContact: 'Nisha Agarwal', companyEmail: 'nisha@spencers.in', companyInsight: 'Standard Partner • 6 Months', companyDescription: 'Verify planogram adherence in FMCG aisle. Report deviations with photos.', address: 'Jayanagar 4th Block, Bengaluru', distance: '2.1 km', distanceVal: 2.1, eta: '15 mins', priority: 'high', dueDate: 'Today, 02:00 PM', date: today, type: 'Audit', incentive: '₹200', incentiveVal: 200, difficulty: 'Medium', coords: { x: 12.92, y: 77.58 }, checklist: [{ id: 1, text: 'Check FMCG aisle planogram', completed: false }, { id: 2, text: 'Photo each non-compliant shelf', completed: false }, { id: 3, text: 'File deviation report', completed: false }] },
+
+  { ...base, title: 'New Product Launch Setup', store: 'Nature\'s Basket', companyName: 'Godrej Nature\'s Basket', companyContact: 'Rohan Mehta', companyEmail: 'rohan@godrej.com', companyInsight: 'Premium Partner • Organic', companyDescription: 'Setup display stands for the new organic skincare product line launch.', address: 'Vittal Mallya Road, Bengaluru', distance: '4.0 km', distanceVal: 4.0, eta: '28 mins', priority: 'high', dueDate: 'Today, 03:00 PM', date: today, type: 'Retail', incentive: '₹350', incentiveVal: 350, difficulty: 'Hard', coords: { x: 12.97, y: 77.60 }, checklist: [{ id: 1, text: 'Assemble 3 display stands', completed: false }, { id: 2, text: 'Place product samples', completed: false }, { id: 3, text: 'Brief store manager on launch', completed: false }, { id: 4, text: 'Upload setup photos', completed: false }] },
+
+  { ...base, title: 'Expired Stock Removal', store: 'Star Bazaar', companyName: 'Trent Hypermarket', companyContact: 'Anil Kumar', companyEmail: 'anil@trent.in', companyInsight: 'Standard Account', companyDescription: 'Identify and flag all expired or near-expiry items in dairy and bakery sections.', address: 'Hebbal, Bengaluru', distance: '7.5 km', distanceVal: 7.5, eta: '40 mins', priority: 'medium', dueDate: 'Today, 04:00 PM', date: today, type: 'Audit', incentive: '₹180', incentiveVal: 180, difficulty: 'Medium', coords: { x: 13.04, y: 77.59 }, checklist: [{ id: 1, text: 'Check dairy section expiry dates', completed: false }, { id: 2, text: 'Check bakery section expiry dates', completed: false }, { id: 3, text: 'Log expired items in system', completed: false }] },
+
+  { ...base, title: 'Promotional Banner Install', store: 'Lulu Hypermarket', companyName: 'Lulu Group', companyContact: 'Faizan Ali', companyEmail: 'faizan@lulu.com', companyInsight: 'New Client • High Footfall', companyDescription: 'Install summer sale banners at entrance and key aisle end-caps.', address: 'Rajajinagar, Bengaluru', distance: '6.3 km', distanceVal: 6.3, eta: '35 mins', priority: 'low', dueDate: 'Today, 04:30 PM', date: today, type: 'Retail', incentive: '₹120', incentiveVal: 120, difficulty: 'Easy', coords: { x: 12.99, y: 77.55 }, checklist: [{ id: 1, text: 'Install entrance banner', completed: false }, { id: 2, text: 'Install 4 aisle end-cap banners', completed: false }] },
+
+  { ...base, title: 'POS Terminal Verification', store: 'Nilgiris', companyName: 'Nilgiris Dairy Farm', companyContact: 'Lakshmi Iyer', companyEmail: 'lakshmi@nilgiris.com', companyInsight: 'Legacy Partner • 5 Years', companyDescription: 'Verify POS terminals are updated with latest firmware and billing software.', address: 'Brigade Road, Bengaluru', distance: '1.8 km', distanceVal: 1.8, eta: '18 mins', priority: 'medium', dueDate: 'Today, 05:00 PM', date: today, type: 'Finance', incentive: '₹150', incentiveVal: 150, difficulty: 'Medium', coords: { x: 12.97, y: 77.61 }, checklist: [{ id: 1, text: 'Check firmware version on each POS', completed: false }, { id: 2, text: 'Run test transaction', completed: false }, { id: 3, text: 'Update billing software if needed', completed: false }] },
+
+  { ...base, title: 'Staff Training Session', store: 'Walmart (Flipkart)', companyName: 'Flipkart Wholesale', companyContact: 'Deepa Nair', companyEmail: 'deepa@flipkart.com', companyInsight: 'Enterprise Partner', companyDescription: 'Conduct 30-min training for new joiners on shelf management and stock rotation.', address: 'Electronic City, Bengaluru', distance: '12.0 km', distanceVal: 12.0, eta: '55 mins', priority: 'low', dueDate: 'Today, 06:00 PM', date: today, type: 'Survey', incentive: '₹200', incentiveVal: 200, difficulty: 'Hard', coords: { x: 12.85, y: 77.67 }, checklist: [{ id: 1, text: 'Set up training materials', completed: false }, { id: 2, text: 'Conduct shelf management module', completed: false }, { id: 3, text: 'Collect trainee attendance sheet', completed: false }] },
+
+  // ==================== YESTERDAY (10 tasks) ====================
+  { ...base, title: 'Store Inspection Audit', store: 'Reliance Digital', companyName: 'Reliance Retail Ltd', companyContact: 'Kavita Reddy', companyEmail: 'kavita@reliance.com', companyInsight: 'Key Electronics Partner', companyDescription: 'Inspect electronics displays for defects and verify staff uniform compliance.', address: 'Jayanagar, Bengaluru', distance: '4.2 km', distanceVal: 4.2, eta: '30 mins', priority: 'high', status: 'delayed', visitStatus: 'Delayed', dueDate: 'Yesterday, 10:00 AM', date: yesterday, type: 'Audit', incentive: '₹200', incentiveVal: 200, difficulty: 'Medium', coords: { x: 12.93, y: 77.58 }, checklist: [{ id: 1, text: 'Check electronic displays for defects', completed: false }, { id: 2, text: 'Verify staff uniform compliance', completed: false }] },
+
+  { ...base, title: 'Hardware Maintenance', store: 'Croma Electronics', companyName: 'Infiniti Retail', companyContact: 'Deepak Menon', companyEmail: 'deepak@croma.com', companyInsight: 'Enterprise Account • 3 Years', companyDescription: 'Fix POS barcode scanner and update firmware on backend terminal.', address: 'Phoenix Marketcity, Bengaluru', distance: '9.5 km', distanceVal: 9.5, eta: '45 mins', priority: 'medium', status: 'delayed', visitStatus: 'Missed', missionStatus: 'Overdue', dueDate: 'Yesterday, 11:00 AM', date: yesterday, type: 'Retail', incentive: '₹150', incentiveVal: 150, difficulty: 'Hard', coords: { x: 12.99, y: 77.70 }, checklist: [{ id: 1, text: 'Fix POS barcode scanner', completed: false }, { id: 2, text: 'Update firmware on backend terminal', completed: false }] },
+
+  { ...base, title: 'Shelf Restocking Drive', store: 'DMart Whitefield', companyName: 'Avenue Supermarts', companyContact: 'Priya Patel', companyEmail: 'priya@dmart.in', companyInsight: 'Tier 1 Account • High Frequency', companyDescription: 'Restock depleted shelves in grocery and household sections before weekend rush.', address: 'Whitefield Main Road, Bengaluru', distance: '11.0 km', distanceVal: 11.0, eta: '50 mins', priority: 'high', status: 'delayed', visitStatus: 'Delayed', dueDate: 'Yesterday, 09:30 AM', date: yesterday, type: 'Retail', incentive: '₹180', incentiveVal: 180, difficulty: 'Medium', coords: { x: 12.97, y: 77.75 }, checklist: [{ id: 1, text: 'Restock grocery shelves', completed: false }, { id: 2, text: 'Restock household shelves', completed: false }, { id: 3, text: 'Photo restocked shelves', completed: false }] },
+
+  { ...base, title: 'Client Onboarding Visit', store: 'FreshToHome Hub', companyName: 'FreshToHome', companyContact: 'Shan Kadavil', companyEmail: 'shan@freshtohome.com', companyInsight: 'New Client • Onboarding', companyDescription: 'Complete onboarding paperwork and set up initial inventory tracking.', address: 'HSR Layout, Bengaluru', distance: '5.0 km', distanceVal: 5.0, eta: '30 mins', priority: 'high', status: 'delayed', visitStatus: 'Delayed', dueDate: 'Yesterday, 12:00 PM', date: yesterday, type: 'Survey', incentive: '₹300', incentiveVal: 300, difficulty: 'Medium', coords: { x: 12.91, y: 77.64 }, checklist: [{ id: 1, text: 'Collect signed onboarding docs', completed: false }, { id: 2, text: 'Setup inventory tracking sheet', completed: false }, { id: 3, text: 'Photo of store front for records', completed: false }] },
+
+  { ...base, title: 'Price Tag Verification', store: 'Heritage Fresh', companyName: 'Heritage Foods', companyContact: 'Ramesh Babu', companyEmail: 'ramesh@heritage.com', companyInsight: 'Regional Partner', companyDescription: 'Cross-check MRP tags with system prices in dairy and frozen foods.', address: 'BTM Layout, Bengaluru', distance: '3.8 km', distanceVal: 3.8, eta: '22 mins', priority: 'medium', status: 'delayed', visitStatus: 'Delayed', dueDate: 'Yesterday, 01:00 PM', date: yesterday, type: 'Audit', incentive: '₹120', incentiveVal: 120, difficulty: 'Easy', coords: { x: 12.91, y: 77.61 }, checklist: [{ id: 1, text: 'Check dairy section prices', completed: false }, { id: 2, text: 'Check frozen foods prices', completed: false }] },
+
+  { ...base, title: 'Vendor Invoice Reconciliation', store: 'Metro Cash & Carry', companyName: 'Metro AG', companyContact: 'Sunita Kapoor', companyEmail: 'sunita@metro.com', companyInsight: 'Wholesale Partner • B2B', companyDescription: 'Reconcile vendor invoices with delivered quantities for the week.', address: 'Yeshwanthpur, Bengaluru', distance: '8.2 km', distanceVal: 8.2, eta: '42 mins', priority: 'high', status: 'delayed', visitStatus: 'Delayed', dueDate: 'Yesterday, 02:00 PM', date: yesterday, type: 'Finance', incentive: '₹400', incentiveVal: 400, difficulty: 'Hard', coords: { x: 13.02, y: 77.55 }, checklist: [{ id: 1, text: 'Cross-check invoices with delivery receipts', completed: false }, { id: 2, text: 'Flag discrepancies', completed: false }, { id: 3, text: 'Submit reconciliation sheet', completed: false }] },
+
+  { ...base, title: 'Cold Storage Inspection', store: 'Hatti Kaapi Supply Center', companyName: 'Hatti Kaapi', companyContact: 'Mohan Das', companyEmail: 'mohan@hattikaapi.com', companyInsight: 'Local Partner', companyDescription: 'Inspect cold storage temperatures and ensure compliance with food safety standards.', address: 'Malleshwaram, Bengaluru', distance: '6.0 km', distanceVal: 6.0, eta: '32 mins', priority: 'medium', status: 'delayed', visitStatus: 'Delayed', dueDate: 'Yesterday, 03:00 PM', date: yesterday, type: 'Audit', incentive: '₹220', incentiveVal: 220, difficulty: 'Medium', coords: { x: 13.00, y: 77.57 }, checklist: [{ id: 1, text: 'Record temperature logs', completed: false }, { id: 2, text: 'Check food safety compliance', completed: false }] },
+
+  { ...base, title: 'Loyalty Program Enrollment', store: 'Shoppers Stop', companyName: 'K Raheja Corp', companyContact: 'Meena Iyer', companyEmail: 'm.iyer@shoppersstop.com', companyInsight: 'Long-term Partner • High Footfall', companyDescription: 'Enroll walk-in customers into the new loyalty rewards program.', address: 'UB City Mall, Bengaluru', distance: '2.5 km', distanceVal: 2.5, eta: '18 mins', priority: 'low', status: 'delayed', visitStatus: 'Delayed', dueDate: 'Yesterday, 04:00 PM', date: yesterday, type: 'Survey', incentive: '₹100', incentiveVal: 100, difficulty: 'Easy', coords: { x: 12.97, y: 77.60 }, checklist: [{ id: 1, text: 'Enroll 15 customers', completed: false }, { id: 2, text: 'Distribute welcome kits', completed: false }] },
+
+  { ...base, title: 'Seasonal Display Teardown', store: 'Lifestyle Store', companyName: 'Landmark Group', companyContact: 'Sumanth Rao', companyEmail: 's.rao@landmark.in', companyInsight: 'Premium Partner • Event Client', companyDescription: 'Remove old winter campaign displays and prepare slots for spring collection.', address: 'Orion Mall, Bengaluru', distance: '10.3 km', distanceVal: 10.3, eta: '48 mins', priority: 'medium', status: 'delayed', visitStatus: 'Delayed', dueDate: 'Yesterday, 05:00 PM', date: yesterday, type: 'Retail', incentive: '₹160', incentiveVal: 160, difficulty: 'Medium', coords: { x: 13.01, y: 77.56 }, checklist: [{ id: 1, text: 'Remove winter campaign displays', completed: false }, { id: 2, text: 'Clean and prep display slots', completed: false }, { id: 3, text: 'Photo cleared areas', completed: false }] },
+
+  { ...base, title: 'Customer Complaint Resolution', store: 'Fabindia', companyName: 'Fabindia Pvt Ltd', companyContact: 'Ananya Gupta', companyEmail: 'ananya@fabindia.com', companyInsight: 'Premium Client • Organic', companyDescription: 'Address pending customer complaints about product quality and returns.', address: 'Church Street, Bengaluru', distance: '1.5 km', distanceVal: 1.5, eta: '12 mins', priority: 'high', status: 'delayed', visitStatus: 'Delayed', dueDate: 'Yesterday, 06:00 PM', date: yesterday, type: 'Survey', incentive: '₹250', incentiveVal: 250, difficulty: 'Hard', coords: { x: 12.97, y: 77.61 }, checklist: [{ id: 1, text: 'Review 5 pending complaints', completed: false }, { id: 2, text: 'Process returns', completed: false }, { id: 3, text: 'Collect customer feedback', completed: false }] },
+
+  // ==================== THIS WEEK (10 tasks) ====================
+  { ...base, title: 'Display Unit Setup', store: 'Nike Factory Store', companyName: 'Nike India', companyContact: 'Rahul Dravid', companyEmail: 'rahul@nike.com', companyInsight: 'Premium Partner', companyDescription: 'Set up new Nike Air display unit and ensure correct product arrangement.', address: 'Whitefield, Bengaluru', distance: '8.2 km', distanceVal: 8.2, eta: '50 mins', priority: 'high', dueDate: 'This Week', date: daysFromNow(2), type: 'Retail', incentive: '₹300', incentiveVal: 300, difficulty: 'Hard', coords: { x: 12.97, y: 77.75 }, checklist: [{ id: 1, text: 'Assemble display unit', completed: false }, { id: 2, text: 'Arrange products by size', completed: false }] },
+
+  { ...base, title: 'Market Competitor Analysis', store: 'DMart Sarjapur', companyName: 'Avenue Supermarts', companyContact: 'Priya Patel', companyEmail: 'priya@dmart.in', companyInsight: 'Tier 1 Account • High Frequency', companyDescription: 'Visit 3 competitor outlets and record pricing data for key SKUs.', address: 'Sarjapur Road, Bengaluru', distance: '6.1 km', distanceVal: 6.1, eta: '35 mins', priority: 'medium', dueDate: 'This Week', date: daysFromNow(2), type: 'Survey', incentive: '₹180', incentiveVal: 180, difficulty: 'Medium', coords: { x: 12.91, y: 77.68 }, checklist: [{ id: 1, text: 'Visit 3 competitor outlets', completed: false }, { id: 2, text: 'Record pricing data for key SKUs', completed: false }, { id: 3, text: 'Photograph competitor displays', completed: false }] },
+
+  { ...base, title: 'Promotional Campaign Setup', store: 'Lifestyle Indiranagar', companyName: 'Landmark Group', companyContact: 'Sumanth Rao', companyEmail: 's.rao@landmark.in', companyInsight: 'Premium Partner • Event Client', companyDescription: 'Set up 2 promotional kiosks and brief store staff on campaign rules.', address: 'Indiranagar, Bengaluru', distance: '3.5 km', distanceVal: 3.5, eta: '22 mins', priority: 'high', dueDate: 'This Week', date: daysFromNow(3), type: 'Retail', incentive: '₹350', incentiveVal: 350, difficulty: 'Hard', coords: { x: 12.98, y: 77.64 }, checklist: [{ id: 1, text: 'Set up 2 promotional kiosks', completed: false }, { id: 2, text: 'Brief store staff on campaign rules', completed: false }] },
+
+  { ...base, title: 'Warehouse Stock Count', store: 'Amazon Fulfilment Centre', companyName: 'Amazon India', companyContact: 'Karthik Raja', companyEmail: 'karthik@amazon.in', companyInsight: 'Enterprise • High Volume', companyDescription: 'Conduct physical stock count in Zone B and reconcile with WMS data.', address: 'Bommasandra, Bengaluru', distance: '15.0 km', distanceVal: 15.0, eta: '60 mins', priority: 'high', dueDate: 'This Week', date: daysFromNow(3), type: 'Audit', incentive: '₹500', incentiveVal: 500, difficulty: 'Hard', coords: { x: 12.82, y: 77.69 }, checklist: [{ id: 1, text: 'Count Zone B inventory', completed: false }, { id: 2, text: 'Reconcile with WMS data', completed: false }, { id: 3, text: 'Flag mismatches', completed: false }] },
+
+  { ...base, title: 'Beverage Section Revamp', store: 'Namdhari\'s Fresh', companyName: 'Namdhari Group', companyContact: 'Guru Prasad', companyEmail: 'guru@namdharis.com', companyInsight: 'Organic Partner', companyDescription: 'Redesign beverage section layout per new planogram guidelines.', address: 'Residency Road, Bengaluru', distance: '2.0 km', distanceVal: 2.0, eta: '14 mins', priority: 'medium', dueDate: 'This Week', date: daysFromNow(4), type: 'Retail', incentive: '₹200', incentiveVal: 200, difficulty: 'Medium', coords: { x: 12.97, y: 77.60 }, checklist: [{ id: 1, text: 'Remove old shelf labels', completed: false }, { id: 2, text: 'Rearrange products per planogram', completed: false }, { id: 3, text: 'Install new shelf dividers', completed: false }] },
+
+  { ...base, title: 'Safety Compliance Audit', store: 'Easyday Club', companyName: 'Bharti Retail', companyContact: 'Manish Tiwari', companyEmail: 'manish@bharti.com', companyInsight: 'Standard Partner', companyDescription: 'Check fire extinguishers, emergency exits, and first-aid kits compliance.', address: 'Marathahalli, Bengaluru', distance: '9.0 km', distanceVal: 9.0, eta: '45 mins', priority: 'high', dueDate: 'This Week', date: daysFromNow(4), type: 'Audit', incentive: '₹280', incentiveVal: 280, difficulty: 'Medium', coords: { x: 12.96, y: 77.70 }, checklist: [{ id: 1, text: 'Verify fire extinguishers valid', completed: false }, { id: 2, text: 'Check emergency exit signage', completed: false }, { id: 3, text: 'Inspect first-aid kit contents', completed: false }] },
+
+  { ...base, title: 'Vendor Payment Follow-up', store: 'JioMart Partner Store', companyName: 'Reliance Jio', companyContact: 'Arjun Das', companyEmail: 'arjun@jio.com', companyInsight: 'Digital Partner • Growing', companyDescription: 'Follow up on 3 pending vendor payments and collect acknowledgement receipts.', address: 'Yelahanka, Bengaluru', distance: '14.0 km', distanceVal: 14.0, eta: '55 mins', priority: 'low', dueDate: 'This Week', date: daysFromNow(5), type: 'Finance', incentive: '₹150', incentiveVal: 150, difficulty: 'Easy', coords: { x: 13.10, y: 77.59 }, checklist: [{ id: 1, text: 'Follow up on 3 pending payments', completed: false }, { id: 2, text: 'Collect acknowledgement receipts', completed: false }] },
+
+  { ...base, title: 'End-Cap Display Rotation', store: 'Vishal Mega Mart', companyName: 'Vishal Retail', companyContact: 'Pooja Verma', companyEmail: 'pooja@vishal.com', companyInsight: 'Value Segment Partner', companyDescription: 'Rotate end-cap displays from winter to spring collection products.', address: 'Kengeri, Bengaluru', distance: '13.0 km', distanceVal: 13.0, eta: '52 mins', priority: 'medium', dueDate: 'This Week', date: daysFromNow(5), type: 'Retail', incentive: '₹170', incentiveVal: 170, difficulty: 'Medium', coords: { x: 12.90, y: 77.48 }, checklist: [{ id: 1, text: 'Remove winter end-cap items', completed: false }, { id: 2, text: 'Place spring collection items', completed: false }, { id: 3, text: 'Update shelf labels', completed: false }] },
+
+  { ...base, title: 'Digital Kiosk Installation', store: 'Decathlon Sports', companyName: 'Decathlon India', companyContact: 'Pierre Martin', companyEmail: 'pierre@decathlon.in', companyInsight: 'International Partner', companyDescription: 'Install 2 digital self-service kiosks and test connectivity.', address: 'Sarjapur Main Road, Bengaluru', distance: '7.0 km', distanceVal: 7.0, eta: '38 mins', priority: 'high', dueDate: 'This Week', date: daysFromNow(6), type: 'Retail', incentive: '₹450', incentiveVal: 450, difficulty: 'Hard', coords: { x: 12.91, y: 77.67 }, checklist: [{ id: 1, text: 'Unbox and assemble kiosks', completed: false }, { id: 2, text: 'Connect to store WiFi', completed: false }, { id: 3, text: 'Run test transactions', completed: false }] },
+
+  { ...base, title: 'Mystery Shopping Assignment', store: 'Westside', companyName: 'Trent Ltd', companyContact: 'Shreya Joshi', companyEmail: 'shreya@trent.in', companyInsight: 'Premium Client', companyDescription: 'Conduct mystery shopping to evaluate staff behavior and store cleanliness.', address: 'Commercial Street, Bengaluru', distance: '2.8 km', distanceVal: 2.8, eta: '20 mins', priority: 'medium', dueDate: 'This Week', date: daysFromNow(6), type: 'Survey', incentive: '₹220', incentiveVal: 220, difficulty: 'Easy', coords: { x: 12.98, y: 77.61 }, checklist: [{ id: 1, text: 'Evaluate staff greeting behavior', completed: false }, { id: 2, text: 'Rate store cleanliness', completed: false }, { id: 3, text: 'Submit mystery shopper report', completed: false }] },
+
+  // ==================== THIS MONTH (10 tasks) ====================
+  { ...base, title: 'Audit Report Filing', store: 'Zudio', companyName: 'Tata Retail', companyContact: 'Mahesh Babu', companyEmail: 'mahesh@tata.com', companyInsight: 'Key Account', companyDescription: 'Compile and file quarterly audit reports for all Bengaluru outlets.', address: 'Indiranagar, Bengaluru', distance: '2.8 km', distanceVal: 2.8, eta: '15 mins', priority: 'low', dueDate: 'This Month', date: daysFromNow(10), type: 'Audit', incentive: '₹120', incentiveVal: 120, difficulty: 'Easy', coords: { x: 12.98, y: 77.64 }, checklist: [] },
+
+  { ...base, title: 'Annual Stock Reconciliation', store: 'Croma Koramangala', companyName: 'Infiniti Retail', companyContact: 'Deepak Menon', companyEmail: 'deepak@croma.com', companyInsight: 'Enterprise Account • 3 Years', companyDescription: 'Cross-check Q4 invoices with physical stock for annual report.', address: 'Koramangala, Bengaluru', distance: '3.9 km', distanceVal: 3.9, eta: '25 mins', priority: 'high', dueDate: 'This Month', date: daysFromNow(12), type: 'Finance', incentive: '₹400', incentiveVal: 400, difficulty: 'Hard', coords: { x: 12.93, y: 77.62 }, checklist: [{ id: 1, text: 'Cross-check invoices with physical stock', completed: false }, { id: 2, text: 'Flag discrepancies in ERP', completed: false }, { id: 3, text: 'Submit signed reconciliation sheet', completed: false }] },
+
+  { ...base, title: 'Customer Loyalty Drive', store: 'Shoppers Stop MG Road', companyName: 'K Raheja Corp', companyContact: 'Meena Iyer', companyEmail: 'm.iyer@shoppersstop.com', companyInsight: 'Long-term Partner • High Footfall', companyDescription: 'Drive loyalty signups targeting 50 new members this month.', address: 'MG Road, Bengaluru', distance: '1.5 km', distanceVal: 1.5, eta: '12 mins', priority: 'medium', dueDate: 'This Month', date: daysFromNow(15), type: 'Survey', incentive: '₹200', incentiveVal: 200, difficulty: 'Medium', coords: { x: 12.97, y: 77.60 }, checklist: [{ id: 1, text: 'Enroll 50 customers in loyalty programme', completed: false }, { id: 2, text: 'Distribute welcome kit packs', completed: false }] },
+
+  { ...base, title: 'Regional Training Workshop', store: 'Flipkart Hub', companyName: 'Flipkart Wholesale', companyContact: 'Deepa Nair', companyEmail: 'deepa@flipkart.com', companyInsight: 'Enterprise Partner', companyDescription: 'Assist with regional training workshop for new retail executives.', address: 'Electronic City Phase 2, Bengaluru', distance: '14.0 km', distanceVal: 14.0, eta: '58 mins', priority: 'medium', dueDate: 'This Month', date: daysFromNow(16), type: 'Survey', incentive: '₹350', incentiveVal: 350, difficulty: 'Hard', coords: { x: 12.84, y: 77.68 }, checklist: [{ id: 1, text: 'Prepare training decks', completed: false }, { id: 2, text: 'Conduct 2 training sessions', completed: false }, { id: 3, text: 'Collect feedback forms', completed: false }] },
+
+  { ...base, title: 'Seasonal Window Dressing', store: 'Pantaloons', companyName: 'Aditya Birla Fashion', companyContact: 'Kavitha Reddy', companyEmail: 'kavitha@abfrl.com', companyInsight: 'Fashion Partner', companyDescription: 'Design and install spring/summer window display for main entrance.', address: 'Forum Mall, Bengaluru', distance: '4.5 km', distanceVal: 4.5, eta: '28 mins', priority: 'high', dueDate: 'This Month', date: daysFromNow(18), type: 'Retail', incentive: '₹380', incentiveVal: 380, difficulty: 'Hard', coords: { x: 12.93, y: 77.62 }, checklist: [{ id: 1, text: 'Remove old window display', completed: false }, { id: 2, text: 'Install new spring mannequins', completed: false }, { id: 3, text: 'Add lighting and props', completed: false }] },
+
+  { ...base, title: 'Hygiene Audit', store: 'BigBasket Warehouse', companyName: 'BigBasket', companyContact: 'Ashwin Kumar', companyEmail: 'ashwin@bigbasket.com', companyInsight: 'E-Commerce Giant', companyDescription: 'Conduct hygiene audit of cold storage and packaging areas.', address: 'Peenya Industrial Area, Bengaluru', distance: '16.0 km', distanceVal: 16.0, eta: '65 mins', priority: 'high', dueDate: 'This Month', date: daysFromNow(20), type: 'Audit', incentive: '₹320', incentiveVal: 320, difficulty: 'Medium', coords: { x: 13.03, y: 77.52 }, checklist: [{ id: 1, text: 'Inspect cold storage hygiene', completed: false }, { id: 2, text: 'Check packaging area standards', completed: false }, { id: 3, text: 'Review pest control records', completed: false }] },
+
+  { ...base, title: 'Contract Renewal Meeting', store: 'Spar Supermarket', companyName: 'Spar International', companyContact: 'Vikram Singh', companyEmail: 'vikram@spar.com', companyInsight: 'Renewal Due', companyDescription: 'Meet store manager to discuss contract renewal terms and negotiate pricing.', address: 'JP Nagar, Bengaluru', distance: '6.5 km', distanceVal: 6.5, eta: '35 mins', priority: 'medium', dueDate: 'This Month', date: daysFromNow(22), type: 'Finance', incentive: '₹250', incentiveVal: 250, difficulty: 'Medium', coords: { x: 12.90, y: 77.58 }, checklist: [{ id: 1, text: 'Review current contract terms', completed: false }, { id: 2, text: 'Negotiate pricing for next year', completed: false }, { id: 3, text: 'Get manager sign-off', completed: false }] },
+
+  { ...base, title: 'Brand Activation Event', store: 'Phoenix Mall Outlet', companyName: 'Coca-Cola India', companyContact: 'Viral Shah', companyEmail: 'viral@coca-cola.com', companyInsight: 'Global Partner • Beverages', companyDescription: 'Coordinate brand activation event with sampling stations and photo booth.', address: 'Phoenix Mall, Bengaluru', distance: '9.0 km', distanceVal: 9.0, eta: '45 mins', priority: 'high', dueDate: 'This Month', date: daysFromNow(24), type: 'Retail', incentive: '₹500', incentiveVal: 500, difficulty: 'Hard', coords: { x: 12.99, y: 77.70 }, checklist: [{ id: 1, text: 'Set up sampling stations', completed: false }, { id: 2, text: 'Install photo booth', completed: false }, { id: 3, text: 'Coordinate with mall security', completed: false }, { id: 4, text: 'Distribute 200 samples', completed: false }] },
+
+  { ...base, title: 'IT Infrastructure Check', store: 'Vijay Sales', companyName: 'Vijay Sales Pvt Ltd', companyContact: 'Nilesh Gupta', companyEmail: 'nilesh@vijaysales.com', companyInsight: 'Retail Tech Client', companyDescription: 'Audit WiFi coverage, CCTV functionality, and POS system uptime.', address: 'Linking Road, Bengaluru', distance: '5.5 km', distanceVal: 5.5, eta: '32 mins', priority: 'low', dueDate: 'This Month', date: daysFromNow(26), type: 'Audit', incentive: '₹180', incentiveVal: 180, difficulty: 'Medium', coords: { x: 12.95, y: 77.58 }, checklist: [{ id: 1, text: 'Test WiFi in all zones', completed: false }, { id: 2, text: 'Verify CCTV footage quality', completed: false }, { id: 3, text: 'Check POS uptime logs', completed: false }] },
+
+  { ...base, title: 'Return Goods Processing', store: 'Myntra Experience Centre', companyName: 'Myntra (Flipkart)', companyContact: 'Shalini Das', companyEmail: 'shalini@myntra.com', companyInsight: 'E-Commerce Partner', companyDescription: 'Process pending return goods, verify condition, and update inventory system.', address: 'Domlur, Bengaluru', distance: '3.2 km', distanceVal: 3.2, eta: '20 mins', priority: 'medium', dueDate: 'This Month', date: daysFromNow(28), type: 'Retail', incentive: '₹200', incentiveVal: 200, difficulty: 'Easy', coords: { x: 12.96, y: 77.64 }, checklist: [{ id: 1, text: 'Inspect 30 return items', completed: false }, { id: 2, text: 'Sort into restock and damaged', completed: false }, { id: 3, text: 'Update inventory system', completed: false }] },
 ];
 
 const seedTasks = async () => {
@@ -81,10 +107,14 @@ const seedTasks = async () => {
     console.log('Connected to MongoDB for task seeding...');
     
     await Task.deleteMany({ employee: EMPLOYEE_ID });
-    console.log('Cleared existing dummy tasks for this employee.');
+    console.log('Cleared existing tasks for this employee.');
     
-    await Task.insertMany(tasks);
-    console.log('Inserted dummy tasks successfully.');
+    const result = await Task.insertMany(tasks);
+    console.log(`✅ Inserted ${result.length} tasks successfully!`);
+    console.log(`   - Today: 10 tasks`);
+    console.log(`   - Yesterday: 10 tasks`);
+    console.log(`   - This Week: 10 tasks`);
+    console.log(`   - This Month: 10 tasks`);
     
     process.exit();
   } catch (error) {
