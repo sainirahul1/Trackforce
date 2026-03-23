@@ -22,9 +22,9 @@ const Sidebar = ({ role, user, isCollapsed, onToggle }) => {
       { name: 'Orders & Revenue', icon: ShoppingBag, path: '/tenant/orders' },
       { name: 'Analytics', icon: Activity, path: '/tenant/analytics' },
       { name: 'Activity Log', icon: Clock, path: '/tenant/activity' },
-      { name: 'Subscription', icon: ShieldCheck, path: '/tenant/subscription' },
+      { name: 'Subscription', icon: CreditCard, path: '/tenant/subscription' },
+      { name: 'Profile', icon: User, path: '/tenant/profile' },
       { name: 'Notifications', icon: Bell, path: '/tenant/notifications' },
-      { name: 'Issues', icon: AlertCircle, path: '/tenant/issues' },
       { name: 'Settings', icon: Settings, path: '/tenant/settings' },
     ],
     manager: [
@@ -36,7 +36,6 @@ const Sidebar = ({ role, user, isCollapsed, onToggle }) => {
       { name: 'Analytics', icon: Activity, path: '/manager/analytics' },
       { name: 'Team', icon: Users, path: '/manager/team' },
       { name: 'Activity Log', icon: Clock, path: '/manager/activity' },
-      { name: 'Issues', icon: AlertCircle, path: '/manager/issues' },
       { name: 'Profile', icon: User, path: '/manager/profile' },
     ],
     employee: [
@@ -62,7 +61,7 @@ const Sidebar = ({ role, user, isCollapsed, onToggle }) => {
             <span className="text-[22px] font-black italic tracking-tighter text-gray-900 dark:text-white pt-0.5">TrackForce</span>
           </div>
         )}
-        <button 
+        <button
           onClick={onToggle}
           className="p-2 rounded-xl text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-indigo-600 transition-all"
         >
@@ -71,14 +70,13 @@ const Sidebar = ({ role, user, isCollapsed, onToggle }) => {
       </div>
       <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto custom-scrollbar">
         {currentMenu.map((item) => (
-          <NavLink 
-            key={item.path} 
-            to={item.path} 
-            className={({ isActive }) => `flex items-center ${isCollapsed ? 'justify-center' : 'space-x-3 px-4'} py-3 rounded-2xl font-bold text-sm transition-all relative group ${
-              isActive 
-                ? 'bg-indigo-50 text-indigo-600 shadow-inner dark:bg-indigo-900/20' 
+          <NavLink
+            key={item.path}
+            to={item.path}
+            className={({ isActive }) => `flex items-center ${isCollapsed ? 'justify-center' : 'space-x-3 px-4'} py-3 rounded-2xl font-bold text-sm transition-all relative group ${isActive
+                ? 'bg-indigo-50 text-indigo-600 shadow-inner dark:bg-indigo-900/20'
                 : 'text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
-            }`}
+              }`}
           >
             <item.icon size={20} className={isCollapsed ? 'shrink-0' : ''} />
             {!isCollapsed && <span className="animate-in slide-in-from-left-2 duration-300">{item.name}</span>}
@@ -103,8 +101,8 @@ const Sidebar = ({ role, user, isCollapsed, onToggle }) => {
               </div>
             )}
           </div>
-          <button 
-            onClick={() => { localStorage.clear(); window.location.href = '/login'; }} 
+          <button
+            onClick={() => { localStorage.clear(); window.location.href = '/login'; }}
             className="p-2 text-gray-400 hover:text-red-600 transition-colors shrink-0"
             title="Logout"
           >
