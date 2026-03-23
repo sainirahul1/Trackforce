@@ -1,0 +1,127 @@
+const Task = require('../../models/employee/Task');
+const StoreVisit = require('../../models/employee/StoreVisit');
+
+exports.getTasks = async (req, res) => {
+  try {
+    const tasks = await Task.find({ 
+      tenant: req.tenantId 
+    }).sort({ date: -1 });
+    console.log(`[DEBUG] Fetched ${tasks.length} tasks for tenant: ${req.tenantId}`);
+    
+    res.json(tasks);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Create a new task
+// @route   POST /api/employee/tasks
+// @access  Private
+exports.createTask = async (req, res) => {
+  try {
+    const taskData = {
+      ...req.body,
+      employee: req.user._id,
+      tenant: req.tenantId,
+    };
+
+    const task = await Task.create(taskData);
+    res.status(201).json(task);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Update a task
+// @route   PATCH /api/employee/tasks/:id
+// @access  Private
+exports.updateTask = async (req, res) => {
+  try {
+    // First, find the task to ensure it exists and belongs to the tenant
+    const task = await Task.findOne({ _id: req.params.id, tenant: req.tenantId });
+
+    if (!task) {
+      return res.status(404).json({ message: 'Task not found' });
+    }
+
+    // Update the task first
+    const updatedTask = await Task.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+
+    if (!updatedTask) {
+      return res.status(404).json({ message: 'Task failed to update' });
+    }
+
+    // Workflow Extension: Create a StoreVisit and handle rescheduling
+    const isFinishing = req.body.status === 'completed' || ['Complete', 'Follow Up', 'Rejected'].includes(req.body.missionStatus);
+    
+    if (isFinishing) {
+      const photos = [];
+      if (updatedTask.evidence) {
+        if (updatedTask.evidence.storeFront) photos.push(updatedTask.evidence.storeFront);
+        if (updatedTask.evidence.selfie) photos.push(updatedTask.evidence.selfie);
+        if (updatedTask.evidence.productDisplay) photos.push(updatedTask.evidence.productDisplay);
+        if (updatedTask.evidence.officialDoc) photos.push(updatedTask.evidence.officialDoc);
+      }
+
+      // Map missionStatus to StoreVisit status
+      let visitStatus = 'completed';
+      if (req.body.missionStatus === 'Follow Up') visitStatus = 'follow_up';
+      if (req.body.missionStatus === 'Rejected') visitStatus = 'not_interested';
+
+      await StoreVisit.create({
+        employee: updatedTask.employee,
+        tenant: updatedTask.tenant,
+        storeName: updatedTask.store,
+        address: updatedTask.address,
+        distance: updatedTask.distance,
+        eta: updatedTask.eta,
+        status: visitStatus,
+        gps: { lat: updatedTask.coords?.x || 0, lng: updatedTask.coords?.y || 0 },
+        photos: photos,
+        notes: updatedTask.visitNotes || `${req.body.missionStatus} - Task: ${updatedTask.title}`,
+        timestamp: new Date()
+      });
+
+      console.log(`[WORKFLOW] Created StoreVisit (${visitStatus}) for task: ${updatedTask.title}`);
+
+      // If not fully completed, reschedule for 24h later
+      if (req.body.missionStatus !== 'Complete' && req.body.status !== 'completed') {
+        const nextDay = new Date();
+        nextDay.setHours(nextDay.getHours() + 24);
+        
+        await Task.findByIdAndUpdate(updatedTask._id, {
+          date: nextDay,
+          status: 'pending',
+          isTaskStarted: false,
+          visitStatus: 'Pending',
+          missionStatus: 'In Progress' // Reset internal mission status
+        });
+        console.log(`[WORKFLOW] Rescheduled task ${updatedTask.title} to: ${nextDay}`);
+      }
+    }
+
+    res.json(updatedTask);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Delete a task
+// @route   DELETE /api/employee/tasks/:id
+// @access  Private
+exports.deleteTask = async (req, res) => {
+  try {
+    const task = await Task.findOneAndDelete({ 
+      _id: req.params.id, 
+      tenant: req.tenantId 
+    });
+
+    if (!task) {
+      return res.status(404).json({ message: 'Task not found' });
+    }
+
+    res.json({ message: 'Task removed' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};

@@ -20,15 +20,20 @@ const EmployeeVisits = () => {
           const visitDate = new Date(v.timestamp || v.createdAt);
           const isValidDate = !isNaN(visitDate.getTime());
           
+          let statusLabel = v.status ? v.status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'Unknown';
+          if (v.status === 'not_interested') statusLabel = 'Rejected';
+          
           return {
             ...v,
             store: v.storeName,
             time: isValidDate ? visitDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '---',
             date: isValidDate ? visitDate.toISOString().split('T')[0] : '---',
             address: v.address || 'Location data not available',
-            distance: '---', 
-            status: v.status ? v.status.charAt(0).toUpperCase() + v.status.slice(1) : 'Unknown',
+            distance: v.distance || '---', 
+            eta: v.eta || '---',
+            status: statusLabel,
             companyDescription: 'Organization Partner',
+            feedback: v.notes || 'No specific feedback recorded.',
             uploadedImages: v.photos || []
           };
         }));
@@ -41,7 +46,7 @@ const EmployeeVisits = () => {
     fetchVisits();
   }, []);
 
-  const statuses = ['All', 'Completed', 'In Progress', 'Not Visit', 'Follow Up'];
+  const statuses = ['All', 'Completed', 'In Progress', 'Rejected', 'Follow Up'];
 
   const filteredVisits = visits.filter(v => {
     const matchStatus = filterStatus === 'All' || v.status === filterStatus;
@@ -63,7 +68,7 @@ const EmployeeVisits = () => {
           badge: 'text-blue-700 bg-blue-100/50 dark:text-blue-400 dark:bg-blue-500/10',
           border: 'border-blue-200 dark:border-blue-500/30'
         };
-      case 'Not Visit':
+      case 'Rejected':
         return {
           icon: 'bg-red-100/50 text-red-600 dark:bg-red-500/10 dark:text-red-400',
           badge: 'text-red-700 bg-red-100/50 dark:text-red-400 dark:bg-red-500/10',
@@ -87,7 +92,7 @@ const EmployeeVisits = () => {
   const statusCounts = {
     'Completed': visits.filter(v => v.status === 'Completed').length,
     'In Progress': visits.filter(v => v.status === 'In Progress').length,
-    'Not Visit': visits.filter(v => v.status === 'Not Visit').length,
+    'Rejected': visits.filter(v => v.status === 'Rejected').length,
     'Follow Up': visits.filter(v => v.status === 'Follow Up').length,
   };
 

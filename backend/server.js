@@ -33,6 +33,9 @@ app.use('/api/superadmin/notifications', require('./routes/superadmin/notificati
 app.use('/api/superadmin/settings', require('./routes/superadmin/settingsRoutes'));
 app.use('/api/superadmin/manage', require('./routes/superadmin/roleManagementRoutes'));
 
+// Employee Routes
+app.use('/api/employee/tasks', require('./routes/employee/taskRoutes'));
+
 // Database Connection — start server only after DB is ready
 const PORT = process.env.PORT || 5001;
 

@@ -57,6 +57,7 @@ const Subscription = require('./models/superadmin/Subscription');
 const SystemSetting = require('./models/superadmin/SystemSetting');
 const PlatformMetric = require('./models/superadmin/PlatformMetric');
 const Notification = require('./models/tenant/Notification');
+const Task = require('./models/employee/Task');
     await Tenant.deleteMany({});
     await StoreVisit.deleteMany({});
     await Order.deleteMany({});
@@ -65,7 +66,8 @@ const Notification = require('./models/tenant/Notification');
     await Subscription.deleteMany({});
     await SystemSetting.deleteMany({});
     await PlatformMetric.deleteMany({});
-    console.log('Cleared all existing database records.');
+    await Task.deleteMany({});
+    console.log('Cleared all existing database records including Tasks.');
 
     // New: Seed Platform Metrics for Dashboard
     await PlatformMetric.insertMany([
@@ -148,6 +150,7 @@ const Notification = require('./models/tenant/Notification');
       const subscription = subs.find(s => s.name.toLowerCase() === comp.plan.toLowerCase());
       
       const tenant = await Tenant.create({
+        _id: comp.name === 'ReatchAll' ? '69c0fbbe60763acca36b8dbe' : undefined,
         name: comp.name,
         industry: comp.industry,
         subscription: { 
@@ -163,6 +166,7 @@ const Notification = require('./models/tenant/Notification');
 
       // Create Tenant Admin
       const admin = await User.create({
+        _id: comp.name === 'ReatchAll' ? '69c0fbbe60763acca36b8dbf' : undefined,
         name: `${comp.name} Admin`,
         company: comp.name,
         email: `admin@${companySlug}.com`,
@@ -173,6 +177,7 @@ const Notification = require('./models/tenant/Notification');
 
       // Create Manager
       const manager = await User.create({
+        _id: comp.name === 'ReatchAll' ? '69c0fbbe60763acca36b8dc0' : undefined,
         name: `${comp.name} Manager`,
         company: comp.name,
         email: `manager@${companySlug}.com`,
@@ -183,6 +188,7 @@ const Notification = require('./models/tenant/Notification');
 
       // Create Employee
       const employee = await User.create({
+        _id: comp.name === 'ReatchAll' ? '69c0fbbe60763acca36b8dc4' : undefined,
         name: `${comp.name} Employee`,
         company: comp.name,
         email: `employee@${companySlug}.com`,
@@ -223,6 +229,88 @@ const Notification = require('./models/tenant/Notification');
         type: 'visit_start',
         details: `Started visit at ${comp.name} Partner Store A`,
       });
+
+      // --- New: Seed Tasks for this employee across timeframes ---
+      const today = new Date();
+      const yesterday = new Date(new Date().setDate(today.getDate() - 1));
+      const thisWeek = new Date(new Date().setDate(today.getDate() + 2));
+      const thisMonth = new Date(new Date().setDate(today.getDate() + 15));
+
+      await Task.insertMany([
+        {
+          employee: employee._id,
+          tenant: tenant._id,
+          title: `Audit - ${comp.name} Main Site`,
+          store: `${comp.name} Central`,
+          companyName: comp.name,
+          priority: 'high',
+          status: 'pending',
+          date: today,
+          dueDate: 'Today, 05:00 PM',
+          distance: '2.5 km',
+          distanceVal: 2.5,
+          eta: '12 mins',
+          type: 'Audit',
+          coords: { x: 30, y: 40 },
+          companyContact: 'Operational Lead',
+          companyEmail: `ops@${companySlug}.com`,
+          companyInsight: 'Key Strategic Partner',
+          companyDescription: `Critical ${comp.industry} workflow audit for ${comp.name}.`,
+          checklist: [{ id: 1, text: 'Safety check', completed: false }]
+        },
+        {
+          employee: employee._id,
+          tenant: tenant._id,
+          title: `Inventory Refresh`,
+          store: `${comp.name} Retail Hub`,
+          companyName: comp.name,
+          priority: 'medium',
+          status: 'completed',
+          date: yesterday,
+          dueDate: 'Yesterday',
+          distance: '4.8 km',
+          distanceVal: 4.8,
+          eta: '25 mins',
+          type: 'Retail',
+          coords: { x: 60, y: 20 },
+          companyDescription: 'Standard weekly inventory count.',
+          checklist: [{ id: 1, text: 'Count stock', completed: true }]
+        },
+        {
+          employee: employee._id,
+          tenant: tenant._id,
+          title: `Logistics Review`,
+          store: `${comp.name} Warehouse`,
+          companyName: comp.name,
+          priority: 'low',
+          status: 'pending',
+          date: thisWeek,
+          dueDate: 'This Week',
+          distance: '8.2 km',
+          distanceVal: 8.2,
+          eta: '45 mins',
+          type: 'Finance',
+          coords: { x: 20, y: 80 },
+          checklist: [{ id: 1, text: 'Review invoices', completed: false }]
+        },
+        {
+          employee: employee._id,
+          tenant: tenant._id,
+          title: `Quarterly Strategy`,
+          store: `${comp.name} HQ`,
+          companyName: comp.name,
+          priority: 'high',
+          status: 'pending',
+          date: thisMonth,
+          dueDate: 'End of Month',
+          distance: '1.2 km',
+          distanceVal: 1.2,
+          eta: '8 mins',
+          type: 'Audit',
+          coords: { x: 45, y: 55 },
+          checklist: [{ id: 1, text: 'Meet department heads', completed: false }]
+        }
+      ]);
 
       console.log(`Seeded accounts and isolated mock data for ${comp.name}.`);
     }

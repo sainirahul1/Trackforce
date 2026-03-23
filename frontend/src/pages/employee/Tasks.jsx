@@ -1,5 +1,6 @@
 // modification of the code
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import * as taskService from '../../services/taskService';
 import {
   CheckCircle2,
   Circle,
@@ -320,7 +321,7 @@ const TaskDetailOverlay = ({ task, onClose, onUpdateOperationalData, onStartTask
                 <Navigation className="text-indigo-600 animate-pulse" size={32} />
               </div>
               <p className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-tight">Navigation Active</p>
-              <p className="text-[10px] font-bold text-gray-400 mt-1 uppercase">{task.distance} Away • {task.eta} Est.</p>
+              <p className="text-[10px] font-bold text-gray-400 mt-1 uppercase">{task.distance} Away • {task.eta} Arrival</p>
               <button
                 onClick={handleOpenMaps}
                 className="mt-6 px-6 py-3 bg-indigo-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-indigo-100 dark:shadow-none hover:scale-105 transition-all"
@@ -405,7 +406,7 @@ const TaskDetailOverlay = ({ task, onClose, onUpdateOperationalData, onStartTask
               <h3 className="text-lg font-black text-gray-900 dark:text-white mb-2">Ready to Start Operation?</h3>
               <p className="text-xs text-gray-500 mb-8">Click below to unlock the operational checklist and status updates.</p>
               <button
-                onClick={() => onStartTask(task.id)}
+                onClick={() => onStartTask(task._id || task.id)}
                 className="px-12 py-4 bg-indigo-600 text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-indigo-100 dark:shadow-none hover:scale-105 transition-all"
               >
                 Start Task Now
@@ -419,7 +420,7 @@ const TaskDetailOverlay = ({ task, onClose, onUpdateOperationalData, onStartTask
                   <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest ml-1">Visit Status</label>
                   <select
                     value={task.visitStatus}
-                    onChange={(e) => onUpdateOperationalData(task.id, { visitStatus: e.target.value })}
+                    onChange={(e) => onUpdateOperationalData(task._id || task.id, { visitStatus: e.target.value })}
                     className="w-full bg-gray-50 dark:bg-gray-800 border border-transparent dark:border-gray-700 rounded-2xl px-5 py-4 text-xs font-black uppercase tracking-widest focus:ring-2 focus:ring-indigo-500 transition-all outline-none"
                   >
                     <option>Reached Client</option>
@@ -433,7 +434,7 @@ const TaskDetailOverlay = ({ task, onClose, onUpdateOperationalData, onStartTask
                     <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest ml-1">Mission Update</label>
                     <select
                       value={task.missionStatus}
-                      onChange={(e) => onUpdateOperationalData(task.id, { missionStatus: e.target.value })}
+                      onChange={(e) => onUpdateOperationalData(task._id || task.id, { missionStatus: e.target.value })}
                       className="w-full bg-gray-50 dark:bg-gray-800 border border-transparent dark:border-gray-700 rounded-2xl px-5 py-4 text-xs font-black uppercase tracking-widest focus:ring-2 focus:ring-indigo-500 transition-all outline-none"
                     >
                       <option>In Progress</option>
@@ -466,7 +467,7 @@ const TaskDetailOverlay = ({ task, onClose, onUpdateOperationalData, onStartTask
                           id={`upload-${item.key}`}
                           type="file"
                           className="hidden"
-                          onChange={(e) => onFileUpload(task.id, item.key, e.target.files[0])}
+                          onChange={(e) => onFileUpload(task._id || task.id, item.key, e.target.files[0])}
                         />
                         <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-3 transition-colors shadow-sm ${isUploaded ? 'bg-emerald-500 text-white' : 'bg-white dark:bg-gray-700 text-gray-400 group-hover/upload:text-indigo-600'}`}>
                           {isUploaded ? <Check size={18} strokeWidth={3} /> : item.icon}
@@ -490,18 +491,36 @@ const TaskDetailOverlay = ({ task, onClose, onUpdateOperationalData, onStartTask
                 </div>
                 <textarea
                   value={task.visitNotes || ''}
-                  onChange={(e) => onUpdateOperationalData(task.id, { visitNotes: e.target.value })}
+                  onChange={(e) => onUpdateOperationalData(task._id || task.id, { visitNotes: e.target.value })}
                   placeholder="Enter any specific observations, client feedback, or issues faced during the visit..."
                   className="w-full bg-gray-50 dark:bg-gray-800 border border-transparent dark:border-gray-700 rounded-2xl px-5 py-4 text-xs font-medium focus:ring-2 focus:ring-indigo-500 transition-all outline-none resize-none h-24 shadow-inner"
                 />
               </div>
 
-              <div className="pt-4">
+              <div className="pt-6 grid grid-cols-2 gap-4">
                 <button
                   onClick={onClose}
-                  className="w-full py-5 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl hover:scale-[1.01] active:scale-95 transition-all"
+                  className="w-full py-4 bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-gray-200 transition-all"
                 >
-                  Done & Update Mission
+                  Save & Exit
+                </button>
+                <button
+                  onClick={async () => {
+                    onClose();
+                    await onUpdateOperationalData(task._id || task.id, { 
+                      status: task.missionStatus === 'Complete' ? 'completed' : task.status, 
+                      missionStatus: task.missionStatus 
+                    });
+                  }}
+                  className={`w-full py-4 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl transition-all hover:scale-[1.02] active:scale-95 ${task.missionStatus === 'Complete' 
+                    ? 'bg-emerald-600 shadow-emerald-100 dark:shadow-none' 
+                    : 'bg-indigo-600 shadow-indigo-100 dark:shadow-none'}`}
+                >
+                  {task.missionStatus === 'Complete' 
+                    ? 'Complete Mission' 
+                    : (['Follow Up', 'Rejected'].includes(task.missionStatus) 
+                      ? 'Submit & Reschedule' 
+                      : 'Update & Save')}
                 </button>
               </div>
             </div>
@@ -1036,69 +1055,117 @@ const EmployeeTasks = () => {
     }
   ];
 
-  const [taskList, setTaskList] = useState(initialTasks);
+  const [taskList, setTaskList] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const updateTaskStatus = (taskId, newStatus) => {
-    setTaskList(prev => prev.map(t => t.id === taskId ? { ...t, status: newStatus } : t));
-    // Also update selected task if it's open to reflect change immediately
-    if (selectedTask && selectedTask.id === taskId) {
-      setSelectedTask(prev => ({ ...prev, status: newStatus }));
-    }
-  };
-
-  const updateTaskOperationalData = (taskId, data) => {
-    setTaskList(prev => prev.map(t => t.id === taskId ? { ...t, ...data } : t));
-    if (selectedTask && selectedTask.id === taskId) {
-      setSelectedTask(prev => ({ ...prev, ...data }));
-    }
-  };
-
-  const handleStartTask = (taskId) => {
-    updateTaskOperationalData(taskId, { isTaskStarted: true, status: 'in-progress' });
-  };
-
-  const handleCreateNewTask = (taskData) => {
-    const newTask = {
-      id: taskList.length > 0 ? Math.max(...taskList.map(t => t.id)) + 1 : 1,
-      title: taskData.title || 'New Task',
-      store: 'New Operational Required',
-      companyName: 'Internal Ops',
-      companyContact: 'N/A',
-      companyEmail: 'N/A',
-      companyInsight: 'Ad-hoc Mission',
-      description: taskData.description,
-      type: taskData.type,
-      priority: taskData.priority.toLowerCase(),
-      status: taskData.initialStatus === 'IN PROGRESS' ? 'in-progress' : (taskData.initialStatus === 'COMPLETED' ? 'completed' : 'pending'),
-      visitStatus: 'Pending',
-      missionStatus: 'Pending',
-      isTaskStarted: taskData.initialStatus === 'IN PROGRESS',
-      date: taskData.date ? new Date(taskData.date) : new Date(),
-      dueDate: taskData.date ? new Date(taskData.date).toLocaleDateString() : new Date().toLocaleDateString(),
-      address: 'Internal Delivery',
-      distance: '0.0 km',
-      distanceVal: 0,
-      eta: '0 mins',
-      coords: { x: 50, y: 50 },
-      evidence: { storeFront: null, selfie: null, productDisplay: null, officialDoc: null },
-      checklist: [],
-      incentive: "₹0",
-      incentiveVal: 0,
+  useEffect(() => {
+    const fetchTasks = async () => {
+      try {
+        setIsLoading(true);
+        const data = await taskService.getTasks();
+        console.log('[DEBUG] Fetched Tasks from API:', data);
+        setTaskList(data);
+        setError(null);
+      } catch (err) {
+        console.error('Failed to fetch tasks:', err);
+        setError('Failed to load tasks. Using offline data.');
+        console.log('[DEBUG] Using fallback initialTasks:', initialTasks);
+        setTaskList(initialTasks);
+      } finally {
+        setIsLoading(false);
+      }
     };
-    setTaskList(prev => [newTask, ...prev]);
-    setIsCreateModalOpen(false);
+    fetchTasks();
+  }, []);
+
+  const updateTaskStatus = async (taskId, newStatus) => {
+    try {
+      const updatedTask = await taskService.updateTask(taskId, { status: newStatus });
+      setTaskList(prev => prev.map(t => t._id === taskId ? updatedTask : t));
+      if (selectedTask && selectedTask._id === taskId) {
+        setSelectedTask(updatedTask);
+      }
+    } catch (err) {
+      console.error('Failed to update task status:', err);
+      // Fallback for UI if error occurs
+      setTaskList(prev => prev.map(t => t._id === taskId ? { ...t, status: newStatus } : t));
+    }
   };
 
-  const handleFileUpload = (taskId, evidenceType, file) => {
-    // In a real app, you'd upload the file here. 
-    // For now, we'll store the filename or a dummy value.
+  const updateTaskOperationalData = async (taskId, data) => {
+    try {
+      const updatedTask = await taskService.updateTask(taskId, data);
+      setTaskList(prev => prev.map(t => t._id === taskId ? updatedTask : t));
+      if (selectedTask && selectedTask._id === taskId) {
+        setSelectedTask(updatedTask);
+      }
+    } catch (err) {
+      console.error('Failed to update task data:', err);
+      // Fallback
+      setTaskList(prev => prev.map(t => t._id === taskId ? { ...t, ...data } : t));
+    }
+  };
+
+  const handleStartTask = async (taskId) => {
+    const task = taskList.find(t => (t._id || t.id) === taskId);
+    if (task) {
+      setSelectedTask(task);
+      await updateTaskOperationalData(taskId, { isTaskStarted: true, status: 'in-progress' });
+    }
+  };
+
+  const handleCreateNewTask = async (taskData) => {
+    try {
+      const newTaskData = {
+        title: taskData.title || 'New Task',
+        store: 'New Operational Required',
+        companyName: 'Internal Ops',
+        companyContact: 'N/A',
+        companyEmail: 'N/A',
+        companyInsight: 'Ad-hoc Mission',
+        description: taskData.description,
+        type: taskData.type,
+        priority: taskData.priority.toLowerCase(),
+        status: taskData.initialStatus === 'IN PROGRESS' ? 'in-progress' : (taskData.initialStatus === 'COMPLETED' ? 'completed' : 'pending'),
+        visitStatus: 'Pending',
+        missionStatus: 'Pending',
+        isTaskStarted: taskData.initialStatus === 'IN PROGRESS',
+        date: taskData.date ? new Date(taskData.date) : new Date(),
+        dueDate: taskData.date ? new Date(taskData.date).toLocaleDateString() : new Date().toLocaleDateString(),
+        address: 'Internal Delivery',
+        distance: '0.0 km',
+        distanceVal: 0,
+        eta: '0 mins',
+        coords: { x: 50, y: 50 },
+        evidence: { storeFront: null, selfie: null, productDisplay: null, officialDoc: null },
+        checklist: [],
+        incentive: "₹0",
+        incentiveVal: 0,
+      };
+
+      const createdTask = await taskService.createTask(newTaskData);
+      setTaskList(prev => [createdTask, ...prev]);
+      setIsCreateModalOpen(false);
+    } catch (err) {
+      console.error('Failed to create task:', err);
+      // Fallback
+      const newTask = { ...taskData, id: Date.now() };
+      setTaskList(prev => [newTask, ...prev]);
+      setIsCreateModalOpen(false);
+    }
+  };
+
+  const handleFileUpload = async (taskId, evidenceType, file) => {
     if (file) {
-      updateTaskOperationalData(taskId, {
-        evidence: {
-          ...taskList.find(t => t.id === taskId).evidence,
-          [evidenceType]: file.name
-        }
-      });
+      // In a real app, you'd upload the file here. 
+      const mockFileUrl = `mock-uploads/${file.name}`;
+      const task = taskList.find(t => (t._id || t.id) === taskId);
+      const newEvidence = {
+        ...task.evidence,
+        [evidenceType]: mockFileUrl
+      };
+      await updateTaskOperationalData(taskId, { evidence: newEvidence });
     }
   };
 
@@ -1119,12 +1186,17 @@ const EmployeeTasks = () => {
 
   const filteredTasks = taskList
     .filter(task => {
+      const now = new Date();
+      const isNotCompleted = task.status !== 'completed';
+      const taskDateObj = new Date(task.date);
+      const isAvailable = !task.date || isNaN(taskDateObj.getTime()) || taskDateObj <= now || ['all', 'this_week', 'this_month'].includes(filterDate);
       const matchesSearch = task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         task.store.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesPriority = filterPriority === 'all' || task.priority === filterPriority;
 
+      if (!isNotCompleted || !isAvailable) return false;
+
       // Date Filtering Logic
-      const now = new Date();
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       const yesterday = new Date(today);
       yesterday.setDate(yesterday.getDate() - 1);
@@ -1158,6 +1230,8 @@ const EmployeeTasks = () => {
       }
       return 0;
     });
+
+  console.log('[DEBUG] Filtered Tasks count:', filteredTasks.length);
 
   const groupTasksByDate = (tasks) => {
     const groups = {
@@ -1231,10 +1305,10 @@ const EmployeeTasks = () => {
   };
 
   return (
-    <div className="w-full h-full py-8 px-4 md:px-10 overflow-x-hidden">
-      <div className="space-y-12 animate-in duration-500">
-      {/* <PerformanceStatsOverview /> */}
-      <style>{`
+    <div className="w-full h-full pt-0 pb-8 px-4 md:px-10 overflow-x-hidden">
+      <div className="space-y-4 animate-in duration-500">
+        {/* <PerformanceStatsOverview /> */}
+        <style>{`
         ::-webkit-scrollbar {
           width: 6px;
           height: 6px;
@@ -1273,324 +1347,361 @@ const EmployeeTasks = () => {
       `}</style>
 
 
-      <div className="space-y-10">
-        {/* Master Page Header */}
-        <div className="flex-1 space-y-3 mb-6">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20">
-            <LayoutGrid size={14} className="text-indigo-600 dark:text-indigo-400" />
-            <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600 dark:text-indigo-400">Assignment Hub</span>
-          </div>
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-            <div>
-              <h2 className="text-4xl md:text-5xl font-black text-gray-900 dark:text-white tracking-tight leading-none mb-2 mt-1">
-                Active <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 to-purple-500">Tasks</span>
-              </h2>
-              <p className="text-sm font-bold text-gray-500 dark:text-gray-400 flex items-center gap-2">
-                Manage your operational queue
-                <span className="hidden sm:inline w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-700" />
-                <span className="text-xs uppercase tracking-widest">
-                  Sorted by <span className="text-indigo-600 dark:text-indigo-400 font-black">{sortBy.replace('_', ' ')}</span>
-                </span>
-              </p>
+        <div className="space-y-6">
+          {/* Loading/Error Indicators */}
+          {isLoading && (
+            <div className="flex items-center justify-center p-12 bg-gray-50 dark:bg-gray-800 rounded-[2.5rem] border-2 border-dashed border-gray-200 dark:border-gray-700">
+              <div className="flex flex-col items-center gap-4">
+                <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+                <p className="text-xs font-black uppercase text-gray-400 tracking-widest">Synchronizing Assignments...</p>
+              </div>
             </div>
-            <button
-              onClick={() => setIsCreateModalOpen(true)}
-              className="flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-indigo-200 dark:shadow-none hover:scale-[1.02] active:scale-95 transition-all whitespace-nowrap"
-            >
-              + Create New Task
-            </button>
-          </div>
-        </div>
-
-        {/* Tab Navigation Switcher */}
-        <div className="flex bg-gray-50 dark:bg-gray-900/50 p-2 rounded-[2rem] border border-gray-100 dark:border-gray-800 shadow-inner w-full">
-          <button
-            onClick={() => setActiveTab('hub')}
-            className={`flex-1 flex items-center justify-center gap-3 py-3 rounded-[1.5rem] font-black text-xs uppercase tracking-widest transition-all ${activeTab === 'hub'
-              ? 'bg-white dark:bg-gray-800 text-indigo-600 shadow-xl'
-              : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'
-              }`}
-          >
-            <LayoutGrid size={18} />
-            Assignment Hub
-          </button>
-          <button
-            onClick={() => setActiveTab('map')}
-            className={`flex-1 flex items-center justify-center gap-3 py-3 rounded-[1.5rem] font-black text-xs uppercase tracking-widest transition-all ${activeTab === 'map'
-              ? 'bg-white dark:bg-gray-800 text-indigo-600 shadow-xl'
-              : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'
-              }`}
-          >
-            <MapIcon size={18} />
-            Live Route Map
-          </button>
-        </div>
-
-        {activeTab === 'map' ? (
-          /* Map View - Interactive Route */
-          <div className="bg-white dark:bg-gray-900 rounded-[2.5rem] p-6 md:p-10 border border-gray-100 dark:border-gray-800 shadow-sm group animate-in slide-in-from-left-4 duration-500 overflow-hidden relative">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 relative z-10">
+          )}
+          {error && (
+            <div className="p-6 bg-amber-50 dark:bg-amber-950/30 border border-amber-100 dark:border-amber-800 rounded-[2rem] flex items-center gap-4">
+              <AlertCircle className="text-amber-600" size={24} />
               <div>
-                <h2 className="text-3xl font-black text-gray-900 dark:text-white tracking-tighter uppercase">Live Route Map</h2>
-                <p className="text-gray-400 text-sm font-bold mt-1 tracking-tight">
-                  Optimized logistics path for <span className="text-indigo-600">12.4 km</span> travel
+                <p className="text-xs font-black text-amber-600 uppercase tracking-widest">Sync Warning</p>
+                <p className="text-xs text-amber-700 dark:text-amber-400 font-bold">{error}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Master Page Header */}
+          <div className="flex-1 space-y-3 mb-2">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20">
+              <LayoutGrid size={14} className="text-indigo-600 dark:text-indigo-400" />
+              <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600 dark:text-indigo-400">Assignment Hub</span>
+            </div>
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+              <div>
+                <h2 className="text-4xl md:text-5xl font-black text-gray-900 dark:text-white tracking-tight leading-none mb-2 mt-1">
+                  Active <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 to-purple-500">Tasks</span>
+                </h2>
+                <p className="text-sm font-bold text-gray-500 dark:text-gray-400 flex items-center gap-2">
+                  Manage your operational queue
+                  <span className="hidden sm:inline w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-700" />
+                  <span className="text-xs uppercase tracking-widest">
+                    Sorted by <span className="text-indigo-600 dark:text-indigo-400 font-black">{sortBy.replace('_', ' ')}</span>
+                  </span>
                 </p>
               </div>
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2 px-4 py-2 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 rounded-xl text-[10px] font-black uppercase tracking-widest border border-emerald-100 dark:border-emerald-800/50">
-                  <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  GPS Active
-                </div>
-                <button className="flex items-center gap-3 px-8 py-4 bg-indigo-600 text-white rounded-[1.5rem] font-black text-xs uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-xl shadow-indigo-200 dark:shadow-none">
-                  <Navigation size={18} className="animate-pulse" />
-                  Optimize Route
-                </button>
-              </div>
+              <button
+                onClick={() => setIsCreateModalOpen(true)}
+                className="flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-indigo-200 dark:shadow-none hover:scale-[1.02] active:scale-95 transition-all whitespace-nowrap"
+              >
+                + Create New Task
+              </button>
             </div>
+          </div>
 
-            <div className="relative h-[550px] bg-gray-50 dark:bg-gray-950 rounded-[3rem] border border-gray-200 dark:border-gray-800 overflow-hidden shadow-2xl">
-              {/* SVG Route Visualization */}
-              <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-40" preserveAspectRatio="none">
-                <path
-                  d="M 30 80 Q 30 55, 45 30 T 70 50"
-                  stroke="url(#route-gradient)"
-                  strokeWidth="4"
-                  fill="none"
-                  className="animate-dash"
-                />
-                <defs>
-                  <linearGradient id="route-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#6366F1" />
-                    <stop offset="100%" stopColor="#EC4899" />
-                  </linearGradient>
-                </defs>
-              </svg>
+          {/* Tab Navigation Switcher */}
+          <div className="flex bg-gray-50 dark:bg-gray-900/50 p-2 rounded-[2rem] border border-gray-100 dark:border-gray-800 shadow-inner w-full">
+            <button
+              onClick={() => setActiveTab('hub')}
+              className={`flex-1 flex items-center justify-center gap-3 py-3 rounded-[1.5rem] font-black text-xs uppercase tracking-widest transition-all ${activeTab === 'hub'
+                ? 'bg-white dark:bg-gray-800 text-indigo-600 shadow-xl'
+                : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'
+                }`}
+            >
+              <LayoutGrid size={18} />
+              Assignment Hub
+            </button>
+            <button
+              onClick={() => setActiveTab('map')}
+              className={`flex-1 flex items-center justify-center gap-3 py-3 rounded-[1.5rem] font-black text-xs uppercase tracking-widest transition-all ${activeTab === 'map'
+                ? 'bg-white dark:bg-gray-800 text-indigo-600 shadow-xl'
+                : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'
+                }`}
+            >
+              <MapIcon size={18} />
+              Live Route Map
+            </button>
+          </div>
 
-              <div className="absolute inset-0 opacity-20 pointer-events-none" style={{ backgroundImage: 'radial-gradient(#6366F1 1.5px, transparent 1.5px)', backgroundSize: '40px 40px' }} />
+          {activeTab === 'map' ? (
+            /* Map View - Interactive Route */
+            <div className="bg-white dark:bg-gray-900 rounded-[2.5rem] p-6 md:p-10 border border-gray-100 dark:border-gray-800 shadow-sm group animate-in slide-in-from-left-4 duration-500 overflow-hidden relative">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 relative z-10">
+                <div>
+                  <h2 className="text-3xl font-black text-gray-900 dark:text-white tracking-tighter uppercase">Live Route Map</h2>
+                  <p className="text-gray-400 text-sm font-bold mt-1 tracking-tight">
+                    Optimized logistics path for <span className="text-indigo-600">12.4 km</span> travel
+                  </p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 px-4 py-2 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 rounded-xl text-[10px] font-black uppercase tracking-widest border border-emerald-100 dark:border-emerald-800/50">
+                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    GPS Active
+                  </div>
+                  <button className="flex items-center gap-3 px-8 py-4 bg-indigo-600 text-white rounded-[1.5rem] font-black text-xs uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-xl shadow-indigo-200 dark:shadow-none">
+                    <Navigation size={18} className="animate-pulse" />
+                    Optimize Route
+                  </button>
+                </div>
+              </div>
 
-              {taskList.map((task) => (
-                <div key={task.id} className="absolute transition-all hover:scale-110 cursor-pointer z-10 hover:z-[60] group/marker" style={{ left: `${task.coords.x}%`, top: `${task.coords.y}%` }}>
-                  <div className="relative">
-                    {/* Ripple Effect */}
-                    <div className={`absolute inset-0 scale-[2.5] opacity-20 animate-ping rounded-full ${task.priority === 'high' ? 'bg-red-500' : 'bg-indigo-500'
-                      }`} />
+              <div className="relative h-[550px] bg-gray-50 dark:bg-gray-950 rounded-[3rem] border border-gray-200 dark:border-gray-800 overflow-hidden shadow-2xl">
+                {/* SVG Route Visualization */}
+                <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-40" preserveAspectRatio="none">
+                  <path
+                    d="M 30 80 Q 30 55, 45 30 T 70 50"
+                    stroke="url(#route-gradient)"
+                    strokeWidth="4"
+                    fill="none"
+                    className="animate-dash"
+                  />
+                  <defs>
+                    <linearGradient id="route-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#6366F1" />
+                      <stop offset="100%" stopColor="#EC4899" />
+                    </linearGradient>
+                  </defs>
+                </svg>
 
-                    <div className={`p-3 rounded-2xl shadow-2xl ring-4 ring-white dark:ring-gray-900 ${getPriorityColor(task.priority)} flex items-center justify-center transform -translate-x-1/2 -translate-y-1/2 transition-all group-hover/marker:shadow-indigo-200 group-hover/marker:-translate-y-2/3`}>
-                      <MapPin size={24} className="fill-current" />
+                <div className="absolute inset-0 opacity-20 pointer-events-none" style={{ backgroundImage: 'radial-gradient(#6366F1 1.5px, transparent 1.5px)', backgroundSize: '40px 40px' }} />
 
-                      {/* Rich Tooltip */}
-                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 opacity-0 group-hover/marker:opacity-100 transition-all pointer-events-none p-4 bg-white dark:bg-gray-900 rounded-[1.5rem] shadow-2xl border border-gray-100 dark:border-gray-700 min-w-[200px] z-[70]">
-                        <p className="text-[9px] font-black text-indigo-600 uppercase tracking-widest">{task.type} • {task.distance}</p>
-                        <h4 className="text-xs font-black text-gray-900 dark:text-white mt-1 leading-tight">{task.store}</h4>
-                        <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-50 dark:border-gray-800">
-                          <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-full ${getPriorityColor(task.priority)}`}>{task.priority}</span>
-                          <span className="text-[10px] font-black text-emerald-600">{task.incentive}</span>
+                {taskList.map((task) => (
+                  <div key={task._id || task.id} className="absolute transition-all hover:scale-110 cursor-pointer z-10 hover:z-[60] group/marker" style={{ left: `${task.coords.x}%`, top: `${task.coords.y}%` }}>
+                    <div className="relative">
+                      {/* Ripple Effect */}
+                      <div className={`absolute inset-0 scale-[2.5] opacity-20 animate-ping rounded-full ${task.priority === 'high' ? 'bg-red-500' : 'bg-indigo-500'
+                        }`} />
+
+                      <div className={`p-3 rounded-2xl shadow-2xl ring-4 ring-white dark:ring-gray-900 ${getPriorityColor(task.priority)} flex items-center justify-center transform -translate-x-1/2 -translate-y-1/2 transition-all group-hover/marker:shadow-indigo-200 group-hover/marker:-translate-y-2/3`}>
+                        <MapPin size={24} className="fill-current" />
+
+                        {/* Rich Tooltip */}
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 opacity-0 group-hover/marker:opacity-100 transition-all pointer-events-none p-4 bg-white dark:bg-gray-900 rounded-[1.5rem] shadow-2xl border border-gray-100 dark:border-gray-700 min-w-[200px] z-[70]">
+                          <p className="text-[9px] font-black text-indigo-600 uppercase tracking-widest">{task.type} • {task.distance}</p>
+                          <h4 className="text-xs font-black text-gray-900 dark:text-white mt-1 leading-tight">{task.store}</h4>
+                          <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-50 dark:border-gray-800">
+                            <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-full ${getPriorityColor(task.priority)}`}>{task.priority}</span>
+                            <span className="text-[10px] font-black text-emerald-600">{task.incentive}</span>
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
 
-              {/* Floating Map Intel */}
-              <div className="absolute top-8 right-8 bg-white/90 dark:bg-gray-900/90 backdrop-blur-3xl p-5 rounded-[2rem] border border-white/20 shadow-2xl flex flex-col gap-4 z-20">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 flex items-center justify-center text-indigo-600">
-                    <TrendingUpIcon size={16} />
-                  </div>
-                  <div>
-                    <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Efficiency</p>
-                    <p className="text-sm font-black text-gray-900 dark:text-white leading-none">94% Optimal</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="absolute bottom-8 left-8 bg-white/90 dark:bg-gray-900/90 backdrop-blur-3xl p-5 rounded-[2rem] border border-white/20 shadow-2xl flex items-center gap-6 z-20">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-lg">
-                    <Navigation size={20} />
-                  </div>
-                  <div>
-                    <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Next Best Step</p>
-                    <p className="text-xs font-black text-gray-900 dark:text-white leading-none">Head to {taskList[0]?.store}</p>
-                  </div>
-                </div>
-                <div className="w-px h-10 bg-gray-200 dark:bg-gray-700" />
-                <div>
-                  <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Travel Time</p>
-                  <p className="text-xs font-black text-emerald-600 leading-none">~12 mins</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Decorative Background Glows */}
-            <div className="absolute bottom-0 left-0 w-64 h-64 bg-indigo-600/5 rounded-full blur-[100px] pointer-events-none" />
-          </div>
-        ) : (
-          /* Task Hub Grid - Ultra-Compact High-Density */
-          <div className="bg-white dark:bg-gray-900 rounded-[3rem] p-8 md:p-14 border border-gray-100 dark:border-gray-800 shadow-xl space-y-12 animate-in slide-in-from-right-4 duration-500">
-            <div className="flex flex-col lg:flex-row lg:items-center gap-8">
-              {/* Header logic moved to top of page */}
-
-              <div className="flex flex-col lg:flex-row items-center justify-end gap-4 ml-auto w-full">
-                <div className="relative group/search w-full lg:flex-1 lg:max-w-xl">
-                  <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within/search:text-indigo-600 transition-colors" size={18} />
-                  <input
-                    type="text"
-                    placeholder="Search mission queue..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-12 pr-6 py-3 bg-gray-50 dark:bg-gray-800 rounded-xl text-xs font-bold outline-none border border-transparent focus:border-indigo-100 dark:focus:border-indigo-900/30 w-full transition-all shadow-inner"
-                  />
-                </div>
-
-                <div className="flex bg-gray-50 dark:bg-gray-800 p-1.5 rounded-xl border border-gray-100 dark:border-gray-700 w-full lg:w-auto overflow-x-auto shrink-0 shadow-sm text-gray-600 dark:text-gray-400 scrollbar-hide">
-                  <select
-                    value={filterPriority}
-                    onChange={(e) => setFilterPriority(e.target.value)}
-                    className="bg-transparent text-[10px] font-black uppercase tracking-widest px-3 py-1.5 outline-none border-none cursor-pointer hover:text-indigo-600 transition-colors"
-                  >
-                    <option value="all">Priority: All</option>
-                    <option value="high">High</option>
-                    <option value="medium">Medium</option>
-                    <option value="low">Low</option>
-                  </select>
-                  <div className="w-px h-5 bg-gray-200 dark:bg-gray-700 self-center mx-1 shrink-0" />
-                  <select
-                    value={filterDate}
-                    onChange={(e) => setFilterDate(e.target.value)}
-                    className="bg-transparent text-[10px] font-black uppercase tracking-widest px-3 py-1.5 outline-none border-none cursor-pointer hover:text-indigo-600 transition-colors"
-                  >
-                    <option value="all">Time: All</option>
-                    <option value="today">Today</option>
-                    <option value="yesterday">Yesterday</option>
-                    <option value="this_week">This Week</option>
-                    <option value="this_month">This Month</option>
-                  </select>
-                  <div className="w-px h-5 bg-gray-200 dark:bg-gray-700 self-center mx-1 shrink-0" />
-                  <select
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value)}
-                    className="bg-transparent text-[10px] font-black uppercase tracking-widest px-3 py-1.5 outline-none border-none cursor-pointer hover:text-indigo-600 transition-colors"
-                  >
-                    <option value="nearest">Sort: Nearest</option>
-                    <option value="highest_pay">Payout</option>
-                    <option value="priority">Priority</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-6">
-              {Object.entries(groupedTasks).map(([category, tasks]) => (
-                tasks.length > 0 && (
-                  <div key={category} className="space-y-3">
-                    <div
-                      className="flex items-center gap-4 border-b border-gray-100 dark:border-gray-800 pb-4 cursor-pointer select-none"
-                      onClick={() => toggleCategory(category)}
-                    >
-                      <div className="w-10 h-10 rounded-xl bg-gray-50 dark:bg-gray-800 flex items-center justify-center text-gray-400">
-                        {category === 'Today' ? <Clock size={18} className="text-indigo-600" /> :
-                          category === 'Yesterday' ? <Calendar size={18} /> :
-                            category === 'This Week' ? <LayoutGrid size={18} /> :
-                              <TrendingUpIcon size={18} />}
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="text-lg font-black text-gray-900 dark:text-white uppercase tracking-widest">{category}'s Missions</h3>
-                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">{tasks.length} Operational Targets</p>
-                      </div>
-                      <div className={`p-2 rounded-xl text-gray-400 transition-transform duration-300 ${collapsedCategories[category] ? 'rotate-180' : ''}`}>
-                        <ChevronDown size={18} />
-                      </div>
+                {/* Floating Map Intel */}
+                <div className="absolute top-8 right-8 bg-white/90 dark:bg-gray-900/90 backdrop-blur-3xl p-5 rounded-[2rem] border border-white/20 shadow-2xl flex flex-col gap-4 z-20">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 flex items-center justify-center text-indigo-600">
+                      <TrendingUpIcon size={16} />
                     </div>
-
-                    {!collapsedCategories[category] && (
-                      <div className={view === 'list' ? "space-y-3" : "grid grid-cols-1 gap-3"}>
-                        {tasks.map((task) => (
-                          <div
-                            key={task.id}
-                            onClick={() => setSelectedTask(task)}
-                            className="group relative bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-[2rem] overflow-hidden transition-all hover:shadow-3xl hover:border-indigo-100 dark:hover:border-indigo-900/40 flex flex-col md:flex-row md:items-center cursor-pointer"
-                          >
-                            {/* Left Priority Strip */}
-                            <div className={`absolute left-0 top-0 bottom-0 w-2 ${task.priority === 'high' ? 'bg-red-500' :
-                              task.priority === 'medium' ? 'bg-orange-500' : 'bg-emerald-500'
-                              }`} />
-
-                            {/* Info Section - Left */}
-                            <div className="p-5 flex-1 flex items-start gap-4">
-                              <div className={`p-3 rounded-xl shrink-0 ${getPriorityColor(task.priority)} shadow-sm group-hover:scale-110 transition-transform`}>
-                                {getCategoryIcon(task.type)}
-                              </div>
-                              <div className="min-w-0">
-                                <div className="flex items-center gap-3 mb-2">
-                                  <p className="text-xs font-black uppercase text-gray-400 tracking-wider leading-none">{task.type}</p>
-                                  <span className="w-1.5 h-1.5 rounded-full bg-gray-200" />
-                                  <p className={`text-xs font-bold uppercase tracking-widest ${task.status === 'in-progress' ? 'text-orange-500 animate-pulse' :
-                                    task.status === 'delayed' ? 'text-red-500' : 'text-gray-500'
-                                    }`}>
-                                    {task.status.replace('-', ' ')}
-                                  </p>
-                                  <span className="w-1.5 h-1.5 rounded-full bg-gray-200" />
-                                  <span className={`text-xs font-black uppercase px-3 py-1 rounded-full border ${task.priority === 'high' ? 'bg-red-50 text-red-600 border-red-100' :
-                                    task.priority === 'medium' ? 'bg-orange-50 text-orange-600 border-orange-100' :
-                                      'bg-emerald-50 text-emerald-600 border-emerald-100'
-                                    }`}>
-                                    {task.priority}
-                                  </span>
-                                </div>
-                                <h3 className="text-lg font-black text-gray-900 dark:text-white mb-1 tracking-tighter leading-tight group-hover:text-indigo-600 transition-colors truncate">
-                                  {task.title}
-                                </h3>
-                                <div className="flex items-center gap-3">
-                                  <MapPin size={16} className="text-gray-400 shrink-0" />
-                                  <p className="text-xs font-bold text-gray-600 dark:text-gray-400 truncate">
-                                    {task.store} • <span className="text-gray-400 font-medium">{task.address}</span>
-                                  </p>
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Action Section - Right */}
-                            <div className="p-5 pl-5 md:w-[360px] flex flex-col justify-center items-end gap-3 bg-gray-50/30 dark:bg-gray-800/20 md:border-l md:border-gray-50 md:dark:border-gray-800/50">
-                              <div className="flex items-center gap-8 w-full justify-end mb-2">
-                                <div className="flex items-center gap-3">
-                                  <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center shadow-inner">
-                                    <Navigation size={18} className="text-indigo-600" />
-                                  </div>
-                                  <div>
-                                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Distance</p>
-                                    <p className="text-sm font-black text-gray-900 dark:text-white leading-none">{task.distance}</p>
-                                  </div>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                  <div className="w-10 h-10 rounded-xl bg-pink-50 dark:bg-pink-900/30 flex items-center justify-center shadow-inner">
-                                    <Clock size={18} className="text-pink-600" />
-                                  </div>
-                                  <div>
-                                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Arrival</p>
-                                    <p className="text-sm font-black text-gray-900 dark:text-white leading-none">{task.eta}</p>
-                                  </div>
-                                </div>
-                              </div>
-
-                              <div className="flex items-center gap-3 w-full justify-end">
-                                <button className="w-auto flex items-center justify-center gap-3 px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] transition-all shadow-xl shadow-indigo-100 dark:shadow-none whitespace-nowrap hover:scale-[1.02] active:scale-95">
-                                  Start Task
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                    <div>
+                      <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Efficiency</p>
+                      <p className="text-sm font-black text-gray-900 dark:text-white leading-none">94% Optimal</p>
+                    </div>
                   </div>
-                )
-              ))}
+                </div>
+
+                <div className="absolute bottom-8 left-8 bg-white/90 dark:bg-gray-900/90 backdrop-blur-3xl p-5 rounded-[2rem] border border-white/20 shadow-2xl flex items-center gap-6 z-20">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-lg">
+                      <Navigation size={20} />
+                    </div>
+                    <div>
+                      <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Next Best Step</p>
+                      <p className="text-xs font-black text-gray-900 dark:text-white leading-none">Head to {taskList[0]?.store}</p>
+                    </div>
+                  </div>
+                  <div className="w-px h-10 bg-gray-200 dark:bg-gray-700" />
+                  <div>
+                    <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Travel Time</p>
+                    <p className="text-xs font-black text-emerald-600 leading-none">~12 mins</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Decorative Background Glows */}
+              <div className="absolute bottom-0 left-0 w-64 h-64 bg-indigo-600/5 rounded-full blur-[100px] pointer-events-none" />
             </div>
-          </div>
-        )}
-      </div>
+          ) : (
+            /* Task Hub Grid - Ultra-Compact High-Density */
+            <div className="bg-white dark:bg-gray-900 rounded-[3rem] p-8 md:p-14 border border-gray-100 dark:border-gray-800 shadow-xl space-y-12 animate-in slide-in-from-right-4 duration-500">
+              <div className="flex flex-col lg:flex-row lg:items-center gap-8">
+                {/* Header logic moved to top of page */}
+
+                <div className="flex flex-col lg:flex-row items-center justify-end gap-4 ml-auto w-full">
+                  <div className="relative group/search w-full lg:flex-1 lg:max-w-xl">
+                    <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within/search:text-indigo-600 transition-colors" size={18} />
+                    <input
+                      type="text"
+                      placeholder="Search mission queue..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-12 pr-6 py-3 bg-gray-50 dark:bg-gray-800 rounded-xl text-xs font-bold outline-none border border-transparent focus:border-indigo-100 dark:focus:border-indigo-900/30 w-full transition-all shadow-inner"
+                    />
+                  </div>
+
+                  <div className="flex bg-gray-50 dark:bg-gray-800 p-1.5 rounded-xl border border-gray-100 dark:border-gray-700 w-full lg:w-auto overflow-x-auto shrink-0 shadow-sm text-gray-600 dark:text-gray-400 scrollbar-hide">
+                    <select
+                      value={filterPriority}
+                      onChange={(e) => setFilterPriority(e.target.value)}
+                      className="bg-transparent text-[10px] font-black uppercase tracking-widest px-3 py-1.5 outline-none border-none cursor-pointer hover:text-indigo-600 transition-colors"
+                    >
+                      <option value="all">Priority: All</option>
+                      <option value="high">High</option>
+                      <option value="medium">Medium</option>
+                      <option value="low">Low</option>
+                    </select>
+                    <div className="w-px h-5 bg-gray-200 dark:bg-gray-700 self-center mx-1 shrink-0" />
+                    <select
+                      value={filterDate}
+                      onChange={(e) => setFilterDate(e.target.value)}
+                      className="bg-transparent text-[10px] font-black uppercase tracking-widest px-3 py-1.5 outline-none border-none cursor-pointer hover:text-indigo-600 transition-colors"
+                    >
+                      <option value="all">Time: All</option>
+                      <option value="today">Today</option>
+                      <option value="yesterday">Yesterday</option>
+                      <option value="this_week">This Week</option>
+                      <option value="this_month">This Month</option>
+                    </select>
+                    <div className="w-px h-5 bg-gray-200 dark:bg-gray-700 self-center mx-1 shrink-0" />
+                    <select
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value)}
+                      className="bg-transparent text-[10px] font-black uppercase tracking-widest px-3 py-1.5 outline-none border-none cursor-pointer hover:text-indigo-600 transition-colors"
+                    >
+                      <option value="nearest">Sort: Nearest</option>
+                      <option value="highest_pay">Payout</option>
+                      <option value="priority">Priority</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-6">
+                {Object.entries(groupedTasks).map(([category, tasks]) => (
+                  tasks.length > 0 && (
+                    <div key={category} className="space-y-3">
+                      <div
+                        className="flex items-center gap-4 border-b border-gray-100 dark:border-gray-800 pb-4 cursor-pointer select-none"
+                        onClick={() => toggleCategory(category)}
+                      >
+                        <div className="w-10 h-10 rounded-xl bg-gray-50 dark:bg-gray-800 flex items-center justify-center text-gray-400">
+                          {category === 'Today' ? <Clock size={18} className="text-indigo-600" /> :
+                            category === 'Yesterday' ? <Calendar size={18} /> :
+                              category === 'This Week' ? <LayoutGrid size={18} /> :
+                                <TrendingUpIcon size={18} />}
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="text-lg font-black text-gray-900 dark:text-white uppercase tracking-widest">{category}'s Missions</h3>
+                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">{tasks.length} Operational Targets</p>
+                        </div>
+                        <div className={`p-2 rounded-xl text-gray-400 transition-transform duration-300 ${collapsedCategories[category] ? 'rotate-180' : ''}`}>
+                          <ChevronDown size={18} />
+                        </div>
+                      </div>
+
+                      {!collapsedCategories[category] && (
+                        <div className={view === 'list' ? "space-y-3" : "grid grid-cols-1 gap-3"}>
+                          {tasks.map((task) => (
+                            <div
+                              key={task._id || task.id}
+                              onClick={() => setSelectedTask(task)}
+                              className="group relative bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-[2rem] overflow-hidden transition-all hover:shadow-3xl hover:border-indigo-100 dark:hover:border-indigo-900/40 flex flex-col md:flex-row md:items-center cursor-pointer"
+                            >
+                              {/* Left Priority Strip */}
+                              <div className={`absolute left-0 top-0 bottom-0 w-2 ${task.priority === 'high' ? 'bg-red-500' :
+                                task.priority === 'medium' ? 'bg-orange-500' : 'bg-emerald-500'
+                                }`} />
+
+                              {/* Info Section - Left */}
+                              <div className="p-5 flex-1 flex items-start gap-4">
+                                <div className={`p-3 rounded-xl shrink-0 ${getPriorityColor(task.priority)} shadow-sm group-hover:scale-110 transition-transform`}>
+                                  {getCategoryIcon(task.type)}
+                                </div>
+                                <div className="min-w-0">
+                                  <div className="flex items-center gap-3 mb-2">
+                                    <p className="text-xs font-black uppercase text-gray-400 tracking-wider leading-none">{task.type}</p>
+                                    <span className="w-1.5 h-1.5 rounded-full bg-gray-200" />
+                                    <p className={`text-xs font-bold uppercase tracking-widest ${task.status === 'in-progress' ? 'text-orange-500 animate-pulse' :
+                                      task.status === 'delayed' ? 'text-red-500' : 'text-gray-500'
+                                      }`}>
+                                      {task.status.replace('-', ' ')}
+                                    </p>
+                                    <span className="w-1.5 h-1.5 rounded-full bg-gray-200" />
+                                    <span className={`text-xs font-black uppercase px-3 py-1 rounded-full border ${task.priority === 'high' ? 'bg-red-50 text-red-600 border-red-100' :
+                                      task.priority === 'medium' ? 'bg-orange-50 text-orange-600 border-orange-100' :
+                                        'bg-emerald-50 text-emerald-600 border-emerald-100'
+                                      }`}>
+                                      {task.priority}
+                                    </span>
+                                  </div>
+                                  <h3 className="text-lg font-black text-gray-900 dark:text-white mb-1 tracking-tighter leading-tight group-hover:text-indigo-600 transition-colors truncate">
+                                    {task.title}
+                                  </h3>
+                                  <div className="flex items-center gap-3">
+                                    <MapPin size={16} className="text-gray-400 shrink-0" />
+                                    <p className="text-xs font-bold text-gray-600 dark:text-gray-400 truncate">
+                                      {task.store} • <span className="text-gray-400 font-medium">{task.address}</span>
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Action Section - Right */}
+                              <div className="p-5 pl-5 md:w-[360px] flex flex-col justify-center items-end gap-3 bg-gray-50/30 dark:bg-gray-800/20 md:border-l md:border-gray-50 md:dark:border-gray-800/50">
+                                <div className="flex items-center gap-8 w-full justify-end mb-2">
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center shadow-inner">
+                                      <Navigation size={18} className="text-indigo-600" />
+                                    </div>
+                                    <div>
+                                      <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Distance</p>
+                                      <p className="text-sm font-black text-gray-900 dark:text-white leading-none">{task.distance}</p>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-xl bg-pink-50 dark:bg-pink-900/30 flex items-center justify-center shadow-inner">
+                                      <Clock size={18} className="text-pink-600" />
+                                    </div>
+                                    <div>
+                                      <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Arrival</p>
+                                      <p className="text-sm font-black text-gray-900 dark:text-white leading-none">{task.eta}</p>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center gap-3 w-full justify-end">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleStartTask(task._id || task.id);
+                                    }}
+                                    className="w-auto flex items-center justify-center gap-3 px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] transition-all shadow-xl shadow-indigo-100 dark:shadow-none whitespace-nowrap hover:scale-[1.02] active:scale-95"
+                                  >
+                                    {task.status === 'in-progress' ? 'Continue' : 'Start Task'}
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )
+                ))}
+                
+                {filteredTasks.length === 0 && (
+                  <div className="flex flex-col items-center justify-center py-20 bg-gray-50/50 dark:bg-gray-800/20 rounded-[3rem] border-2 border-dashed border-gray-100 dark:border-gray-800 animate-in fade-in zoom-in duration-500">
+                    <div className="w-20 h-20 bg-white dark:bg-gray-800 rounded-full flex items-center justify-center mb-6 shadow-xl shadow-gray-200/50 dark:shadow-none border border-gray-50 dark:border-gray-700">
+                      <LayoutGrid size={32} className="text-gray-300" />
+                    </div>
+                    <h3 className="text-xl font-black text-gray-900 dark:text-white tracking-tighter uppercase mb-2">No Active Missions</h3>
+                    <p className="text-gray-400 text-sm font-bold tracking-tight text-center max-w-xs px-6">
+                      Your operational queue is clear. New tasks will appear here when assigned or after cool-down.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
 
       </div>
 

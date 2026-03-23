@@ -93,7 +93,7 @@ const DashboardLayout = ({ allowedRole }) => {
         <div className="print:hidden">
           <Navbar user={storedUser} />
         </div>
-        <main className="flex-1 p-8 overflow-y-auto text-gray-900 dark:text-gray-100 print:p-0">
+        <main className="flex-1 p-4 sm:p-6 overflow-y-auto text-gray-900 dark:text-gray-100 print:p-0">
           <div className="max-w-7xl mx-auto print:max-w-none print:m-0">
             <Outlet context={{ workStatus, setWorkStatus }} />
           </div>

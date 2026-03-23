@@ -20,6 +20,9 @@ const storeVisitSchema = new mongoose.Schema({
     enum: ['completed', 'partially_completed', 'not_interested', 'follow_up'],
     required: true,
   },
+  address: String,
+  distance: String,
+  eta: String,
   gps: {
     lat: Number,
     lng: Number,
