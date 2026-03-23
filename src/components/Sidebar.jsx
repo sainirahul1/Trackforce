@@ -1,6 +1,26 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, Building2, ClipboardList, Map, Settings, LogOut, ShieldCheck, Bell, ShoppingBag, Camera, Clock, AlertCircle, ChevronLeft, ChevronRight, Menu, Activity, User } from 'lucide-react';
+import { 
+  LayoutDashboard, 
+  Users, 
+  Building2, 
+  ClipboardList, 
+  Map, 
+  Settings, 
+  LogOut, 
+  ShieldCheck, 
+  Bell, 
+  ShoppingBag, 
+  Camera, 
+  Clock, 
+  AlertCircle, 
+  ChevronLeft, 
+  ChevronRight, 
+  Menu, 
+  Activity, 
+  User,
+  CreditCard
+} from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
 
 const Sidebar = ({ role, user, isCollapsed, onToggle }) => {
@@ -8,7 +28,6 @@ const Sidebar = ({ role, user, isCollapsed, onToggle }) => {
     superadmin: [
       { name: 'Dashboard', icon: LayoutDashboard, path: '/superadmin/dashboard' },
       { name: 'Companies', icon: Building2, path: '/superadmin/companies' },
-      { name: 'Issues', icon: AlertCircle, path: '/superadmin/issues' },
     ],
     tenant: [
       { name: 'Dashboard', icon: LayoutDashboard, path: '/tenant/dashboard' },
@@ -18,9 +37,9 @@ const Sidebar = ({ role, user, isCollapsed, onToggle }) => {
       { name: 'Orders & Revenue', icon: ShoppingBag, path: '/tenant/orders' },
       { name: 'Analytics', icon: Activity, path: '/tenant/analytics' },
       { name: 'Activity Log', icon: Clock, path: '/tenant/activity' },
-      { name: 'Subscription', icon: ShieldCheck, path: '/tenant/subscription' },
+      { name: 'Subscription', icon: CreditCard, path: '/tenant/subscription' },
+      { name: 'Profile', icon: User, path: '/tenant/profile' },
       { name: 'Notifications', icon: Bell, path: '/tenant/notifications' },
-      { name: 'Issues', icon: AlertCircle, path: '/tenant/issues' },
       { name: 'Settings', icon: Settings, path: '/tenant/settings' },
     ],
     manager: [
@@ -32,7 +51,6 @@ const Sidebar = ({ role, user, isCollapsed, onToggle }) => {
       { name: 'Analytics', icon: Activity, path: '/manager/analytics' },
       { name: 'Team', icon: Users, path: '/manager/team' },
       { name: 'Activity Log', icon: Clock, path: '/manager/activity' },
-      { name: 'Issues', icon: AlertCircle, path: '/manager/issues' },
       { name: 'Profile', icon: User, path: '/manager/profile' },
     ],
     employee: [

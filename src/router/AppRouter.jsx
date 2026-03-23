@@ -30,6 +30,7 @@ import AnalyticsTenant from '../pages/tenant/Analytics';
 import ActivityTenant from '../pages/tenant/Activity';
 import SettingsTenant from '../pages/tenant/Settings';
 import NotificationsTenant from '../pages/tenant/Notifications';
+import TenantProfile from '../pages/tenant/Profile';
 import SuperAdminIssues from '../pages/superadmin/Issues';
 
 // Employee Portal
@@ -71,6 +72,7 @@ const AppRouter = () => (
       <Route path="settings" element={<SettingsTenant />} />
       <Route path="notifications" element={<NotificationsTenant />} />
       <Route path="issues" element={<TenantIssues />} />
+      <Route path="profile" element={<TenantProfile />} />
       <Route index element={<Navigate to="dashboard" replace />} />
     </Route>
 
