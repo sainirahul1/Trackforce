@@ -15,18 +15,26 @@ const orderSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  items: [{
-    name: { type: String, required: true },
-    quantity: { type: Number, required: true },
-    price: { type: Number, required: true },
-  }],
+  items: {
+    type: Number,
+    required: true,
+  },
+  paymentMethod: {
+    type: String,
+  },
+  deliveryDate: {
+    type: String, // String or Date works, frontend sends YYYY-MM-DD
+  },
+  notes: {
+    type: String,
+  },
   totalAmount: {
     type: Number,
     required: true,
   },
   status: {
     type: String,
-    enum: ['pending', 'shipped', 'delivered', 'canceled'],
+    enum: ['pending', 'processing', 'shipped', 'delivered', 'completed', 'canceled'],
     default: 'pending',
   },
   timestamp: {
