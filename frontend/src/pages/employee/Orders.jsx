@@ -11,10 +11,14 @@ import {
   Edit,           // Icon for edit action
   Layers,         // Icon for 'All' filter
   Clock,          // Icon for 'Today' filter
-  CalendarDays    // Icon for 'Weekly' filter
+  CalendarDays,    // Icon for 'Weekly' filter
+  AlertTriangle,   // Icon for validation errors
+  PenLine,        // Professional Edit Icon
+  FileText        // Professional View Icon
 } from "lucide-react";
 // Import theme context for global dark mode
 import { useTheme } from "../../context/ThemeContext";
+import { getOrders, createOrderAPI, updateOrderAPI } from "../../services/orderService";
 
 // Main Employee Orders Component
 const EmployeeOrders = () => {
@@ -26,6 +30,7 @@ const EmployeeOrders = () => {
   const [showModal, setShowModal] = useState(false);           // Modal visibility state
   const [success, setSuccess] = useState(false);              // Success message state
   const [activityFilter, setActivityFilter] = useState("All"); // Activity filter state
+  const [statusFilter, setStatusFilter] = useState("All");     // Status filter state
   const [lastAction, setLastAction] = useState("");         // Track last action (create/update)
   const [validationError, setValidationError] = useState(false); // Validation error state
   const [selectedOrder, setSelectedOrder] = useState(null);   // Selected order for viewing
@@ -64,11 +69,40 @@ const EmployeeOrders = () => {
   */
 
   // Initial orders data with sample orders
-  const [orders, setOrders] = useState([
-    { id: "ORD-892", store: "Reliance Fresh", items: 12, value: 14200, status: "Pending", date: "2024-03-13" },
-    { id: "ORD-891", store: "Global Mart", items: 5, value: 6800, status: "Completed", date: "2024-03-13" },
-    { id: "ORD-890", store: "Daily Needs", items: 23, value: 32500, status: "Pending", date: "2024-03-12" }
-  ]);
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch orders from API
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        const data = await getOrders();
+        // Map backend orders to frontend format
+        setOrders(data.map(o => {
+          const orderDate = new Date(o.timestamp || o.createdAt);
+          const isValidDate = !isNaN(orderDate.getTime());
+          return {
+            ...o,
+            id: o._id,
+            store: o.storeName,
+            items: Array.isArray(o.items) ? o.items.reduce((acc, item) => acc + item.quantity, 0) : (o.items || 0),
+            value: o.totalAmount,
+            status: o.status ? o.status.charAt(0).toUpperCase() + o.status.slice(1) : 'Pending',
+            date: isValidDate ? orderDate.toISOString().split('T')[0] : '---',
+            paymentMethod: o.paymentMethod || "",
+            deliveryDate: o.deliveryDate || "",
+            orderStatus: o.status || "Pending",
+            notes: o.notes || ""
+          };
+        }));
+      } catch (err) {
+        console.error("Error fetching orders:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchOrders();
+  }, []);
 
   // Calculate total sales from all orders
   const totalSales = orders.reduce((a, b) => a + b.value, 0);
@@ -82,16 +116,21 @@ const EmployeeOrders = () => {
         o.id.toLowerCase().includes(search.toLowerCase())
     );
 
+    // Apply status filter
+    const statusFiltered = statusFilter === "All" 
+      ? filteredBySearch 
+      : filteredBySearch.filter(o => o.status === statusFilter);
+
     // Apply activity filter
     if (activityFilter === "All") {
-      return filteredBySearch;
+      return statusFiltered;
     }
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
     if (activityFilter === "Daily") {
-      return filteredBySearch.filter(o => {
+      return statusFiltered.filter(o => {
         const orderDate = new Date(o.date);
         orderDate.setHours(0, 0, 0, 0);
         return orderDate.getTime() === today.getTime();
@@ -100,13 +139,13 @@ const EmployeeOrders = () => {
 
     if (activityFilter === "Weekly") {
       const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
-      return filteredBySearch.filter(o => {
+      return statusFiltered.filter(o => {
         const orderDate = new Date(o.date);
         return orderDate >= weekAgo;
       });
     }
 
-    return filteredBySearch;
+    return statusFiltered;
   };
 
   // Export orders to CSV
@@ -166,7 +205,7 @@ const EmployeeOrders = () => {
   };
 
   // Function to update an existing order
-  const updateOrder = () => {
+  const updateOrder = async () => {
     console.log('updateOrder called', editingOrder);
 
     // Reset any previous validation errors
@@ -191,47 +230,70 @@ const EmployeeOrders = () => {
       return;
     }
 
-    // Update order object with all fields
-    const updatedOrder = {
-      ...editingOrder,
-      store: editingOrder.store,
-      items: itemsNum,
-      value: valueNum,
-      salesExecutive: editingOrder.salesExecutive,
-      paymentMethod: editingOrder.paymentMethod,
-      date: editingOrder.date || new Date().toISOString().split('T')[0],
-      deliveryDate: editingOrder.deliveryDate,
-      notes: editingOrder.notes,
-      status: "Pending"
-    };
+    try {
+      // Data payload for backend update
+      const apiUpdateData = {
+        storeName: editingOrder.store,
+        items: itemsNum,
+        totalAmount: valueNum,
+        paymentMethod: editingOrder.paymentMethod,
+        deliveryDate: editingOrder.deliveryDate,
+        notes: editingOrder.notes,
+        status: (editingOrder.orderStatus || editingOrder.status || "pending").toLowerCase()
+      };
 
-    console.log('Updating order:', updatedOrder);
-    // Update order in orders array
-    setOrders(prevOrders =>
-      prevOrders.map(o => o.id === editingOrder.id ? updatedOrder : o)
-    );
-    // Close modal after successful update
-    setEditModal(false);
-    setEditingOrder(null);
-    // Set last action to update
-    setLastAction("update");
-    // Show success message
-    setSuccess(true);
+      const updated = await updateOrderAPI(editingOrder.id, apiUpdateData);
+      console.log('API responded with updated order:', updated);
 
-    // Hide success message after 3 seconds
-    setTimeout(() => {
-      setSuccess(false);
-      setLastAction("");
-    }, 3000);
+      const orderDate = new Date(updated.timestamp || updated.createdAt);
+
+      // Update order object with all fields
+      const updatedOrder = {
+        ...editingOrder,
+        store: updated.storeName,
+        items: itemsNum,
+        value: updated.totalAmount,
+        salesExecutive: editingOrder.salesExecutive,
+        paymentMethod: editingOrder.paymentMethod,
+        date: !isNaN(orderDate.getTime()) ? orderDate.toISOString().split('T')[0] : '---',
+        deliveryDate: editingOrder.deliveryDate,
+        notes: editingOrder.notes,
+        status: updated.status ? updated.status.charAt(0).toUpperCase() + updated.status.slice(1) : "Pending"
+      };
+
+      console.log('Updating order local state:', updatedOrder);
+      // Update order in orders array
+      setOrders(prevOrders =>
+        prevOrders.map(o => o.id === editingOrder.id ? updatedOrder : o)
+      );
+      // Close modal after successful update
+      setEditModal(false);
+      setEditingOrder(null);
+      // Set last action to update
+      setLastAction("update");
+      // Show success message
+      setSuccess(true);
+
+      // Hide success message after 3 seconds
+      setTimeout(() => {
+        setSuccess(false);
+        setLastAction("");
+      }, 3000);
+
+    } catch (error) {
+      console.error("Failed to update order:", error);
+      setValidationError("Failed to update order on server");
+      setTimeout(() => setValidationError(false), 3000);
+    }
   };
-  const createOrder = () => {
+  const createOrder = async () => {
     console.log('createOrder called', newOrder);
 
     // Reset any previous validation errors
     setValidationError(false);
 
     // Validate that all required fields are filled (only check fields that are actually in form)
-    if (!newOrder.store || !newOrder.items || !newOrder.value || !newOrder.salesExecutive || !newOrder.paymentMethod) {
+    if (!newOrder.store || !newOrder.items || !newOrder.value || !newOrder.paymentMethod) {
       console.log('Validation failed');
       setValidationError("Please fill in all required fields");
       setTimeout(() => setValidationError(false), 3000);
@@ -249,30 +311,46 @@ const EmployeeOrders = () => {
       return;
     }
 
-    // Create new order object with all fields
-    const order = {
-      id: "ORD-" + Math.floor(Math.random() * 1000),  // Generate unique order ID
-      store: newOrder.store,                      // Store name from form
-      items: itemsNum,                           // Number of items
-      value: valueNum,                            // Order value
-      salesExecutive: newOrder.salesExecutive,        // Sales Executive/Employee
-      storeLocation: newOrder.storeLocation,          // Store Location
-      orderStatus: newOrder.orderStatus,             // Order Status
-      paymentStatus: newOrder.paymentStatus,          // Payment Status
-      paymentMethod: newOrder.paymentMethod,          // Payment Method
-      date: newOrder.date || new Date().toISOString().split('T')[0], // Use form date or today's date
-      deliveryDate: newOrder.deliveryDate,            // Delivery Date
-      priority: newOrder.priority,                    // Priority
-      orderSource: newOrder.orderSource,              // Order Source
-      notes: newOrder.notes,                         // Notes
-      status: newOrder.orderStatus || "Pending"      // Status for display
-    };
+    try {
+      // Create new order object for API
+      const apiOrderData = {
+        storeName: newOrder.store,
+        items: itemsNum,
+        totalAmount: valueNum,
+        status: (newOrder.orderStatus || "Pending").toLowerCase(),
+        paymentMethod: newOrder.paymentMethod,
+        deliveryDate: newOrder.deliveryDate,
+        notes: newOrder.notes
+      };
 
-    console.log('Creating order:', order);
-    // Add new order to beginning of orders array
-    setOrders(prevOrders => [order, ...prevOrders]);
-    // Close modal after successful creation
-    setShowModal(false);
+      const createdOrder = await createOrderAPI(apiOrderData);
+      console.log('API responded with created order:', createdOrder);
+
+      const orderDate = new Date(createdOrder.timestamp || createdOrder.createdAt);
+      
+      const order = {
+        ...createdOrder,
+        id: createdOrder._id,
+        store: createdOrder.storeName,
+        items: itemsNum,
+        value: createdOrder.totalAmount,
+        salesExecutive: newOrder.salesExecutive,
+        storeLocation: newOrder.storeLocation,
+        orderStatus: newOrder.orderStatus,
+        paymentStatus: newOrder.paymentStatus,
+        paymentMethod: newOrder.paymentMethod,
+        date: !isNaN(orderDate.getTime()) ? orderDate.toISOString().split('T')[0] : '---',
+        deliveryDate: newOrder.deliveryDate,
+        priority: newOrder.priority,
+        orderSource: newOrder.orderSource,
+        notes: newOrder.notes,
+        status: createdOrder.status ? createdOrder.status.charAt(0).toUpperCase() + createdOrder.status.slice(1) : "Pending"
+      };
+
+      // Add new order to beginning of orders array
+      setOrders(prevOrders => [order, ...prevOrders]);
+      // Close modal after successful creation
+      setShowModal(false);
     // Reset form fields
     setNewOrder({
       store: "",
@@ -299,6 +377,12 @@ const EmployeeOrders = () => {
       setSuccess(false);
       setLastAction("");
     }, 3000);
+
+    } catch (error) {
+      console.error("Failed to create order:", error);
+      setValidationError("Failed to create order on server");
+      setTimeout(() => setValidationError(false), 3000);
+    }
   };
 
 
@@ -378,7 +462,10 @@ const EmployeeOrders = () => {
         </div>
 
         {/* Total Orders Card */}
-        <div className={`${isDarkMode ? "bg-[#1e293b]/80 border-slate-700" : "bg-white border-slate-100"} p-5 rounded-3xl shadow-sm border backdrop-blur-xl hover:-translate-y-1 hover:shadow-lg transition-all duration-300 group`}>
+        <div
+          onClick={() => setStatusFilter("All")}
+          className={`${isDarkMode ? "bg-[#1e293b]/80 border-slate-700" : "bg-white border-slate-100"} ${statusFilter === "All" ? "ring-2 ring-indigo-500 shadow-md" : ""} p-5 rounded-3xl shadow-sm border backdrop-blur-xl hover:-translate-y-1 hover:shadow-lg transition-all duration-300 group cursor-pointer`}
+        >
           <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-4 ${isDarkMode ? "bg-emerald-500/20 text-emerald-400" : "bg-emerald-100 text-emerald-600"} group-hover:scale-110 transition-transform duration-300`}>
             <ShoppingBag size={24} className="stroke-[2.5]" />
           </div>
@@ -391,7 +478,10 @@ const EmployeeOrders = () => {
         </div>
 
         {/* Pending Orders Card */}
-        <div className={`${isDarkMode ? "bg-[#1e293b]/80 border-slate-700" : "bg-white border-slate-100"} p-5 rounded-3xl shadow-sm border backdrop-blur-xl hover:-translate-y-1 hover:shadow-lg transition-all duration-300 group`}>
+        <div
+          onClick={() => setStatusFilter("Pending")}
+          className={`${isDarkMode ? "bg-[#1e293b]/80 border-slate-700" : "bg-white border-slate-100"} ${statusFilter === "Pending" ? "ring-2 ring-orange-400 shadow-md" : ""} p-5 rounded-3xl shadow-sm border backdrop-blur-xl hover:-translate-y-1 hover:shadow-lg transition-all duration-300 group cursor-pointer`}
+        >
           <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-4 ${isDarkMode ? "bg-orange-500/20 text-orange-400" : "bg-orange-100 text-orange-600"} group-hover:scale-110 transition-transform duration-300`}>
             <ShoppingBag size={24} className="stroke-[2.5]" />
           </div>
@@ -404,7 +494,10 @@ const EmployeeOrders = () => {
         </div>
 
         {/* Completed Orders Card */}
-        <div className={`${isDarkMode ? "bg-[#1e293b]/80 border-slate-700" : "bg-white border-slate-100"} p-5 rounded-3xl shadow-sm border backdrop-blur-xl hover:-translate-y-1 hover:shadow-lg transition-all duration-300 group`}>
+        <div
+          onClick={() => setStatusFilter("Completed")}
+          className={`${isDarkMode ? "bg-[#1e293b]/80 border-slate-700" : "bg-white border-slate-100"} ${statusFilter === "Completed" ? "ring-2 ring-teal-400 shadow-md" : ""} p-5 rounded-3xl shadow-sm border backdrop-blur-xl hover:-translate-y-1 hover:shadow-lg transition-all duration-300 group cursor-pointer`}
+        >
           <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-4 ${isDarkMode ? "bg-teal-500/20 text-teal-400" : "bg-teal-100 text-teal-600"} group-hover:scale-110 transition-transform duration-300`}>
             <ShoppingBag size={24} className="stroke-[2.5]" />
           </div>
@@ -459,7 +552,7 @@ const EmployeeOrders = () => {
               <div className="flex items-center gap-3 flex-1 sm:flex-initial">
                 {/* Search Input */}
                 <div className="relative flex-1 sm:w-64">
-                  <span className={`absolute right-3 top-1/2 -translate-y-1/2 ${isDarkMode ? "text-slate-500" : "text-slate-400"} pointer-events-none text-sm`}>🔍</span>
+                  <span className={`absolute right-3 top-1/2 -translate-y-1/2 ${isDarkMode ? "text-slate-500" : "text-slate-400"} pointer-events-none flex items-center`}><Search size={16} /></span>
                   <input
                     placeholder="Search Orders"
                     value={search}
@@ -526,22 +619,24 @@ const EmployeeOrders = () => {
                     </span>
                   </td>
                   <td className="px-4 py-3">
-                    <div className="flex gap-1.5 justify-end">
+                    <div className="flex gap-2 justify-end">
                       {/* Edit Order Button */}
                       <button
                         onClick={() => editOrder(o)}
-                        className={`p-1.5 rounded-lg transition-all duration-200 hover:scale-110 ${isDarkMode ? "bg-slate-800 text-amber-400 hover:bg-amber-400/20" : "bg-slate-100 text-amber-600 hover:bg-amber-100"}`}
+                        className={`px-3 py-1.5 rounded-xl border transition-all duration-300 hover:-translate-y-0.5 shadow-sm flex items-center justify-center gap-1.5 text-[11px] font-bold w-16 ${isDarkMode ? "bg-amber-500/10 border-amber-500/20 text-amber-400 hover:bg-amber-500/20 hover:shadow-amber-500/10" : "bg-amber-50 border-amber-100 text-amber-600 hover:bg-amber-100 hover:text-amber-700"}`}
                         title="Edit Order"
                       >
-                        <Edit size={14} />
+                        <PenLine size={13} className="stroke-[2.5]" />
+                        Edit
                       </button>
                       {/* View Order Button */}
                       <button
                         onClick={() => viewOrder(o)}
-                        className={`p-1.5 rounded-lg transition-all duration-200 hover:scale-110 ${isDarkMode ? "bg-slate-800 text-blue-400 hover:bg-blue-400/20" : "bg-slate-100 text-blue-600 hover:bg-blue-100"}`}
+                        className={`px-3 py-1.5 rounded-xl border transition-all duration-300 hover:-translate-y-0.5 shadow-sm flex items-center justify-center gap-1.5 text-[11px] font-bold w-16 ${isDarkMode ? "bg-blue-500/10 border-blue-500/20 text-blue-400 hover:bg-blue-500/20 hover:shadow-blue-500/10" : "bg-blue-50 border-blue-100 text-blue-600 hover:bg-blue-100 hover:text-blue-700"}`}
                         title="View Order"
                       >
-                        <Eye size={14} />
+                        <FileText size={13} className="stroke-[2.5]" />
+                        View
                       </button>
                     </div>
                   </td>
@@ -564,7 +659,7 @@ const EmployeeOrders = () => {
       {/* Validation Error Message - shows when validation fails */}
       {validationError && (
         <div className="fixed top-6 right-6 bg-rose-500/90 backdrop-blur-md text-white px-6 py-4 rounded-xl shadow-2xl z-[300] animate-bounce flex items-center gap-3 border border-rose-400/20">
-          <span className="text-xl">⚠️</span>
+          <span className="text-xl flex items-center"><AlertTriangle size={20} /></span>
           <span className="font-medium">{validationError}</span>
         </div>
       )}
