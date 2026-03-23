@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { MapPin, Navigation, Clock, CheckCircle2, ChevronRight, Calendar, AlertCircle, Phone, Image as ImageIcon, Camera, Map, X, Users, Store, FileText, MessageSquare } from 'lucide-react';
 import Button from '../../components/Button';
 
-import { getVisits } from '../../services/visitService';
+import { getVisits, getVisitById } from '../../services/visitService';
 
 const EmployeeVisits = () => {
   const [selectedVisit, setSelectedVisit] = useState(null);
+  const [selectedVisitLoading, setSelectedVisitLoading] = useState(false);
   const [filterStatus, setFilterStatus] = useState('All');
   const [filterDate, setFilterDate] = useState('');
   const [visits, setVisits] = useState([]);
@@ -34,7 +35,10 @@ const EmployeeVisits = () => {
             status: statusLabel,
             companyDescription: 'Organization Partner',
             feedback: v.notes || 'No specific feedback recorded.',
-            uploadedImages: v.photos || []
+            uploadedImages: v.photos || [],
+            taskTitle: v.taskTitle,
+            taskType: v.taskType,
+            checklist: v.checklist || []
           };
         }));
       } catch (err) {
@@ -45,6 +49,39 @@ const EmployeeVisits = () => {
     };
     fetchVisits();
   }, []);
+
+  const handleVisitClick = async (visit) => {
+    try {
+      setSelectedVisitLoading(true);
+      setSelectedVisit(visit); // Open modal with partial data first
+      // Fetch full details with photos and checklist
+      const fullVisit = await getVisitById(visit._id);
+      
+      // Transform the data to match the UI expectation
+      const visitDate = new Date(fullVisit.timestamp || fullVisit.createdAt);
+      const isValidDate = !isNaN(visitDate.getTime());
+      
+      let statusLabel = fullVisit.status ? fullVisit.status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'Unknown';
+      if (fullVisit.status === 'not_interested') statusLabel = 'Rejected';
+
+      setSelectedVisit({
+        ...fullVisit,
+        store: fullVisit.storeName,
+        time: isValidDate ? visitDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '---',
+        date: isValidDate ? visitDate.toISOString().split('T')[0] : '---',
+        status: statusLabel,
+        companyDescription: 'Organization Partner',
+        feedback: fullVisit.notes || 'No specific feedback recorded.',
+        uploadedImages: fullVisit.photos || [],
+        checklist: fullVisit.checklist || []
+      });
+    } catch (err) {
+      console.error('Error fetching visit details:', err);
+      // Data is already set from 'visit' in the fallback
+    } finally {
+      setSelectedVisitLoading(false);
+    }
+  };
 
   const statuses = ['All', 'Completed', 'In Progress', 'Rejected', 'Follow Up'];
 
@@ -160,12 +197,17 @@ const EmployeeVisits = () => {
         {/* Visits List */}
         <div className="lg:col-span-2 space-y-4">
           <div className="space-y-4">
-            {filteredVisits.length > 0 ? filteredVisits.map((visit, idx) => {
+            {loading ? (
+              <div className="flex flex-col items-center justify-center py-20 bg-white dark:bg-gray-900 rounded-[2rem] border border-gray-100 dark:border-gray-800 shadow-sm animate-pulse">
+                <div className="w-12 h-12 rounded-full border-4 border-indigo-100 dark:border-indigo-900/30 border-t-indigo-600 animate-spin mb-4" />
+                <p className="text-sm font-black text-gray-400 uppercase tracking-widest">Infiltrating Database...</p>
+              </div>
+            ) : filteredVisits.length > 0 ? filteredVisits.map((visit, idx) => {
               const styles = getStatusStyles(visit.status);
               return (
                 <div
                   key={visit._id || idx}
-                  onClick={() => setSelectedVisit(visit)}
+                  onClick={() => handleVisitClick(visit)}
                   className={`bg-white dark:bg-gray-900 p-4 sm:p-5 rounded-[2rem] border ${styles.border} shadow-sm hover:shadow-md hover:border-indigo-200 dark:hover:border-indigo-500/30 transition-all duration-300 group relative overflow-hidden cursor-pointer`}
                 >
                   <div className="flex flex-col gap-3">
@@ -285,6 +327,13 @@ const EmployeeVisits = () => {
           <div className="absolute inset-0 bg-gray-900/40 backdrop-blur-sm" onClick={() => setSelectedVisit(null)}></div>
 
           <div className="relative w-full max-w-4xl bg-white dark:bg-gray-900 rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-300">
+            {/* Modal Detail Loading Overlay */}
+            {selectedVisitLoading && (
+              <div className="absolute inset-0 z-[210] flex flex-col items-center justify-center bg-white/60 dark:bg-gray-900/60 backdrop-blur-sm rounded-[2.5rem]">
+                <div className="w-12 h-12 rounded-full border-4 border-indigo-100 dark:border-indigo-900/30 border-t-indigo-600 animate-spin mb-4" />
+                <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest animate-pulse">Fetching Mission Evidence...</p>
+              </div>
+            )}
             {/* Ultra-Clean Professional Header (Compact & Reordered) */}
             <div className="relative bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 shrink-0 px-5 py-5 sm:px-6 sm:py-6">
               <button
@@ -373,6 +422,46 @@ const EmployeeVisits = () => {
                   {selectedVisit.companyDescription}
                 </p>
               </div>
+
+              {/* Mission Details Section */}
+              {(selectedVisit.taskTitle || (selectedVisit.checklist && selectedVisit.checklist.length > 0)) && (
+                <div className="bg-white dark:bg-gray-900 rounded-2xl p-5 border border-gray-100 dark:border-gray-800 shadow-sm space-y-4">
+                  <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400 flex items-center gap-2">
+                    <FileText size={14} className="text-indigo-500" />
+                    Mission Details
+                  </h4>
+                  
+                  {selectedVisit.taskTitle && (
+                    <div className="flex flex-col gap-1">
+                      <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Task Title</p>
+                      <h5 className="text-sm font-black text-gray-900 dark:text-white leading-tight">{selectedVisit.taskTitle}</h5>
+                      {selectedVisit.taskType && <p className="text-[9px] font-bold text-gray-400 uppercase">{selectedVisit.taskType} Mission</p>}
+                    </div>
+                  )}
+
+                  {selectedVisit.checklist && selectedVisit.checklist.length > 0 && (
+                    <div className="pt-3 border-t border-gray-50 dark:border-gray-800">
+                      <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-3">Goal Completion Checklist</p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {selectedVisit.checklist.map((item, idx) => (
+                          <div key={idx} className="flex items-center gap-2 text-xs font-medium text-gray-700 dark:text-gray-300">
+                            {item.completed ? (
+                              <div className="w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-500/20 flex items-center justify-center shrink-0">
+                                <CheckCircle2 size={12} className="text-emerald-600 dark:text-emerald-400" />
+                              </div>
+                            ) : (
+                              <div className="w-5 h-5 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center shrink-0">
+                                <Clock size={10} className="text-gray-400" />
+                              </div>
+                            )}
+                            <span className={item.completed ? 'opacity-100' : 'opacity-60'}>{item.text}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Feedback and Notes */}
               <div className="bg-white dark:bg-gray-900 rounded-2xl p-5 border border-gray-100 dark:border-gray-800 shadow-sm">

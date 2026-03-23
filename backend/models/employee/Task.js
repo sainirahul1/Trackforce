@@ -74,4 +74,7 @@ const taskSchema = new mongoose.Schema({
   visitNotes: String,
 }, { timestamps: true, collection: 'employee.tasks' });
 
+taskSchema.index({ tenant: 1, date: -1 });
+taskSchema.index({ tenant: 1, status: 1 });
+
 module.exports = mongoose.model('Task', taskSchema);

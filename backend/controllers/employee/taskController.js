@@ -3,12 +3,33 @@ const StoreVisit = require('../../models/employee/StoreVisit');
 
 exports.getTasks = async (req, res) => {
   try {
+    console.log(`[DEBUG] Fetching lean tasks for tenant: ${req.tenantId}`);
     const tasks = await Task.find({ 
       tenant: req.tenantId 
-    }).sort({ date: -1 });
-    console.log(`[DEBUG] Fetched ${tasks.length} tasks for tenant: ${req.tenantId}`);
+    })
+    .select('-evidence -checklist')
+    .sort({ date: -1 });
+    
+    console.log(`[DEBUG] Found ${tasks.length} lean tasks for tenant: ${req.tenantId}`);
     
     res.json(tasks);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Get single task details
+// @route   GET /api/employee/tasks/:id
+// @access  Private
+exports.getTaskById = async (req, res) => {
+  try {
+    const task = await Task.findOne({ _id: req.params.id, tenant: req.tenantId });
+    
+    if (!task) {
+      return res.status(404).json({ message: 'Task not found' });
+    }
+
+    res.json(task);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -79,6 +100,9 @@ exports.updateTask = async (req, res) => {
         gps: { lat: updatedTask.coords?.x || 0, lng: updatedTask.coords?.y || 0 },
         photos: photos,
         notes: updatedTask.visitNotes || `${req.body.missionStatus} - Task: ${updatedTask.title}`,
+        taskTitle: updatedTask.title,
+        taskType: updatedTask.type,
+        checklist: updatedTask.checklist,
         timestamp: new Date()
       });
 

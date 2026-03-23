@@ -27,8 +27,15 @@ const storeVisitSchema = new mongoose.Schema({
     lat: Number,
     lng: Number,
   },
-  photos: [String], // URLs to cloud storage
+  photos: [String], // URLs or Data URLs
   notes: String,
+  taskTitle: String,
+  taskType: String,
+  checklist: [{
+    id: Number,
+    text: String,
+    completed: Boolean
+  }],
   visitForm: {
     type: mongoose.Schema.Types.Mixed,
     default: {},
@@ -38,5 +45,7 @@ const storeVisitSchema = new mongoose.Schema({
     default: Date.now,
   },
 }, { timestamps: true, collection: 'employee.store_visits' });
+
+storeVisitSchema.index({ tenant: 1, timestamp: -1 });
 
 module.exports = mongoose.model('StoreVisit', storeVisitSchema);

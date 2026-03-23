@@ -285,7 +285,7 @@ const ProgressCircle = ({ label, current, target, unit = '', color }) => {
 
 
 
-const TaskDetailOverlay = ({ task, onClose, onUpdateOperationalData, onStartTask, onFileUpload }) => {
+const TaskDetailOverlay = ({ task, onClose, onUpdateOperationalData, onStartTask, onFileUpload, isTaskLoading }) => {
   // Local draft state — changes here don't hit the API until submit
   const [localVisitStatus, setLocalVisitStatus] = React.useState(task?.visitStatus || 'Reached Client');
   const [localMissionStatus, setLocalMissionStatus] = React.useState(task?.missionStatus || 'In Progress');
@@ -306,6 +306,13 @@ const TaskDetailOverlay = ({ task, onClose, onUpdateOperationalData, onStartTask
       />
 
       <div className="relative bg-white dark:bg-gray-900 w-full max-w-4xl max-h-[90vh] rounded-[2.5rem] border border-gray-100 dark:border-gray-800 shadow-2xl overflow-hidden flex flex-col md:flex-row animate-in zoom-in-95 slide-in-from-bottom-10 duration-500">
+        {/* Mission Detail Loading Overlay */}
+        {isTaskLoading && (
+          <div className="absolute inset-0 z-[210] flex flex-col items-center justify-center bg-white/60 dark:bg-gray-900/60 backdrop-blur-sm rounded-[2.5rem]">
+            <div className="w-12 h-12 rounded-full border-4 border-indigo-100 dark:border-indigo-900/30 border-t-indigo-600 animate-spin mb-4" />
+            <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest animate-pulse">Synchronizing Mission Data...</p>
+          </div>
+        )}
         {/* Left Side: Map & Info */}
         <div className="md:w-5/12 bg-gray-50 dark:bg-gray-950 relative overflow-hidden group">
           <div className="absolute inset-0 opacity-20 pointer-events-none" style={{ backgroundImage: 'radial-gradient(#6366F1 1.5px, transparent 1.5px)', backgroundSize: '30px 30px' }} />
@@ -470,6 +477,7 @@ const TaskDetailOverlay = ({ task, onClose, onUpdateOperationalData, onStartTask
                         <input
                           id={`upload-${item.key}`}
                           type="file"
+                          accept="image/*"
                           className="hidden"
                           onChange={(e) => onFileUpload(task._id || task.id, item.key, e.target.files[0])}
                         />
@@ -677,6 +685,7 @@ const EmployeeTasks = () => {
   const [sortBy, setSortBy] = useState('nearest');
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
+  const [isTaskLoading, setIsTaskLoading] = useState(false);
   const [collapsedCategories, setCollapsedCategories] = useState({});
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
@@ -1128,10 +1137,30 @@ const EmployeeTasks = () => {
     }
   };
 
+  const handleTaskClick = async (task) => {
+    try {
+      setIsTaskLoading(true);
+      setSelectedTask(task); // Show overlay immediately with partial data
+      
+      const fullTask = await taskService.getTaskById(task._id || task.id);
+      
+      // Update the selected task with full details
+      setSelectedTask(fullTask);
+      
+      // Also update the task in the list if it exists
+      setTaskList(prev => prev.map(t => (t._id || t.id) === (fullTask._id || fullTask.id) ? fullTask : t));
+    } catch (err) {
+      console.error('Error fetching mission details:', err);
+      // Fallback: the overlay is already showing basically the lean task data
+    } finally {
+      setIsTaskLoading(false);
+    }
+  };
+
   const handleStartTask = async (taskId) => {
     const task = taskList.find(t => (t._id || t.id) === taskId);
     if (task) {
-      setSelectedTask(task);
+      handleTaskClick(task);
       await updateTaskOperationalData(taskId, { isTaskStarted: true, status: 'in-progress' });
     }
   };
@@ -1179,14 +1208,35 @@ const EmployeeTasks = () => {
 
   const handleFileUpload = async (taskId, evidenceType, file) => {
     if (file) {
-      // In a real app, you'd upload the file here. 
-      const mockFileUrl = `mock-uploads/${file.name}`;
-      const task = taskList.find(t => (t._id || t.id) === taskId);
-      const newEvidence = {
-        ...task.evidence,
-        [evidenceType]: mockFileUrl
+      // 10MB soft limit to ensure it fits in a 16MB MongoDB document after Base64 encoding
+      if (file.size > 10 * 1024 * 1024) {
+        alert('File is too large! Please upload images smaller than 10MB to ensure mission synchronization.');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onloadstart = () => setIsTaskLoading(true);
+      reader.onloadend = async () => {
+        try {
+          const base64String = reader.result;
+          const task = taskList.find(t => (t._id || t.id) === taskId);
+          const newEvidence = {
+            ...task.evidence,
+            [evidenceType]: base64String
+          };
+          await updateTaskOperationalData(taskId, { evidence: newEvidence });
+        } catch (err) {
+          console.error('Upload failed:', err);
+          alert('Failed to synchronize mission evidence. Please try a smaller file.');
+        } finally {
+          setIsTaskLoading(false);
+        }
       };
-      await updateTaskOperationalData(taskId, { evidence: newEvidence });
+      reader.onerror = () => {
+        alert('Failed to read file. Please try a different image format.');
+        setIsTaskLoading(false);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -1647,7 +1697,7 @@ const EmployeeTasks = () => {
                           {tasks.map((task) => (
                             <div
                               key={task._id || task.id}
-                              onClick={() => setSelectedTask(task)}
+                              onClick={() => handleTaskClick(task)}
                               className="group relative bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-[2rem] overflow-hidden transition-all hover:shadow-3xl hover:border-indigo-100 dark:hover:border-indigo-900/40 flex flex-col md:flex-row md:items-center cursor-pointer"
                             >
                               {/* Left Priority Strip */}
@@ -1757,6 +1807,7 @@ const EmployeeTasks = () => {
         onUpdateOperationalData={updateTaskOperationalData}
         onStartTask={handleStartTask}
         onFileUpload={handleFileUpload}
+        isTaskLoading={isTaskLoading}
       />
 
       {isCreateModalOpen && (

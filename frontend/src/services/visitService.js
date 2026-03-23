@@ -10,6 +10,14 @@ export const getVisits = async () => {
   return response.json();
 };
 
+export const getVisitById = async (id) => {
+  const response = await fetch(`${API_URL}/${id}`, {
+    headers: getAuthHeader()
+  });
+  if (!response.ok) throw new Error('Failed to fetch visit details');
+  return response.json();
+};
+
 export const createVisit = async (visitData) => {
   const response = await fetch(API_URL, {
     method: 'POST',

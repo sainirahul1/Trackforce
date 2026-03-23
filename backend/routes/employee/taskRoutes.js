@@ -1,5 +1,5 @@
 const express = require('express');
-const { getTasks, createTask, updateTask, deleteTask } = require('../../controllers/employee/taskController');
+const { getTasks, getTaskById, createTask, updateTask, deleteTask } = require('../../controllers/employee/taskController');
 const { protect } = require('../../middleware/authMiddleware');
 const tenantMiddleware = require('../../middleware/tenantMiddleware');
 const router = express.Router();
@@ -12,6 +12,7 @@ router.route('/')
   .post(createTask);
 
 router.route('/:id')
+  .get(getTaskById)
   .patch(updateTask)
   .delete(deleteTask);
 

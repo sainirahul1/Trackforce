@@ -5,11 +5,33 @@ const StoreVisit = require('../models/employee/StoreVisit');
 // @access  Private (Tenant/Manager/Employee)
 exports.getVisits = async (req, res) => {
   try {
-    // Data Isolation: Only find visits that match the requester's tenant ID
+    console.log(`[DEBUG] Fetching lean visits for tenant: ${req.tenantId}`);
+    // Lean fetch: exclude photos and checklist for the main list to improve performance
     const visits = await StoreVisit.find({ tenant: req.tenantId })
+      .select('-photos -checklist')
+      .populate('employee', 'name email')
+      .sort({ timestamp: -1 });
+    
+    console.log(`[DEBUG] Found ${visits.length} visits for tenant: ${req.tenantId}`);
+    res.json(visits);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Get single visit details
+// @route   GET /api/visits/:id
+// @access  Private
+exports.getVisitById = async (req, res) => {
+  try {
+    const visit = await StoreVisit.findOne({ _id: req.params.id, tenant: req.tenantId })
       .populate('employee', 'name email');
     
-    res.json(visits);
+    if (!visit) {
+      return res.status(404).json({ message: 'Visit not found' });
+    }
+
+    res.json(visit);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

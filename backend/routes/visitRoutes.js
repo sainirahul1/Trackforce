@@ -1,5 +1,5 @@
 const express = require('express');
-const { getVisits, createVisit } = require('../controllers/visitController');
+const { getVisits, getVisitById, createVisit } = require('../controllers/visitController');
 const { protect } = require('../middleware/authMiddleware');
 const tenantMiddleware = require('../middleware/tenantMiddleware');
 const router = express.Router();
@@ -11,5 +11,8 @@ router.use(tenantMiddleware);
 router.route('/')
   .get(getVisits)
   .post(createVisit);
+
+router.route('/:id')
+  .get(getVisitById);
 
 module.exports = router;
