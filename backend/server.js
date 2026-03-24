@@ -34,6 +34,7 @@ app.use('/api/superadmin/analytics', require('./routes/superadmin/analyticsRoute
 app.use('/api/superadmin/notifications', require('./routes/superadmin/notificationRoutes'));
 app.use('/api/superadmin/settings', require('./routes/superadmin/settingsRoutes'));
 app.use('/api/superadmin/manage', require('./routes/superadmin/roleManagementRoutes'));
+app.use('/api/tenant', require('./routes/tenantRoutes'));
 
 // Employee Routes
 app.use('/api/employee/tasks', require('./routes/employee/taskRoutes'));

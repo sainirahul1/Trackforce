@@ -13,6 +13,7 @@ exports.getTasks = async (req, res) => {
 
     const tasks = await Task.find(query)
     .select('-evidence -checklist')
+    .populate('employee', 'name email')
     .sort({ date: -1 });
     
     console.log(`[DEBUG] Found ${tasks.length} lean tasks for tenant: ${req.tenantId}`);
@@ -45,14 +46,18 @@ exports.getTaskById = async (req, res) => {
 // @access  Private
 exports.createTask = async (req, res) => {
   try {
+    const isManager = req.user && (req.user.role === 'manager' || req.user.role === 'superadmin');
+    
     const taskData = {
       ...req.body,
-      employee: req.user._id,
+      // If manager/superadmin, use provided employee; otherwise, use current user
+      employee: isManager && req.body.employee ? req.body.employee : req.user._id,
       tenant: req.tenantId,
     };
 
     const task = await Task.create(taskData);
-    res.status(201).json(task);
+    const populatedTask = await Task.findById(task._id).populate('employee', 'name email');
+    res.status(201).json(populatedTask);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -77,10 +82,11 @@ exports.updateTask = async (req, res) => {
       return res.status(404).json({ message: 'Task failed to update' });
     }
 
-    // Workflow Extension: Create a StoreVisit and handle rescheduling
-    const isFinishing = req.body.status === 'completed' || ['Complete', 'Follow Up', 'Rejected'].includes(req.body.missionStatus);
+    // Workflow Extension: Only trigger for employees or when a task is explicitly "finished"
+    const isEmployee = req.user && req.user.role === 'employee';
+    const isFinishing = (req.body.status === 'completed' || ['Complete', 'Follow Up', 'Rejected'].includes(req.body.missionStatus));
     
-    if (isFinishing) {
+    if (isEmployee && isFinishing) {
       const photos = [];
       if (updatedTask.evidence) {
         if (updatedTask.evidence.storeFront) photos.push(updatedTask.evidence.storeFront);
@@ -129,7 +135,9 @@ exports.updateTask = async (req, res) => {
       }
     }
 
-    res.json(updatedTask);
+    // Return the updated task with populated employee name
+    const populatedTask = await Task.findById(updatedTask._id).populate('employee', 'name email');
+    res.json(populatedTask);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

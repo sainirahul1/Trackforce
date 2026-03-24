@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import {
   Plus, Search, Filter, MoreHorizontal, Clock, CheckCircle2,
@@ -9,17 +9,13 @@ import {
   Edit2, Trash2, ArrowRightCircle, ChevronRight,
   Layout, LayoutPanelLeft, Columns, Settings, Trello
 } from 'lucide-react';
+import { getTasks, createTask, updateTask, deleteTask } from '../../services/taskService';
 
-/**
- * Tasks Component
- * Jira-style task management for the Manager Portal.
- * Includes both Kanban Board and detailed List view with advanced filtering, 
- * detail overlays, full action sub-system, and dynamic category management.
- */
 const ManagerTasks = () => {
   const [activeTab, setActiveTab] = useState('board'); // 'board' or 'list'
   const [showModal, setShowModal] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
+  const [isReassigning, setIsReassigning] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
   const [openDropdownId, setOpenDropdownId] = useState(null);
   const [openColumnMenuId, setOpenColumnMenuId] = useState(null);
@@ -33,27 +29,52 @@ const ManagerTasks = () => {
 
   // Dynamic Categories (Sections/Columns)
   const [categories, setCategories] = useState([
-    { id: 'incoming', label: 'Incoming', icon: ClipboardList, color: 'bg-slate-500', lightColor: 'text-slate-600', bgColor: 'bg-slate-50', theme: 'slate' },
+    { id: 'pending', label: 'Pending', icon: ClipboardList, color: 'bg-slate-500', lightColor: 'text-slate-600', bgColor: 'bg-slate-50', theme: 'slate' },
     { id: 'in-progress', label: 'In Progress', icon: PlayCircle, color: 'bg-blue-600', lightColor: 'text-blue-600', bgColor: 'bg-blue-50', theme: 'blue' },
-    { id: 'in-review', label: 'Under Review', icon: ShieldCheck, color: 'bg-amber-600', lightColor: 'text-amber-600', bgColor: 'bg-amber-50', theme: 'amber' },
-    { id: 'blocked', label: 'Blocked', icon: Ban, color: 'bg-rose-600', lightColor: 'text-rose-600', bgColor: 'bg-rose-50', theme: 'rose' },
+    { id: 'delayed', label: 'Delayed', icon: ShieldCheck, color: 'bg-amber-600', lightColor: 'text-amber-600', bgColor: 'bg-amber-50', theme: 'amber' },
+    { id: 'cancelled', label: 'Cancelled', icon: Ban, color: 'bg-rose-600', lightColor: 'text-rose-600', bgColor: 'bg-rose-50', theme: 'rose' },
     { id: 'completed', label: 'Completed', icon: CheckCircle, color: 'bg-emerald-600', lightColor: 'text-emerald-600', bgColor: 'bg-emerald-50', theme: 'emerald' },
   ]);
 
-  const [tasks, setTasks] = useState([
-    { id: 'TSK-102', title: 'Onboard New Supplier in Sector 4', assignee: 'John Doe', priority: 'High', status: 'in-progress', deadline: 'Mar 18', category: 'Operations', description: 'Initiate onboarding process for new vendors in Sector 4. Review compliance documents and set up initial account access.' },
-    { id: 'TSK-105', title: 'Route Optimization for North Zone', assignee: 'Sarah Wilson', priority: 'Medium', status: 'incoming', deadline: 'Mar 19', category: 'Logistics', description: 'Analyze current delivery times and traffic patterns to optimize the North Zone distribution network.' },
-    { id: 'TSK-101', title: 'Monthly Inventory Audit - Warehouse B', assignee: 'Mike Johnson', priority: 'Critical', status: 'in-review', deadline: 'Mar 18', category: 'Inventory', description: 'Conduct a physical count of all inventory in Warehouse B and reconcile with the digital management system.' },
-    { id: 'TSK-108', title: 'Store Visit: Global Tech Solutions', assignee: 'Jane Smith', priority: 'Low', status: 'completed', deadline: 'Mar 14', category: 'Retail', description: 'Routine visit to Global Tech Solutions to check display compliance and gather feedback from store management.' },
-    { id: 'TSK-110', title: 'Vehicle Maintenance - Truck #42', assignee: 'Alex Kumar', priority: 'High', status: 'blocked', deadline: 'Mar 20', category: 'Fleet', description: 'Truck #42 requires immediate engine diagnostics and basic service. Parts are currently on order.' },
-    { id: 'TSK-111', title: 'Review Q1 Performance Metrics', assignee: 'Priya Mehta', priority: 'Medium', status: 'in-progress', deadline: 'Mar 22', category: 'Managerial', description: 'Synthesize data from Q1 sales and operations reports for the upcoming stakeholders meeting.' },
-    { id: 'TSK-112', title: 'Update Security Protocols for Hub 2', assignee: 'Mark Vance', priority: 'Critical', status: 'in-review', deadline: 'Mar 18', category: 'Security', description: 'Audit physical and digital security protocols at Hub 2. Implement new multi-factor authentication for staff.' },
-    { id: 'TSK-113', title: 'Supplier Contract Renegotiation', assignee: 'Sarah Wilson', priority: 'High', status: 'incoming', deadline: 'Mar 25', category: 'Financial', description: 'Review and renegotiate terms for the upcoming fiscal year with primary electronics suppliers.' },
-    { id: 'TSK-114', title: 'Safety Training Workshop - Phase 1', assignee: 'Mike Johnson', priority: 'Medium', status: 'completed', deadline: 'Mar 15', category: 'HR', description: 'Conduct introductory safety training for new hires. Cover emergency exits, equipment handling, and reporting procedures.' },
-    { id: 'TSK-115', title: 'Emergency Backup Power Test', assignee: 'Alex Kumar', priority: 'High', status: 'blocked', deadline: 'Pending', category: 'Facility', description: 'Scheduled stress test of the backup generators. Delayed due to fuel delivery issues.' },
-  ]);
+  const [tasks, setTasks] = useState([]);
+  const [teamMembers, setTeamMembers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const teamMembers = ['John Doe', 'Sarah Wilson', 'Mike Johnson', 'Jane Smith', 'Alex Kumar', 'Priya Mehta', 'Mark Vance'];
+  // Fetch data
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const [fetchedTasks, fetchedEmployees] = await Promise.all([
+        getTasks(),
+        fetch('http://localhost:5001/api/tenant/employees', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        }).then(res => res.json())
+      ]);
+      
+      setTasks(fetchedTasks.map(t => ({
+        ...t,
+        id: t._id,
+        assignee: t.employee?.name || 'Unassigned',
+        deadline: t.date ? new Date(t.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : 'No Date',
+        category: t.type || 'General'
+      })));
+      
+      setTeamMembers(fetchedEmployees);
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching data:', err);
+      setError('Failed to load dashboard data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
 
   // Close dropdowns on click outside
   useEffect(() => {
@@ -68,13 +89,14 @@ const ManagerTasks = () => {
   // Advanced Filtering Logic
   const filteredTasks = useMemo(() => {
     return tasks.filter(task => {
-      const matchesSearch =
-        task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        task.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        task.assignee.toLowerCase().includes(searchQuery.toLowerCase());
+      const titleMatch = task.title.toLowerCase().includes(searchQuery.toLowerCase());
+      const idMatch = task.id.toLowerCase().includes(searchQuery.toLowerCase());
+      const assigneeMatch = task.assignee.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      const matchesSearch = titleMatch || idMatch || assigneeMatch;
 
       const matchesStatus = statusFilter === 'all' || task.status === statusFilter;
-      const matchesPriority = priorityFilter === 'all' || task.priority === priorityFilter;
+      const matchesPriority = priorityFilter === 'all' || task.priority.toLowerCase() === priorityFilter.toLowerCase();
 
       return matchesSearch && matchesStatus && matchesPriority;
     });
@@ -91,19 +113,21 @@ const ManagerTasks = () => {
   const [form, setForm] = useState({
     title: '',
     description: '',
-    assignee: '',
-    priority: 'Medium',
-    status: 'incoming',
-    deadline: '',
-    category: '',
+    employee: '',
+    priority: 'medium',
+    status: 'pending',
+    date: '',
+    type: '',
+    store: '',
   });
   const [errors, setErrors] = useState({});
 
   const getPriorityColor = (priority) => {
-    switch (priority) {
-      case 'Critical': return 'text-rose-600 bg-rose-50 border-rose-100 dark:bg-rose-900/20 dark:border-rose-800/50';
-      case 'High': return 'text-orange-600 bg-orange-50 border-orange-100 dark:bg-orange-900/20 dark:border-orange-800/50';
-      case 'Medium': return 'text-blue-600 bg-blue-50 border-blue-100 dark:bg-blue-900/20 dark:border-blue-800/50';
+    switch (priority?.toLowerCase()) {
+      case 'critical': return 'text-rose-600 bg-rose-50 border-rose-100 dark:bg-rose-900/20 dark:border-rose-800/50';
+      case 'high': return 'text-orange-600 bg-orange-50 border-orange-100 dark:bg-orange-900/20 dark:border-orange-800/50';
+      case 'medium': return 'text-blue-600 bg-blue-50 border-blue-100 dark:bg-blue-900/20 dark:border-blue-800/50';
+      case 'low': return 'text-gray-600 bg-gray-50 border-gray-100 dark:bg-gray-800 dark:border-gray-700';
       default: return 'text-gray-600 bg-gray-50 border-gray-100 dark:bg-gray-800 dark:border-gray-700';
     }
   };
@@ -122,20 +146,53 @@ const ManagerTasks = () => {
   const validate = () => {
     const newErrors = {};
     if (!form.title.trim()) newErrors.title = 'Task title is required.';
-    if (!form.assignee) newErrors.assignee = 'Please assign this task to a team member.';
-    if (!form.deadline) newErrors.deadline = 'A deadline is required.';
-    if (!form.category.trim()) newErrors.category = 'Category / mission type is required.';
+    if (!form.employee) newErrors.employee = 'Please assign this task to a team member.';
+    if (!form.date) newErrors.date = 'A date is required.';
+    if (!form.type.trim()) newErrors.type = 'Mission type is required.';
+    if (!form.store.trim()) newErrors.store = 'Store name is required.';
     return newErrors;
   };
 
-  const handleDeleteTask = (id) => {
-    setTasks(prev => prev.filter(t => t.id !== id));
-    setOpenDropdownId(null);
+  const handleDeleteTask = async (id) => {
+    if (window.confirm('Are you sure you want to delete this mission?')) {
+      try {
+        await deleteTask(id);
+        setTasks(prev => prev.filter(t => t.id !== id));
+        setOpenDropdownId(null);
+      } catch (err) {
+        alert(err.message);
+      }
+    }
   };
 
-  const handleMoveTask = (id, newStatus) => {
-    setTasks(prev => prev.map(t => t.id === id ? { ...t, status: newStatus } : t));
-    setOpenDropdownId(null);
+  const handleReassignTask = async (taskId, newEmployeeId) => {
+    try {
+      const updated = await updateTask(taskId, { employee: newEmployeeId });
+      const formatted = {
+        ...updated,
+        id: updated._id,
+        assignee: updated.employee?.name || 'Unassigned',
+        deadline: updated.date ? new Date(updated.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : 'No Date',
+        category: updated.type || 'General'
+      };
+      setTasks(prev => prev.map(t => t.id === taskId ? formatted : t));
+      if (selectedTask && selectedTask.id === taskId) {
+        setSelectedTask(formatted);
+      }
+      setIsReassigning(false);
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const handleMoveTask = async (id, newStatus) => {
+    try {
+      await updateTask(id, { status: newStatus });
+      setTasks(prev => prev.map(t => t.id === id ? { ...t, status: newStatus } : t));
+      setOpenDropdownId(null);
+    } catch (err) {
+      alert(err.message);
+    }
   };
 
   const handleEditTask = (task) => {
@@ -143,17 +200,18 @@ const ManagerTasks = () => {
     setForm({
       title: task.title,
       description: task.description || '',
-      assignee: task.assignee,
-      priority: task.priority,
-      status: task.status,
-      deadline: task.deadline.includes('Pending') ? '' : task.deadline,
-      category: task.category,
+      employee: task.employee?._id || task.employee,
+      priority: task.priority || 'medium',
+      status: task.status || 'pending',
+      date: task.date ? new Date(task.date).toISOString().split('T')[0] : '',
+      type: task.type || '',
+      store: task.store || '',
     });
     setShowModal(true);
     setOpenDropdownId(null);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const newErrors = validate();
     if (Object.keys(newErrors).length > 0) {
@@ -161,18 +219,36 @@ const ManagerTasks = () => {
       return;
     }
 
-    if (editingTask) {
-      setTasks(prev => prev.map(t => t.id === editingTask.id ? { ...t, ...form } : t));
-    } else {
-      const nextId = `TSK-${100 + tasks.length + 1}`;
-      const deadlineFormatted = new Date(form.deadline).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
-      setTasks(prev => [
-        { id: nextId, ...form, deadline: deadlineFormatted },
-        ...prev,
-      ]);
+    try {
+      if (editingTask) {
+        const updated = await updateTask(editingTask.id, form);
+        const employeeName = updated.employee?.name || teamMembers.find(m => m._id === (updated.employee?._id || updated.employee))?.name || 'Unassigned';
+        setTasks(prev => prev.map(t => t.id === editingTask.id ? { 
+          ...t, 
+          ...updated,
+          id: updated._id,
+          assignee: employeeName,
+          deadline: new Date(updated.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }),
+          category: updated.type || 'General'
+        } : t));
+      } else {
+        const created = await createTask(form);
+        const employeeName = created.employee?.name || teamMembers.find(m => m._id === (created.employee?._id || created.employee))?.name || 'Unassigned';
+        setTasks(prev => [
+          { 
+            ...created, 
+            id: created._id,
+            assignee: employeeName,
+            deadline: new Date(created.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }),
+            category: created.type || 'General'
+          },
+          ...prev,
+        ]);
+      }
+      closeModal();
+    } catch (err) {
+      alert(err.message);
     }
-
-    closeModal();
   };
 
   const handleChange = (field, value) => {
@@ -184,7 +260,7 @@ const ManagerTasks = () => {
     setShowModal(false);
     setEditingTask(null);
     setErrors({});
-    setForm({ title: '', description: '', assignee: '', priority: 'Medium', status: 'incoming', deadline: '', category: '' });
+    setForm({ title: '', description: '', employee: '', priority: 'medium', status: 'pending', date: '', type: '', store: '' });
   };
 
   // ──── COLUMN MANAGEMENT ────
@@ -209,23 +285,13 @@ const ManagerTasks = () => {
   };
 
   const handleDeleteSection = (statusId) => {
-    // Prevent deleting 'incoming' as a safety default
-    if (statusId === 'incoming') return;
+    // Prevent deleting 'pending' as a safety default
+    if (statusId === 'pending') return;
     
-    // Logic for Orphaned Tasks: Move to 'incoming'
-    setTasks(prev => prev.map(t => t.status === statusId ? { ...t, status: 'incoming' } : t));
+    // Logic for Orphaned Tasks: Move to 'pending'
+    setTasks(prev => prev.map(t => t.status === statusId ? { ...t, status: 'pending' } : t));
     setCategories(prev => prev.filter(c => c.id !== statusId));
     setOpenColumnMenuId(null);
-  };
-
-  const handleClearSection = (statusId) => {
-    const category = categories.find(c => c.id === statusId);
-    if (!category) return;
-    
-    if (window.confirm(`Are you sure you want to delete all missions in the "${category.label}" section? This action cannot be undone.`)) {
-      setTasks(prev => prev.filter(t => t.status !== statusId));
-      setOpenColumnMenuId(null);
-    }
   };
 
   // ──── ACTION DROPDOWN COMPONENT ────
@@ -366,14 +432,7 @@ const ManagerTasks = () => {
                       <Plus size={14} /> Add Mission
                     </button>
                     
-                    <button 
-                      onClick={() => handleClearSection(col.id)}
-                      className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/10 transition-all text-left"
-                    >
-                      <RotateCcw size={14} /> Clear All Missions
-                    </button>
-
-                    {col.id !== 'incoming' && (
+                    {col.id !== 'pending' && (
                       <div className="mt-1 pt-1 border-t border-gray-50 dark:border-gray-800">
                         <button 
                           onClick={() => handleDeleteSection(col.id)}
@@ -400,7 +459,7 @@ const ManagerTasks = () => {
                     </div>
                     <h4 className="text-[13px] font-bold text-gray-800 dark:text-white leading-snug mb-3 group-hover:text-indigo-600 transition-colors line-clamp-2">{task.title}</h4>
                     <div className="flex items-center justify-between pt-3 border-t border-gray-50 dark:border-gray-800">
-                      <div className="flex items-center gap-2"><div className="w-5 h-5 rounded-full bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center text-[8px] font-bold text-indigo-600 border border-indigo-100 dark:border-indigo-800/50">{task.assignee.split(' ').map(n => n[0]).join('')}</div><span className="text-[9px] font-bold text-gray-500 dark:text-gray-400">{task.assignee}</span></div>
+                      <div className="flex items-center gap-2"><div className="w-5 h-5 rounded-full bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center text-[8px] font-bold text-indigo-600 border border-indigo-100 dark:border-indigo-800/50">{(task.assignee || '').split(' ').filter(Boolean).map(n => n[0]).join('')}</div><span className="text-[9px] font-bold text-gray-500 dark:text-gray-400">{task.assignee}</span></div>
                       <div className={`flex items-center gap-1 text-[8px] font-black uppercase tracking-widest ${task.status === 'blocked' ? 'text-rose-500' : 'text-gray-400 dark:text-gray-500'}`}><Clock size={10} /> {task.deadline}</div>
                     </div>
                   </div>
@@ -435,10 +494,64 @@ const ManagerTasks = () => {
 
       {/* ── MISSION DETAIL MODAL ── */}
       {selectedTask && ReactDOM.createPortal(
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-[12px]" onClick={(e) => { if (e.target === e.currentTarget) setSelectedTask(null); }}>
-          <div className="relative w-full max-w-4xl bg-white dark:bg-gray-900 rounded-[3rem] shadow-2xl border border-gray-100 dark:border-gray-800 overflow-hidden animate-in fade-in zoom-in-95 duration-400 flex flex-col md:flex-row min-h-[600px]">
-            <div className="md:w-32 py-10 flex md:flex-col items-center justify-start gap-10 bg-slate-700 dark:bg-slate-700 border-r border-white/5"><div className="bg-white/5 p-5 rounded-[2rem] border border-white/10 shadow-inner">{React.createElement(categories.find(c => c.id === selectedTask.status)?.icon || Info, { size: 28, className: "text-indigo-400" })}</div><div className="hidden md:flex flex-col items-center gap-8 py-4"><div className="h-20 w-px bg-gradient-to-b from-white/0 via-white/10 to-white/0"></div><div className="text-white/30 text-[9px] font-black uppercase tracking-[0.4em] [writing-mode:vertical-lr] rotate-180">MISSION LOG • {selectedTask.id}</div><div className="h-20 w-px bg-gradient-to-b from-white/0 via-white/10 to-white/0"></div></div></div>
-            <div className="flex-1 p-10 md:p-14 space-y-10"><div className="flex justify-between items-start"><div className="space-y-2"><div className="flex items-center gap-3"><span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${getPriorityColor(selectedTask.priority)}`}>{selectedTask.priority}</span><span className="text-[10px] font-bold text-indigo-500 bg-indigo-50 dark:bg-indigo-900/20 px-3 py-1 rounded-full uppercase tracking-wider">{selectedTask.category}</span></div><h2 className="text-3xl font-black text-gray-900 dark:text-white leading-tight">{selectedTask.title}</h2></div><button onClick={() => setSelectedTask(null)} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-2xl text-gray-400 hover:text-rose-500 transition-all active:scale-95"><X size={24} /></button></div><div className="grid grid-cols-1 md:grid-cols-2 gap-10"><div className="space-y-6"><div className="space-y-2"><label className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2"><User size={12} className="text-indigo-600" /> Mission Lead</label><div className="flex items-center gap-3 bg-gray-50 dark:bg-gray-800/50 p-4 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm"><div className="w-10 h-10 rounded-2xl bg-indigo-600 flex items-center justify-center text-xs font-black text-white shadow-lg shadow-indigo-500/20">{selectedTask.assignee.split(' ').map(n => n[0]).join('')}</div><div><p className="text-sm font-black text-gray-900 dark:text-white">{selectedTask.assignee}</p><p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Operational Specialist</p></div></div></div><div className="space-y-2"><label className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2"><Calendar size={12} className="text-indigo-600" /> Compliance Deadline</label><div className="flex items-center gap-3 bg-gray-50 dark:bg-gray-800/50 p-4 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm"><div className="w-10 h-10 rounded-2xl bg-amber-500 flex items-center justify-center text-white shadow-lg shadow-amber-500/20"><Clock size={20} /></div><div><p className="text-sm font-black text-gray-900 dark:text-white">{selectedTask.deadline}</p><p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Before End of Day</p></div></div></div></div><div className="space-y-6"><div className="space-y-3"><label className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2"><FileText size={12} className="text-indigo-600" /> Mission Intelligence</label><p className="text-sm font-bold text-gray-600 dark:text-gray-400 leading-relaxed bg-gray-50 dark:bg-gray-800/30 p-5 rounded-3xl border border-dashed border-gray-200 dark:border-gray-800">{selectedTask.description || "No specific mission intelligence provided for this operation. Contact Mission Lead for guidance."}</p></div><div className="flex items-center justify-between pt-4"><div className="space-y-1"><p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Current Status</p>{getStatusBadge(selectedTask.status)}</div><button className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-indigo-500/30 active:scale-95 transition-all" onClick={() => handleEditTask(selectedTask)}>Edit Mission</button></div></div></div></div>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-[8px]" onClick={(e) => { if (e.target === e.currentTarget) setSelectedTask(null); }}>
+          <div className="relative w-full max-w-2xl bg-white dark:bg-gray-900 rounded-[2.5rem] shadow-2xl border border-gray-100 dark:border-gray-800 overflow-hidden animate-in fade-in zoom-in-95 duration-400 flex flex-col md:flex-row">
+            <div className="md:w-24 py-8 flex md:flex-col items-center justify-start gap-8 bg-slate-700 dark:bg-slate-700 border-r border-white/5"><div className="bg-white/5 p-4 rounded-[1.5rem] border border-white/10 shadow-inner">{React.createElement(categories.find(c => c.id === selectedTask.status)?.icon || Info, { size: 24, className: "text-indigo-400" })}</div><div className="hidden md:flex flex-col items-center gap-6 py-2"><div className="h-16 w-px bg-gradient-to-b from-white/0 via-white/10 to-white/0"></div><div className="text-white/30 text-[8px] font-black uppercase tracking-[0.4em] [writing-mode:vertical-lr] rotate-180 text-center">MISSION LOG • {selectedTask.id.slice(-6)}</div><div className="h-16 w-px bg-gradient-to-b from-white/0 via-white/10 to-white/0"></div></div></div>
+            <div className="flex-1 p-8 md:p-10 space-y-8">
+              <div className="flex justify-between items-start"><div className="space-y-1"><div className="flex items-center gap-2"><span className={`px-2.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest border ${getPriorityColor(selectedTask.priority)}`}>{selectedTask.priority}</span><span className="text-[9px] font-bold text-indigo-500 bg-indigo-50 dark:bg-indigo-900/20 px-2.5 py-0.5 rounded-full uppercase tracking-wider">{selectedTask.category}</span></div><h2 className="text-2xl font-black text-gray-900 dark:text-white leading-tight">{selectedTask.title}</h2></div><button onClick={() => setSelectedTask(null)} className="p-2 bg-gray-50 dark:bg-gray-800 rounded-xl text-gray-400 hover:text-rose-500 transition-all active:scale-95"><X size={20} /></button></div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-5">
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">Mission Lead</label>
+                      <button onClick={() => setIsReassigning(!isReassigning)} className="text-[9px] font-black text-indigo-600 hover:text-indigo-700 uppercase tracking-widest transition-all">
+                        {isReassigning ? 'Cancel' : 'Reassign'}
+                      </button>
+                    </div>
+                    {isReassigning ? (
+                      <div className="relative animate-in slide-in-from-top-1 duration-300">
+                        <select 
+                          onChange={(e) => handleReassignTask(selectedTask.id, e.target.value)}
+                          className="w-full appearance-none px-4 py-3 bg-indigo-50/50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800/50 rounded-2xl text-[11px] font-bold text-indigo-600 outline-none focus:ring-2 focus:ring-indigo-500/20 cursor-pointer"
+                          defaultValue=""
+                        >
+                          <option value="" disabled>Select new assignee...</option>
+                          {teamMembers.map(member => (
+                            <option key={member._id} value={member._id}>{member.name}</option>
+                          ))}
+                        </select>
+                        <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-indigo-400 pointer-events-none" />
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-3 bg-gray-50 dark:bg-gray-800/50 p-3 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm">
+                        <div className="w-8 h-8 rounded-xl bg-indigo-600 flex items-center justify-center text-[10px] font-black text-white shadow-lg shadow-indigo-500/20">{(selectedTask.assignee || '').split(' ').filter(Boolean).map(n => n[0]).join('')}</div>
+                        <div><p className="text-xs font-black text-gray-900 dark:text-white">{selectedTask.assignee}</p><p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Operational Specialist</p></div>
+                      </div>
+                    )}
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">Compliance Deadline</label>
+                    <div className="flex items-center gap-3 bg-gray-50 dark:bg-gray-800/50 p-3 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm">
+                      <div className="w-8 h-8 rounded-xl bg-amber-500 flex items-center justify-center text-white shadow-lg shadow-amber-500/20"><Clock size={16} /></div>
+                      <div><p className="text-xs font-black text-gray-900 dark:text-white">{selectedTask.deadline}</p><p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Before End of Day</p></div>
+                    </div>
+                  </div>
+                </div>
+                <div className="space-y-5">
+                  <div className="space-y-2">
+                    <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">Mission Intelligence</label>
+                    <p className="text-xs font-bold text-gray-600 dark:text-gray-400 leading-relaxed bg-gray-50 dark:bg-gray-800/30 p-4 rounded-2xl border border-dashed border-gray-200 dark:border-gray-800 line-clamp-4">{selectedTask.description || "No specific mission intelligence provided."}</p>
+                  </div>
+                  <div className="flex items-center justify-between pt-2">
+                    <div className="space-y-1">
+                      <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Status</p>
+                      {getStatusBadge(selectedTask.status)}
+                    </div>
+                    <button className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest shadow-lg shadow-indigo-500/20 active:scale-95 transition-all" onClick={() => handleEditTask(selectedTask)}>Edit</button>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>,
         document.body
@@ -452,9 +565,12 @@ const ManagerTasks = () => {
             <form onSubmit={handleSubmit} className="px-10 py-8 space-y-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
               <div><label className="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2">Task Title <span className="text-rose-500">*</span></label><input type="text" value={form.title} onChange={e => handleChange('title', e.target.value)} placeholder="e.g. Quarterly Route Audit – North Zone" className={`w-full px-5 py-3.5 bg-gray-50 dark:bg-gray-800 border rounded-2xl text-sm font-bold text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all ${errors.title ? 'border-rose-400' : 'border-gray-100 dark:border-gray-700'}`} />{errors.title && <p className="mt-1.5 text-[10px] font-bold text-rose-500">{errors.title}</p>}</div>
               <div><label className="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2">Description</label><textarea rows={3} value={form.description} onChange={e => handleChange('description', e.target.value)} placeholder="Describe the objective, scope, and expected deliverables…" className="w-full px-5 py-3.5 bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl text-sm font-bold text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all resize-none" /></div>
-              <div><label className="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2">Category / Mission Type <span className="text-rose-500">*</span></label><input type="text" value={form.category} onChange={e => handleChange('category', e.target.value)} placeholder="e.g. Supplier Onboarding, Route Planning, Audit…" className={`w-full px-5 py-3.5 bg-gray-50 dark:bg-gray-800 border rounded-2xl text-sm font-bold text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all ${errors.category ? 'border-rose-400' : 'border-gray-100 dark:border-gray-700'}`} />{errors.category && <p className="mt-1.5 text-[10px] font-bold text-rose-500">{errors.category}</p>}</div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5"><div><label className="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2">Assign To <span className="text-rose-500">*</span></label><div className="relative"><select value={form.assignee} onChange={e => handleChange('assignee', e.target.value)} className={`w-full appearance-none px-5 py-3.5 bg-gray-50 dark:bg-gray-800 border rounded-2xl text-sm font-bold text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all cursor-pointer ${errors.assignee ? 'border-rose-400' : 'border-gray-100 dark:border-gray-700'} ${!form.assignee ? 'text-gray-300' : ''}`}><option value="" disabled>Select team member</option>{teamMembers.map(member => (<option key={member} value={member}>{member}</option>))}</select><ChevronDown size={15} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" /></div>{errors.assignee && <p className="mt-1.5 text-[10px] font-bold text-rose-500">{errors.assignee}</p>}</div><div><label className="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2">Deadline <span className="text-rose-500">*</span></label><input type="date" value={form.deadline} onChange={e => handleChange('deadline', e.target.value)} className={`w-full px-5 py-3.5 bg-gray-50 dark:bg-gray-800 border rounded-2xl text-sm font-bold text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all ${errors.deadline ? 'border-rose-400' : 'border-gray-100 dark:border-gray-700'}`} />{errors.deadline && <p className="mt-1.5 text-[10px] font-bold text-rose-500">{errors.deadline}</p>}</div></div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5"><div><label className="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2">Priority</label><div className="flex gap-2 flex-wrap">{['Low', 'Medium', 'High', 'Critical'].map(p => (<button key={p} type="button" onClick={() => handleChange('priority', p)} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${form.priority === p ? getPriorityColor(p) + ' shadow-sm' : 'border-gray-100 dark:border-gray-700 text-gray-400 bg-gray-50 dark:bg-gray-800 hover:border-gray-300'}`}>{p}</button>))}</div></div><div><label className="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2">Status</label><div className="grid grid-cols-2 gap-2">{categories.map(s => (<button key={s.id} type="button" onClick={() => handleChange('status', s.id)} className={`px-3 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest border transition-all flex items-center justify-center gap-2 ${form.status === s.id ? `${s.bgColor} ${s.lightColor} border-${s.theme}-200 dark:bg-${s.theme}-900/20 dark:text-${s.theme}-400 dark:border-${s.theme}-800/50 shadow-sm shadow-${s.theme}-500/10` : 'border-gray-50 dark:border-gray-800 text-gray-400 bg-gray-50 dark:bg-gray-800 hover:border-gray-200'}`}><s.icon size={14} className={form.status === s.id ? s.lightColor : 'text-gray-400'} /> {s.label}</button>))}</div></div></div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div><label className="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2">Mission Type <span className="text-rose-500">*</span></label><input type="text" value={form.type} onChange={e => handleChange('type', e.target.value)} placeholder="Audit, Retail, etc." className={`w-full px-5 py-3.5 bg-gray-50 dark:bg-gray-800 border rounded-2xl text-sm font-bold text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all ${errors.type ? 'border-rose-400' : 'border-gray-100 dark:border-gray-700'}`} />{errors.type && <p className="mt-1.5 text-[10px] font-bold text-rose-500">{errors.type}</p>}</div>
+                <div><label className="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2">Store Name <span className="text-rose-500">*</span></label><input type="text" value={form.store} onChange={e => handleChange('store', e.target.value)} placeholder="Location name" className={`w-full px-5 py-3.5 bg-gray-50 dark:bg-gray-800 border rounded-2xl text-sm font-bold text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all ${errors.store ? 'border-rose-400' : 'border-gray-100 dark:border-gray-700'}`} />{errors.store && <p className="mt-1.5 text-[10px] font-bold text-rose-500">{errors.store}</p>}</div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5"><div><label className="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2">Assign To <span className="text-rose-500">*</span></label><div className="relative"><select value={form.employee} onChange={e => handleChange('employee', e.target.value)} className={`w-full appearance-none px-5 py-3.5 bg-gray-50 dark:bg-gray-800 border rounded-2xl text-sm font-bold text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all cursor-pointer ${errors.employee ? 'border-rose-400' : 'border-gray-100 dark:border-gray-700'} ${!form.employee ? 'text-gray-300' : ''}`}><option value="" disabled>Select team member</option>{teamMembers.map(member => (<option key={member._id} value={member._id}>{member.name}</option>))}</select><ChevronDown size={15} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" /></div>{errors.employee && <p className="mt-1.5 text-[10px] font-bold text-rose-500">{errors.employee}</p>}</div><div><label className="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2">Date <span className="text-rose-500">*</span></label><input type="date" value={form.date} onChange={e => handleChange('date', e.target.value)} className={`w-full px-5 py-3.5 bg-gray-50 dark:bg-gray-800 border rounded-2xl text-sm font-bold text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all ${errors.date ? 'border-rose-400' : 'border-gray-100 dark:border-gray-700'}`} />{errors.date && <p className="mt-1.5 text-[10px] font-bold text-rose-500">{errors.date}</p>}</div></div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5"><div><label className="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2">Priority</label><div className="flex gap-2 flex-wrap">{['low', 'medium', 'high'].map(p => (<button key={p} type="button" onClick={() => handleChange('priority', p)} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${form.priority === p ? getPriorityColor(p) + ' shadow-sm' : 'border-gray-100 dark:border-gray-700 text-gray-400 bg-gray-50 dark:bg-gray-800 hover:border-gray-300'}`}>{p}</button>))}</div></div><div><label className="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2">Status</label><div className="grid grid-cols-2 gap-2">{categories.map(s => (<button key={s.id} type="button" onClick={() => handleChange('status', s.id)} className={`px-3 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest border transition-all flex items-center justify-center gap-2 ${form.status === s.id ? `${s.bgColor} ${s.lightColor} border-${s.theme}-200 dark:bg-${s.theme}-900/20 dark:text-${s.theme}-400 dark:border-${s.theme}-800/50 shadow-sm shadow-${s.theme}-500/10` : 'border-gray-50 dark:border-gray-800 text-gray-400 bg-gray-50 dark:bg-gray-800 hover:border-gray-200'}`}><s.icon size={14} className={form.status === s.id ? s.lightColor : 'text-gray-400'} /> {s.label}</button>))}</div></div></div>
               <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-800"><button type="button" onClick={closeModal} className="px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all">Cancel</button><button type="submit" className="flex items-center gap-2 px-8 py-3 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-lg shadow-indigo-500/25">{editingTask ? <Edit2 size={16} /> : <Plus size={16} />} {editingTask ? 'Update Mission' : 'Create Task'}</button></div>
             </form>
           </div>
