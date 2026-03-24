@@ -97,13 +97,25 @@ const ProgressRing = ({ label, current, target, color }) => {
  * RevenueCard Component
  * Displays a weekly revenue visualization inspired by the Orders page.
  */
-const RevenueCard = () => {
+const RevenueCard = ({ revenueData }) => {
+  const weeklyData = revenueData?.weeklyData || [0, 0, 0, 0, 0, 0, 0];
+  const totalWeekly = revenueData?.totalWeekly || 0;
+
+  const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const labels = [];
+  const today = new Date();
+  for (let i = 6; i >= 0; i--) {
+    const date = new Date(today);
+    date.setDate(today.getDate() - i);
+    labels.push(days[date.getDay()]);
+  }
+
   const data = {
-    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+    labels: labels,
     datasets: [
       {
         label: 'Revenue',
-        data: [12000, 19000, 15000, 25000, 22000, 30000, 28000],
+        data: weeklyData,
         borderColor: '#10b981',
         backgroundColor: (context) => {
           const chart = context.chart;
@@ -173,10 +185,8 @@ const RevenueCard = () => {
         </div>
 
         <div className="space-y-1">
-          <p className="text-3xl font-black text-slate-800">₹84,200</p>
-          <div className="flex items-center justify-center gap-1.5 text-emerald-600 text-[10px] font-black uppercase tracking-widest bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity">
-            View Analytics
-          </div>
+          <p className="text-3xl font-black text-slate-800">₹{totalWeekly.toLocaleString('en-IN')}</p>
+          <div className="h-4" /> {/* Spacer for symmetry after removing button */}
         </div>
       </div>
     </Link>
@@ -187,13 +197,15 @@ const RevenueCard = () => {
  * CapabilitiesCard Component
  * Displays a radar chart of the employee's "Capabilities and Power".
  */
-const CapabilitiesCard = () => {
+const CapabilitiesCard = ({ capabilities }) => {
+  const radarData = (capabilities && capabilities.length === 5) ? capabilities : [0, 0, 0, 0, 0];
+
   const data = {
     labels: ['Efficiency', 'Reliability', 'Speed', 'Accuracy', 'Engagement'],
     datasets: [
       {
         label: 'Capabilities',
-        data: [85, 90, 75, 95, 80],
+        data: radarData,
         backgroundColor: 'rgba(99, 102, 241, 0.2)',
         borderColor: '#6366f1',
         borderWidth: 3,
@@ -235,6 +247,8 @@ const CapabilitiesCard = () => {
     }
   };
 
+  const isDataEmpty = radarData.every(v => v === 0);
+
   return (
     <div className="w-full max-w-[320px] aspect-square bg-white dark:bg-slate-900 text-gray-900 dark:text-white p-7 rounded-[3rem] shadow-xl relative overflow-hidden group transition-all duration-700 border border-gray-100 dark:border-slate-800 hover:border-indigo-500/30">
       {/* Background Pattern */}
@@ -250,8 +264,13 @@ const CapabilitiesCard = () => {
           <p className="text-xs text-gray-400 font-bold uppercase tracking-[0.25em]">Capabilities</p>
         </div>
 
-        <div className="w-full h-36 my-1 group-hover:scale-105 transition-transform duration-700">
+        <div className="w-full h-36 my-1 group-hover:scale-105 transition-transform duration-700 relative">
           <Radar data={data} options={options} />
+          {isDataEmpty && (
+            <div className="absolute inset-0 flex items-center justify-center bg-white/50 dark:bg-slate-900/50 backdrop-blur-[2px] rounded-full">
+              <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest bg-white dark:bg-slate-800 px-3 py-1 rounded-full shadow-sm border border-gray-100 dark:border-slate-700">No Data Found</span>
+            </div>
+          )}
         </div>
 
         <div className="w-12 h-1 bg-indigo-100 rounded-full" />
@@ -408,8 +427,16 @@ const EmployeeDashboard = () => {
           {/* Header Controls (Stats Grid with Integrated Shift Toggle) */}
           <div className="flex flex-col items-end gap-6 w-full lg:w-auto">
             <div className="grid grid-cols-3 gap-4 w-full sm:w-auto">
-              {stats.map((stat, idx) => (
-                <div key={idx} className="flex flex-col items-center justify-center p-4 md:p-6 bg-white/10 backdrop-blur-xl rounded-[2rem] border border-white/10 hover:bg-white/20 transition-all duration-300 min-w-[120px] md:min-w-[160px] shadow-lg group relative overflow-hidden">
+              {stats.map((stat, idx) => {
+                const CardWrapper = stat.label === "Duty" ? 'div' : Link;
+                const wrapperProps = stat.label === "Duty" ? {} : { to: stat.label === 'Visits' ? '/employee/visits' : '/employee/orders' };
+
+                return (
+                  <CardWrapper 
+                    key={idx} 
+                    {...wrapperProps}
+                    className="flex flex-col items-center justify-center p-4 md:p-6 bg-white/10 backdrop-blur-xl rounded-[2rem] border border-white/10 hover:bg-white/20 transition-all duration-300 min-w-[120px] md:min-w-[160px] shadow-lg group relative overflow-hidden cursor-pointer"
+                  >
                   <span className="text-[11px] font-black text-white/40 uppercase tracking-[0.2em] mb-2 group-hover:text-white/60 transition-colors">{stat.label}</span>
                   <div className="flex flex-col items-center">
                     <span className="text-3xl md:text-4xl font-black text-white mb-1">{stat.value}</span>
@@ -443,8 +470,9 @@ const EmployeeDashboard = () => {
                       </button>
                     </div>
                   )}
-                </div>
-              ))}
+                  </CardWrapper>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -452,8 +480,8 @@ const EmployeeDashboard = () => {
 
       {/* 2. Metrics Row: Revenue, Performance, and Capabilities Cards */}
       <section className="flex flex-col lg:flex-row justify-end items-center gap-6 md:gap-8">
-        <RevenueCard />
-        <CapabilitiesCard />
+        <RevenueCard revenueData={statsData.revenueData} />
+        <CapabilitiesCard capabilities={statsData.capabilities} />
         <Link
           to="/employee/tasks"
           className="w-full max-w-[320px] aspect-square bg-white dark:bg-slate-900 text-gray-900 dark:text-white p-7 rounded-[3rem] shadow-xl relative overflow-hidden group transition-all duration-700 border border-gray-100 dark:border-slate-800 hover:border-indigo-500/30 block hover:-translate-y-1 active:scale-[0.98]"
@@ -472,8 +500,18 @@ const EmployeeDashboard = () => {
             </div>
 
             <div className="grid grid-cols-2 gap-6 w-full px-2">
-              <ProgressRing label="Visits" current={12} target={15} color="text-blue-500" />
-              <ProgressRing label="Tasks" current={8} target={10} color="text-emerald-500" />
+              <ProgressRing 
+                label="Visits" 
+                current={statsData.visitsToday - statsData.tasksToday} 
+                target={statsData.visitsToday || 1} 
+                color="text-blue-500" 
+              />
+              <ProgressRing 
+                label="Tasks" 
+                current={statsData.visitsToday - statsData.tasksToday} 
+                target={statsData.visitsToday || 1} 
+                color="text-emerald-500" 
+              />
             </div>
 
             <div className="mt-3 w-16 h-1 bg-gray-100 rounded-full" />

@@ -17,8 +17,18 @@ const storeVisitSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['completed', 'partially_completed', 'not_interested', 'follow_up'],
+    enum: ['completed', 'pending', 'incomplete', 'rejected'],
     required: true,
+  },
+  onTime: {
+    type: String,
+    enum: ['delay', 'completed'],
+    default: 'completed'
+  },
+  isConsistent: {
+    type: String,
+    enum: ['consistent', 'inconsistent'],
+    default: 'consistent'
   },
   address: String,
   distance: String,
