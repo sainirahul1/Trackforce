@@ -37,6 +37,13 @@ const userSchema = new mongoose.Schema({
     address: String,
     employeeId: String,
     skills: [String],
+    dob: String,
+    gender: String,
+    nationality: String,
+    bloodGroup: String,
+    emergencyContact: String,
+    allergies: String,
+    location: String
   },
   isDeactivated: {
     type: Boolean,
