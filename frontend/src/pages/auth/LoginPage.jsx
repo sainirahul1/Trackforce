@@ -34,17 +34,20 @@ const LoginPage = () => {
     { label: '--- ReatchAll ---', email: '', password: '' },
     { label: 'ReatchAll Tenant', email: 'admin@reatchall.com', password: 'password123' },
     { label: 'ReatchAll Manager', email: 'manager@reatchall.com', password: 'password123' },
-    { label: 'ReatchAll Employee', email: 'employee@reatchall.com', password: 'password123' },
+    { label: 'ReatchAll Employee 1', email: 'employee@reatchall.com', password: 'password123' },
+    { label: 'ReatchAll Employee 2', email: 'employee2@reatchall.com', password: 'password123' },
+    { label: 'ReatchAll Employee 3', email: 'employee3@reatchall.com', password: 'password123' },
+    { label: 'ReatchAll Employee 4', email: 'employee4@reatchall.com', password: 'password123' },
 
-    { label: '--- MetaLogistics ---', email: '', password: '' },
-    { label: 'MetaLogistics Tenant', email: 'admin@metalogistics.com', password: 'password123' },
-    { label: 'MetaLogistics Manager', email: 'manager@metalogistics.com', password: 'password123' },
-    { label: 'MetaLogistics Employee', email: 'employee@metalogistics.com', password: 'password123' },
+    // { label: '--- MetaLogistics ---', email: '', password: '' },
+    // { label: 'MetaLogistics Tenant', email: 'admin@metalogistics.com', password: 'password123' },
+    // { label: 'MetaLogistics Manager', email: 'manager@metalogistics.com', password: 'password123' },
+    // { label: 'MetaLogistics Employee', email: 'employee@metalogistics.com', password: 'password123' },
 
-    { label: '--- SwiftDelivery ---', email: '', password: '' },
-    { label: 'SwiftDelivery Tenant', email: 'admin@swiftdelivery.com', password: 'password123' },
-    { label: 'SwiftDelivery Manager', email: 'manager@swiftdelivery.com', password: 'password123' },
-    { label: 'SwiftDelivery Employee', email: 'employee@swiftdelivery.com', password: 'password123' },
+    // { label: '--- SwiftDelivery ---', email: '', password: '' },
+    // { label: 'SwiftDelivery Tenant', email: 'admin@swiftdelivery.com', password: 'password123' },
+    // { label: 'SwiftDelivery Manager', email: 'manager@swiftdelivery.com', password: 'password123' },
+    // { label: 'SwiftDelivery Employee', email: 'employee@swiftdelivery.com', password: 'password123' },
   ];
 
   const handleQuickLogin = (e) => {

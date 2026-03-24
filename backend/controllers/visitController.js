@@ -7,7 +7,14 @@ exports.getVisits = async (req, res) => {
   try {
     console.log(`[DEBUG] Fetching lean visits for tenant: ${req.tenantId}`);
     // Lean fetch: exclude photos and checklist for the main list to improve performance
-    const visits = await StoreVisit.find({ tenant: req.tenantId })
+    const query = { tenant: req.tenantId };
+
+    // If the user is an employee, only show their own visits
+    if (req.user && req.user.role === 'employee') {
+      query.employee = req.user._id;
+    }
+
+    const visits = await StoreVisit.find(query)
       .select('-photos -checklist')
       .populate('employee', 'name email')
       .sort({ timestamp: -1 });

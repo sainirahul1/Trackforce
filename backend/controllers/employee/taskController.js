@@ -4,9 +4,14 @@ const StoreVisit = require('../../models/employee/StoreVisit');
 exports.getTasks = async (req, res) => {
   try {
     console.log(`[DEBUG] Fetching lean tasks for tenant: ${req.tenantId}`);
-    const tasks = await Task.find({ 
-      tenant: req.tenantId 
-    })
+    const query = { tenant: req.tenantId };
+    
+    // If the user is an employee, only show their own tasks
+    if (req.user && req.user.role === 'employee') {
+      query.employee = req.user._id;
+    }
+
+    const tasks = await Task.find(query)
     .select('-evidence -checklist')
     .sort({ date: -1 });
     
