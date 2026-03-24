@@ -121,39 +121,6 @@ exports.updateTask = async (req, res) => {
 
       // Mark the original task as completed because the visit attempt was finalized
       await Task.findByIdAndUpdate(updatedTask._id, { status: 'completed' });
-
-      // If not fully completed, create a NEW task for 24h later (instead of reusing the old one with old evidence)
-      if (req.body.missionStatus !== 'Complete' && req.body.status !== 'completed') {
-        const nextDay = new Date();
-        nextDay.setHours(nextDay.getHours() + 24);
-        
-        await Task.create({
-          employee: updatedTask.employee,
-          tenant: updatedTask.tenant,
-          title: updatedTask.title + ' (Follow Up)',
-          store: updatedTask.store,
-          companyName: updatedTask.companyName,
-          companyContact: updatedTask.companyContact,
-          companyEmail: updatedTask.companyEmail,
-          companyInsight: updatedTask.companyInsight,
-          companyDescription: updatedTask.companyDescription,
-          address: updatedTask.address,
-          distance: updatedTask.distance,
-          distanceVal: updatedTask.distanceVal,
-          eta: updatedTask.eta,
-          priority: updatedTask.priority,
-          date: nextDay,
-          dueDate: 'Tomorrow',
-          type: updatedTask.type,
-          coords: updatedTask.coords,
-          status: 'pending',
-          isTaskStarted: false,
-          visitStatus: 'Pending',
-          missionStatus: 'Pending',
-          checklist: updatedTask.checklist.map(c => ({ id: c.id, text: c.text, completed: false }))
-        });
-        console.log(`[WORKFLOW] Created new Follow Up task for: ${nextDay}`);
-      }
     }
 
     // Return the updated task with populated employee name

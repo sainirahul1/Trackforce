@@ -171,7 +171,7 @@ const ManagerTasks = () => {
       const formatted = {
         ...updated,
         id: updated._id,
-        assignee: updated.employee?.name || 'Unassigned',
+        assignee: updated.employee?.name || teamMembers.find(m => m._id === newEmployeeId)?.name || 'Unassigned',
         deadline: updated.date ? new Date(updated.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : 'No Date',
         category: updated.type || 'General'
       };
@@ -222,7 +222,7 @@ const ManagerTasks = () => {
     try {
       if (editingTask) {
         const updated = await updateTask(editingTask.id, form);
-        const employeeName = updated.employee?.name || teamMembers.find(m => m._id === (updated.employee?._id || updated.employee))?.name || 'Unassigned';
+        const employeeName = updated.employee?.name || teamMembers.find(m => m._id === updated.employee || m._id === updated.employee?._id || m._id === form.employee)?.name || 'Unassigned';
         setTasks(prev => prev.map(t => t.id === editingTask.id ? { 
           ...t, 
           ...updated,
@@ -233,7 +233,7 @@ const ManagerTasks = () => {
         } : t));
       } else {
         const created = await createTask(form);
-        const employeeName = created.employee?.name || teamMembers.find(m => m._id === (created.employee?._id || created.employee))?.name || 'Unassigned';
+        const employeeName = created.employee?.name || teamMembers.find(m => m._id === created.employee || m._id === created.employee?._id || m._id === form.employee)?.name || 'Unassigned';
         setTasks(prev => [
           { 
             ...created, 
