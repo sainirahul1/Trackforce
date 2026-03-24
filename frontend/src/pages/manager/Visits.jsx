@@ -1,11 +1,4 @@
-/**
- * @file Visits.jsx
- * @description High-fidelity Manager Dashboard for reviewing Field Visits and Proofs.
- * Features include high-density row layouts, dynamic status-based UI, 
- * and a React Portal-based Lightbox for 100% viewport coverage.
- */
-
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import {
   Camera, MapPin, CheckCircle2, Clock, AlertCircle,
@@ -14,14 +7,11 @@ import {
   Check, X, MessageSquare, MoreHorizontal, Mail, Phone, ArrowLeft,
   ChevronDown, History
 } from 'lucide-react';
+import { getVisits, getVisitById, updateVisit } from '../../services/visitService';
 
 /**
  * VisitRow Component
  * Renders a high-density, horizontal entry for the visits feed.
- * 
- * @param {Object} props
- * @param {Object} props.visit - The visit data object.
- * @param {Function} props.onReview - Callback to trigger the detail view.
  */
 const VisitRow = ({ visit, onReview }) => (
   <div
@@ -65,11 +55,19 @@ const VisitRow = ({ visit, onReview }) => (
         <span className="text-[8px] font-black uppercase tracking-widest">{visit.photos} Proofs</span>
       </div>
 
-      <div className={`px-3 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest border ${visit.status === 'Accepted' || visit.status === 'Verified' ? 'text-emerald-500 bg-emerald-50 border-emerald-100 dark:bg-emerald-500/5' :
-        visit.status === 'Rejected' ? 'text-rose-500 bg-rose-50 border-rose-100 dark:bg-rose-500/5' :
-          'text-amber-500 bg-amber-50 border-amber-100 dark:bg-amber-500/5'
-        }`}>
-        {visit.status}
+      <div className="flex flex-col items-end gap-1.5 shrink-0">
+        {/* Submission Status (Outcome of the visit) */}
+        <div className="px-2 py-0.5 rounded bg-gray-50 dark:bg-gray-800 text-[7px] font-black text-gray-400 uppercase tracking-tighter border border-gray-100 dark:border-gray-700">
+          Outcome: {visit.submissionStatus}
+        </div>
+        
+        {/* Audit Status (Manager Review) */}
+        <div className={`px-3 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest border ${visit.reviewStatus === 'accepted' ? 'text-emerald-500 bg-emerald-50 border-emerald-100 dark:bg-emerald-500/5' :
+          visit.reviewStatus === 'rejected' ? 'text-rose-500 bg-rose-50 border-rose-100 dark:bg-rose-500/5' :
+            'text-amber-500 bg-amber-50 border-amber-100 dark:bg-amber-500/5'
+          }`}>
+          {visit.reviewStatus === 'pending' ? 'Pending Review' : visit.reviewStatus === 'accepted' ? 'Accepted' : 'Rejected'}
+        </div>
       </div>
 
       <button
@@ -81,198 +79,163 @@ const VisitRow = ({ visit, onReview }) => (
     </div>
   </div>
 );
+
 /**
  * ManagerVisits Main Component
- * Orchestrates the overall Field Visits dashboard, including statistics,
- * filtered lists, and the comprehensive Detail Review mode.
  */
-
 const ManagerVisits = () => {
-  // --- State Initialization ---
-  const [filterStatus, setFilterStatus] = React.useState('Total');       // Active status filter (Total, Accepted, Rejected, etc.)
-  const [selectedVisit, setSelectedVisit] = React.useState(null);       // Tracks the visit currently being reviewed in Detail mode
-  const [isPendingExpanded, setIsPendingExpanded] = React.useState(true); // Toggles 'Awaiting Action' accordion
-  const [isHistoryExpanded, setIsHistoryExpanded] = React.useState(true); // Toggles 'Operational Intelligence' accordion
-  const [isRejecting, setIsRejecting] = React.useState(false);           // Controls the showing of the rejection remark textarea
-  const [rejectionReasonInput, setRejectionReasonInput] = React.useState(''); // Buffer for user-entered rejection text
-  const [activePhoto, setActivePhoto] = React.useState(null);           // Holds the photo object for the Portal-based Lightbox
-  const [observationCategory, setObservationCategory] = React.useState('General Overview'); // Active category for observation notes
+  const [filterStatus, setFilterStatus] = useState('Total');
+  const [selectedVisit, setSelectedVisit] = useState(null);
+  const [selectedVisitLoading, setSelectedVisitLoading] = useState(false);
+  const [isPendingExpanded, setIsPendingExpanded] = useState(true);
+  const [isHistoryExpanded, setIsHistoryExpanded] = useState(true);
+  const [isRejecting, setIsRejecting] = useState(false);
+  const [rejectionReasonInput, setRejectionReasonInput] = useState('');
+  const [activePhoto, setActivePhoto] = useState(null);
+  const [observationCategory, setObservationCategory] = useState('General Overview');
+
+  const [visits, setVisits] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const categoryContent = {
     'General Overview': "The store inventory was mostly organized, however, some discrepancies were noted in the inward goods section. Client was cooperative and provided all necessary documentation for the audit trail. No major issues faced during the field protocol execution.",
     'Inventory Compliance': "Stock levels for premium SKUs are maintained at 85%. End-cap displays are correctly positioned as per the planogram. Inward goods documentation is complete and verified.",
-    'Staff Performance': "Executive SW demonstrated excellent product knowledge and client engagement. Store manager noted the promptness and professionalism of the field officer during the audit.",
+    'Staff Performance': "Executive demonstrated excellent product knowledge and client engagement. Store manager noted the promptness and professionalism of the field officer during the audit.",
     'Client Feedback': "Client expressed satisfaction with the real-time reporting capabilities. Requested a follow-up on the promotional display efficacy by next week's visit.",
-    'Protocol Variance': "Minor variance noted in the geo-tagging at the entrance (0.05km). Site-path protocols were strictly followed otherwise, with all checkpoints covered accurately."
+    'Protocol Variance': "Minor variance noted in the geo-tagging at the entrance. Site-path protocols were strictly followed otherwise, with all checkpoints covered accurately."
   };
 
-  const [visits, setVisits] = React.useState([
-    {
-      id: 'VST-9021',
-      store: 'Global Tech Solutions HQ',
-      executive: 'John Doe',
-      designation: 'Sales Executive',
-      team: 'North Sales',
-      type: 'Store Visit',
-      status: 'Accepted',
-      time: '10:45 AM',
-      location: 'Verified (0.02km variance)',
-      photos: 4,
-      avatar: 'JD',
-      employeeId: 101,
-      proofs: [
-        { id: 1, title: 'Store Front', img: 'https://images.unsplash.com/photo-1534452203293-494d7ddbf7e0?w=500&auto=format&fit=crop&q=60' },
-        { id: 2, title: 'Shelf Check', img: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=500&auto=format&fit=crop&q=60' },
-        { id: 3, title: 'Compliance Poster', img: 'https://images.unsplash.com/photo-1506784983877-45594efa4cbe?w=500&auto=format&fit=crop&q=60' },
-        { id: 4, title: 'Visual Merchandising', img: 'https://images.unsplash.com/photo-1534452203293-494d7ddbf7e0?w=500&auto=format&fit=crop&q=60' }
-      ]
-    },
-    {
-      id: 'VST-9022',
-      store: 'North Star Retail',
-      executive: 'Sarah',
-      designation: 'Field Officer',
-      team: 'Retail Team',
-      type: 'Supplier Visit',
-      status: 'Pending Review',
-      time: '11:15 AM',
-      location: 'Verified (0.05km variance)',
-      photos: 4,
-      avatar: 'SW',
-      employeeId: 102,
-      proofs: [
-        { id: 1, title: 'Main Entrance', img: 'https://images.unsplash.com/photo-1472851294608-062f824d29cc?w=800&auto=format&fit=crop&q=80' },
-        { id: 2, title: 'Inventory Shelf', img: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&auto=format&fit=crop&q=80' },
-        { id: 3, title: 'Store Display', img: 'https://images.unsplash.com/photo-1534452203293-494d7ddbf7e0?w=800&auto=format&fit=crop&q=80' },
-        { id: 4, title: 'Product Check', img: 'https://images.unsplash.com/photo-1506784983877-45594efa4cbe?w=800&auto=format&fit=crop&q=80' }
-      ]
-    },
-    {
-      id: 'VST-9023',
-      store: 'Prime Logistics Hub',
-      executive: 'Mike Johnson',
-      designation: 'Logistics Supervisor',
-      team: 'Logistics A',
-      type: 'Routine Check',
-      status: 'Accepted',
-      time: '09:30 AM',
-      location: 'Verified (0.01km variance)',
-      photos: 4,
-      avatar: 'MJ',
-      employeeId: 103,
-      proofs: [
-        { id: 1, title: 'Logistics Bay', img: 'https://images.unsplash.com/photo-1586528116311-ad86d51b90f8?w=500&auto=format&fit=crop&q=60' },
-        { id: 2, title: 'Inward Goods', img: 'https://images.unsplash.com/photo-1553413077-190dd305871c?w=500&auto=format&fit=crop&q=60' },
-        { id: 3, title: 'Quality Check', img: 'https://images.unsplash.com/photo-1542744094-3a31f272c490?w=500&auto=format&fit=crop&q=60' },
-        { id: 4, title: 'Audit Label', img: 'https://images.unsplash.com/photo-1506784983877-45594efa4cbe?w=500&auto=format&fit=crop&q=60' }
-      ]
-    },
-    {
-      id: 'VST-9024',
-      store: 'City Mall Store',
-      executive: 'Emma Davis',
-      designation: 'Brand Ambassador',
-      team: 'Promotions',
-      type: 'Promotion Check',
-      status: 'Rejected',
-      rejectionReason: 'Promotional display did not meet the brand compliance guidelines. End-cap alignment is off by 15 degrees.',
-      time: '12:00 PM',
-      location: 'Warning (0.5km variance)',
-      photos: 4,
-      avatar: 'ED',
-      employeeId: 104,
-      proofs: [
-        { id: 1, title: 'Site Entrance', img: 'https://images.unsplash.com/photo-1472851294608-062f824d29cc?w=800&auto=format&fit=crop&q=80' },
-        { id: 2, title: 'Area Overview', img: 'https://images.unsplash.com/photo-1534452203293-494d7ddbf7e0?w=800&auto=format&fit=crop&q=80' },
-        { id: 3, title: 'Marker Point', img: 'https://images.unsplash.com/photo-1506784983877-45594efa4cbe?w=800&auto=format&fit=crop&q=80' },
-        { id: 4, title: 'Final Receipt', img: 'https://images.unsplash.com/photo-1553413077-190dd305871c?w=800&auto=format&fit=crop&q=80' }
-      ],
-    },
-    {
-      id: 'VST-9025',
-      store: 'Wellness Pharmacy',
-      executive: 'Alex Brown',
-      designation: 'Medical Rep',
-      team: 'Pharma West',
-      type: 'Visit',
-      status: 'Follow-up',
-      time: '01:30 PM',
-      location: 'Verified (0.05km variance)',
-      photos: 4,
-      avatar: 'AB',
-      employeeId: 105,
-      proofs: [
-        { id: 1, title: 'Main Display', img: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&auto=format&fit=crop&q=80' },
-        { id: 2, title: 'Shelf Alignment', img: 'https://images.unsplash.com/photo-1534452203293-494d7ddbf7e0?w=800&auto=format&fit=crop&q=80' },
-        { id: 3, title: 'Lighting Check', img: 'https://images.unsplash.com/photo-1506784983877-45594efa4cbe?w=800&auto=format&fit=crop&q=80' },
-        { id: 4, title: 'Floor Hygiene', img: 'https://images.unsplash.com/photo-1553413077-190dd305871c?w=800&auto=format&fit=crop&q=80' }
-      ]
-    },
-    {
-      id: 'VST-9026',
-      store: 'Big Bazaar Town',
-      executive: 'Rahul Sharma',
-      designation: 'Field Supervisor',
-      team: 'Operations',
-      type: 'Audit Visit',
-      status: 'Pending Review',
-      time: '02:15 PM',
-      location: 'Verified (0.02km variance)',
-      photos: 4,
-      avatar: 'RS',
-      employeeId: 106,
-      proofs: [
-        { id: 1, title: 'Entrance Guard', img: 'https://images.unsplash.com/photo-1541829070764-84a7d30dee62?w=800&auto=format&fit=crop&q=80' },
-        { id: 2, title: 'Main Aisle 1', img: 'https://images.unsplash.com/photo-1578916171728-46686eac8d58?w=800&auto=format&fit=crop&q=80' },
-        { id: 3, title: 'Back Storage', img: 'https://images.unsplash.com/photo-1586528116311-ad86d51b90f8?w=800&auto=format&fit=crop&q=80' },
-        { id: 4, title: 'Compliance Sign', img: 'https://images.unsplash.com/photo-1506784983877-45594efa4cbe?w=800&auto=format&fit=crop&q=80' }
-      ]
-    },
-    {
-      id: 'VST-9027',
-      store: 'Metro Mega Mart',
-      executive: 'Priya Singh',
-      designation: 'Audit Executive',
-      team: 'Quality Control',
-      type: 'Compliance Check',
-      status: 'Pending Review',
-      time: '03:30 PM',
-      location: 'Verified (0.01km variance)',
-      photos: 4,
-      avatar: 'PS',
-      employeeId: 107,
-      proofs: [
-        { id: 1, title: 'Billing Counter', img: 'https://images.unsplash.com/photo-1556742049-02e4d46cfb70?w=800&auto=format&fit=crop&q=80' },
-        { id: 2, title: 'Safety Exit', img: 'https://images.unsplash.com/photo-1506784983877-45594efa4cbe?w=800&auto=format&fit=crop&q=80' },
-        { id: 3, title: 'Stock Register', img: 'https://images.unsplash.com/photo-1553413077-190dd305871c?w=800&auto=format&fit=crop&q=80' },
-        { id: 4, title: 'Team Briefing', img: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800&auto=format&fit=crop&q=80' }
-      ]
-    },
-  ]);
+  // Helper to map backend completion status to human-readable labels
+  const mapSubmissionStatus = (backendStatus) => {
+    switch (backendStatus) {
+      case 'completed': return 'Completed';
+      case 'partially_completed': return 'Partial';
+      case 'not_interested': return 'No Interest';
+      case 'follow_up': return 'Follow-up';
+      default: return 'Pending';
+    }
+  };
+
+  // Fetch all visits from the backend
+  useEffect(() => {
+    const fetchVisits = async () => {
+      try {
+        setLoading(true);
+        const data = await getVisits();
+        const mapped = data.map(v => {
+          const visitDate = new Date(v.timestamp || v.createdAt);
+          const isValidDate = !isNaN(visitDate.getTime());
+          const empName = v.employee?.name || 'Unknown';
+          const initials = empName.split(' ').filter(Boolean).map(n => n[0]).join('').toUpperCase();
+
+          return {
+            ...v,
+            id: v._id,
+            store: v.storeName,
+            executive: empName,
+            designation: 'Field Executive',
+            team: 'Operations',
+            type: v.taskType || 'Store Visit',
+            submissionStatus: mapSubmissionStatus(v.status),
+            time: isValidDate ? visitDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '---',
+            location: v.gps?.lat ? `Verified (GPS: ${v.gps.lat.toFixed(4)}, ${v.gps.lng.toFixed(4)})` : 'Location data not available',
+            photos: v.photos?.length || 0,
+            avatar: initials,
+            employeeId: v.employee?._id || '---',
+            proofs: (v.photos || []).map((url, idx) => ({
+              id: idx + 1,
+              title: `Photo ${idx + 1}`,
+              img: url,
+            })),
+            reviewStatus: v.reviewStatus || 'pending',
+            rejectionReason: v.rejectionReason || null,
+          };
+        });
+        setVisits(mapped);
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching visits:', err);
+        setError('Failed to load visits from the server.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchVisits();
+  }, []);
+
+  // Handle clicking a visit row to load full details
+  const handleReviewVisit = async (visit) => {
+    try {
+      setSelectedVisitLoading(true);
+      setSelectedVisit(visit); // Show with partial data
+      const fullVisit = await getVisitById(visit.id);
+      const visitDate = new Date(fullVisit.timestamp || fullVisit.createdAt);
+      const isValidDate = !isNaN(visitDate.getTime());
+      const empName = fullVisit.employee?.name || visit.executive;
+      const initials = empName.split(' ').filter(Boolean).map(n => n[0]).join('').toUpperCase();
+
+      setSelectedVisit({
+        ...visit,
+        ...fullVisit,
+        id: fullVisit._id,
+        store: fullVisit.storeName,
+        executive: empName,
+        avatar: initials,
+        status: visit.status, // Keep the mapped status
+        time: isValidDate ? visitDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : visit.time,
+        location: fullVisit.gps?.lat ? `Verified (GPS: ${fullVisit.gps.lat.toFixed(4)}, ${fullVisit.gps.lng.toFixed(4)})` : visit.location,
+        photos: fullVisit.photos?.length || 0,
+        proofs: (fullVisit.photos || []).map((url, idx) => ({
+          id: idx + 1,
+          title: `Photo ${idx + 1}`,
+          img: url,
+        })),
+        notes: fullVisit.notes,
+        checklist: fullVisit.checklist || [],
+        reviewStatus: fullVisit.reviewStatus || visit.reviewStatus,
+        rejectionReason: fullVisit.rejectionReason || visit.rejectionReason,
+      });
+    } catch (err) {
+      console.error('Error fetching visit details:', err);
+    } finally {
+      setSelectedVisitLoading(false);
+    }
+  };
 
   const stats = [
     { label: 'Total Visits', value: visits.length.toString(), icon: Camera, color: 'text-indigo-600', bg: 'bg-indigo-50', status: 'Total' },
-    { label: 'Accepted Visits', value: visits.filter(v => v.status === 'Accepted').length.toString(), icon: CheckCircle2, color: 'text-emerald-600', bg: 'bg-emerald-50', status: 'Accepted' },
-    { label: 'Rejected Visits', value: visits.filter(v => v.status === 'Rejected').length.toString(), icon: XCircle, color: 'text-rose-600', bg: 'bg-rose-50', status: 'Rejected' },
-    { label: 'Follow-up Visits', value: visits.filter(v => v.status === 'Follow-up' || v.status === 'Pending Review').length.toString(), icon: RotateCcw, color: 'text-amber-600', bg: 'bg-amber-50', status: 'Follow-up' },
+    { label: 'Awaiting Review', value: visits.filter(v => v.reviewStatus === 'pending').length.toString(), icon: Clock, color: 'text-amber-600', bg: 'bg-amber-50', status: 'Pending' },
+    { label: 'Accepted', value: visits.filter(v => v.reviewStatus === 'accepted').length.toString(), icon: CheckCircle2, color: 'text-emerald-600', bg: 'bg-emerald-50', status: 'Accepted' },
+    { label: 'Rejected', value: visits.filter(v => v.reviewStatus === 'rejected').length.toString(), icon: XCircle, color: 'text-rose-600', bg: 'bg-rose-50', status: 'Rejected' },
   ];
 
   const filteredVisits = filterStatus === 'Total'
     ? visits
     : visits.filter(v => {
-      if (filterStatus === 'Follow-up') return v.status === 'Follow-up' || v.status === 'Pending Review';
-      return v.status === filterStatus;
+      if (filterStatus === 'Pending') return v.reviewStatus === 'pending';
+      if (filterStatus === 'Accepted') return v.reviewStatus === 'accepted';
+      if (filterStatus === 'Rejected') return v.reviewStatus === 'rejected';
+      return true;
     });
 
   /**
    * Finalizes an audit action (Approve/Reject)
-   * Updates local state and resets the UI buffers.
+   * Persists to backend and updates local state.
    */
-  const handleAction = (id, newStatus, reason = null) => {
-    setVisits(prev => prev.map(v => v.id === id ? { ...v, status: newStatus, rejectionReason: reason } : v));
-    setSelectedVisit(null);
-    setIsRejecting(false);
-    setRejectionReasonInput('');
+  const handleAction = async (id, newReviewStatus, reason = null) => {
+    try {
+      const payload = { reviewStatus: newReviewStatus };
+      if (reason) payload.rejectionReason = reason;
+      await updateVisit(id, payload);
+      setVisits(prev => prev.map(v => v.id === id ? { ...v, reviewStatus: newReviewStatus, rejectionReason: reason } : v));
+      setSelectedVisit(null);
+      setIsRejecting(false);
+      setRejectionReasonInput('');
+    } catch (err) {
+      console.error('Error updating visit review status:', err);
+      alert('Failed to update review status.');
+    }
   };
 
   return (
@@ -300,7 +263,16 @@ const ManagerVisits = () => {
         )}
       </div>
 
-      {!selectedVisit ? (
+      {loading ? (
+        <div className="flex flex-col items-center justify-center py-32 animate-pulse">
+          <div className="w-12 h-12 rounded-full border-4 border-indigo-100 dark:border-indigo-900/30 border-t-indigo-600 animate-spin mb-4" />
+          <p className="text-sm font-black text-gray-400 uppercase tracking-widest">Loading Field Intelligence...</p>
+        </div>
+      ) : error ? (
+        <div className="flex flex-col items-center justify-center py-32">
+          <p className="text-sm font-black text-rose-500 uppercase tracking-widest">{error}</p>
+        </div>
+      ) : !selectedVisit ? (
         <>
           {/* --- KPI QUICK OPS GRID ---
               Dynamic summary of visit counts with quick-filter capabilities. */}
@@ -324,7 +296,7 @@ const ManagerVisits = () => {
           <div className="space-y-12">
             {/* --- SECTION 1: AWAITING ACTION ---
                 Renders pending review requests with a blink-status indicator. */}
-            {(filterStatus === 'Total' || filterStatus === 'Follow-up') && filteredVisits.some(v => v.status === 'Pending Review') && (
+            {(filterStatus === 'Total' || filterStatus === 'Pending') && filteredVisits.some(v => v.reviewStatus === 'pending') && (
               <div className="space-y-4">
                 <button
                   onClick={() => setIsPendingExpanded(!isPendingExpanded)}
@@ -339,7 +311,7 @@ const ManagerVisits = () => {
                         Awaiting Action
                         <div className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
                       </h3>
-                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-0.5">{filteredVisits.filter(v => v.status === 'Pending Review').length} NEW REQUESTS PENDING</p>
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-0.5">{filteredVisits.filter(v => v.reviewStatus === 'pending').length} NEW REQUESTS PENDING</p>
                     </div>
                   </div>
                   <div className={`p-2 rounded-xl bg-white dark:bg-gray-900 border border-rose-100 dark:border-rose-500/20 text-rose-500 transition-transform duration-300 ${isPendingExpanded ? 'rotate-180' : ''}`}>
@@ -349,8 +321,8 @@ const ManagerVisits = () => {
 
                 {isPendingExpanded && (
                   <div className="flex flex-col gap-4 animate-in slide-in-from-top-4 duration-500">
-                    {filteredVisits.filter(v => v.status === 'Pending Review').map((visit) => (
-                      <VisitRow key={visit.id} visit={visit} onReview={() => setSelectedVisit(visit)} />
+                    {filteredVisits.filter(v => v.reviewStatus === 'pending').map((visit) => (
+                      <VisitRow key={visit.id} visit={visit} onReview={() => handleReviewVisit(visit)} />
                     ))}
                   </div>
                 )}
@@ -372,7 +344,7 @@ const ManagerVisits = () => {
                     <h3 className="text-sm font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-[0.2em] flex items-center gap-2">
                       Operational History
                     </h3>
-                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-0.5">VIEWING {filteredVisits.filter(v => v.status !== 'Pending Review').length} RECORDED ENTRIES</p>
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-0.5">VIEWING {filteredVisits.filter(v => v.reviewStatus !== 'pending').length} RECORDED ENTRIES</p>
                   </div>
                 </div>
                 <div className={`p-2 rounded-xl bg-white dark:bg-gray-900 border border-indigo-100 dark:border-indigo-500/20 text-indigo-600 transition-transform duration-300 ${isHistoryExpanded ? 'rotate-180' : ''}`}>
@@ -382,9 +354,9 @@ const ManagerVisits = () => {
 
               {isHistoryExpanded && (
                 <div className="flex flex-col gap-4 animate-in slide-in-from-top-4 duration-500">
-                  {filteredVisits.filter(v => v.status !== 'Pending Review').length > 0 ? (
-                    filteredVisits.filter(v => v.status !== 'Pending Review').map((visit) => (
-                      <VisitRow key={visit.id} visit={visit} onReview={() => setSelectedVisit(visit)} />
+                  {filteredVisits.filter(v => v.reviewStatus !== 'pending').length > 0 ? (
+                    filteredVisits.filter(v => v.reviewStatus !== 'pending').map((visit) => (
+                      <VisitRow key={visit.id} visit={visit} onReview={() => handleReviewVisit(visit)} />
                     ))
                   ) : (
                     <div className="col-span-full py-24 text-center bg-gray-50/50 dark:bg-gray-800/10 rounded-[3rem] border-2 border-dashed border-gray-100 dark:border-gray-800">
@@ -403,7 +375,14 @@ const ManagerVisits = () => {
         <div className="animate-in slide-in-from-bottom-12 [animation-duration:1000ms] [animation-timing-function:cubic-bezier(0.16,1,0.3,1)] max-w-[1400px] mx-auto">
           {/* --- COMPREHENSIVE DETAIL REVIEW MODE ---
               A dual-column layout for deep-dive analysis of a specific visit. */}
-          <div className="bg-white dark:bg-gray-950 rounded-[3rem] border border-gray-100 dark:border-gray-800 shadow-[0_32px_128px_-16px_rgba(0,0,0,0.1)] overflow-hidden flex flex-col min-h-[85vh]">
+          <div className="bg-white dark:bg-gray-950 rounded-[3rem] border border-gray-100 dark:border-gray-800 shadow-[0_32px_128px_-16px_rgba(0,0,0,0.1)] overflow-hidden flex flex-col min-h-[85vh] relative">
+            {/* Loading overlay for detail fetch */}
+            {selectedVisitLoading && (
+              <div className="absolute inset-0 z-[210] flex flex-col items-center justify-center bg-white/60 dark:bg-gray-950/60 backdrop-blur-sm rounded-[3rem]">
+                <div className="w-12 h-12 rounded-full border-4 border-indigo-100 dark:border-indigo-900/30 border-t-indigo-600 animate-spin mb-4" />
+                <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest animate-pulse">Fetching Mission Evidence...</p>
+              </div>
+            )}
 
             {/* 1. DYNAMIC REPORT HEADER
                 Displays the executive's profile, contact info, and current audit status. */}
@@ -424,11 +403,11 @@ const ManagerVisits = () => {
                   <div>
                     <div className="flex items-center gap-3 mb-2">
                       <h2 className="text-4xl font-black text-gray-900 dark:text-white tracking-tighter">{selectedVisit.executive}</h2>
-                      <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border ${selectedVisit.status === 'Accepted' || selectedVisit.status === 'Verified' ? 'text-emerald-600 bg-emerald-50 border-emerald-100 dark:bg-emerald-500/10 dark:border-emerald-500/20' :
-                        selectedVisit.status === 'Rejected' ? 'text-rose-600 bg-rose-50 border-rose-100 dark:bg-rose-500/10 dark:border-rose-500/20' :
+                      <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border ${selectedVisit.reviewStatus === 'accepted' ? 'text-emerald-600 bg-emerald-50 border-emerald-100 dark:bg-emerald-500/10 dark:border-emerald-500/20' :
+                        selectedVisit.reviewStatus === 'rejected' ? 'text-rose-600 bg-rose-50 border-rose-100 dark:bg-rose-500/10 dark:border-rose-500/20' :
                           'text-amber-600 bg-amber-50 border-amber-100 dark:bg-amber-500/10 dark:border-amber-500/20'
                         }`}>
-                        {selectedVisit.status}
+                        {selectedVisit.reviewStatus === 'pending' ? 'Pending Review' : selectedVisit.reviewStatus === 'accepted' ? 'Accepted' : 'Rejected'}
                       </span>
                     </div>
                     <div className="flex flex-wrap items-center gap-6">
@@ -497,14 +476,12 @@ const ManagerVisits = () => {
                   {/* Protocol Action Panel */}
                   <div className="mt-12 pt-10 border-t border-gray-100 dark:border-gray-800">
                     <h5 className="text-[11px] font-black text-gray-400 uppercase tracking-[0.3em] mb-6">Review Protocol</h5>
-                    {selectedVisit.status === 'Pending Review' || selectedVisit.status === 'Follow-up' ? (
+                    {selectedVisit.reviewStatus === 'pending' ? (
                       !isRejecting ? (
                         <div className="grid grid-cols-1 gap-3">
-                          {selectedVisit.status === 'Pending Review' && (
-                            <button onClick={() => handleAction(selectedVisit.id, 'Accepted')} className="w-full py-5 bg-indigo-600 text-white rounded-[1.5rem] font-black text-[11px] uppercase tracking-widest hover:bg-indigo-500 shadow-2xl shadow-indigo-600/30 transition-all flex items-center justify-center gap-3">
-                              <CheckCircle2 size={18} /> Approve Field Audit
-                            </button>
-                          )}
+                          <button onClick={() => handleAction(selectedVisit.id, 'accepted')} className="w-full py-5 bg-indigo-600 text-white rounded-[1.5rem] font-black text-[11px] uppercase tracking-widest hover:bg-indigo-500 shadow-2xl shadow-indigo-600/30 transition-all flex items-center justify-center gap-3">
+                            <CheckCircle2 size={18} /> Approve Field Audit
+                          </button>
                           <button onClick={() => setIsRejecting(true)} className="w-full py-5 bg-white dark:bg-gray-900 text-rose-500 border border-rose-100 dark:border-gray-800 rounded-[1.5rem] font-black text-[11px] uppercase tracking-widest hover:border-rose-500 transition-all flex items-center justify-center gap-3">
                             <XCircle size={18} /> Reject Submission
                           </button>
@@ -513,34 +490,34 @@ const ManagerVisits = () => {
                         <div className="space-y-3 animate-in fade-in zoom-in-95">
                           <textarea value={rejectionReasonInput} onChange={(e) => setRejectionReasonInput(e.target.value)} placeholder="Enter detailed rejection remark..." className="w-full h-32 p-6 bg-white dark:bg-gray-950 border border-rose-500/20 rounded-[2rem] text-[13px] font-bold focus:ring-2 focus:ring-rose-500/10 transition-all resize-none dark:text-white" />
                           <div className="flex gap-3">
-                            <button onClick={() => handleAction(selectedVisit.id, 'Rejected', rejectionReasonInput)} disabled={!rejectionReasonInput.trim()} className="flex-[2] py-4 bg-rose-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-rose-500 transition-all">Confirm Rejection</button>
+                            <button onClick={() => handleAction(selectedVisit.id, 'rejected', rejectionReasonInput)} disabled={!rejectionReasonInput.trim()} className="flex-[2] py-4 bg-rose-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-rose-500 transition-all">Confirm Rejection</button>
                             <button onClick={() => { setIsRejecting(false); setRejectionReasonInput(''); }} className="flex-1 py-4 bg-white dark:bg-gray-900 text-gray-500 rounded-2xl font-black text-[10px] uppercase tracking-widest border border-gray-100 dark:border-gray-800">Cancel</button>
                           </div>
                         </div>
                       )
                     ) : (
-                      <div className={`rounded-[2.5rem] border p-8 flex items-center justify-between group overflow-hidden relative ${selectedVisit.status === 'Rejected'
+                      <div className={`rounded-[2.5rem] border p-8 flex items-center justify-between group overflow-hidden relative ${selectedVisit.reviewStatus === 'rejected'
                           ? 'bg-rose-50/50 dark:bg-rose-500/5 border-rose-100 dark:border-rose-500/10'
                           : 'bg-emerald-50/50 dark:bg-emerald-500/5 border-emerald-100 dark:border-emerald-500/10'
                         }`}>
-                        <div className={`absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-48 h-48 rounded-full blur-3xl transition-colors ${selectedVisit.status === 'Rejected' ? 'bg-rose-500/5 group-hover:bg-rose-500/10' : 'bg-emerald-500/5 group-hover:bg-emerald-500/10'
+                        <div className={`absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-48 h-48 rounded-full blur-3xl transition-colors ${selectedVisit.reviewStatus === 'rejected' ? 'bg-rose-500/5 group-hover:bg-rose-500/10' : 'bg-emerald-500/5 group-hover:bg-emerald-500/10'
                           }`} />
                         <div className="flex items-center gap-6 md:gap-8 relative z-10">
-                          <div className={`w-16 h-16 rounded-[1.5rem] flex items-center justify-center text-white shadow-xl transition-transform duration-500 group-hover:scale-110 ${selectedVisit.status === 'Rejected' ? 'bg-rose-500 shadow-rose-500/20' : 'bg-emerald-500 shadow-emerald-500/20'
+                          <div className={`w-16 h-16 rounded-[1.5rem] flex items-center justify-center text-white shadow-xl transition-transform duration-500 group-hover:scale-110 ${selectedVisit.reviewStatus === 'rejected' ? 'bg-rose-500 shadow-rose-500/20' : 'bg-emerald-500 shadow-emerald-500/20'
                             }`}>
-                            {selectedVisit.status === 'Rejected' ? <XCircle size={32} strokeWidth={2.5} /> : <CheckCircle2 size={32} strokeWidth={2.5} />}
+                            {selectedVisit.reviewStatus === 'rejected' ? <XCircle size={32} strokeWidth={2.5} /> : <CheckCircle2 size={32} strokeWidth={2.5} />}
                           </div>
                           <div>
-                            <p className={`text-[11px] font-black uppercase tracking-[0.3em] mb-2 ${selectedVisit.status === 'Rejected' ? 'text-rose-600/60' : 'text-emerald-600/60'
-                              }`}>Audit Intelligence {selectedVisit.status === 'Rejected' ? 'Flagged' : 'Verified'}</p>
-                            <h4 className={`text-xl md:text-2xl font-black tracking-tighter ${selectedVisit.status === 'Rejected' ? 'text-rose-600' : 'text-emerald-600'
+                            <p className={`text-[11px] font-black uppercase tracking-[0.3em] mb-2 ${selectedVisit.reviewStatus === 'rejected' ? 'text-rose-600/60' : 'text-emerald-600/60'
+                              }`}>Audit Intelligence {selectedVisit.reviewStatus === 'rejected' ? 'Flagged' : 'Verified'}</p>
+                            <h4 className={`text-xl md:text-2xl font-black tracking-tighter ${selectedVisit.reviewStatus === 'rejected' ? 'text-rose-600' : 'text-emerald-600'
                               }`}>
-                              {selectedVisit.status === 'Rejected' ? 'Rejected' : 'Accepted'}
-                              <span className={`font-medium ml-2 uppercase text-[12px] md:text-[15px] tracking-[0.1em] ${selectedVisit.status === 'Rejected' ? 'text-rose-400' : 'text-emerald-400'
+                              {selectedVisit.reviewStatus === 'rejected' ? 'Rejected' : 'Accepted'}
+                              <span className={`font-medium ml-2 uppercase text-[12px] md:text-[15px] tracking-[0.1em] ${selectedVisit.reviewStatus === 'rejected' ? 'text-rose-400' : 'text-emerald-400'
                                 }`}>ON {selectedVisit.time}</span>
                             </h4>
                             {/* Display rejection reason only if the visit was explicitly flagged */}
-                            {selectedVisit.status === 'Rejected' && selectedVisit.rejectionReason && (
+                            {selectedVisit.reviewStatus === 'rejected' && selectedVisit.rejectionReason && (
                               <p className="mt-4 p-4 bg-rose-50/50 dark:bg-rose-500/10 rounded-2xl border border-rose-100 dark:border-rose-500/20 text-[11px] font-bold text-rose-600 leading-relaxed italic animate-in slide-in-from-top-2 duration-500">
                                 "{selectedVisit.rejectionReason}"
                               </p>
@@ -548,9 +525,9 @@ const ManagerVisits = () => {
                           </div>
                         </div>
                         <div className="hidden md:flex flex-col items-end relative z-10">
-                          <div className={`px-5 py-2.5 bg-white dark:bg-gray-900 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] border shadow-sm ${selectedVisit.status === 'Rejected' ? 'text-rose-600 border-rose-100 dark:border-rose-500/20' : 'text-gray-400 border-gray-100 dark:border-gray-800'
+                          <div className={`px-5 py-2.5 bg-white dark:bg-gray-900 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] border shadow-sm ${selectedVisit.reviewStatus === 'rejected' ? 'text-rose-600 border-rose-100 dark:border-rose-500/20' : 'text-gray-400 border-gray-100 dark:border-gray-800'
                             }`}>
-                            {selectedVisit.status === 'Rejected' ? 'Audit Terminated' : 'Audit Trail Complete'}
+                            {selectedVisit.reviewStatus === 'rejected' ? 'Audit Terminated' : 'Audit Trail Complete'}
                           </div>
                         </div>
                       </div>
@@ -651,7 +628,7 @@ const ManagerVisits = () => {
                         <div className="absolute top-0 w-full h-1/2 bg-indigo-500" />
                       </div>
                       <p className="pl-8 text-[14px] font-bold text-gray-600 dark:text-gray-400 leading-relaxed italic">
-                        "{categoryContent[observationCategory]}"
+                        "{selectedVisit.notes || categoryContent[observationCategory]}"
                       </p>
                     </div>
                   </div>

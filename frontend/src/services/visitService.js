@@ -30,3 +30,16 @@ export const createVisit = async (visitData) => {
   if (!response.ok) throw new Error('Failed to create visit');
   return response.json();
 };
+
+export const updateVisit = async (id, visitData) => {
+  const response = await fetch(`${API_URL}/${id}`, {
+    method: 'PATCH',
+    headers: {
+      ...getAuthHeader(),
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(visitData)
+  });
+  if (!response.ok) throw new Error('Failed to update visit');
+  return response.json();
+};

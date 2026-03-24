@@ -29,6 +29,16 @@ const storeVisitSchema = new mongoose.Schema({
   },
   photos: [String], // URLs or Data URLs
   notes: String,
+  reviewStatus: {
+    type: String,
+    enum: ['pending', 'accepted', 'rejected'],
+    default: 'pending',
+  },
+  reviewedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+  },
+  rejectionReason: String,
   taskTitle: String,
   taskType: String,
   checklist: [{

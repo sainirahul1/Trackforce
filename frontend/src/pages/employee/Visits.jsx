@@ -33,6 +33,8 @@ const EmployeeVisits = () => {
             distance: v.distance || '---', 
             eta: v.eta || '---',
             status: statusLabel,
+            reviewStatus: v.reviewStatus || 'pending',
+            rejectionReason: v.rejectionReason || null,
             companyDescription: 'Organization Partner',
             feedback: v.notes || 'No specific feedback recorded.',
             uploadedImages: v.photos || [],
@@ -70,6 +72,8 @@ const EmployeeVisits = () => {
         time: isValidDate ? visitDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '---',
         date: isValidDate ? visitDate.toISOString().split('T')[0] : '---',
         status: statusLabel,
+        reviewStatus: fullVisit.reviewStatus || visit.reviewStatus || 'pending',
+        rejectionReason: fullVisit.rejectionReason || visit.rejectionReason,
         companyDescription: 'Organization Partner',
         feedback: fullVisit.notes || 'No specific feedback recorded.',
         uploadedImages: fullVisit.photos || [],
@@ -222,9 +226,25 @@ const EmployeeVisits = () => {
                           <span className="truncate">{visit.address}</span>
                         </p>
                       </div>
-                      <span className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg shrink-0 ${styles.badge} ${styles.border} border`}>
-                        {visit.status}
-                      </span>
+                      <div className="flex flex-col items-end gap-2 shrink-0">
+                        <span className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg ${styles.badge} ${styles.border} border`}>
+                          {visit.status}
+                        </span>
+                        <div className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-tighter border ${visit.reviewStatus === 'accepted' ? 'text-emerald-600 bg-emerald-50 border-emerald-100 dark:bg-emerald-500/10 dark:border-emerald-500/20' :
+                          visit.reviewStatus === 'rejected' ? 'text-rose-600 bg-rose-50 border-rose-100 dark:bg-rose-500/10 dark:border-rose-500/20' :
+                            'text-amber-600 bg-amber-50 border-amber-100 dark:bg-amber-500/10 dark:border-amber-500/20'
+                          }`}>
+                          {visit.reviewStatus === 'pending' ? 'Pending Review' : visit.reviewStatus === 'accepted' ? 'Accepted' : 'Rejected'}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Meta stats: Assets count etc */}
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-1.5 px-2 py-1 bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-lg text-gray-400">
+                        <Camera size={11} />
+                        <span className="text-[9px] font-black uppercase tracking-widest">{(visit.photos || []).length} Proofs</span>
+                      </div>
                     </div>
 
                     {/* Bottom Row: Details & Actions */}
@@ -352,9 +372,17 @@ const EmployeeVisits = () => {
                       {selectedVisit.store}
                     </h2>
                     {/* Status Badge Beside Title */}
-                    <div className={`px-2 py-0.5 rounded text-[10px] font-bold flex items-center gap-1 uppercase tracking-wider shrink-0 ${selectedVisit.status === 'Completed' ? 'text-emerald-700 bg-emerald-50 border border-emerald-100 dark:text-emerald-400 dark:bg-emerald-500/10 dark:border-emerald-500/20' : 'text-gray-700 bg-gray-50 border border-gray-200 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300'}`}>
-                      {selectedVisit.status === 'Completed' && <CheckCircle2 size={10} className="text-emerald-600 dark:text-emerald-400" />}
-                      {selectedVisit.status}
+                    <div className="flex flex-col items-start gap-1">
+                      <div className={`px-2 py-0.5 rounded text-[10px] font-bold flex items-center gap-1 uppercase tracking-wider shrink-0 ${selectedVisit.status === 'Completed' ? 'text-emerald-700 bg-emerald-50 border border-emerald-100 dark:text-emerald-400 dark:bg-emerald-500/10 dark:border-emerald-500/20' : 'text-gray-700 bg-gray-50 border border-gray-200 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300'}`}>
+                        {selectedVisit.status === 'Completed' && <CheckCircle2 size={10} className="text-emerald-600 dark:text-emerald-400" />}
+                        {selectedVisit.status}
+                      </div>
+                      <div className={`px-2 py-0.5 rounded text-[9px] font-black flex items-center gap-1 uppercase tracking-widest border ${selectedVisit.reviewStatus === 'accepted' ? 'text-emerald-600 bg-emerald-50 border-emerald-100 dark:bg-emerald-500/10 dark:border-emerald-500/20' :
+                        selectedVisit.reviewStatus === 'rejected' ? 'text-rose-600 bg-rose-50 border-rose-100 dark:bg-rose-500/10 dark:border-rose-500/20' :
+                          'text-amber-600 bg-amber-50 border-amber-100 dark:bg-amber-500/10 dark:border-amber-500/20'
+                        }`}>
+                        {selectedVisit.reviewStatus === 'pending' ? 'Audit Status: Pending' : selectedVisit.reviewStatus === 'accepted' ? 'Audit Status: Accepted' : 'Audit Status: Rejected'}
+                      </div>
                     </div>
                   </div>
                   <p className="flex items-start gap-1.5 text-gray-500 dark:text-gray-400 text-sm font-medium">
@@ -464,14 +492,28 @@ const EmployeeVisits = () => {
               )}
 
               {/* Feedback and Notes */}
-              <div className="bg-white dark:bg-gray-900 rounded-2xl p-5 border border-gray-100 dark:border-gray-800 shadow-sm">
-                <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-3 flex items-center gap-2">
-                  <MessageSquare size={14} className="text-blue-500" />
-                  Task Feedback / Notes
-                </h4>
-                <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed italic border-l-2 border-blue-300 dark:border-blue-500/50 pl-4 font-medium">
-                  "{selectedVisit.feedback}"
-                </p>
+              <div className="space-y-4">
+                <div className="bg-white dark:bg-gray-900 rounded-2xl p-5 border border-gray-100 dark:border-gray-800 shadow-sm">
+                  <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-3 flex items-center gap-2">
+                    <MessageSquare size={14} className="text-blue-500" />
+                    Task Feedback / Notes
+                  </h4>
+                  <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed italic border-l-2 border-blue-300 dark:border-blue-500/50 pl-4 font-medium">
+                    "{selectedVisit.feedback}"
+                  </p>
+                </div>
+                
+                {selectedVisit.reviewStatus === 'rejected' && selectedVisit.rejectionReason && (
+                  <div className="bg-rose-50 dark:bg-rose-500/5 rounded-2xl p-5 border border-rose-100 dark:border-rose-500/20">
+                    <h4 className="text-[10px] font-black uppercase tracking-widest text-rose-500 mb-3 flex items-center gap-2">
+                      <AlertCircle size={14} />
+                      Manager Rejection Remarks
+                    </h4>
+                    <p className="text-sm text-rose-700 dark:text-rose-400 leading-relaxed font-bold italic pl-4 border-l-2 border-rose-300 dark:border-rose-500/50">
+                      "{selectedVisit.rejectionReason}"
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Uploaded Images */}

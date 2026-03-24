@@ -15,7 +15,7 @@ exports.getVisits = async (req, res) => {
     }
 
     const visits = await StoreVisit.find(query)
-      .select('-photos -checklist')
+      .select('-checklist')
       .populate('employee', 'name email')
       .sort({ timestamp: -1 });
     
@@ -61,6 +61,39 @@ exports.createVisit = async (req, res) => {
     });
 
     res.status(201).json(visit);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Update a store visit (Manager review: accept/reject)
+// @route   PATCH /api/visits/:id
+// @access  Private (Manager/Superadmin)
+exports.updateVisit = async (req, res) => {
+  try {
+    const visit = await StoreVisit.findOne({ _id: req.params.id, tenant: req.tenantId });
+
+    if (!visit) {
+      return res.status(404).json({ message: 'Visit not found' });
+    }
+
+    // If updating reviewStatus, track who reviewed it
+    if (req.body.reviewStatus) {
+      visit.reviewStatus = req.body.reviewStatus;
+      visit.reviewedBy = req.user._id;
+    }
+
+    if (req.body.rejectionReason) {
+      visit.rejectionReason = req.body.rejectionReason;
+    }
+
+    await visit.save();
+
+    const updatedVisit = await StoreVisit.findById(visit._id)
+      .populate('employee', 'name email')
+      .populate('reviewedBy', 'name');
+
+    res.json(updatedVisit);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
