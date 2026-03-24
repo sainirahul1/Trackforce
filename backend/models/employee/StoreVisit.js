@@ -17,7 +17,7 @@ const storeVisitSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['completed', 'partially_completed', 'not_interested', 'follow_up'],
+    enum: ['pending', 'completed', 'partially_completed', 'not_interested', 'follow_up'],
     required: true,
   },
   address: String,

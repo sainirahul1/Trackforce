@@ -296,7 +296,7 @@ const ManagerVisits = () => {
           <div className="space-y-12">
             {/* --- SECTION 1: AWAITING ACTION ---
                 Renders pending review requests with a blink-status indicator. */}
-            {(filterStatus === 'Total' || filterStatus === 'Pending') && filteredVisits.some(v => v.reviewStatus === 'pending') && (
+            {(filterStatus === 'Total' || filterStatus === 'Pending') && visits.some(v => v.reviewStatus === 'pending') && (
               <div className="space-y-4">
                 <button
                   onClick={() => setIsPendingExpanded(!isPendingExpanded)}
@@ -311,7 +311,7 @@ const ManagerVisits = () => {
                         Awaiting Action
                         <div className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
                       </h3>
-                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-0.5">{filteredVisits.filter(v => v.reviewStatus === 'pending').length} NEW REQUESTS PENDING</p>
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-0.5">{visits.filter(v => v.reviewStatus === 'pending').length} NEW REQUESTS PENDING</p>
                     </div>
                   </div>
                   <div className={`p-2 rounded-xl bg-white dark:bg-gray-900 border border-rose-100 dark:border-rose-500/20 text-rose-500 transition-transform duration-300 ${isPendingExpanded ? 'rotate-180' : ''}`}>
@@ -321,9 +321,15 @@ const ManagerVisits = () => {
 
                 {isPendingExpanded && (
                   <div className="flex flex-col gap-4 animate-in slide-in-from-top-4 duration-500">
-                    {filteredVisits.filter(v => v.reviewStatus === 'pending').map((visit) => (
-                      <VisitRow key={visit.id} visit={visit} onReview={() => handleReviewVisit(visit)} />
-                    ))}
+                    {filteredVisits.filter(v => v.reviewStatus === 'pending').length > 0 ? (
+                      filteredVisits.filter(v => v.reviewStatus === 'pending').map((visit) => (
+                        <VisitRow key={visit.id} visit={visit} onReview={() => handleReviewVisit(visit)} />
+                      ))
+                    ) : (
+                      <div className="py-12 text-center bg-gray-50/50 dark:bg-gray-800/10 rounded-[2.5rem] border-2 border-dashed border-gray-100 dark:border-gray-800">
+                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">No pending audits matching current filter</p>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -331,44 +337,46 @@ const ManagerVisits = () => {
 
             {/* --- SECTION 2: OPERATIONAL INTELLIGENCE ---
                 Renders the history of processed visits (Accepted, Rejected, etc.) */}
-            <div className="space-y-4">
-              <button
-                onClick={() => setIsHistoryExpanded(!isHistoryExpanded)}
-                className="w-full flex items-center justify-between p-6 bg-indigo-50/50 dark:bg-indigo-500/5 rounded-[2rem] border border-indigo-100 dark:border-indigo-500/10 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 transition-all group"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-lg shadow-indigo-600/20">
-                    <History size={18} />
-                  </div>
-                  <div className="text-left">
-                    <h3 className="text-sm font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                      Operational History
-                    </h3>
-                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-0.5">VIEWING {filteredVisits.filter(v => v.reviewStatus !== 'pending').length} RECORDED ENTRIES</p>
-                  </div>
-                </div>
-                <div className={`p-2 rounded-xl bg-white dark:bg-gray-900 border border-indigo-100 dark:border-indigo-500/20 text-indigo-600 transition-transform duration-300 ${isHistoryExpanded ? 'rotate-180' : ''}`}>
-                  <ChevronDown size={20} />
-                </div>
-              </button>
-
-              {isHistoryExpanded && (
-                <div className="flex flex-col gap-4 animate-in slide-in-from-top-4 duration-500">
-                  {filteredVisits.filter(v => v.reviewStatus !== 'pending').length > 0 ? (
-                    filteredVisits.filter(v => v.reviewStatus !== 'pending').map((visit) => (
-                      <VisitRow key={visit.id} visit={visit} onReview={() => handleReviewVisit(visit)} />
-                    ))
-                  ) : (
-                    <div className="col-span-full py-24 text-center bg-gray-50/50 dark:bg-gray-800/10 rounded-[3rem] border-2 border-dashed border-gray-100 dark:border-gray-800">
-                      <div className="mx-auto w-16 h-16 rounded-full bg-gray-50 dark:bg-gray-800 flex items-center justify-center mb-6">
-                        <History size={32} className="text-gray-300 dark:text-gray-600" />
-                      </div>
-                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">No historical data found for this filter</p>
+            {(filterStatus === 'Total' || filterStatus === 'Accepted' || filterStatus === 'Rejected') && (
+              <div className="space-y-4">
+                <button
+                  onClick={() => setIsHistoryExpanded(!isHistoryExpanded)}
+                  className="w-full flex items-center justify-between p-6 bg-indigo-50/50 dark:bg-indigo-500/5 rounded-[2rem] border border-indigo-100 dark:border-indigo-500/10 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 transition-all group"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-lg shadow-indigo-600/20">
+                      <History size={18} />
                     </div>
-                  )}
-                </div>
-              )}
-            </div>
+                    <div className="text-left">
+                      <h3 className="text-sm font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                        Operational History
+                      </h3>
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-0.5">VIEWING {visits.filter(v => v.reviewStatus !== 'pending').length} RECORDED ENTRIES</p>
+                    </div>
+                  </div>
+                  <div className={`p-2 rounded-xl bg-white dark:bg-gray-900 border border-indigo-100 dark:border-indigo-500/20 text-indigo-600 transition-transform duration-300 ${isHistoryExpanded ? 'rotate-180' : ''}`}>
+                    <ChevronDown size={20} />
+                  </div>
+                </button>
+
+                {isHistoryExpanded && (
+                  <div className="flex flex-col gap-4 animate-in slide-in-from-top-4 duration-500">
+                    {filteredVisits.filter(v => v.reviewStatus !== 'pending').length > 0 ? (
+                      filteredVisits.filter(v => v.reviewStatus !== 'pending').map((visit) => (
+                        <VisitRow key={visit.id} visit={visit} onReview={() => handleReviewVisit(visit)} />
+                      ))
+                    ) : (
+                      <div className="col-span-full py-24 text-center bg-gray-50/50 dark:bg-gray-800/10 rounded-[3rem] border-2 border-dashed border-gray-100 dark:border-gray-800">
+                        <div className="mx-auto w-16 h-16 rounded-full bg-gray-50 dark:bg-gray-800 flex items-center justify-center mb-6">
+                          <History size={32} className="text-gray-300 dark:text-gray-600" />
+                        </div>
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">No historical data found for this filter</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </>
       ) : (

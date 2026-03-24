@@ -5,7 +5,6 @@ const StoreVisit = require('../models/employee/StoreVisit');
 // @access  Private (Tenant/Manager/Employee)
 exports.getVisits = async (req, res) => {
   try {
-    console.log(`[DEBUG] Fetching lean visits for tenant: ${req.tenantId}`);
     // Lean fetch: exclude photos and checklist for the main list to improve performance
     const query = { tenant: req.tenantId };
 
@@ -19,7 +18,6 @@ exports.getVisits = async (req, res) => {
       .populate('employee', 'name email')
       .sort({ timestamp: -1 });
     
-    console.log(`[DEBUG] Found ${visits.length} visits for tenant: ${req.tenantId}`);
     res.json(visits);
   } catch (error) {
     res.status(500).json({ message: error.message });
