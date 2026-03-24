@@ -24,6 +24,7 @@ app.use('/api/visits', require('./routes/visitRoutes'));
 app.use('/api/activity', require('./routes/activityRoutes'));
 app.use('/api/tracking', require('./routes/trackingRoutes'));
 app.use('/api/stats', require('./routes/statsRoutes'));
+app.use('/api/employee', require('./routes/employee/employeeRoutes'));
 
 // Super Admin Routes
 app.use('/api/superadmin/companies', require('./routes/superadmin/companyRoutes'));

@@ -135,7 +135,7 @@ const ShareProfileModal = ({ isOpen, onClose, employee }) => {
   );
 };
 
-const ProfileUnifiedOverlay = ({ isOpen, onClose, employee, documents, activeTab, setActiveTab, onEditDocument, onViewDocument, onEditProfile, onSaveProfile }) => {
+const ProfileUnifiedOverlay = ({ isOpen, onClose, employee, documents, activeTab, setActiveTab, onEditDocument, onViewDocument, onEditProfile, onSaveProfile, onOpenPasswordSettings }) => {
   useEffect(() => {
     if (!isOpen) return;
     const onKeyDown = (e) => { if (e.key === 'Escape') onClose(); };
@@ -176,11 +176,10 @@ const ProfileUnifiedOverlay = ({ isOpen, onClose, employee, documents, activeTab
             <button
               key={item.id}
               onClick={() => setActiveTab(item.id)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all ${
-                activeTab === item.id
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all ${activeTab === item.id
                   ? 'bg-indigo-50 text-indigo-600 shadow-inner dark:bg-indigo-900/20'
                   : 'text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
-              }`}
+                }`}
             >
               <item.icon size={20} />
               <span>{item.label}</span>
@@ -189,13 +188,13 @@ const ProfileUnifiedOverlay = ({ isOpen, onClose, employee, documents, activeTab
         </div>
         <div className="p-4 border-t border-gray-100 dark:border-gray-800">
           <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-800 flex items-center gap-3">
-             <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center text-indigo-600 font-bold shrink-0">
-               {employee.name.charAt(0)}
-             </div>
-             <div className="min-w-0">
-               <p className="font-black text-gray-900 dark:text-white text-sm truncate">{employee.name}</p>
-               <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest truncate">{employee.designation}</p>
-             </div>
+            <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center text-indigo-600 font-bold shrink-0">
+              {employee.name.charAt(0)}
+            </div>
+            <div className="min-w-0">
+              <p className="font-black text-gray-900 dark:text-white text-sm truncate">{employee.name}</p>
+              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest truncate">{employee.designation}</p>
+            </div>
           </div>
         </div>
       </aside>
@@ -209,12 +208,12 @@ const ProfileUnifiedOverlay = ({ isOpen, onClose, employee, documents, activeTab
         {/* Top Header with Horizontal Navigation */}
         <header className="h-24 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-100 dark:border-gray-800 flex items-center justify-between px-8 sticky top-0 z-20 transition-all shrink-0">
           <div className="flex items-center gap-8">
-             <button onClick={onClose} className="lg:hidden p-2.5 rounded-2xl bg-gray-50 dark:bg-gray-800 text-gray-400 hover:text-indigo-600 transition-all">
-                <Menu size={20} />
-             </button>
-             <h2 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">Your Profile</h2>
+            <button onClick={onClose} className="lg:hidden p-2.5 rounded-2xl bg-gray-50 dark:bg-gray-800 text-gray-400 hover:text-indigo-600 transition-all">
+              <Menu size={20} />
+            </button>
+            <h2 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">Your Profile</h2>
           </div>
-          
+
           <div className="flex items-center gap-4">
             <button onClick={onClose} className="p-3 bg-gray-50 dark:bg-gray-800 text-gray-400 hover:text-gray-900 dark:hover:text-white rounded-2xl transition-all">
               <X size={20} />
@@ -228,15 +227,15 @@ const ProfileUnifiedOverlay = ({ isOpen, onClose, employee, documents, activeTab
             {activeTab === 'personal' && (
               <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <div className="flex flex-col gap-8">
-                   <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight mb-1">Personal Details</h3>
-                        <p className="text-gray-500 font-medium">Your verified identity and health records</p>
-                      </div>
-                   </div>
-                   <div className="flex flex-col gap-8">
-                      <PersonalInfoContent employee={employee} />
-                   </div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight mb-1">Personal Details</h3>
+                      <p className="text-gray-500 font-medium">Your verified identity and health records</p>
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-8">
+                    <PersonalInfoContent employee={employee} />
+                  </div>
                 </div>
               </div>
             )}
@@ -244,18 +243,18 @@ const ProfileUnifiedOverlay = ({ isOpen, onClose, employee, documents, activeTab
             {activeTab === 'documents' && (
               <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <div className="flex flex-col gap-8">
-                   <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight mb-1">Verified Documents</h3>
-                        <p className="text-gray-500 font-medium">Access and manage your professional credentials</p>
-                      </div>
-                      <button className="flex items-center gap-2 px-6 py-2.5 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl font-black text-sm text-gray-900 dark:text-white hover:bg-gray-50 transition-all shadow-sm">
-                        <Download size={18} /> Export Records
-                      </button>
-                   </div>
-                   <div className="flex flex-col gap-8">
-                      <DocumentsContent documents={documents} onEditDocument={onEditDocument} onViewDocument={onViewDocument} />
-                   </div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight mb-1">Verified Documents</h3>
+                      <p className="text-gray-500 font-medium">Access and manage your professional credentials</p>
+                    </div>
+                    <button className="flex items-center gap-2 px-6 py-2.5 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl font-black text-sm text-gray-900 dark:text-white hover:bg-gray-50 transition-all shadow-sm">
+                      <Download size={18} /> Export Records
+                    </button>
+                  </div>
+                  <div className="flex flex-col gap-8">
+                    <DocumentsContent documents={documents} onEditDocument={onEditDocument} onViewDocument={onViewDocument} />
+                  </div>
                 </div>
               </div>
             )}
@@ -263,13 +262,13 @@ const ProfileUnifiedOverlay = ({ isOpen, onClose, employee, documents, activeTab
             {activeTab === 'settings' && (
               <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <div className="flex flex-col gap-8">
-                   <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight mb-1">Account Control</h3>
-                        <p className="text-gray-500 font-medium">Security, notifications and system preferences</p>
-                      </div>
-                   </div>
-                   <SettingsContent employee={employee} onSaveProfile={onSaveProfile} />
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight mb-1">Account Control</h3>
+                      <p className="text-gray-500 font-medium">Security, notifications and system preferences</p>
+                    </div>
+                  </div>
+                  <SettingsContent employee={employee} onSaveProfile={onSaveProfile} onOpenPasswordSettings={onOpenPasswordSettings} />
                 </div>
               </div>
             )}
@@ -324,10 +323,10 @@ const PersonalInfoContent = ({ employee }) => {
         {group.items.map((item, i) => (
           <div key={i} className="flex items-center justify-between gap-4 py-3 border-b border-gray-50 dark:border-gray-800/50 last:border-0 hover:bg-gray-50/50 dark:hover:bg-gray-800/20 -mx-4 px-4 rounded-xl transition-colors">
             <div className="flex items-center gap-2.5 min-w-0">
-               <div className="p-1.5 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-400 group-hover:text-indigo-500 transition-colors">
-                  <item.icon size={12} />
-               </div>
-               <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest truncate">{item.label}</p>
+              <div className="p-1.5 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-400 group-hover:text-indigo-500 transition-colors">
+                <item.icon size={12} />
+              </div>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest truncate">{item.label}</p>
             </div>
             <p className="text-sm font-bold text-gray-700 dark:text-gray-200 text-right truncate">{item.value}</p>
           </div>
@@ -387,14 +386,14 @@ const DocumentsContent = ({ documents, onEditDocument, onViewDocument }) => {
   ));
 };
 
-const SettingsContent = ({ employee, onSaveProfile }) => {
+const SettingsContent = ({ employee, onSaveProfile, onOpenPasswordSettings }) => {
   const [displayName, setDisplayName] = useState(employee.name || '');
   const [emailNotif, setEmailNotif] = useState(true);
   const [pushNotif, setPushNotif] = useState(true);
   const [twoFA, setTwoFA] = useState(false);
   const [loginAlerts, setLoginAlerts] = useState(true);
   const [sessionTimeout, setSessionTimeout] = useState('30');
-  
+
   const SectionContainer = ({ title, icon: Icon, children }) => (
     <div className="bg-white dark:bg-gray-900 p-8 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 shadow-sm flex flex-col gap-6">
       <div className="flex items-center gap-4 mb-2">
@@ -425,8 +424,8 @@ const SettingsContent = ({ employee, onSaveProfile }) => {
     <div className="flex flex-col gap-8 pb-12">
       <SectionContainer title="User Preferences" icon={User}>
         <SettingRow label="Display Name" sub="How your name appears across the platform">
-          <input 
-            value={displayName} 
+          <input
+            value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
             onBlur={() => onSaveProfile({ name: displayName })}
             className={inputCls}
@@ -458,17 +457,17 @@ const SettingsContent = ({ employee, onSaveProfile }) => {
           <Toggle checked={loginAlerts} onChange={setLoginAlerts} />
         </SettingRow>
         <SettingRow label="Session Timeout" sub="Auto-logout after period of inactivity">
-           <select 
-             value={sessionTimeout} 
-             onChange={(e) => setSessionTimeout(e.target.value)}
-             className={inputCls}
-           >
-              <option value="15">15 minutes</option>
-              <option value="30">30 minutes</option>
-              <option value="60">1 hour</option>
-              <option value="240">4 hours</option>
-              <option value="never">Never</option>
-           </select>
+          <select
+            value={sessionTimeout}
+            onChange={(e) => setSessionTimeout(e.target.value)}
+            className={inputCls}
+          >
+            <option value="15">15 minutes</option>
+            <option value="30">30 minutes</option>
+            <option value="60">1 hour</option>
+            <option value="240">4 hours</option>
+            <option value="never">Never</option>
+          </select>
         </SettingRow>
 
         <div className="mt-6 pt-6 border-t border-gray-50 dark:border-gray-800">
@@ -480,13 +479,13 @@ const SettingsContent = ({ employee, onSaveProfile }) => {
             ].map((s, i) => (
               <div key={i} className="flex items-center justify-between p-4 bg-gray-50/50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-800">
                 <div className="flex items-center gap-4">
-                   <div className="p-2 bg-white dark:bg-gray-900 rounded-lg text-indigo-600 shadow-sm">
-                      <Smartphone size={16} />
-                   </div>
-                   <div>
-                      <p className="text-sm font-bold text-gray-900 dark:text-white">{s.device}</p>
-                      <p className="text-[10px] text-gray-500 font-medium">{s.loc}</p>
-                   </div>
+                  <div className="p-2 bg-white dark:bg-gray-900 rounded-lg text-indigo-600 shadow-sm">
+                    <Smartphone size={16} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-gray-900 dark:text-white">{s.device}</p>
+                    <p className="text-[10px] text-gray-500 font-medium">{s.loc}</p>
+                  </div>
                 </div>
                 {s.current ? (
                   <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 px-3 py-1 rounded-full">Active</span>
@@ -505,7 +504,7 @@ const SettingsContent = ({ employee, onSaveProfile }) => {
             </h5>
             <p className="text-sm text-gray-500 font-medium leading-relaxed">Regularly update your password to keep your account safe.</p>
           </div>
-          <button className="px-8 py-4 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-2xl font-black text-sm hover:scale-[1.02] transition-all shadow-xl shrink-0">
+          <button onClick={onOpenPasswordSettings} type="button" className="px-8 py-4 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-2xl font-black text-sm hover:scale-[1.02] transition-all shadow-xl shrink-0">
             Update Password
           </button>
         </div>
@@ -1696,7 +1695,7 @@ const AccountSettingsPanel = ({ isOpen, onClose, employee, onSaveProfile }) => {
     showToast(setSecSaved);
   };
 
-  const handleChangePassword = (e) => {
+  const handleChangePassword = async (e) => {
     e.preventDefault();
     setPasswordError('');
     if (!currentPassword || !newPassword || !confirmPassword)
@@ -1707,9 +1706,29 @@ const AccountSettingsPanel = ({ isOpen, onClose, employee, onSaveProfile }) => {
       return setPasswordError('Passwords do not match.');
     if (newPassword === currentPassword)
       return setPasswordError('New password must differ from current.');
-    onSaveProfile({ password: newPassword });
-    setCurrentPassword(''); setNewPassword(''); setConfirmPassword('');
-    showToast(setPasswordSaved);
+      
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('http://localhost:5001/api/employee/profile/password', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ currentPassword, newPassword })
+      });
+      
+      const data = await res.json();
+      
+      if (!res.ok) {
+        throw new Error(data.message || 'Failed to update password');
+      }
+
+      setCurrentPassword(''); setNewPassword(''); setConfirmPassword('');
+      showToast(setPasswordSaved);
+    } catch (error) {
+      setPasswordError(error.message);
+    }
   };
 
   const SectionCard = ({ title, icon: Icon, children, onSubmit, saved, submitLabel = 'Save Changes' }) => (
@@ -1925,27 +1944,66 @@ const EmployeeProfile = () => {
     { id: 6, name: 'Insurance Policy', size: '2.5 MB', type: 'PDF', status: 'Active' },
   ]);
 
-  const [employee, setEmployee] = useState({
-    name: 'Test person',
-    designation: 'Senior Field Executive',
-    team: 'Delta Team',
-    status: 'On Duty',
-    email: 'person@trackforce.com',
-    phone: '+91 91234 56789',
-    location: 'Bengaluru, Karnataka',
-    address: 'Indiranagar, Bengaluru, KA',
-    gender: 'Male',
-    nationality: 'Indian',
-    bloodGroup: 'A+ Positive',
-    emergencyContact: 'Deepika (Sister) - 9876543210',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix'
-  });
+  const [employee, setEmployee] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchProfile();
+  }, []);
+
+  const fetchProfile = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('http://localhost:5001/api/employee/profile/me', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setEmployee(data);
+      }
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSaveProfile = async (updates) => {
+    // Optimistic UI update
+    setEmployee((prev) => ({ ...prev, ...updates }));
+
+    try {
+      const token = localStorage.getItem('token');
+      await fetch('http://localhost:5001/api/employee/profile/me', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(updates)
+      });
+    } catch (error) {
+      console.error('Error saving profile:', error);
+    }
+  };
 
   const tabs = [
     { id: 'personal', label: 'Profile Info', icon: User },
     { id: 'employment', label: 'Work Details', icon: Briefcase },
     { id: 'documents', label: 'Documents', icon: FileText },
   ];
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
+      </div>
+    );
+  }
+
+  if (!employee) {
+    return <div className="text-center mt-20 text-gray-500 font-bold">Failed to load profile data.</div>;
+  }
 
   const renderContent = () => {
     switch (activeTab) {
@@ -1965,39 +2023,39 @@ const EmployeeProfile = () => {
       <div className="animate-in duration-500">
         <ScrollStyles />
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-4">
-        <div>
-          <h1 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">Your Profile</h1>
-          <p className="text-gray-500 font-medium">Manage your field performance and professional records</p>
+          <div>
+            <h1 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">Your Profile</h1>
+            <p className="text-gray-500 font-medium">Manage your field performance and professional records</p>
+          </div>
         </div>
-      </div>
 
-      <ProfileHeader
-        employee={employee}
-        onEditProfile={() => setIsEditProfileOpen(true)}
-        onOpenSettings={() => {
-          setActiveTab('settings');
-          setIsNavigationOpen(true);
-        }}
-        onShareProfile={() => setIsShareModalOpen(true)}
-        onOpenNavigation={() => setIsNavigationOpen(true)}
-      />
+        <ProfileHeader
+          employee={employee}
+          onEditProfile={() => setIsEditProfileOpen(true)}
+          onOpenSettings={() => {
+            setActiveTab('settings');
+            setIsNavigationOpen(true);
+          }}
+          onShareProfile={() => setIsShareModalOpen(true)}
+          onOpenNavigation={() => setIsNavigationOpen(true)}
+        />
 
-      <EmploymentSection />
-      <NotificationsSection />
+        <EmploymentSection />
+        <NotificationsSection />
       </div>
 
       <EditProfileModal
         isOpen={isEditProfileOpen}
         onClose={() => setIsEditProfileOpen(false)}
         employee={employee}
-        onSaveProfile={(updates) => setEmployee((prev) => ({ ...prev, ...updates }))}
+        onSaveProfile={handleSaveProfile}
       />
 
       <AccountSettingsPanel
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
         employee={employee}
-        onSaveProfile={(updates) => setEmployee((prev) => ({ ...prev, ...updates }))}
+        onSaveProfile={handleSaveProfile}
       />
 
       <ShareProfileModal
@@ -2024,10 +2082,14 @@ const EmployeeProfile = () => {
           setIsViewModalOpen(true);
         }}
         onEditProfile={() => {
-           setIsNavigationOpen(false);
-           setIsEditProfileOpen(true);
+          setIsNavigationOpen(false);
+          setIsEditProfileOpen(true);
         }}
-        onSaveProfile={(updates) => setEmployee((prev) => ({ ...prev, ...updates }))}
+        onOpenPasswordSettings={() => {
+          setIsNavigationOpen(false);
+          setIsSettingsOpen(true);
+        }}
+        onSaveProfile={handleSaveProfile}
       />
 
       <PersonalInfoModal
