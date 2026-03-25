@@ -76,7 +76,7 @@ const DashboardLayout = ({ allowedRole }) => {
     return <MaintenanceOverlay />;
   }
 
-  const isSuspended = localUser.tenantStatus === 'suspended';
+  const isSuspended = localUser.tenantStatus === 'suspended' || localUser.isDeactivated === true;
 
   return (
     <div className="min-h-screen bg-gray-50/50 dark:bg-gray-950 flex transition-colors duration-300 relative">

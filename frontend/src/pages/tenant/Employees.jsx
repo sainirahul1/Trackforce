@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import DataTable from '../../components/DataTable';
-import { mockEmployees } from '../../utils/mockData';
+import tenantService from '../../services/tenantService';
 import Button from '../../components/Button';
-import { UserPlus, Search, Download, Shield, Users, Activity, CheckCircle2, X, ArrowLeft, Mail, Phone, MapPin, Briefcase, Calendar, User, Clock } from 'lucide-react';
+import { UserPlus, Search, Download, Shield, Users, Activity, CheckCircle2, X, ArrowLeft, Mail, Phone, MapPin, Briefcase, Calendar, User, Clock, MoreVertical, Edit, Trash2, Ban } from 'lucide-react';
 
 const getRelativeTime = (timestamp) => {
   const now = new Date();
@@ -21,11 +21,15 @@ const getRelativeTime = (timestamp) => {
 };
 
 const EmployeeList = () => {
-  const [employees, setEmployees] = useState(mockEmployees);
+  const [employees, setEmployees] = useState([]);
+  const [teamMembers, setTeamMembers] = useState([]);
   const [selectedManager, setSelectedManager] = useState(null);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [newManager, setNewManager] = useState({ name: '', team: '', designation: 'Operations Manager' });
+  const [newManager, setNewManager] = useState({ name: '', email: '', password: '', team: '', designation: 'Operations Manager' });
+  const [dropdownState, setDropdownState] = useState({ id: null, top: 0, right: 0 });
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingManager, setEditingManager] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [showSuccess, setShowSuccess] = useState(false);
@@ -40,7 +44,46 @@ const EmployeeList = () => {
     return () => {
       document.body.style.overflow = 'unset';
     };
-  }, [isModalOpen]);
+  }, [isModalOpen, isEditModalOpen]);
+
+  useEffect(() => {
+    fetchManagers();
+    fetchTeamMembers();
+  }, []);
+
+  const fetchTeamMembers = async () => {
+    try {
+      const data = await tenantService.getEmployees();
+      const mapped = data.map(e => ({
+        id: e._id,
+        name: e.name,
+        role: e.profile?.designation || 'Employee',
+        status: e.isDeactivated ? 'Inactive' : 'Active',
+        lastActivity: new Date().toISOString()
+      }));
+      setTeamMembers(mapped);
+    } catch (error) {
+      console.error('Failed to fetch team members:', error);
+    }
+  };
+
+  const fetchManagers = async () => {
+    try {
+      const data = await tenantService.getManagers();
+      const mapped = data.map(m => ({
+        id: m._id,
+        name: m.name,
+        email: m.email,
+        designation: m.profile?.designation || 'Manager',
+        status: m.isDeactivated ? 'Inactive' : 'On Duty',
+        team: m.profile?.team || 'N/A',
+        avatar: `https://i.pravatar.cc/150?u=${m._id}`
+      }));
+      setEmployees(mapped);
+    } catch (error) {
+      console.error('Failed to fetch managers:', error);
+    }
+  };
 
   const stats = [
     { label: 'Total Managers', value: employees.length.toString(), icon: Users, color: 'text-indigo-600', bg: 'bg-indigo-50', filter: 'All' },
@@ -49,23 +92,72 @@ const EmployeeList = () => {
     { label: 'Total Teams', value: new Set(employees.map(e => e.team)).size.toString(), icon: Activity, color: 'text-blue-600', bg: 'bg-blue-50', filter: 'All' },
   ];
 
-  const handleAddManager = (e) => {
+  const handleAddManager = async (e) => {
     e.preventDefault();
-    const manager = {
-      id: Date.now(),
-      name: newManager.name,
-      designation: newManager.designation,
-      status: 'On Duty',
-      team: newManager.team,
-      visitsToday: 0,
-      avatar: `https://i.pravatar.cc/150?u=${Date.now()}`
-    };
-    setEmployees([manager, ...employees]);
-    setAddedManagerName(newManager.name);
-    setIsModalOpen(false);
-    setNewManager({ name: '', team: '', designation: 'Operations Manager' });
-    setShowSuccess(true);
-    setTimeout(() => setShowSuccess(false), 3000);
+    try {
+      const response = await tenantService.createManager(newManager);
+      const m = response.data;
+      const manager = {
+        id: m._id,
+        name: m.name,
+        email: m.email,
+        designation: m.profile?.designation || 'Manager',
+        status: 'On Duty',
+        team: m.profile?.team || 'N/A',
+        avatar: `https://i.pravatar.cc/150?u=${m._id}`
+      };
+      setEmployees([manager, ...employees]);
+      setAddedManagerName(newManager.name);
+      setIsModalOpen(false);
+      setNewManager({ name: '', email: '', password: '', team: '', designation: 'Operations Manager' });
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3000);
+    } catch (error) {
+      console.error('Failed to create manager:', error);
+      alert(error.response?.data?.message || 'Failed to create manager');
+    }
+  };
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await tenantService.updateManager(editingManager.id, editingManager);
+      setEmployees(employees.map(emp => emp.id === editingManager.id ? { ...emp, name: editingManager.name, team: editingManager.team, designation: editingManager.designation } : emp));
+      setIsEditModalOpen(false);
+      setEditingManager(null);
+      setShowSuccess(true);
+      setAddedManagerName(editingManager.name);
+      setTimeout(() => setShowSuccess(false), 3000);
+    } catch (err) {
+      console.error('Failed to edit manager:', err);
+      alert('Failed to edit manager');
+    }
+  };
+
+  const handleSuspendManager = async (id, currentStatus) => {
+    const newStatus = currentStatus === 'Inactive' ? 'Active' : 'Inactive';
+    try {
+      await tenantService.updateManager(id, { status: newStatus });
+      setEmployees(employees.map(emp => emp.id === id ? { ...emp, status: newStatus } : emp));
+      setDropdownState({ id: null, top: 0, right: 0 });
+    } catch (err) {
+      console.error(err);
+      alert('Failed to update status');
+    }
+  };
+
+  const handleDeleteManager = async (id) => {
+    if (window.confirm("Are you sure you want to delete this manager?")) {
+      try {
+        await tenantService.deleteManager(id);
+        const filtered = employees.filter(emp => emp.id !== id);
+        setEmployees(filtered);
+        setSelectedManager(null);
+      } catch (error) {
+        console.error('Failed to delete manager:', error);
+        alert('Failed to delete manager');
+      }
+    }
   };
 
   const handleExportCSV = () => {
@@ -151,6 +243,73 @@ const EmployeeList = () => {
         <div className="flex items-center space-x-2 bg-emerald-50 dark:bg-emerald-900/20 px-3 py-1.5 rounded-xl w-max border border-emerald-100 dark:border-emerald-800/50 backdrop-blur-sm shadow-sm">
           <Shield size={14} className="text-emerald-500 dark:text-emerald-400" />
           <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400">Encrypted</span>
+        </div>
+      ),
+    },
+    {
+      header: 'Actions',
+      accessor: 'actions',
+      render: (row) => (
+        <div className="relative flex justify-end" onClick={(e) => e.stopPropagation()}>
+          <button 
+            onClick={(e) => {
+              if (dropdownState.id === row.id) {
+                setDropdownState({ id: null, top: 0, right: 0 });
+              } else {
+                const rect = e.currentTarget.getBoundingClientRect();
+                setDropdownState({
+                  id: row.id,
+                  top: rect.bottom + 4,
+                  right: window.innerWidth - rect.right
+                });
+              }
+            }}
+            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+          >
+            <MoreVertical size={16} className="text-gray-500" />
+          </button>
+          
+          {dropdownState.id === row.id && createPortal(
+            <>
+              <div className="fixed inset-0 z-[160]" onClick={(e) => { e.stopPropagation(); setDropdownState({ id: null, top: 0, right: 0 }); }} />
+              <div 
+                className="fixed bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-gray-100 dark:border-gray-800 z-[170] py-2 w-48 animate-in fade-in zoom-in-[0.98] duration-200"
+                style={{ top: `${dropdownState.top}px`, right: `${dropdownState.right}px` }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <button
+                  onClick={() => {
+                     setEditingManager(row);
+                     setIsEditModalOpen(true);
+                     setDropdownState({ id: null, top: 0, right: 0 });
+                  }}
+                  className="w-full text-left px-4 py-3 text-sm font-bold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center space-x-3 transition-colors"
+                >
+                  <Edit size={16} className="text-indigo-500" />
+                  <span>Edit Manager</span>
+                </button>
+                <button
+                  onClick={() => handleSuspendManager(row.id, row.status)}
+                  className="w-full text-left px-4 py-3 text-sm font-bold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center space-x-3 transition-colors"
+                >
+                  <Ban size={16} className={row.status === 'Inactive' ? 'text-emerald-500' : 'text-orange-500'} />
+                  <span>{row.status === 'Inactive' ? 'Re-activate' : 'Suspend Op'}</span>
+                </button>
+                <div className="h-px bg-gray-100 dark:bg-gray-800 my-1 mx-2"></div>
+                <button
+                  onClick={() => {
+                    handleDeleteManager(row.id);
+                    setDropdownState({ id: null, top: 0, right: 0 });
+                  }}
+                  className="w-full text-left px-4 py-3 text-sm font-black text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20 flex items-center space-x-3 transition-colors"
+                >
+                  <Trash2 size={16} />
+                  <span>Delete Profile</span>
+                </button>
+              </div>
+            </>,
+            document.body
+          )}
         </div>
       ),
     },
@@ -258,11 +417,17 @@ const EmployeeList = () => {
 
     return (
       <div className="space-y-6 animate-in fade-in duration-500">
-        <div className="flex items-center space-x-4">
-          <Button variant="ghost" onClick={() => setSelectedManager(null)} className="p-2 border border-gray-100 dark:border-gray-800 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-            <ArrowLeft size={20} className="text-gray-600 dark:text-gray-400" />
+        <div className="flex items-center justify-between w-full">
+          <div className="flex items-center space-x-4">
+            <Button variant="ghost" onClick={() => setSelectedManager(null)} className="p-2 border border-gray-100 dark:border-gray-800 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+              <ArrowLeft size={20} className="text-gray-600 dark:text-gray-400" />
+            </Button>
+            <h1 className="text-2xl font-black text-gray-900 dark:text-white">Manager Profile</h1>
+          </div>
+          <Button variant="ghost" onClick={() => handleDeleteManager(selectedManager.id)} className="p-2 border border-rose-100 text-rose-500 rounded-xl hover:bg-rose-50 dark:border-rose-900/40 dark:hover:bg-rose-900/20 transition-colors flex items-center">
+            <X size={20} />
+            <span className="ml-2 font-bold text-sm">Delete Manager</span>
           </Button>
-          <h1 className="text-2xl font-black text-gray-900 dark:text-white">Manager Profile</h1>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 relative">
@@ -392,12 +557,7 @@ const EmployeeList = () => {
                 }
               ]}
               onRowClick={(row) => setSelectedEmployee(row)}
-              data={[
-                { id: 1, name: 'Alex Johnson', role: 'Security Guard', status: 'Active', lastActivity: new Date(Date.now() - 10 * 60 * 1000).toISOString() },
-                { id: 2, name: 'Maria Garcia', role: 'Patrol Officer', status: 'Active', lastActivity: new Date(Date.now() - 45 * 60 * 1000).toISOString() },
-                { id: 3, name: 'James Smith', role: 'Security Guard', status: 'Off Duty', lastActivity: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString() },
-                { id: 4, name: 'Linda Davis', role: 'Patrol Officer', status: 'Active', lastActivity: new Date(Date.now() - 5 * 60 * 1000).toISOString() }
-              ]}
+              data={teamMembers}
             />
           </div>
         </div>
@@ -561,6 +721,30 @@ const EmployeeList = () => {
                   />
                 </div>
               </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.25em] ml-1">Manager Email</label>
+                  <input
+                    required
+                    type="email"
+                    value={newManager.email}
+                    onChange={(e) => setNewManager({ ...newManager, email: e.target.value })}
+                    className="w-full px-6 py-4 bg-gray-50/50 dark:bg-gray-800/50 border-2 border-transparent focus:border-emerald-500/20 rounded-2xl text-gray-900 dark:text-white font-bold transition-all outline-none placeholder:text-gray-300"
+                    placeholder="e.g. john@example.com"
+                  />
+                </div>
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.25em] ml-1">Password</label>
+                  <input
+                    required
+                    type="password"
+                    value={newManager.password}
+                    onChange={(e) => setNewManager({ ...newManager, password: e.target.value })}
+                    className="w-full px-6 py-4 bg-gray-50/50 dark:bg-gray-800/50 border-2 border-transparent focus:border-emerald-500/20 rounded-2xl text-gray-900 dark:text-white font-bold transition-all outline-none placeholder:text-gray-300"
+                    placeholder="••••••••"
+                  />
+                </div>
+              </div>
               <div className="space-y-3">
                 <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.25em] ml-1">Designated Role</label>
                 <div className="relative group">
@@ -593,6 +777,98 @@ const EmployeeList = () => {
                   className="flex-1 py-5 rounded-2xl text-xs font-black uppercase tracking-[0.2em] bg-[#00966d] text-white shadow-xl shadow-emerald-100 dark:shadow-none transition-all hover:bg-[#007b5a] hover:scale-[1.02] active:scale-95"
                 >
                   Save Manager
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Edit Modal */}
+      {isEditModalOpen && createPortal(
+        <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-md animate-in fade-in duration-500"
+            onClick={() => setIsEditModalOpen(false)}
+          />
+          <div className="bg-white dark:bg-gray-900 rounded-[2.5rem] w-full max-w-xl p-10 shadow-2xl border border-white/20 dark:border-gray-800 animate-in zoom-in-95 duration-300 relative z-10 overflow-hidden">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-50 dark:bg-indigo-900/10 rounded-full blur-3xl -mr-32 -mt-32 pointer-events-none" />
+            <div className="absolute bottom-0 left-0 w-64 h-64 bg-emerald-50 dark:bg-emerald-900/10 rounded-full blur-3xl -ml-32 -mb-32 pointer-events-none" />
+
+            <div className="relative z-10 flex justify-between items-start mb-10">
+              <div className="flex gap-5 items-center">
+                <div className="w-14 h-14 rounded-2xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-800/50 shadow-inner">
+                  <Edit size={28} strokeWidth={1.5} />
+                </div>
+                <div>
+                  <h2 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">Edit Manager</h2>
+                  <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 mt-1 uppercase tracking-[0.2em]">Update manager details</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsEditModalOpen(false)}
+                className="p-3 bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-2xl transition-all duration-300 group shadow-sm border border-transparent dark:border-gray-700"
+              >
+                <X size={20} className="text-gray-500 dark:text-gray-400 group-hover:rotate-90 transition-transform duration-300" />
+              </button>
+            </div>
+
+            <form onSubmit={handleEditSubmit} className="space-y-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.25em] ml-1">Manager Name</label>
+                  <input
+                    required
+                    type="text"
+                    value={editingManager?.name || ''}
+                    onChange={(e) => setEditingManager({ ...editingManager, name: e.target.value })}
+                    className="w-full px-6 py-4 bg-gray-50/50 dark:bg-gray-800/50 border-2 border-transparent focus:border-indigo-500/20 rounded-2xl text-gray-900 dark:text-white font-bold transition-all outline-none"
+                  />
+                </div>
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.25em] ml-1">Team Name</label>
+                  <input
+                    required
+                    type="text"
+                    value={editingManager?.team || ''}
+                    onChange={(e) => setEditingManager({ ...editingManager, team: e.target.value })}
+                    className="w-full px-6 py-4 bg-gray-50/50 dark:bg-gray-800/50 border-2 border-transparent focus:border-indigo-500/20 rounded-2xl text-gray-900 dark:text-white font-bold transition-all outline-none"
+                  />
+                </div>
+              </div>
+              <div className="space-y-3">
+                <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.25em] ml-1">Designated Role</label>
+                <div className="relative group">
+                  <select
+                    required
+                    value={editingManager?.designation || 'Operations Manager'}
+                    onChange={(e) => setEditingManager({ ...editingManager, designation: e.target.value })}
+                    className="w-full px-6 py-4 bg-gray-50/50 dark:bg-gray-800/50 border-2 border-transparent focus:border-indigo-500/20 rounded-2xl text-gray-900 dark:text-white font-bold transition-all outline-none appearance-none cursor-pointer"
+                  >
+                    <option value="Operations Manager">Operations Manager</option>
+                    <option value="Regional Manager">Regional Manager</option>
+                    <option value="Team Lead">Team Lead</option>
+                    <option value="Project Manager">Project Manager</option>
+                  </select>
+                  <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                    <Users size={18} />
+                  </div>
+                </div>
+              </div>
+              <div className="flex space-x-4 pt-6">
+                <button
+                  type="button"
+                  className="flex-1 py-5 rounded-2xl text-xs font-black uppercase tracking-[0.2em] border border-gray-100 dark:border-gray-800 text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all active:scale-95"
+                  onClick={() => setIsEditModalOpen(false)}
+                >
+                  Discard
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-5 rounded-2xl text-xs font-black uppercase tracking-[0.2em] bg-[#4f46e5] text-white shadow-xl shadow-indigo-100 dark:shadow-none transition-all hover:bg-[#4338ca] hover:scale-[1.02] active:scale-95"
+                >
+                  Update Manager
                 </button>
               </div>
             </form>
