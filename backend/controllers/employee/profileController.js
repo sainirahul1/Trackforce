@@ -103,82 +103,6 @@ const updateSettings = async (req, res) => {
   }
 };
 
-// @desc    Add a document to profile
-// @route   POST /api/profile/documents
-// @access  Private
-const addDocument = async (req, res) => {
-  try {
-    const { name, size, type, status, fileUrl } = req.body;
-
-    const profile = await Profile.findOne({ employeeId: req.user._id });
-    if (!profile) {
-      return res.status(404).json({ message: 'Profile not found' });
-    }
-
-    profile.documents.push({ name, size, type, status, fileUrl });
-    await profile.save();
-
-    res.status(201).json(profile.documents);
-  } catch (error) {
-    console.error('addDocument error:', error.message);
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
-};
-
-// @desc    Update a document in profile
-// @route   PUT /api/profile/documents/:docId
-// @access  Private
-const updateDocument = async (req, res) => {
-  try {
-    const { docId } = req.params;
-    const { name, size, type, status, fileUrl } = req.body;
-
-    const profile = await Profile.findOne({ employeeId: req.user._id });
-    if (!profile) {
-      return res.status(404).json({ message: 'Profile not found' });
-    }
-
-    const doc = profile.documents.id(docId);
-    if (!doc) {
-      return res.status(404).json({ message: 'Document not found' });
-    }
-
-    if (name !== undefined) doc.name = name;
-    if (size !== undefined) doc.size = size;
-    if (type !== undefined) doc.type = type;
-    if (status !== undefined) doc.status = status;
-    if (fileUrl !== undefined) doc.fileUrl = fileUrl;
-
-    await profile.save();
-    res.json(doc);
-  } catch (error) {
-    console.error('updateDocument error:', error.message);
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
-};
-
-// @desc    Delete a document from profile
-// @route   DELETE /api/profile/documents/:docId
-// @access  Private
-const deleteDocument = async (req, res) => {
-  try {
-    const { docId } = req.params;
-
-    const profile = await Profile.findOne({ employeeId: req.user._id });
-    if (!profile) {
-      return res.status(404).json({ message: 'Profile not found' });
-    }
-
-    profile.documents = profile.documents.filter(d => d._id.toString() !== docId);
-    await profile.save();
-
-    res.json({ message: 'Document removed', documents: profile.documents });
-  } catch (error) {
-    console.error('deleteDocument error:', error.message);
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
-};
-
 // @desc    Change password
 // @route   PUT /api/profile/password
 // @access  Private
@@ -219,8 +143,5 @@ module.exports = {
   getMyProfile,
   updateMyProfile,
   updateSettings,
-  addDocument,
-  updateDocument,
-  deleteDocument,
   changePassword,
 };

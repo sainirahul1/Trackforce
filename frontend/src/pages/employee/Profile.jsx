@@ -1,7 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { User, Briefcase, FileText, Activity, LayoutDashboard, Settings, Mail, Phone, MapPin, MoreVertical, ShieldCheck, TrendingUp, ShoppingBag, Map as MapIcon, Clock, HeartPulse, Building, Shield, UserCheck, Calendar, CheckCircle, Download, ExternalLink, Bell, Globe, LogOut, Share2, Eye, EyeOff, Lock, AlertTriangle, Smartphone, Wifi, X, MessageSquare, Copy, Pencil, UploadCloud, ChevronDown, CheckCircle2, Filter, Search, GripVertical, MoreHorizontal, Info, Users, Menu } from 'lucide-react';
+import { User, Briefcase, FileText, Activity, LayoutDashboard, Settings, Mail, Phone, MapPin, MoreVertical, ShieldCheck, TrendingUp, ShoppingBag, Map as MapIcon, Clock, HeartPulse, Building, Shield, UserCheck, Calendar, CheckCircle, Download, ExternalLink, Bell, Globe, LogOut, Share2, Eye, EyeOff, Lock, AlertTriangle, Smartphone, Wifi, X, MessageSquare, Copy, Pencil, UploadCloud, ChevronDown, CheckCircle2, Filter, Search, GripVertical, MoreHorizontal, Info, Users, Menu, Plus, Trash2 } from 'lucide-react';
 import { useNotifications } from '../../context/NotificationContext';
+import { getMyProfile, updateMyProfile } from '../../services/profileService';
+import { fetchDocuments, uploadDocument, updateDocumentService, deleteDocumentService } from '../../services/documentService';
 
 const ScrollStyles = () => (
   <style>{`
@@ -135,7 +137,7 @@ const ShareProfileModal = ({ isOpen, onClose, employee }) => {
   );
 };
 
-const ProfileUnifiedOverlay = ({ isOpen, onClose, employee, documents, activeTab, setActiveTab, onEditDocument, onViewDocument, onEditProfile, onSaveProfile, onOpenPasswordSettings }) => {
+const ProfileUnifiedOverlay = ({ isOpen, onClose, employee, documents, activeTab, setActiveTab, onEditDocument, onViewDocument, onDeleteDocument, onEditProfile, onSaveProfile }) => {
   useEffect(() => {
     if (!isOpen) return;
     const onKeyDown = (e) => { if (e.key === 'Escape') onClose(); };
@@ -176,10 +178,11 @@ const ProfileUnifiedOverlay = ({ isOpen, onClose, employee, documents, activeTab
             <button
               key={item.id}
               onClick={() => setActiveTab(item.id)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all ${activeTab === item.id
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all ${
+                activeTab === item.id
                   ? 'bg-indigo-50 text-indigo-600 shadow-inner dark:bg-indigo-900/20'
                   : 'text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
-                }`}
+              }`}
             >
               <item.icon size={20} />
               <span>{item.label}</span>
@@ -188,13 +191,13 @@ const ProfileUnifiedOverlay = ({ isOpen, onClose, employee, documents, activeTab
         </div>
         <div className="p-4 border-t border-gray-100 dark:border-gray-800">
           <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-800 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center text-indigo-600 font-bold shrink-0">
-              {employee.name.charAt(0)}
-            </div>
-            <div className="min-w-0">
-              <p className="font-black text-gray-900 dark:text-white text-sm truncate">{employee.name}</p>
-              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest truncate">{employee.designation}</p>
-            </div>
+             <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center text-indigo-600 font-bold shrink-0">
+               {employee.name.charAt(0)}
+             </div>
+             <div className="min-w-0">
+               <p className="font-black text-gray-900 dark:text-white text-sm truncate">{employee.name}</p>
+               <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest truncate">{employee.designation}</p>
+             </div>
           </div>
         </div>
       </aside>
@@ -208,12 +211,12 @@ const ProfileUnifiedOverlay = ({ isOpen, onClose, employee, documents, activeTab
         {/* Top Header with Horizontal Navigation */}
         <header className="h-24 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-100 dark:border-gray-800 flex items-center justify-between px-8 sticky top-0 z-20 transition-all shrink-0">
           <div className="flex items-center gap-8">
-            <button onClick={onClose} className="lg:hidden p-2.5 rounded-2xl bg-gray-50 dark:bg-gray-800 text-gray-400 hover:text-indigo-600 transition-all">
-              <Menu size={20} />
-            </button>
-            <h2 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">Your Profile</h2>
+             <button onClick={onClose} className="lg:hidden p-2.5 rounded-2xl bg-gray-50 dark:bg-gray-800 text-gray-400 hover:text-indigo-600 transition-all">
+                <Menu size={20} />
+             </button>
+             <h2 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">Your Profile</h2>
           </div>
-
+          
           <div className="flex items-center gap-4">
             <button onClick={onClose} className="p-3 bg-gray-50 dark:bg-gray-800 text-gray-400 hover:text-gray-900 dark:hover:text-white rounded-2xl transition-all">
               <X size={20} />
@@ -227,15 +230,15 @@ const ProfileUnifiedOverlay = ({ isOpen, onClose, employee, documents, activeTab
             {activeTab === 'personal' && (
               <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <div className="flex flex-col gap-8">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight mb-1">Personal Details</h3>
-                      <p className="text-gray-500 font-medium">Your verified identity and health records</p>
-                    </div>
-                  </div>
-                  <div className="flex flex-col gap-8">
-                    <PersonalInfoContent employee={employee} />
-                  </div>
+                   <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight mb-1">Personal Details</h3>
+                        <p className="text-gray-500 font-medium">Your verified identity and health records</p>
+                      </div>
+                   </div>
+                   <div className="flex flex-col gap-8">
+                      <PersonalInfoContent employee={employee} />
+                   </div>
                 </div>
               </div>
             )}
@@ -243,18 +246,18 @@ const ProfileUnifiedOverlay = ({ isOpen, onClose, employee, documents, activeTab
             {activeTab === 'documents' && (
               <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <div className="flex flex-col gap-8">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight mb-1">Verified Documents</h3>
-                      <p className="text-gray-500 font-medium">Access and manage your professional credentials</p>
-                    </div>
-                    <button className="flex items-center gap-2 px-6 py-2.5 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl font-black text-sm text-gray-900 dark:text-white hover:bg-gray-50 transition-all shadow-sm">
-                      <Download size={18} /> Export Records
-                    </button>
-                  </div>
-                  <div className="flex flex-col gap-8">
-                    <DocumentsContent documents={documents} onEditDocument={onEditDocument} onViewDocument={onViewDocument} />
-                  </div>
+                   <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight mb-1">Verified Documents</h3>
+                        <p className="text-gray-500 font-medium">Access and manage your professional credentials</p>
+                      </div>
+                      <button className="flex items-center gap-2 px-6 py-2.5 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl font-black text-sm text-gray-900 dark:text-white hover:bg-gray-50 transition-all shadow-sm">
+                        <Download size={18} /> Export Records
+                      </button>
+                   </div>
+                   <div className="flex flex-col gap-8">
+                      <DocumentsContent documents={documents} onEditDocument={onEditDocument} onViewDocument={onViewDocument} onDeleteDocument={onDeleteDocument} />
+                   </div>
                 </div>
               </div>
             )}
@@ -262,13 +265,13 @@ const ProfileUnifiedOverlay = ({ isOpen, onClose, employee, documents, activeTab
             {activeTab === 'settings' && (
               <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <div className="flex flex-col gap-8">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight mb-1">Account Control</h3>
-                      <p className="text-gray-500 font-medium">Security, notifications and system preferences</p>
-                    </div>
-                  </div>
-                  <SettingsContent employee={employee} onSaveProfile={onSaveProfile} onOpenPasswordSettings={onOpenPasswordSettings} />
+                   <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight mb-1">Account Control</h3>
+                        <p className="text-gray-500 font-medium">Security, notifications and system preferences</p>
+                      </div>
+                   </div>
+                   <SettingsContent employee={employee} onSaveProfile={onSaveProfile} />
                 </div>
               </div>
             )}
@@ -323,10 +326,10 @@ const PersonalInfoContent = ({ employee }) => {
         {group.items.map((item, i) => (
           <div key={i} className="flex items-center justify-between gap-4 py-3 border-b border-gray-50 dark:border-gray-800/50 last:border-0 hover:bg-gray-50/50 dark:hover:bg-gray-800/20 -mx-4 px-4 rounded-xl transition-colors">
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className="p-1.5 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-400 group-hover:text-indigo-500 transition-colors">
-                <item.icon size={12} />
-              </div>
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest truncate">{item.label}</p>
+               <div className="p-1.5 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-400 group-hover:text-indigo-500 transition-colors">
+                  <item.icon size={12} />
+               </div>
+               <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest truncate">{item.label}</p>
             </div>
             <p className="text-sm font-bold text-gray-700 dark:text-gray-200 text-right truncate">{item.value}</p>
           </div>
@@ -336,64 +339,95 @@ const PersonalInfoContent = ({ employee }) => {
   ));
 };
 
-const DocumentsContent = ({ documents, onEditDocument, onViewDocument }) => {
-  return documents.map((doc, i) => (
-    <div
-      key={i}
-      className="group p-8 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 flex flex-col gap-6 hover:border-indigo-500/30 hover:shadow-xl hover:-translate-y-1 transition-all"
-    >
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-6">
-          <div className={`p-5 rounded-2xl ${doc.type === 'PDF' ? 'bg-indigo-50 text-indigo-600' : 'bg-emerald-50 text-emerald-600'} dark:bg-opacity-10 group-hover:scale-110 transition-transform`}>
-            <FileText size={28} />
-          </div>
-          <div>
-            <p className="text-xl font-black text-gray-900 dark:text-white tracking-tight">{doc.name}</p>
-            <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mt-0.5">Professional Document</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => onEditDocument(doc)}
-            className="p-3 rounded-2xl bg-gray-50 dark:bg-gray-800 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all shadow-sm"
-          >
-            <UploadCloud size={18} />
-          </button>
-          <button
-            onClick={() => onViewDocument(doc)}
-            className="p-3 bg-indigo-600 text-white rounded-2xl shadow-lg shadow-indigo-200 dark:shadow-none hover:bg-indigo-700 transition-all active:scale-95"
-          >
-            <ExternalLink size={18} />
-          </button>
-        </div>
-      </div>
+const MOCK_DOCS = [
+  { name: 'Aadhaar Card', type: 'PDF', size: '1.2 MB', status: 'Pending Upload' },
+  { name: 'PAN Card', type: 'PDF', size: '0.8 MB', status: 'Pending Upload' },
+  { name: 'Driving License', type: 'PDF', size: '1.5 MB', status: 'Pending Upload' },
+  { name: 'Medical Fitness Cert.', type: 'PDF', size: '2.1 MB', status: 'Pending Upload' },
+  { name: 'Background Check Report', type: 'PDF', size: '3.4 MB', status: 'Pending Upload' }
+];
 
-      <div className="grid grid-cols-3 gap-6 pt-6 border-t border-gray-50 dark:border-gray-800">
-        <div className="flex flex-col gap-1">
-          <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Format</span>
-          <span className="text-sm font-bold text-gray-700 dark:text-gray-200">{doc.type}</span>
+const DocumentsContent = ({ documents, onEditDocument, onViewDocument, onAddDocument, onDeleteDocument }) => {
+  // Merge real documents with placeholders based on name matching
+  const displayDocsBase = MOCK_DOCS.map(mockDoc => {
+    const realDoc = (documents || []).find(d => d.name === mockDoc.name);
+    return realDoc || mockDoc;
+  });
+
+  // Also include any extra documents that aren't in the MOCK_DOCS list
+  const extraDocs = (documents || []).filter(d => !MOCK_DOCS.find(m => m.name === d.name));
+  const finalDocs = [...displayDocsBase, ...extraDocs];
+
+  return (
+    <div className="grid grid-cols-1 gap-8">
+      {finalDocs.map((doc, i) => (
+        <div
+          key={i}
+          className="group p-8 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 flex flex-col gap-6 hover:border-indigo-500/30 hover:shadow-xl hover:-translate-y-1 transition-all"
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-6">
+              <div className={`p-5 rounded-2xl ${doc.type === 'PDF' ? 'bg-indigo-50 text-indigo-600' : 'bg-emerald-50 text-emerald-600'} dark:bg-opacity-10 group-hover:scale-110 transition-transform`}>
+                <FileText size={28} />
+              </div>
+              <div>
+                <p className="text-xl font-black text-gray-900 dark:text-white tracking-tight">{doc.name}</p>
+                <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mt-0.5">Professional Document</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
+              {doc._id && (
+                <button
+                  onClick={() => onDeleteDocument && onDeleteDocument(doc)}
+                  className="p-3 rounded-2xl bg-red-50 dark:bg-red-900/20 text-red-500 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/40 transition-all shadow-sm"
+                  title="Delete Document"
+                >
+                  <Trash2 size={18} />
+                </button>
+              )}
+              <button
+                onClick={() => onEditDocument(doc)}
+                className="p-3 rounded-2xl bg-gray-50 dark:bg-gray-800 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all shadow-sm"
+              >
+                <UploadCloud size={18} />
+              </button>
+              <button
+                onClick={() => onViewDocument(doc)}
+                className="p-3 bg-indigo-600 text-white rounded-2xl shadow-lg shadow-indigo-200 dark:shadow-none hover:bg-indigo-700 transition-all active:scale-95"
+              >
+                <ExternalLink size={18} />
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-6 pt-6 border-t border-gray-50 dark:border-gray-800">
+            <div className="flex flex-col gap-1">
+              <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Format</span>
+              <span className="text-sm font-bold text-gray-700 dark:text-gray-200">{doc.type}</span>
+            </div>
+            <div className="flex flex-col gap-1">
+              <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Size</span>
+              <span className="text-sm font-bold text-gray-700 dark:text-gray-200">{doc.size}</span>
+            </div>
+            <div className="flex flex-col gap-1">
+              <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Status</span>
+              <span className={`text-sm font-bold ${doc.status === 'Verified' ? 'text-emerald-500' : 'text-orange-500'}`}>{doc.status}</span>
+            </div>
+          </div>
         </div>
-        <div className="flex flex-col gap-1">
-          <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Size</span>
-          <span className="text-sm font-bold text-gray-700 dark:text-gray-200">{doc.size}</span>
-        </div>
-        <div className="flex flex-col gap-1">
-          <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Status</span>
-          <span className={`text-sm font-bold ${doc.status === 'Verified' ? 'text-emerald-500' : 'text-orange-500'}`}>{doc.status}</span>
-        </div>
-      </div>
+      ))}
     </div>
-  ));
+  );
 };
 
-const SettingsContent = ({ employee, onSaveProfile, onOpenPasswordSettings }) => {
+const SettingsContent = ({ employee, onSaveProfile }) => {
   const [displayName, setDisplayName] = useState(employee.name || '');
   const [emailNotif, setEmailNotif] = useState(true);
   const [pushNotif, setPushNotif] = useState(true);
   const [twoFA, setTwoFA] = useState(false);
   const [loginAlerts, setLoginAlerts] = useState(true);
   const [sessionTimeout, setSessionTimeout] = useState('30');
-
+  
   const SectionContainer = ({ title, icon: Icon, children }) => (
     <div className="bg-white dark:bg-gray-900 p-8 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 shadow-sm flex flex-col gap-6">
       <div className="flex items-center gap-4 mb-2">
@@ -424,8 +458,8 @@ const SettingsContent = ({ employee, onSaveProfile, onOpenPasswordSettings }) =>
     <div className="flex flex-col gap-8 pb-12">
       <SectionContainer title="User Preferences" icon={User}>
         <SettingRow label="Display Name" sub="How your name appears across the platform">
-          <input
-            value={displayName}
+          <input 
+            value={displayName} 
             onChange={(e) => setDisplayName(e.target.value)}
             onBlur={() => onSaveProfile({ name: displayName })}
             className={inputCls}
@@ -457,17 +491,17 @@ const SettingsContent = ({ employee, onSaveProfile, onOpenPasswordSettings }) =>
           <Toggle checked={loginAlerts} onChange={setLoginAlerts} />
         </SettingRow>
         <SettingRow label="Session Timeout" sub="Auto-logout after period of inactivity">
-          <select
-            value={sessionTimeout}
-            onChange={(e) => setSessionTimeout(e.target.value)}
-            className={inputCls}
-          >
-            <option value="15">15 minutes</option>
-            <option value="30">30 minutes</option>
-            <option value="60">1 hour</option>
-            <option value="240">4 hours</option>
-            <option value="never">Never</option>
-          </select>
+           <select 
+             value={sessionTimeout} 
+             onChange={(e) => setSessionTimeout(e.target.value)}
+             className={inputCls}
+           >
+              <option value="15">15 minutes</option>
+              <option value="30">30 minutes</option>
+              <option value="60">1 hour</option>
+              <option value="240">4 hours</option>
+              <option value="never">Never</option>
+           </select>
         </SettingRow>
 
         <div className="mt-6 pt-6 border-t border-gray-50 dark:border-gray-800">
@@ -479,13 +513,13 @@ const SettingsContent = ({ employee, onSaveProfile, onOpenPasswordSettings }) =>
             ].map((s, i) => (
               <div key={i} className="flex items-center justify-between p-4 bg-gray-50/50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-800">
                 <div className="flex items-center gap-4">
-                  <div className="p-2 bg-white dark:bg-gray-900 rounded-lg text-indigo-600 shadow-sm">
-                    <Smartphone size={16} />
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-gray-900 dark:text-white">{s.device}</p>
-                    <p className="text-[10px] text-gray-500 font-medium">{s.loc}</p>
-                  </div>
+                   <div className="p-2 bg-white dark:bg-gray-900 rounded-lg text-indigo-600 shadow-sm">
+                      <Smartphone size={16} />
+                   </div>
+                   <div>
+                      <p className="text-sm font-bold text-gray-900 dark:text-white">{s.device}</p>
+                      <p className="text-[10px] text-gray-500 font-medium">{s.loc}</p>
+                   </div>
                 </div>
                 {s.current ? (
                   <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 px-3 py-1 rounded-full">Active</span>
@@ -504,7 +538,7 @@ const SettingsContent = ({ employee, onSaveProfile, onOpenPasswordSettings }) =>
             </h5>
             <p className="text-sm text-gray-500 font-medium leading-relaxed">Regularly update your password to keep your account safe.</p>
           </div>
-          <button onClick={onOpenPasswordSettings} type="button" className="px-8 py-4 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-2xl font-black text-sm hover:scale-[1.02] transition-all shadow-xl shrink-0">
+          <button className="px-8 py-4 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-2xl font-black text-sm hover:scale-[1.02] transition-all shadow-xl shrink-0">
             Update Password
           </button>
         </div>
@@ -998,7 +1032,7 @@ const NotificationsSection = () => {
   );
 };
 
-const DocumentsModal = ({ isOpen, onClose, documents, onEditDocument, onViewDocument }) => {
+const DocumentsModal = ({ isOpen, onClose, documents, onEditDocument, onViewDocument, onDeleteDocument }) => {
   useEffect(() => {
     if (!isOpen) return;
     const onKeyDown = (e) => { if (e.key === 'Escape') onClose(); };
@@ -1027,6 +1061,12 @@ const DocumentsModal = ({ isOpen, onClose, documents, onEditDocument, onViewDocu
               </div>
             </div>
             <div className="flex items-center gap-2 sm:gap-4">
+              <button 
+                onClick={() => onEditDocument(null)}
+                className="hidden sm:flex text-sm font-bold bg-slate-900 text-white dark:bg-white dark:text-slate-900 px-4 py-2 rounded-xl items-center gap-2 hover:opacity-90 transition-all"
+              >
+                <Plus size={16} /> New Upload
+              </button>
               <button className="hidden sm:flex text-sm font-bold text-slate-900 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white underline items-center gap-2 mr-4">
                 <Download size={16} /> Export All
               </button>
@@ -1056,6 +1096,15 @@ const DocumentsModal = ({ isOpen, onClose, documents, onEditDocument, onViewDocu
                       {doc.status}
                     </span>
                     <div className="flex items-center gap-2">
+                      {doc._id && (
+                        <button
+                          onClick={() => onDeleteDocument && onDeleteDocument(doc)}
+                          className="p-2 rounded-xl bg-red-50 dark:bg-red-900/20 text-red-500 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/40 transition-all shadow-sm"
+                          title="Delete Document"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      )}
                       <button
                         onClick={() => onEditDocument(doc)}
                         className="p-2 rounded-xl bg-slate-100 dark:bg-gray-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-gray-700 transition-all shadow-sm"
@@ -1114,6 +1163,14 @@ const DocumentPreviewModal = ({ isOpen, onClose, document: docRecord }) => {
             </div>
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
+            {docRecord?.fileUrl && (
+              <button 
+                onClick={() => window.open(`http://localhost:5001${docRecord.fileUrl}`, '_blank')}
+                className="hidden sm:flex p-3 rounded-2xl bg-indigo-500 hover:bg-indigo-600 transition-all items-center gap-2 font-bold text-sm text-white border-none"
+              >
+                <ExternalLink size={20} /> View Original
+              </button>
+            )}
             <button className="hidden sm:flex p-3 rounded-2xl bg-white/10 hover:bg-white/20 transition-all items-center gap-2 font-bold text-sm">
               <Download size={20} /> Download
             </button>
@@ -1219,8 +1276,8 @@ const DocumentUploadModal = ({ isOpen, onClose, document: docRecord, onSave }) =
     const selectedFile = e.target.files[0];
     if (selectedFile) {
       setFile(selectedFile);
-      // Auto-update name if it's empty or generically named
-      if (!name || name === docRecord?.name) {
+      // Auto-update name only if it's empty
+      if (!name) {
         setName(selectedFile.name.split('.')[0]);
       }
     }
@@ -1228,13 +1285,20 @@ const DocumentUploadModal = ({ isOpen, onClose, document: docRecord, onSave }) =
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const updatedData = {
-      ...docRecord,
-      name,
-      size: file ? `${(file.size / (1024 * 1024)).toFixed(1)} MB` : docRecord.size,
-      status: file ? 'Verified' : docRecord.status // Mocking verification on upload
-    };
-    onSave(updatedData);
+    if (file) {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('name', name);
+      onSave(formData, docRecord?._id);
+    } else {
+      const updatedData = {
+        ...docRecord,
+        name,
+        size: docRecord?.size || '0 MB',
+        status: docRecord?.status || 'Pending Review'
+      };
+      onSave(updatedData, docRecord?._id);
+    }
   };
 
   return (
@@ -1695,7 +1759,7 @@ const AccountSettingsPanel = ({ isOpen, onClose, employee, onSaveProfile }) => {
     showToast(setSecSaved);
   };
 
-  const handleChangePassword = async (e) => {
+  const handleChangePassword = (e) => {
     e.preventDefault();
     setPasswordError('');
     if (!currentPassword || !newPassword || !confirmPassword)
@@ -1706,29 +1770,9 @@ const AccountSettingsPanel = ({ isOpen, onClose, employee, onSaveProfile }) => {
       return setPasswordError('Passwords do not match.');
     if (newPassword === currentPassword)
       return setPasswordError('New password must differ from current.');
-      
-    try {
-      const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:5001/api/employee/profile/password', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({ currentPassword, newPassword })
-      });
-      
-      const data = await res.json();
-      
-      if (!res.ok) {
-        throw new Error(data.message || 'Failed to update password');
-      }
-
-      setCurrentPassword(''); setNewPassword(''); setConfirmPassword('');
-      showToast(setPasswordSaved);
-    } catch (error) {
-      setPasswordError(error.message);
-    }
+    onSaveProfile({ password: newPassword });
+    setCurrentPassword(''); setNewPassword(''); setConfirmPassword('');
+    showToast(setPasswordSaved);
   };
 
   const SectionCard = ({ title, icon: Icon, children, onSubmit, saved, submitLabel = 'Save Changes' }) => (
@@ -1907,6 +1951,56 @@ const AccountSettingsPanel = ({ isOpen, onClose, employee, onSaveProfile }) => {
   );
 };
 
+const DeleteConfirmationModal = ({ isOpen, onClose, onConfirm, documentName }) => {
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKeyDown = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isOpen, onClose]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, [isOpen]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 animate-in fade-in duration-300">
+      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" onClick={onClose} />
+      <div className="relative w-full max-w-md bg-white dark:bg-gray-950 rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-slate-800 p-8 transform animate-in zoom-in-95 duration-300">
+        <div className="flex flex-col items-center text-center">
+          <div className="w-20 h-20 rounded-3xl bg-rose-50 dark:bg-rose-900/20 text-rose-500 flex items-center justify-center mb-6 shadow-sm">
+            <Trash2 size={40} />
+          </div>
+          <h3 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight mb-2">Delete Document?</h3>
+          <p className="text-gray-500 dark:text-gray-400 font-medium leading-relaxed mb-8">
+            Are you sure you want to delete <span className="font-black text-gray-900 dark:text-white">"{documentName || 'this file'}"</span>? This action cannot be undone.
+          </p>
+          
+          <div className="flex w-full gap-4">
+            <button
+              onClick={onClose}
+              className="flex-1 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white font-black hover:bg-gray-100 dark:hover:bg-gray-700 transition-all border border-gray-100 dark:border-gray-700"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={onConfirm}
+              className="flex-1 py-4 rounded-2xl bg-rose-500 text-white font-black hover:bg-rose-600 transition-all shadow-lg shadow-rose-200 dark:shadow-none"
+            >
+              Delete
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // --- Main Page Component ---
 
 const EmployeeProfile = () => {
@@ -1921,6 +2015,7 @@ const EmployeeProfile = () => {
   const [editingDocument, setEditingDocument] = useState(null);
   const [viewingDocument, setViewingDocument] = useState(null);
   const [activeTab, setActiveTab] = useState('personal');
+  const [deleteModalConfig, setDeleteModalConfig] = useState({ isOpen: false, documentId: null, documentName: '' });
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -1935,57 +2030,53 @@ const EmployeeProfile = () => {
     }
   }, [location, navigate]);
 
-  const [documents, setDocuments] = useState([
-    { id: 1, name: 'Kyc Document (Aadhar)', size: '1.2 MB', type: 'PDF', status: 'Verified' },
-    { id: 2, name: 'PAN Clearance', size: '0.9 MB', type: 'PDF', status: 'Verified' },
-    { id: 3, name: 'Field Certification', size: '2.1 MB', type: 'PDF', status: 'Active' },
-    { id: 4, name: 'Monthly Performance Card', size: '1.4 MB', type: 'PDF', status: 'Pending Review' },
-    { id: 5, name: 'Work Permit', size: '0.8 MB', type: 'PDF', status: 'Verified' },
-    { id: 6, name: 'Insurance Policy', size: '2.5 MB', type: 'PDF', status: 'Active' },
-  ]);
+  const [documents, setDocuments] = useState([]);
 
-  const [employee, setEmployee] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [employee, setEmployee] = useState({
+    name: '',
+    designation: '',
+    team: '',
+    status: 'Off Duty',
+    email: '',
+    phone: '',
+    location: '',
+    address: '',
+    gender: '',
+    nationality: '',
+    bloodGroup: '',
+    emergencyContact: '',
+    avatar: ''
+  });
+  const [profileLoading, setProfileLoading] = useState(true);
 
+  // Fetch profile from backend on mount
   useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        setProfileLoading(true);
+        const data = await getMyProfile();
+        setEmployee(data);
+      } catch (err) {
+        console.error('Failed to load profile:', err.message);
+      } finally {
+        setProfileLoading(false);
+      }
+    };
     fetchProfile();
   }, []);
 
-  const fetchProfile = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:5001/api/employee/profile/me', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setEmployee(data);
+  // Fetch documents from backend on mount
+  useEffect(() => {
+    const loadDocuments = async () => {
+      try {
+        const data = await fetchDocuments();
+        setDocuments(data);
+      } catch (err) {
+        console.error('Failed to load documents:', err.message);
       }
-    } catch (error) {
-      console.error('Error fetching profile:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSaveProfile = async (updates) => {
-    // Optimistic UI update
-    setEmployee((prev) => ({ ...prev, ...updates }));
-
-    try {
-      const token = localStorage.getItem('token');
-      await fetch('http://localhost:5001/api/employee/profile/me', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify(updates)
-      });
-    } catch (error) {
-      console.error('Error saving profile:', error);
-    }
-  };
+    };
+    loadDocuments();
+  }, []);
 
   const tabs = [
     { id: 'personal', label: 'Profile Info', icon: User },
@@ -1993,28 +2084,26 @@ const EmployeeProfile = () => {
     { id: 'documents', label: 'Documents', icon: FileText },
   ];
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
-      </div>
-    );
-  }
-
-  if (!employee) {
-    return <div className="text-center mt-20 text-gray-500 font-bold">Failed to load profile data.</div>;
-  }
-
   const renderContent = () => {
     switch (activeTab) {
       case 'personal':
-        return <div className="animate-in fade-in slide-in-from-bottom-4 duration-500"><PersonalInfoSection employee={employee} /></div>;
+        return <div className="animate-in fade-in slide-in-from-bottom-4 duration-500"><PersonalInfoContent employee={employee} /></div>;
       case 'employment':
         return <div className="animate-in fade-in slide-in-from-bottom-4 duration-500"><EmploymentSection /></div>;
       case 'documents':
-        return <div className="animate-in fade-in slide-in-from-bottom-4 duration-500"><DocumentsSection /></div>;
+        return <div className="animate-in fade-in slide-in-from-bottom-4 duration-500"><DocumentsContent 
+          documents={documents} 
+          onEditDocument={(doc) => { setEditingDocument(doc); setIsEditDocumentOpen(true); }} 
+          onViewDocument={(doc) => { setViewingDocument(doc); setIsViewModalOpen(true); }} 
+          onAddDocument={() => { setEditingDocument(null); setIsEditDocumentOpen(true); }} 
+          onDeleteDocument={(doc) => setDeleteModalConfig({
+            isOpen: true,
+            documentId: doc._id,
+            documentName: doc.name
+          })}
+        /></div>;
       default:
-        return <div className="animate-in fade-in slide-in-from-bottom-4 duration-500"><PersonalInfoSection employee={employee} /></div>;
+        return <div className="animate-in fade-in slide-in-from-bottom-4 duration-500"><PersonalInfoContent employee={employee} /></div>;
     }
   };
 
@@ -2023,39 +2112,56 @@ const EmployeeProfile = () => {
       <div className="animate-in duration-500">
         <ScrollStyles />
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-4">
-          <div>
-            <h1 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">Your Profile</h1>
-            <p className="text-gray-500 font-medium">Manage your field performance and professional records</p>
-          </div>
+        <div>
+          <h1 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">Your Profile</h1>
+          <p className="text-gray-500 font-medium">Manage your field performance and professional records</p>
         </div>
+      </div>
 
-        <ProfileHeader
-          employee={employee}
-          onEditProfile={() => setIsEditProfileOpen(true)}
-          onOpenSettings={() => {
-            setActiveTab('settings');
-            setIsNavigationOpen(true);
-          }}
-          onShareProfile={() => setIsShareModalOpen(true)}
-          onOpenNavigation={() => setIsNavigationOpen(true)}
-        />
+      <ProfileHeader
+        employee={employee}
+        onEditProfile={() => setIsEditProfileOpen(true)}
+        onOpenSettings={() => {
+          setActiveTab('settings');
+          setIsNavigationOpen(true);
+        }}
+        onShareProfile={() => setIsShareModalOpen(true)}
+        onOpenNavigation={() => setIsNavigationOpen(true)}
+      />
 
-        <EmploymentSection />
-        <NotificationsSection />
+      <EmploymentSection />
+      <NotificationsSection />
       </div>
 
       <EditProfileModal
         isOpen={isEditProfileOpen}
         onClose={() => setIsEditProfileOpen(false)}
         employee={employee}
-        onSaveProfile={handleSaveProfile}
+        onSaveProfile={async (updates) => {
+          try {
+            const saved = await updateMyProfile(updates);
+            setEmployee(saved);
+          } catch (err) {
+            console.error('Failed to save profile:', err.message);
+            // Still update locally so the UI isn't stale
+            setEmployee((prev) => ({ ...prev, ...updates }));
+          }
+        }}
       />
 
       <AccountSettingsPanel
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
         employee={employee}
-        onSaveProfile={handleSaveProfile}
+        onSaveProfile={async (updates) => {
+          try {
+            const saved = await updateMyProfile(updates);
+            setEmployee(saved);
+          } catch (err) {
+            console.error('Failed to save settings:', err.message);
+            setEmployee((prev) => ({ ...prev, ...updates }));
+          }
+        }}
       />
 
       <ShareProfileModal
@@ -2082,14 +2188,23 @@ const EmployeeProfile = () => {
           setIsViewModalOpen(true);
         }}
         onEditProfile={() => {
-          setIsNavigationOpen(false);
-          setIsEditProfileOpen(true);
+           setIsNavigationOpen(false);
+           setIsEditProfileOpen(true);
         }}
-        onOpenPasswordSettings={() => {
-          setIsNavigationOpen(false);
-          setIsSettingsOpen(true);
+        onDeleteDocument={(doc) => setDeleteModalConfig({
+          isOpen: true,
+          documentId: doc._id,
+          documentName: doc.name
+        })}
+        onSaveProfile={async (updates) => {
+          try {
+            const saved = await updateMyProfile(updates);
+            setEmployee(saved);
+          } catch (err) {
+            console.error('Failed to save profile:', err.message);
+            setEmployee((prev) => ({ ...prev, ...updates }));
+          }
         }}
-        onSaveProfile={handleSaveProfile}
       />
 
       <PersonalInfoModal
@@ -2118,6 +2233,28 @@ const EmployeeProfile = () => {
           setIsDocumentsOpen(false);
           setIsViewModalOpen(true);
         }}
+        onDeleteDocument={(doc) => setDeleteModalConfig({
+          isOpen: true,
+          documentId: doc._id,
+          documentName: doc.name
+        })}
+      />
+
+      <DeleteConfirmationModal
+        isOpen={deleteModalConfig.isOpen}
+        onClose={() => setDeleteModalConfig({ isOpen: false, documentId: null, documentName: '' })}
+        onConfirm={async () => {
+          const { documentId } = deleteModalConfig;
+          try {
+            await deleteDocumentService(documentId);
+            setDocuments(prev => prev.filter(d => d._id !== documentId));
+          } catch (err) {
+            console.error('Failed to delete document', err);
+          } finally {
+            setDeleteModalConfig({ isOpen: false, documentId: null, documentName: '' });
+          }
+        }}
+        documentName={deleteModalConfig.documentName}
       />
 
       <DocumentUploadModal
@@ -2127,10 +2264,21 @@ const EmployeeProfile = () => {
           setIsNavigationOpen(true);
         }}
         document={editingDocument}
-        onSave={(updatedDoc) => {
-          setDocuments(prev => prev.map(d => d.id === updatedDoc.id ? updatedDoc : d));
-          setIsEditDocumentOpen(false);
-          setIsNavigationOpen(true);
+        onSave={async (updatedDoc, documentId) => {
+          try {
+            let saved;
+            if (documentId) {
+              saved = await updateDocumentService(documentId, updatedDoc);
+              setDocuments(prev => prev.map(d => d._id === saved._id ? saved : d));
+            } else {
+              saved = await uploadDocument(updatedDoc);
+              setDocuments(prev => [saved, ...prev]);
+            }
+            setIsEditDocumentOpen(false);
+            setIsNavigationOpen(true);
+          } catch (err) {
+            console.error('Failed to save document:', err.message);
+          }
         }}
       />
 

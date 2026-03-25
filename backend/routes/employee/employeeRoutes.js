@@ -15,5 +15,6 @@ router.use(employee); // Ensure the user has employee/manager/tenant role
 
 // Mount specific feature routes under the /api/employee prefix
 router.use('/profile', require('./profileRoutes'));
+router.use('/documents', require('./documentRoutes'));
 
 module.exports = router;

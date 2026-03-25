@@ -30,16 +30,6 @@ const profileSchema = new mongoose.Schema({
   reportingTo: { type: String, default: '' },
   securityLevel: { type: String, default: 'Field Access - Level 1' },
 
-  // Documents
-  documents: [{
-    name: { type: String, required: true },
-    size: { type: String, default: '0 MB' },
-    type: { type: String, default: 'PDF' },
-    status: { type: String, enum: ['Verified', 'Active', 'Pending Review'], default: 'Pending Review' },
-    fileUrl: { type: String, default: '' },
-    uploadedAt: { type: Date, default: Date.now }
-  }],
-
   // Settings / Preferences
   settings: {
     language: { type: String, default: 'en' },

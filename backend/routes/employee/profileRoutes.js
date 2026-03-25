@@ -18,11 +18,6 @@ router.put('/me', updateMyProfile);
 // Settings
 router.put('/settings', updateSettings);
 
-// Documents
-router.post('/documents', addDocument);
-router.put('/documents/:docId', updateDocument);
-router.delete('/documents/:docId', deleteDocument);
-
 // Password
 router.put('/password', changePassword);
 
