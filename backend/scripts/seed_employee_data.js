@@ -112,7 +112,7 @@ const main = async () => {
                 employee: emp.id,
                 tenant: REACHALL_TENANT_ID,
                 storeName: stores[(i + 4) % stores.length],
-                status: 'follow_up',
+                status: 'pending',
                 gps: { lat: 12.9716 + (Math.random() - 0.5) * 0.1, lng: 77.5946 + (Math.random() - 0.5) * 0.1 },
                 notes: `Currently performing audit at ${stores[(i + 4) % stores.length]}`,
                 timestamp: new Date()

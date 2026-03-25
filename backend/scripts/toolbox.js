@@ -131,8 +131,8 @@ const tasks = {
         }
         const today = new Date();
         const ordersData = [
-            { employee: user._id, tenant: tenant._id, storeName: 'Reliance Smart (Dummy Today)', items: [{ name: 'Assorted Items', quantity: 15, price: 100 }], totalAmount: 1500, status: 'pending', timestamp: today },
-            { employee: user._id, tenant: tenant._id, storeName: 'Global Mart (Dummy 3 days ago)', items: [{ name: 'Assorted Items', quantity: 5, price: 200 }], totalAmount: 1000, status: 'completed', timestamp: new Date(today.getTime() - 3 * 24 * 60 * 60 * 1000) }
+            { employee: user._id, tenant: tenant._id, storeName: 'Reliance Smart (Dummy Today)', items: 15, totalAmount: 1500, status: 'pending', timestamp: today },
+            { employee: user._id, tenant: tenant._id, storeName: 'Global Mart (Dummy 3 days ago)', items: 5, totalAmount: 1000, status: 'completed', timestamp: new Date(today.getTime() - 3 * 24 * 60 * 60 * 1000) }
         ];
         await Order.insertMany(ordersData);
         console.log('Successfully inserted 2 dummy orders.');
