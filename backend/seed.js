@@ -1,326 +1,86 @@
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
+const Order = require('./models/employee/Order');
+const ManagerOrder = require('./models/manager/ManagerOrder');
 const User = require('./models/tenant/User');
-const path = require('path');
-dotenv.config({ path: path.join(__dirname, '.env') });
 
-const users = [
-  {
-    name: 'Platform Admin',
-    email: 'superadmin@trackforce.com',
-    password: 'admin123',
-    role: 'superadmin',
-    company: 'TrackForce',
-  },
-  {
-    name: 'Company Admin',
-    email: 'tenant@company.com',
-    password: 'tenant123',
-    role: 'tenant',
-    company: 'Acme Corp',
-  },
-  {
-    name: 'Team Manager',
-    email: 'manager@company.com',
-    password: 'manager123',
-    role: 'manager',
-    company: 'Acme Corp',
-  },
-  {
-    name: 'Field Executive',
-    email: 'employee@company.com',
-    password: 'employee123',
-    role: 'employee',
-    company: 'Acme Corp',
-  },
-];
+dotenv.config();
 
-const companies = [
-  { name: 'ReatchAll', plan: 'enterprise', industry: 'Logistics', logo: 'https://images.unsplash.com/photo-1599305090598-fe179d501c27?w=100&h=100&fit=crop' },
-  { name: 'MetaLogistics', plan: 'premium', industry: 'Supply Chain', logo: 'https://images.unsplash.com/photo-1549923746-c502d488b3ea?w=100&h=100&fit=crop' },
-  { name: 'SwiftDelivery', plan: 'basic', industry: 'E-commerce', logo: 'https://images.unsplash.com/photo-1531297484001-80022131f5a1?w=100&h=100&fit=crop' }
-];
-
-const seedDB = async () => {
+const seedAllManagers = async () => {
   try {
     await mongoose.connect(process.env.MONGO_URI);
-    console.log('Connected to MongoDB for seeding...');
+    console.log('Connected to MongoDB...');
 
-    // 1. Clear existing data
-    await User.deleteMany({});
-    const Tenant = require('./models/superadmin/Tenant');
-    const StoreVisit = require('./models/employee/StoreVisit');
-const Order = require('./models/employee/Order');
-const Location = require('./models/employee/Location');
-const ActivityLog = require('./models/employee/ActivityLog');
-const Subscription = require('./models/superadmin/Subscription');
-const SystemSetting = require('./models/superadmin/SystemSetting');
-const PlatformMetric = require('./models/superadmin/PlatformMetric');
-const Notification = require('./models/tenant/Notification');
-const Task = require('./models/employee/Task');
-    await Tenant.deleteMany({});
-    await StoreVisit.deleteMany({});
-    await Order.deleteMany({});
-    await Location.deleteMany({});
-    await ActivityLog.deleteMany({});
-    await Subscription.deleteMany({});
-    await SystemSetting.deleteMany({});
-    await PlatformMetric.deleteMany({});
-    await Task.deleteMany({});
-    console.log('Cleared all existing database records including Tasks.');
+    // 1. Find all managers and an employee (to use as executuive)
+    const managers = await User.find({ role: 'manager' });
+    const employee = await User.findOne({ role: 'employee' });
 
-    // New: Seed Platform Metrics for Dashboard
-    await PlatformMetric.insertMany([
-      {
-        type: 'global_metric',
-        data: {
-          dataProcessed: '5.2 TB',
-          globalRegions: '12',
-          securityScore: 'A+'
-        }
-      },
-      {
-        type: 'system_health',
-        data: {
-          apiGateway: { status: 'OPERATIONAL', value: 100 },
-          storageClusters: { status: '78% CAPACITY', value: 78 },
-          authServices: { status: 'STABLE', value: 100 }
-        }
-      }
-    ]);
-    console.log('Created Platform Metrics.');
-
-    // 2. Create Global Subscriptions
-    const subs = await Subscription.insertMany([
-      {
-        name: 'Basic',
-        price: '49',
-        description: 'Ideal for small startups or local agencies.',
-        features: ['Up to 10 Employees', 'Basic GPS Tracking', 'Daily Reports', 'Email Support'],
-        employeeLimit: 10,
-        icon: 'Zap',
-        color: 'blue'
-      },
-      {
-        name: 'Premium',
-        price: '149',
-        description: 'Best for growing businesses with multiple teams.',
-        features: ['Up to 50 Employees', 'Real-time Tracking', 'Advanced Analytics', 'Priority Support', 'Geo-fencing'],
-        employeeLimit: 50,
-        isPopular: true,
-        icon: 'Shield',
-        color: 'indigo'
-      },
-      {
-        name: 'Enterprise',
-        price: '499',
-        description: 'Full-featured solution for large organizations.',
-        features: ['Unlimited Employees', 'White-labeling', 'API Access', 'Dedicated Manager', 'Custom Integration'],
-        employeeLimit: 1000,
-        icon: 'Crown',
-        color: 'purple'
-      }
-    ]);
-    console.log('Created Subscription Plans.');
-
-    // 3. Create Global Settings
-    await SystemSetting.create({
-      platformName: 'TrackForce SaaS',
-      currency: 'USD',
-      maintenanceMode: false,
-      globalNotifications: true,
-      integrations: {
-        googleMaps: { status: 'inactive' }
-      }
-    });
-    console.log('Created System Settings.');
-
-    // 4. Create Global SuperAdmin (in tenant.users collection)
-    await User.create({
-      name: 'Super Admin',
-      email: 'superadmin@trackforce.com',
-      company: 'TrackForce',
-      password: 'admin123',
-      role: 'superadmin'
-    });
-    console.log('Created Global SuperAdmin (in tenant.users).');
-
-    // 3. Create Organizations and their Users
-    for (const comp of companies) {
-      const subscription = subs.find(s => s.name.toLowerCase() === comp.plan.toLowerCase());
-      
-      const tenant = await Tenant.create({
-        _id: comp.name === 'ReatchAll' ? '69c0fbbe60763acca36b8dbe' : undefined,
-        name: comp.name,
-        industry: comp.industry,
-        subscription: { 
-          planId: subscription ? subscription._id : null,
-          plan: comp.plan, 
-          status: 'active', 
-          employeeLimit: subscription ? subscription.employeeLimit : (comp.plan === 'enterprise' ? 1000 : 50)
-        },
-        settings: { logo: comp.logo }
-      });
-
-      const companySlug = comp.name.toLowerCase().replace(/\s/g, '');
-
-      // Create Tenant Admin
-      const admin = await User.create({
-        _id: comp.name === 'ReatchAll' ? '69c0fbbe60763acca36b8dbf' : undefined,
-        name: `${comp.name} Admin`,
-        company: comp.name,
-        email: `admin@${companySlug}.com`,
-        password: 'password123',
-        role: 'tenant',
-        tenant: tenant._id,
-      });
-
-      // Create Manager
-      const manager = await User.create({
-        _id: comp.name === 'ReatchAll' ? '69c0fbbe60763acca36b8dc0' : undefined,
-        name: `${comp.name} Manager`,
-        company: comp.name,
-        email: `manager@${companySlug}.com`,
-        password: 'password123',
-        role: 'manager',
-        tenant: tenant._id,
-      });
-
-      // Create Employee
-      const employee = await User.create({
-        _id: comp.name === 'ReatchAll' ? '69c0fbbe60763acca36b8dc4' : undefined,
-        name: `${comp.name} Employee`,
-        company: comp.name,
-        email: `employee@${companySlug}.com`,
-        password: 'password123',
-        role: 'employee',
-        tenant: tenant._id,
-        manager: manager._id,
-      });
-
-      // 4. Create Mock Operational Data for this tenant
-      await StoreVisit.create({
-        employee: employee._id,
-        tenant: tenant._id,
-        storeName: `${comp.name} Partner Store A`,
-        status: 'completed',
-        gps: { lat: 12.9716, lng: 77.5946 },
-        notes: `Regular visit for ${comp.name}`,
-      });
-
-      await Order.create({
-        employee: employee._id,
-        tenant: tenant._id,
-        storeName: `${comp.name} Partner Store A`,
-        items: [{ name: 'Standard Kit', quantity: 5, price: 100 }],
-        totalAmount: 500,
-        status: 'delivered',
-      });
-
-      await Location.create({
-        user: employee._id,
-        tenant: tenant._id,
-        coords: { lat: 12.9716, lng: 77.5946 },
-      });
-
-      await ActivityLog.create({
-        user: employee._id,
-        tenant: tenant._id,
-        type: 'visit_start',
-        details: `Started visit at ${comp.name} Partner Store A`,
-      });
-
-      // --- New: Seed Tasks for this employee across timeframes ---
-      const today = new Date();
-      const yesterday = new Date(new Date().setDate(today.getDate() - 1));
-      const thisWeek = new Date(new Date().setDate(today.getDate() + 2));
-      const thisMonth = new Date(new Date().setDate(today.getDate() + 15));
-
-      await Task.insertMany([
-        {
-          employee: employee._id,
-          tenant: tenant._id,
-          title: `Audit - ${comp.name} Main Site`,
-          store: `${comp.name} Central`,
-          companyName: comp.name,
-          priority: 'high',
-          status: 'pending',
-          date: today,
-          dueDate: 'Today, 05:00 PM',
-          distance: '2.5 km',
-          distanceVal: 2.5,
-          eta: '12 mins',
-          type: 'Audit',
-          coords: { x: 30, y: 40 },
-          companyContact: 'Operational Lead',
-          companyEmail: `ops@${companySlug}.com`,
-          companyInsight: 'Key Strategic Partner',
-          companyDescription: `Critical ${comp.industry} workflow audit for ${comp.name}.`,
-          checklist: [{ id: 1, text: 'Safety check', completed: false }]
-        },
-        {
-          employee: employee._id,
-          tenant: tenant._id,
-          title: `Inventory Refresh`,
-          store: `${comp.name} Retail Hub`,
-          companyName: comp.name,
-          priority: 'medium',
-          status: 'completed',
-          date: yesterday,
-          dueDate: 'Yesterday',
-          distance: '4.8 km',
-          distanceVal: 4.8,
-          eta: '25 mins',
-          type: 'Retail',
-          coords: { x: 60, y: 20 },
-          companyDescription: 'Standard weekly inventory count.',
-          checklist: [{ id: 1, text: 'Count stock', completed: true }]
-        },
-        {
-          employee: employee._id,
-          tenant: tenant._id,
-          title: `Logistics Review`,
-          store: `${comp.name} Warehouse`,
-          companyName: comp.name,
-          priority: 'low',
-          status: 'pending',
-          date: thisWeek,
-          dueDate: 'This Week',
-          distance: '8.2 km',
-          distanceVal: 8.2,
-          eta: '45 mins',
-          type: 'Finance',
-          coords: { x: 20, y: 80 },
-          checklist: [{ id: 1, text: 'Review invoices', completed: false }]
-        },
-        {
-          employee: employee._id,
-          tenant: tenant._id,
-          title: `Quarterly Strategy`,
-          store: `${comp.name} HQ`,
-          companyName: comp.name,
-          priority: 'high',
-          status: 'pending',
-          date: thisMonth,
-          dueDate: 'End of Month',
-          distance: '1.2 km',
-          distanceVal: 1.2,
-          eta: '8 mins',
-          type: 'Audit',
-          coords: { x: 45, y: 55 },
-          checklist: [{ id: 1, text: 'Meet department heads', completed: false }]
-        }
-      ]);
-
-      console.log(`Seeded accounts and isolated mock data for ${comp.name}.`);
+    if (managers.length === 0) {
+      console.log('No managers found in DB. Run main seeder first.');
+      process.exit(1);
+    }
+    
+    if (!employee) {
+      console.log('No employee found for order executive field. Seeding might look incomplete.');
     }
 
-    console.log('\nSuccessfully seeded 10 accounts and unique data for 3 organizations.');
-    process.exit();
-  } catch (error) {
-    console.error('Error seeding database:', error);
+    const categories = ['Electronics', 'Office', 'Furniture', 'Accessories', 'Software'];
+    const suppliers = ['Global Tech', 'Office Depot', 'Aristo Corp', 'Logitech', 'Microsoft'];
+    const statuses = ['active', 'out-of-stock', 'discontinued'];
+    const stores = ['Tech Plaza', 'Gadget Hub', 'Digital World', 'Smart Store', 'Retail Max'];
+    const orderStatuses = ['pending', 'shipped', 'delivered', 'completed'];
+
+    for (const manager of managers) {
+      const tenantId = manager.tenant;
+      console.log(`Seeding data for Manager: ${manager.email} (Tenant: ${tenantId})...`);
+
+      // 2. Clear and Seed Manager Orders (10 Records)
+      await ManagerOrder.deleteMany({ tenant: tenantId });
+      const managerOrders = [];
+      for (let i = 1; i <= 10; i++) {
+        managerOrders.push({
+          tenant: tenantId,
+          sku: `SKU-${manager.email.split('@')[0].slice(0, 5)}-${tenantId.toString().slice(-4)}-${100 + i}`,
+          name: `Product ${i}`,
+          category: categories[i % categories.length],
+          stockLevel: Math.floor(Math.random() * 200),
+          unit: 'pcs',
+          price: Math.floor(Math.random() * 500) + 50,
+          supplier: suppliers[i % suppliers.length],
+          lastRestocked: new Date(Date.now() - Math.floor(Math.random() * 10) * 86400000),
+          status: statuses[Math.floor(Math.random() * statuses.length)],
+        });
+      }
+      await ManagerOrder.insertMany(managerOrders);
+
+      // 3. Clear and Seed Employee Orders (20 Records)
+      await Order.deleteMany({ tenant: tenantId });
+      const orders = [];
+      for (let i = 0; i < 20; i++) {
+        const date = new Date();
+        date.setDate(date.getDate() - Math.floor(Math.random() * 14));
+        orders.push({
+          employee: employee ? employee._id : manager._id, // Fallback to manager if no employee
+          tenant: tenantId,
+          storeName: stores[i % stores.length],
+          items: Math.floor(Math.random() * 5) + 1,
+          totalAmount: Math.floor(Math.random() * 5000) + 500,
+          status: orderStatuses[i % orderStatuses.length],
+          paymentMethod: 'Credit Card',
+          timestamp: date,
+          deliveryDate: new Date(date.getTime() + 86400000).toISOString().split('T')[0]
+        });
+      }
+      await Order.insertMany(orders);
+      console.log(`- Seeded 10 products and 20 orders for ${manager.email}`);
+    }
+
+    console.log('Universal Seeding completed successfully!');
+    process.exit(0);
+  } catch (err) {
+    console.error('Seeding error:', err.message);
     process.exit(1);
   }
 };
 
-seedDB();
+seedAllManagers();
