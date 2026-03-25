@@ -37,7 +37,7 @@ exports.getManagers = async (req, res) => {
 // @access  Private (Tenant)
 exports.createManager = async (req, res) => {
   try {
-    const { name, email, password, team, designation } = req.body;
+    const { name, email, password, team, zone, designation, status } = req.body;
 
     const userExists = await User.findOne({ email });
     if (userExists) {
@@ -54,8 +54,10 @@ exports.createManager = async (req, res) => {
       role: 'manager',
       tenant: req.tenantId,
       company: currentUser ? currentUser.company : 'Unknown',
+      status: status || 'Active',
       profile: {
         team: team || '',
+        zone: zone || '',
         designation: designation || 'Operations Manager'
       }
     });
@@ -75,7 +77,7 @@ exports.createManager = async (req, res) => {
 exports.updateManager = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, team, designation, status } = req.body;
+    const { name, team, zone, designation, status } = req.body;
 
     const manager = await User.findOne({ _id: id, tenant: req.tenantId });
 
@@ -84,19 +86,19 @@ exports.updateManager = async (req, res) => {
     }
 
     if (name) manager.name = name;
+    if (status) manager.status = status;
     
     if (!manager.profile) {
       manager.profile = {};
     }
 
     if (team !== undefined) manager.profile.team = team;
+    if (zone !== undefined) manager.profile.zone = zone;
     if (designation !== undefined) manager.profile.designation = designation;
-    // Status can be mapped to isDeactivated or a new status property. 
-    // If you need "On Duty", "Off Duty", usually we add a `status` field. Let's add it if needed, or stick to isDeactivated.
-    if (status !== undefined) {
-      if (status === 'Inactive') manager.isDeactivated = true;
-      else if (status === 'On Duty' || status === 'Active') manager.isDeactivated = false;
-    }
+    
+    // Kept map for legacy compatibility
+    if (status === 'Inactive') manager.isDeactivated = true;
+    else if (status === 'On Duty' || status === 'Active') manager.isDeactivated = false;
 
     await manager.save();
 
@@ -124,6 +126,105 @@ exports.deleteManager = async (req, res) => {
 
     await User.deleteOne({ _id: id });
     res.json({ message: 'Manager removed' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Create a new employee
+// @route   POST /api/tenant/employees
+// @access  Private (Manager/Tenant)
+exports.createEmployee = async (req, res) => {
+  try {
+    const { name, email, password, team, zone, designation, status } = req.body;
+
+    const userExists = await User.findOne({ email });
+    if (userExists) {
+      return res.status(400).json({ message: 'User with this email already exists' });
+    }
+
+    const currentUser = await User.findById(req.user.id);
+
+    const employee = await User.create({
+      name,
+      email,
+      password,
+      role: 'employee',
+      tenant: req.tenantId,
+      company: currentUser ? currentUser.company : 'Unknown',
+      status: status || 'Active',
+      profile: {
+        team: team || '',
+        zone: zone || '',
+        designation: designation || 'Employee'
+      }
+    });
+
+    const employeeResponse = employee.toObject();
+    delete employeeResponse.password;
+
+    res.status(201).json(employeeResponse);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Update an employee
+// @route   PUT /api/tenant/employees/:id
+// @access  Private (Manager/Tenant)
+exports.updateEmployee = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, team, zone, designation, status } = req.body;
+
+    const employee = await User.findOne({ _id: id, tenant: req.tenantId });
+
+    if (!employee) {
+      return res.status(404).json({ message: 'Employee not found' });
+    }
+
+    if (name) employee.name = name;
+    if (status) employee.status = status;
+    
+    if (!employee.profile) {
+      employee.profile = {};
+    }
+
+    if (team !== undefined) employee.profile.team = team;
+    if (zone !== undefined) employee.profile.zone = zone;
+    if (designation !== undefined) employee.profile.designation = designation;
+    
+    if (status !== undefined) {
+      if (status === 'Inactive') employee.isDeactivated = true;
+      else if (status === 'On Duty' || status === 'Active') employee.isDeactivated = false;
+    }
+
+    await employee.save();
+
+    const updatedEmployee = employee.toObject();
+    delete updatedEmployee.password;
+
+    res.json(updatedEmployee);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Delete an employee
+// @route   DELETE /api/tenant/employees/:id
+// @access  Private (Manager/Tenant)
+exports.deleteEmployee = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const employee = await User.findOne({ _id: id, tenant: req.tenantId });
+
+    if (!employee) {
+      return res.status(404).json({ message: 'Employee not found' });
+    }
+
+    await User.deleteOne({ _id: id });
+    res.json({ message: 'Employee removed' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

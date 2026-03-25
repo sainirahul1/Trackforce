@@ -1,6 +1,9 @@
 const express = require('express');
 const { 
   getEmployees, 
+  createEmployee,
+  updateEmployee,
+  deleteEmployee,
   getManagers, 
   createManager, 
   updateManager, 
@@ -14,6 +17,9 @@ router.use(protect);
 router.use(tenantMiddleware);
 
 router.get('/employees', getEmployees);
+router.post('/employees', createEmployee);
+router.put('/employees/:id', updateEmployee);
+router.delete('/employees/:id', deleteEmployee);
 
 router.get('/managers', getManagers);
 router.post('/managers', createManager);

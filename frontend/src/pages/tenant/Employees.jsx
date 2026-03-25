@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import DataTable from '../../components/DataTable';
 import tenantService from '../../services/tenantService';
 import Button from '../../components/Button';
-import { UserPlus, Search, Download, Shield, Users, Activity, CheckCircle2, X, ArrowLeft, Mail, Phone, MapPin, Briefcase, Calendar, User, Clock, MoreVertical, Edit, Trash2, Ban } from 'lucide-react';
+import { UserPlus, Search, Download, Shield, Users, Activity, CheckCircle2, X, ArrowLeft, Mail, Phone, MapPin, Briefcase, Calendar, User, Clock, Edit, Trash2, Ban } from 'lucide-react';
 
 const getRelativeTime = (timestamp) => {
   const now = new Date();
@@ -26,8 +26,7 @@ const EmployeeList = () => {
   const [selectedManager, setSelectedManager] = useState(null);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [newManager, setNewManager] = useState({ name: '', email: '', password: '', team: '', designation: 'Operations Manager' });
-  const [dropdownState, setDropdownState] = useState({ id: null, top: 0, right: 0 });
+  const [newManager, setNewManager] = useState({ name: '', email: '', password: '', zone: '', designation: 'Operations Manager', status: 'Active' });
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingManager, setEditingManager] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -75,8 +74,8 @@ const EmployeeList = () => {
         name: m.name,
         email: m.email,
         designation: m.profile?.designation || 'Manager',
-        status: m.isDeactivated ? 'Inactive' : 'On Duty',
-        team: m.profile?.team || 'N/A',
+        status: m.status || (m.isDeactivated ? 'Inactive' : 'On Duty'),
+        zone: m.profile?.zone || m.profile?.team || 'N/A',
         avatar: `https://i.pravatar.cc/150?u=${m._id}`
       }));
       setEmployees(mapped);
@@ -89,7 +88,7 @@ const EmployeeList = () => {
     { label: 'Total Managers', value: employees.length.toString(), icon: Users, color: 'text-indigo-600', bg: 'bg-indigo-50', filter: 'All' },
     { label: 'Active Managers', value: employees.filter(e => e.status === 'On Duty').length.toString(), icon: Activity, color: 'text-emerald-600', bg: 'bg-emerald-50', filter: 'On Duty' },
     { label: 'Inactive Managers', value: employees.filter(e => e.status !== 'On Duty').length.toString(), icon: Shield, color: 'text-rose-600', bg: 'bg-rose-50', filter: 'Inactive' },
-    { label: 'Total Teams', value: new Set(employees.map(e => e.team)).size.toString(), icon: Activity, color: 'text-blue-600', bg: 'bg-blue-50', filter: 'All' },
+    { label: 'Total Zones', value: new Set(employees.map(e => e.zone)).size.toString(), icon: Activity, color: 'text-blue-600', bg: 'bg-blue-50', filter: 'All' },
   ];
 
   const handleAddManager = async (e) => {
@@ -102,14 +101,14 @@ const EmployeeList = () => {
         name: m.name,
         email: m.email,
         designation: m.profile?.designation || 'Manager',
-        status: 'On Duty',
-        team: m.profile?.team || 'N/A',
+        status: m.status || 'On Duty',
+        zone: m.profile?.zone || m.profile?.team || 'N/A',
         avatar: `https://i.pravatar.cc/150?u=${m._id}`
       };
       setEmployees([manager, ...employees]);
       setAddedManagerName(newManager.name);
       setIsModalOpen(false);
-      setNewManager({ name: '', email: '', password: '', team: '', designation: 'Operations Manager' });
+      setNewManager({ name: '', email: '', password: '', zone: '', designation: 'Operations Manager', status: 'Active' });
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
     } catch (error) {
@@ -122,7 +121,7 @@ const EmployeeList = () => {
     e.preventDefault();
     try {
       await tenantService.updateManager(editingManager.id, editingManager);
-      setEmployees(employees.map(emp => emp.id === editingManager.id ? { ...emp, name: editingManager.name, team: editingManager.team, designation: editingManager.designation } : emp));
+      setEmployees(employees.map(emp => emp.id === editingManager.id ? { ...emp, name: editingManager.name, zone: editingManager.zone, designation: editingManager.designation, status: editingManager.status } : emp));
       setIsEditModalOpen(false);
       setEditingManager(null);
       setShowSuccess(true);
@@ -139,7 +138,6 @@ const EmployeeList = () => {
     try {
       await tenantService.updateManager(id, { status: newStatus });
       setEmployees(employees.map(emp => emp.id === id ? { ...emp, status: newStatus } : emp));
-      setDropdownState({ id: null, top: 0, right: 0 });
     } catch (err) {
       console.error(err);
       alert('Failed to update status');
@@ -161,11 +159,11 @@ const EmployeeList = () => {
   };
 
   const handleExportCSV = () => {
-    const headers = ['Name', 'Designation', 'Team', 'Status'];
+    const headers = ['Name', 'Designation', 'Zone', 'Status'];
     const rows = employees.map(emp => [
       `"${emp.name}"`,
       `"${emp.designation}"`,
-      `"${emp.team}"`,
+      `"${emp.zone}"`,
       `"${emp.status}"`
     ]);
 
@@ -187,7 +185,7 @@ const EmployeeList = () => {
 
   const filteredEmployees = employees.filter(emp => {
     const matchesSearch = emp.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      emp.team.toLowerCase().includes(searchQuery.toLowerCase());
+      emp.zone.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === 'All' ||
       (statusFilter === 'Inactive' ? emp.status !== 'On Duty' : emp.status === statusFilter);
     return matchesSearch && matchesStatus;
@@ -211,15 +209,15 @@ const EmployeeList = () => {
       ),
     },
     {
-      header: 'Team',
-      accessor: 'team',
+      header: 'Zone',
+      accessor: 'zone',
       render: (row) => (
         <div className="flex items-center space-x-3">
           <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold text-xs border border-indigo-100 dark:border-indigo-800/50">
-            {row.team.charAt(0)}
+            {row.zone.charAt(0)}
           </div>
           <span className="text-sm font-bold text-gray-700 dark:text-gray-300">
-            {row.team}
+            {row.zone}
           </span>
         </div>
       ),
@@ -250,66 +248,31 @@ const EmployeeList = () => {
       header: 'Actions',
       accessor: 'actions',
       render: (row) => (
-        <div className="relative flex justify-end" onClick={(e) => e.stopPropagation()}>
-          <button 
-            onClick={(e) => {
-              if (dropdownState.id === row.id) {
-                setDropdownState({ id: null, top: 0, right: 0 });
-              } else {
-                const rect = e.currentTarget.getBoundingClientRect();
-                setDropdownState({
-                  id: row.id,
-                  top: rect.bottom + 4,
-                  right: window.innerWidth - rect.right
-                });
-              }
+        <div className="flex items-center justify-end space-x-2" onClick={(e) => e.stopPropagation()}>
+          <button
+            onClick={() => {
+              setEditingManager(row);
+              setIsEditModalOpen(true);
             }}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+            title="Edit Manager"
+            className="p-2 text-indigo-500 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/20 dark:hover:bg-indigo-900/40 rounded-lg transition-colors"
           >
-            <MoreVertical size={16} className="text-gray-500" />
+            <Edit size={16} />
           </button>
-          
-          {dropdownState.id === row.id && createPortal(
-            <>
-              <div className="fixed inset-0 z-[160]" onClick={(e) => { e.stopPropagation(); setDropdownState({ id: null, top: 0, right: 0 }); }} />
-              <div 
-                className="fixed bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-gray-100 dark:border-gray-800 z-[170] py-2 w-48 animate-in fade-in zoom-in-[0.98] duration-200"
-                style={{ top: `${dropdownState.top}px`, right: `${dropdownState.right}px` }}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <button
-                  onClick={() => {
-                     setEditingManager(row);
-                     setIsEditModalOpen(true);
-                     setDropdownState({ id: null, top: 0, right: 0 });
-                  }}
-                  className="w-full text-left px-4 py-3 text-sm font-bold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center space-x-3 transition-colors"
-                >
-                  <Edit size={16} className="text-indigo-500" />
-                  <span>Edit Manager</span>
-                </button>
-                <button
-                  onClick={() => handleSuspendManager(row.id, row.status)}
-                  className="w-full text-left px-4 py-3 text-sm font-bold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center space-x-3 transition-colors"
-                >
-                  <Ban size={16} className={row.status === 'Inactive' ? 'text-emerald-500' : 'text-orange-500'} />
-                  <span>{row.status === 'Inactive' ? 'Re-activate' : 'Suspend Op'}</span>
-                </button>
-                <div className="h-px bg-gray-100 dark:bg-gray-800 my-1 mx-2"></div>
-                <button
-                  onClick={() => {
-                    handleDeleteManager(row.id);
-                    setDropdownState({ id: null, top: 0, right: 0 });
-                  }}
-                  className="w-full text-left px-4 py-3 text-sm font-black text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20 flex items-center space-x-3 transition-colors"
-                >
-                  <Trash2 size={16} />
-                  <span>Delete Profile</span>
-                </button>
-              </div>
-            </>,
-            document.body
-          )}
+          <button
+            onClick={() => handleSuspendManager(row.id, row.status)}
+            title={row.status === 'Inactive' ? 'Re-activate' : 'Suspend Op'}
+            className={`p-2 rounded-lg transition-colors ${row.status === 'Inactive' ? 'text-emerald-500 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-900/20 dark:hover:bg-emerald-900/40' : 'text-orange-500 bg-orange-50 hover:bg-orange-100 dark:bg-orange-900/20 dark:hover:bg-orange-900/40'}`}
+          >
+            <Ban size={16} />
+          </button>
+          <button
+            onClick={() => handleDeleteManager(row.id)}
+            title="Delete Profile"
+            className="p-2 text-rose-500 bg-rose-50 hover:bg-rose-100 dark:bg-rose-900/20 dark:hover:bg-rose-900/40 rounded-lg transition-colors"
+          >
+            <Trash2 size={16} />
+          </button>
         </div>
       ),
     },
@@ -317,7 +280,7 @@ const EmployeeList = () => {
 
   if (selectedEmployee) {
     return (
-      <div className="space-y-6 animate-in fade-in duration-500">
+      <div className="space-y-6 animate-in fade-in duration-500 overflow-x-hidden">
         <div className="flex items-center space-x-4">
           <Button variant="ghost" onClick={() => setSelectedEmployee(null)} className="p-2 border border-gray-100 dark:border-gray-800 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
             <ArrowLeft size={20} className="text-gray-600 dark:text-gray-400" />
@@ -416,7 +379,7 @@ const EmployeeList = () => {
     };
 
     return (
-      <div className="space-y-6 animate-in fade-in duration-500">
+      <div className="space-y-6 animate-in fade-in duration-500 overflow-x-hidden">
         <div className="flex items-center justify-between w-full">
           <div className="flex items-center space-x-4">
             <Button variant="ghost" onClick={() => setSelectedManager(null)} className="p-2 border border-gray-100 dark:border-gray-800 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
@@ -502,8 +465,8 @@ const EmployeeList = () => {
                   <Users size={18} />
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Team</p>
-                  <p className="text-sm font-black text-gray-900 dark:text-white">{manager.team}</p>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Zone</p>
+                  <p className="text-sm font-black text-gray-900 dark:text-white">{manager.zone}</p>
                 </div>
               </div>
               <div className="flex items-center gap-4 text-gray-600 dark:text-gray-300 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
@@ -566,7 +529,7 @@ const EmployeeList = () => {
   }
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500 relative">
+    <div className="space-y-8 animate-in fade-in duration-500 relative overflow-x-hidden">
       {/* Decorative Background SVG */}
       <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-indigo-50/50 dark:bg-indigo-900/10 rounded-full blur-[100px] -mr-64 -mt-64 pointer-events-none" />
 
@@ -710,14 +673,14 @@ const EmployeeList = () => {
                   />
                 </div>
                 <div className="space-y-3">
-                  <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.25em] ml-1">Team Name</label>
+                  <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.25em] ml-1">Zone</label>
                   <input
                     required
                     type="text"
-                    value={newManager.team}
-                    onChange={(e) => setNewManager({ ...newManager, team: e.target.value })}
+                    value={newManager.zone}
+                    onChange={(e) => setNewManager({ ...newManager, zone: e.target.value })}
                     className="w-full px-6 py-4 bg-gray-50/50 dark:bg-gray-800/50 border-2 border-transparent focus:border-emerald-500/20 rounded-2xl text-gray-900 dark:text-white font-bold transition-all outline-none placeholder:text-gray-300"
-                    placeholder="e.g. Team Alpha"
+                    placeholder="e.g. Zone Alpha"
                   />
                 </div>
               </div>
@@ -745,22 +708,44 @@ const EmployeeList = () => {
                   />
                 </div>
               </div>
-              <div className="space-y-3">
-                <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.25em] ml-1">Designated Role</label>
-                <div className="relative group">
-                  <select
-                    required
-                    value={newManager.designation}
-                    onChange={(e) => setNewManager({ ...newManager, designation: e.target.value })}
-                    className="w-full px-6 py-4 bg-gray-50/50 dark:bg-gray-800/50 border-2 border-transparent focus:border-emerald-500/20 rounded-2xl text-gray-900 dark:text-white font-bold transition-all outline-none appearance-none cursor-pointer"
-                  >
-                    <option value="Operations Manager">Operations Manager</option>
-                    <option value="Regional Manager">Regional Manager</option>
-                    <option value="Team Lead">Team Lead</option>
-                    <option value="Project Manager">Project Manager</option>
-                  </select>
-                  <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
-                    <Users size={18} />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.25em] ml-1">Designated Role</label>
+                  <div className="relative group">
+                    <select
+                      required
+                      value={newManager.designation}
+                      onChange={(e) => setNewManager({ ...newManager, designation: e.target.value })}
+                      className="w-full px-6 py-4 bg-gray-50/50 dark:bg-gray-800/50 border-2 border-transparent focus:border-emerald-500/20 rounded-2xl text-gray-900 dark:text-white font-bold transition-all outline-none appearance-none cursor-pointer"
+                    >
+                      <option value="Operations Manager">Operations Manager</option>
+                      <option value="Regional Manager">Regional Manager</option>
+                      <option value="Team Lead">Team Lead</option>
+                      <option value="Project Manager">Project Manager</option>
+                    </select>
+                    <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                      <Users size={18} />
+                    </div>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.25em] ml-1">Manager Status</label>
+                  <div className="relative group">
+                    <select
+                      required
+                      value={newManager.status}
+                      onChange={(e) => setNewManager({ ...newManager, status: e.target.value })}
+                      className="w-full px-6 py-4 bg-gray-50/50 dark:bg-gray-800/50 border-2 border-transparent focus:border-emerald-500/20 rounded-2xl text-gray-900 dark:text-white font-bold transition-all outline-none appearance-none cursor-pointer"
+                    >
+                      <option value="Active">Active</option>
+                      <option value="Inactive">Inactive</option>
+                      <option value="On Duty">On Duty</option>
+                      <option value="Off Duty">Off Duty</option>
+                      <option value="On Leave">On Leave</option>
+                    </select>
+                    <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                      <Activity size={18} />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -827,32 +812,54 @@ const EmployeeList = () => {
                   />
                 </div>
                 <div className="space-y-3">
-                  <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.25em] ml-1">Team Name</label>
+                  <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.25em] ml-1">Zone</label>
                   <input
                     required
                     type="text"
-                    value={editingManager?.team || ''}
-                    onChange={(e) => setEditingManager({ ...editingManager, team: e.target.value })}
+                    value={editingManager?.zone || ''}
+                    onChange={(e) => setEditingManager({ ...editingManager, zone: e.target.value })}
                     className="w-full px-6 py-4 bg-gray-50/50 dark:bg-gray-800/50 border-2 border-transparent focus:border-indigo-500/20 rounded-2xl text-gray-900 dark:text-white font-bold transition-all outline-none"
                   />
                 </div>
               </div>
-              <div className="space-y-3">
-                <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.25em] ml-1">Designated Role</label>
-                <div className="relative group">
-                  <select
-                    required
-                    value={editingManager?.designation || 'Operations Manager'}
-                    onChange={(e) => setEditingManager({ ...editingManager, designation: e.target.value })}
-                    className="w-full px-6 py-4 bg-gray-50/50 dark:bg-gray-800/50 border-2 border-transparent focus:border-indigo-500/20 rounded-2xl text-gray-900 dark:text-white font-bold transition-all outline-none appearance-none cursor-pointer"
-                  >
-                    <option value="Operations Manager">Operations Manager</option>
-                    <option value="Regional Manager">Regional Manager</option>
-                    <option value="Team Lead">Team Lead</option>
-                    <option value="Project Manager">Project Manager</option>
-                  </select>
-                  <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
-                    <Users size={18} />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.25em] ml-1">Designated Role</label>
+                  <div className="relative group">
+                    <select
+                      required
+                      value={editingManager?.designation || 'Operations Manager'}
+                      onChange={(e) => setEditingManager({ ...editingManager, designation: e.target.value })}
+                      className="w-full px-6 py-4 bg-gray-50/50 dark:bg-gray-800/50 border-2 border-transparent focus:border-indigo-500/20 rounded-2xl text-gray-900 dark:text-white font-bold transition-all outline-none appearance-none cursor-pointer"
+                    >
+                      <option value="Operations Manager">Operations Manager</option>
+                      <option value="Regional Manager">Regional Manager</option>
+                      <option value="Team Lead">Team Lead</option>
+                      <option value="Project Manager">Project Manager</option>
+                    </select>
+                    <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                      <Users size={18} />
+                    </div>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.25em] ml-1">Manager Status</label>
+                  <div className="relative group">
+                    <select
+                      required
+                      value={editingManager?.status || 'Active'}
+                      onChange={(e) => setEditingManager({ ...editingManager, status: e.target.value })}
+                      className="w-full px-6 py-4 bg-gray-50/50 dark:bg-gray-800/50 border-2 border-transparent focus:border-indigo-500/20 rounded-2xl text-gray-900 dark:text-white font-bold transition-all outline-none appearance-none cursor-pointer"
+                    >
+                      <option value="Active">Active</option>
+                      <option value="Inactive">Inactive</option>
+                      <option value="On Duty">On Duty</option>
+                      <option value="Off Duty">Off Duty</option>
+                      <option value="On Leave">On Leave</option>
+                    </select>
+                    <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                      <Activity size={18} />
+                    </div>
                   </div>
                 </div>
               </div>

@@ -38,6 +38,7 @@ const userSchema = new mongoose.Schema({
     employeeId: String,
     skills: [String],
     team: String,
+    zone: String,
     designation: String,
     dob: String,
     gender: String,
@@ -50,6 +51,11 @@ const userSchema = new mongoose.Schema({
   isDeactivated: {
     type: Boolean,
     default: false,
+  },
+  status: {
+    type: String,
+    enum: ['Active', 'Inactive', 'On Duty', 'Off Duty', 'On Leave'],
+    default: 'Active',
   },
   isTracking: {
     type: Boolean,

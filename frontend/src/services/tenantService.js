@@ -48,12 +48,39 @@ export const getEmployees = async () => {
   return response.data;
 };
 
+// Create an employee
+export const createEmployee = async (employeeData) => {
+  const response = await axios.post(`${API_URL}/employees`, employeeData, {
+    headers: getAuthHeader(),
+  });
+  return response;
+};
+
+// Update an employee
+export const updateEmployee = async (id, employeeData) => {
+  const response = await axios.put(`${API_URL}/employees/${id}`, employeeData, {
+    headers: getAuthHeader(),
+  });
+  return response;
+};
+
+// Delete an employee
+export const deleteEmployee = async (id) => {
+  const response = await axios.delete(`${API_URL}/employees/${id}`, {
+    headers: getAuthHeader(),
+  });
+  return response;
+};
+
 const tenantService = {
   getManagers,
   createManager,
   updateManager,
   deleteManager,
   getEmployees,
+  createEmployee,
+  updateEmployee,
+  deleteEmployee,
 };
 
 export default tenantService;
