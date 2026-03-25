@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { User, Briefcase, FileText, Activity, LayoutDashboard, Settings, Mail, Phone, MapPin, MoreVertical, ShieldCheck, TrendingUp, ShoppingBag, Map as MapIcon, Clock, HeartPulse, Building, Shield, UserCheck, Calendar, CheckCircle, Download, ExternalLink, Bell, Globe, LogOut, Share2, Eye, EyeOff, Lock, AlertTriangle, Smartphone, Wifi, X, MessageSquare, Copy, Pencil, UploadCloud, ChevronDown, CheckCircle2, Filter, Search, GripVertical, MoreHorizontal, Info, Users, Menu, Plus, Trash2 } from 'lucide-react';
 import { useNotifications } from '../../context/NotificationContext';
-import { getMyProfile, updateMyProfile } from '../../services/profileService';
+import { getMyProfile, updateMyProfile, changePassword } from '../../services/profileService';
 import { fetchDocuments, uploadDocument, updateDocumentService, deleteDocumentService } from '../../services/documentService';
 
 const ScrollStyles = () => (
@@ -138,6 +138,7 @@ const ShareProfileModal = ({ isOpen, onClose, employee }) => {
 };
 
 const ProfileUnifiedOverlay = ({ isOpen, onClose, employee, documents, activeTab, setActiveTab, onEditDocument, onViewDocument, onDeleteDocument, onEditProfile, onSaveProfile }) => {
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   useEffect(() => {
     if (!isOpen) return;
     const onKeyDown = (e) => { if (e.key === 'Escape') onClose(); };
@@ -161,7 +162,7 @@ const ProfileUnifiedOverlay = ({ isOpen, onClose, employee, documents, activeTab
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[200] flex animate-in fade-in duration-300">
+    <div className="fixed inset-0 z-[200] flex animate-in fade-in duration-300 backdrop-blur-xl bg-white/10 dark:bg-black/20">
       {/* Sidebar Mockup */}
       <aside className="w-64 bg-white dark:bg-gray-900 border-r border-gray-100 dark:border-gray-800 flex flex-col hidden lg:flex">
         <div className="p-6 flex items-center justify-between border-b border-gray-50 dark:border-gray-800">
@@ -178,11 +179,10 @@ const ProfileUnifiedOverlay = ({ isOpen, onClose, employee, documents, activeTab
             <button
               key={item.id}
               onClick={() => setActiveTab(item.id)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all ${
-                activeTab === item.id
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all ${activeTab === item.id
                   ? 'bg-indigo-50 text-indigo-600 shadow-inner dark:bg-indigo-900/20'
                   : 'text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
-              }`}
+                }`}
             >
               <item.icon size={20} />
               <span>{item.label}</span>
@@ -191,13 +191,13 @@ const ProfileUnifiedOverlay = ({ isOpen, onClose, employee, documents, activeTab
         </div>
         <div className="p-4 border-t border-gray-100 dark:border-gray-800">
           <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-800 flex items-center gap-3">
-             <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center text-indigo-600 font-bold shrink-0">
-               {employee.name.charAt(0)}
-             </div>
-             <div className="min-w-0">
-               <p className="font-black text-gray-900 dark:text-white text-sm truncate">{employee.name}</p>
-               <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest truncate">{employee.designation}</p>
-             </div>
+            <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center text-indigo-600 font-bold shrink-0">
+              {employee.name.charAt(0)}
+            </div>
+            <div className="min-w-0">
+              <p className="font-black text-gray-900 dark:text-white text-sm truncate">{employee.name}</p>
+              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest truncate">{employee.designation}</p>
+            </div>
           </div>
         </div>
       </aside>
@@ -208,37 +208,36 @@ const ProfileUnifiedOverlay = ({ isOpen, onClose, employee, documents, activeTab
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-indigo-500/5 rounded-full blur-[120px] -mr-64 -mt-64 pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-emerald-500/5 rounded-full blur-[120px] -ml-64 -mb-64 pointer-events-none" />
 
-        {/* Top Header with Horizontal Navigation */}
-        <header className="h-24 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-100 dark:border-gray-800 flex items-center justify-between px-8 sticky top-0 z-20 transition-all shrink-0">
-          <div className="flex items-center gap-8">
-             <button onClick={onClose} className="lg:hidden p-2.5 rounded-2xl bg-gray-50 dark:bg-gray-800 text-gray-400 hover:text-indigo-600 transition-all">
+        {/* Top Header with Horizontal Navigation - Hidden when password modal is open */}
+        {!isPasswordModalOpen && (
+          <header className="h-24 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-100 dark:border-gray-800 flex items-center justify-between px-8 sticky top-0 z-20 transition-all shrink-0 animate-in fade-in slide-in-from-top-4 duration-300">
+            <div className="flex items-center gap-8">
+              <button onClick={onClose} className="lg:hidden p-2.5 rounded-2xl bg-gray-50 dark:bg-gray-800 text-gray-400 hover:text-indigo-600 transition-all">
                 <Menu size={20} />
-             </button>
-             <h2 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">Your Profile</h2>
-          </div>
-          
-          <div className="flex items-center gap-4">
-            <button onClick={onClose} className="p-3 bg-gray-50 dark:bg-gray-800 text-gray-400 hover:text-gray-900 dark:hover:text-white rounded-2xl transition-all">
-              <X size={20} />
-            </button>
-          </div>
-        </header>
-
-        {/* Scrollable Content Body */}
+              </button>
+              <h2 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">Your Profile</h2>
+            </div>
+            <div className="flex items-center gap-4">
+              <button onClick={onClose} className="p-3 bg-gray-50 dark:bg-gray-800 text-gray-400 hover:text-gray-900 dark:hover:text-white rounded-2xl transition-all shadow-sm">
+                <X size={20} />
+              </button>
+            </div>
+          </header>
+        )}
         <div className="flex-1 overflow-y-auto p-8 lg:p-12 tf-modal-scroll relative z-10">
           <div className="max-w-6xl mx-auto">
             {activeTab === 'personal' && (
               <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <div className="flex flex-col gap-8">
-                   <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight mb-1">Personal Details</h3>
-                        <p className="text-gray-500 font-medium">Your verified identity and health records</p>
-                      </div>
-                   </div>
-                   <div className="flex flex-col gap-8">
-                      <PersonalInfoContent employee={employee} />
-                   </div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight mb-1">Personal Details</h3>
+                      <p className="text-gray-500 font-medium">Your verified identity and health records</p>
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-8">
+                    <PersonalInfoContent employee={employee} />
+                  </div>
                 </div>
               </div>
             )}
@@ -246,18 +245,18 @@ const ProfileUnifiedOverlay = ({ isOpen, onClose, employee, documents, activeTab
             {activeTab === 'documents' && (
               <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <div className="flex flex-col gap-8">
-                   <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight mb-1">Verified Documents</h3>
-                        <p className="text-gray-500 font-medium">Access and manage your professional credentials</p>
-                      </div>
-                      <button className="flex items-center gap-2 px-6 py-2.5 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl font-black text-sm text-gray-900 dark:text-white hover:bg-gray-50 transition-all shadow-sm">
-                        <Download size={18} /> Export Records
-                      </button>
-                   </div>
-                   <div className="flex flex-col gap-8">
-                      <DocumentsContent documents={documents} onEditDocument={onEditDocument} onViewDocument={onViewDocument} onDeleteDocument={onDeleteDocument} />
-                   </div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight mb-1">Verified Documents</h3>
+                      <p className="text-gray-500 font-medium">Access and manage your professional credentials</p>
+                    </div>
+                    <button className="flex items-center gap-2 px-6 py-2.5 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl font-black text-sm text-gray-900 dark:text-white hover:bg-gray-50 transition-all shadow-sm">
+                      <Download size={18} /> Export Records
+                    </button>
+                  </div>
+                  <div className="flex flex-col gap-8">
+                    <DocumentsContent documents={documents} onEditDocument={onEditDocument} onViewDocument={onViewDocument} onDeleteDocument={onDeleteDocument} />
+                  </div>
                 </div>
               </div>
             )}
@@ -265,13 +264,14 @@ const ProfileUnifiedOverlay = ({ isOpen, onClose, employee, documents, activeTab
             {activeTab === 'settings' && (
               <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <div className="flex flex-col gap-8">
-                   <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight mb-1">Account Control</h3>
-                        <p className="text-gray-500 font-medium">Security, notifications and system preferences</p>
-                      </div>
-                   </div>
-                   <SettingsContent employee={employee} onSaveProfile={onSaveProfile} />
+                  <div className="flex items-center justify-between">
+                    <SettingsContent
+                      employee={employee}
+                      onSaveProfile={onSaveProfile}
+                      isPasswordModalOpen={isPasswordModalOpen}
+                      setIsPasswordModalOpen={setIsPasswordModalOpen}
+                    />
+                  </div>
                 </div>
               </div>
             )}
@@ -326,10 +326,10 @@ const PersonalInfoContent = ({ employee }) => {
         {group.items.map((item, i) => (
           <div key={i} className="flex items-center justify-between gap-4 py-3 border-b border-gray-50 dark:border-gray-800/50 last:border-0 hover:bg-gray-50/50 dark:hover:bg-gray-800/20 -mx-4 px-4 rounded-xl transition-colors">
             <div className="flex items-center gap-2.5 min-w-0">
-               <div className="p-1.5 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-400 group-hover:text-indigo-500 transition-colors">
-                  <item.icon size={12} />
-               </div>
-               <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest truncate">{item.label}</p>
+              <div className="p-1.5 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-400 group-hover:text-indigo-500 transition-colors">
+                <item.icon size={12} />
+              </div>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest truncate">{item.label}</p>
             </div>
             <p className="text-sm font-bold text-gray-700 dark:text-gray-200 text-right truncate">{item.value}</p>
           </div>
@@ -362,7 +362,7 @@ const DocumentsContent = ({ documents, onEditDocument, onViewDocument, onAddDocu
     <div className="grid grid-cols-1 gap-8">
       {finalDocs.map((doc, i) => (
         <div
-          key={i}
+          key={doc._id || i} // Use doc._id if available, otherwise index
           className="group p-8 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 flex flex-col gap-6 hover:border-indigo-500/30 hover:shadow-xl hover:-translate-y-1 transition-all"
         >
           <div className="flex items-center justify-between">
@@ -420,14 +420,14 @@ const DocumentsContent = ({ documents, onEditDocument, onViewDocument, onAddDocu
   );
 };
 
-const SettingsContent = ({ employee, onSaveProfile }) => {
+const SettingsContent = ({ employee, onSaveProfile, isPasswordModalOpen, setIsPasswordModalOpen }) => {
   const [displayName, setDisplayName] = useState(employee.name || '');
   const [emailNotif, setEmailNotif] = useState(true);
   const [pushNotif, setPushNotif] = useState(true);
   const [twoFA, setTwoFA] = useState(false);
   const [loginAlerts, setLoginAlerts] = useState(true);
   const [sessionTimeout, setSessionTimeout] = useState('30');
-  
+
   const SectionContainer = ({ title, icon: Icon, children }) => (
     <div className="bg-white dark:bg-gray-900 p-8 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 shadow-sm flex flex-col gap-6">
       <div className="flex items-center gap-4 mb-2">
@@ -458,8 +458,8 @@ const SettingsContent = ({ employee, onSaveProfile }) => {
     <div className="flex flex-col gap-8 pb-12">
       <SectionContainer title="User Preferences" icon={User}>
         <SettingRow label="Display Name" sub="How your name appears across the platform">
-          <input 
-            value={displayName} 
+          <input
+            value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
             onBlur={() => onSaveProfile({ name: displayName })}
             className={inputCls}
@@ -491,17 +491,17 @@ const SettingsContent = ({ employee, onSaveProfile }) => {
           <Toggle checked={loginAlerts} onChange={setLoginAlerts} />
         </SettingRow>
         <SettingRow label="Session Timeout" sub="Auto-logout after period of inactivity">
-           <select 
-             value={sessionTimeout} 
-             onChange={(e) => setSessionTimeout(e.target.value)}
-             className={inputCls}
-           >
-              <option value="15">15 minutes</option>
-              <option value="30">30 minutes</option>
-              <option value="60">1 hour</option>
-              <option value="240">4 hours</option>
-              <option value="never">Never</option>
-           </select>
+          <select
+            value={sessionTimeout}
+            onChange={(e) => setSessionTimeout(e.target.value)}
+            className={inputCls}
+          >
+            <option value="15">15 minutes</option>
+            <option value="30">30 minutes</option>
+            <option value="60">1 hour</option>
+            <option value="240">4 hours</option>
+            <option value="never">Never</option>
+          </select>
         </SettingRow>
 
         <div className="mt-6 pt-6 border-t border-gray-50 dark:border-gray-800">
@@ -513,13 +513,13 @@ const SettingsContent = ({ employee, onSaveProfile }) => {
             ].map((s, i) => (
               <div key={i} className="flex items-center justify-between p-4 bg-gray-50/50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-800">
                 <div className="flex items-center gap-4">
-                   <div className="p-2 bg-white dark:bg-gray-900 rounded-lg text-indigo-600 shadow-sm">
-                      <Smartphone size={16} />
-                   </div>
-                   <div>
-                      <p className="text-sm font-bold text-gray-900 dark:text-white">{s.device}</p>
-                      <p className="text-[10px] text-gray-500 font-medium">{s.loc}</p>
-                   </div>
+                  <div className="p-2 bg-white dark:bg-gray-900 rounded-lg text-indigo-600 shadow-sm">
+                    <Smartphone size={16} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-gray-900 dark:text-white">{s.device}</p>
+                    <p className="text-[10px] text-gray-500 font-medium">{s.loc}</p>
+                  </div>
                 </div>
                 {s.current ? (
                   <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 px-3 py-1 rounded-full">Active</span>
@@ -538,11 +538,152 @@ const SettingsContent = ({ employee, onSaveProfile }) => {
             </h5>
             <p className="text-sm text-gray-500 font-medium leading-relaxed">Regularly update your password to keep your account safe.</p>
           </div>
-          <button className="px-8 py-4 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-2xl font-black text-sm hover:scale-[1.02] transition-all shadow-xl shrink-0">
+          <button
+            onClick={() => setIsPasswordModalOpen(true)}
+            className="px-8 py-4 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-2xl font-black text-sm hover:scale-[1.02] transition-all shadow-xl shrink-0"
+          >
             Update Password
           </button>
         </div>
       </SectionContainer>
+
+      <ChangePasswordModal
+        isOpen={isPasswordModalOpen}
+        onClose={() => setIsPasswordModalOpen(false)}
+      />
+    </div>
+  );
+};
+
+const ChangePasswordModal = ({ isOpen, onClose }) => {
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      setError('');
+      setSuccess(false);
+    }
+  }, [isOpen]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+
+    if (newPassword !== confirmPassword) {
+      return setError('New passwords do not match');
+    }
+
+    if (newPassword.length < 8) {
+      return setError('New password must be at least 8 characters');
+    }
+
+    setLoading(true);
+    try {
+      await changePassword({ currentPassword, newPassword });
+      setSuccess(true);
+      setTimeout(() => {
+        onClose();
+      }, 2000);
+    } catch (err) {
+      setError(err.message || 'Failed to update password');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[300] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative w-full max-w-md bg-white dark:bg-gray-950 rounded-[2rem] shadow-2xl border border-gray-100 dark:border-gray-800 p-8">
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-3">
+            <div className="p-3 rounded-2xl bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600">
+              <Lock size={20} />
+            </div>
+            <h3 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">Update Password</h3>
+          </div>
+          <button onClick={onClose} className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+            <X size={20} className="text-gray-400" />
+          </button>
+        </div>
+
+        {success ? (
+          <div className="py-8 text-center animate-in fade-in zoom-in duration-300">
+            <div className="w-20 h-20 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6">
+              <CheckCircle2 size={40} />
+            </div>
+            <h4 className="text-xl font-black text-gray-900 dark:text-white mb-2">Password Updated!</h4>
+            <p className="text-gray-500 font-medium">Your account is now more secure.</p>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {error && (
+              <div className="p-4 rounded-xl bg-rose-50 dark:bg-rose-900/20 border border-rose-100 dark:border-rose-900/30 flex items-center gap-3 text-rose-600 dark:text-rose-400 text-sm font-bold">
+                <AlertTriangle size={18} />
+                {error}
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Current Password</label>
+              <input
+                type="password"
+                required
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                className="w-full px-6 py-4 rounded-2xl bg-gray-50 dark:bg-gray-900 border-2 border-transparent focus:border-indigo-500 outline-none transition-all font-bold text-gray-900 dark:text-white"
+                placeholder="••••••••"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">New Password</label>
+              <input
+                type="password"
+                required
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                className="w-full px-6 py-4 rounded-2xl bg-gray-50 dark:bg-gray-900 border-2 border-transparent focus:border-indigo-500 outline-none transition-all font-bold text-gray-900 dark:text-white"
+                placeholder="••••••••"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Confirm New Password</label>
+              <input
+                type="password"
+                required
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="w-full px-6 py-4 rounded-2xl bg-gray-50 dark:bg-gray-900 border-2 border-transparent focus:border-indigo-500 outline-none transition-all font-bold text-gray-900 dark:text-white"
+                placeholder="••••••••"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-4 rounded-2xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-black hover:opacity-90 transition-all flex items-center justify-center gap-2 shadow-xl"
+            >
+              {loading ? (
+                <div className="w-5 h-5 border-2 border-white dark:border-slate-900 border-t-transparent rounded-full animate-spin" />
+              ) : (
+                'Save New Password'
+              )}
+            </button>
+          </form>
+        )}
+      </div>
     </div>
   );
 };
@@ -781,14 +922,14 @@ const PersonalInfoModal = ({ isOpen, onClose, employee }) => {
   );
 };
 
-const EmploymentSection = () => {
+const EmploymentSection = ({ employee }) => {
   const details = [
-    { label: 'Employee Code', value: 'TF-EXE-402', icon: Briefcase },
-    { label: 'Date of Join', value: '15 June 2023', icon: Calendar },
-    { label: 'Designation', value: 'Senior Field Executive', icon: Building },
-    { label: 'Work Area', value: 'Central Bengaluru Zone', icon: Clock },
-    { label: 'Reporting To', value: 'Ananya Sharma (Manager)', icon: UserCheck },
-    { label: 'Security Level', value: 'Field Access - Level 1', icon: Shield },
+    { label: 'Employee Code', value: employee.employeeCode || 'TF-EXE-402', icon: Briefcase },
+    { label: 'Date of Join', value: employee.dateOfJoin || '15 June 2023', icon: Calendar },
+    { label: 'Designation', value: employee.designation || 'Senior Field Executive', icon: Building },
+    { label: 'Work Area', value: employee.workArea || 'Central Bengaluru Zone', icon: Clock },
+    { label: 'Reporting To', value: employee.reportingTo || 'Ananya Sharma (Manager)', icon: UserCheck },
+    { label: 'Security Level', value: employee.securityLevel || 'Field Access - Level 1', icon: Shield },
   ];
   return (
     <div className="bg-white/40 dark:bg-slate-950/40 rounded-[2rem] sm:rounded-[2.5rem] border-2 border-slate-100 dark:border-slate-800 p-6 sm:p-8 lg:p-10 overflow-hidden relative backdrop-blur-xl mb-6">
@@ -1061,7 +1202,7 @@ const DocumentsModal = ({ isOpen, onClose, documents, onEditDocument, onViewDocu
               </div>
             </div>
             <div className="flex items-center gap-2 sm:gap-4">
-              <button 
+              <button
                 onClick={() => onEditDocument(null)}
                 className="hidden sm:flex text-sm font-bold bg-slate-900 text-white dark:bg-white dark:text-slate-900 px-4 py-2 rounded-xl items-center gap-2 hover:opacity-90 transition-all"
               >
@@ -1077,7 +1218,7 @@ const DocumentsModal = ({ isOpen, onClose, documents, onEditDocument, onViewDocu
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
               {documents.map((doc, i) => (
                 <div
-                  key={i}
+                  key={doc._id || i} // Use doc._id if available, otherwise index
                   className="group p-4 sm:p-5 lg:p-6 rounded-2xl sm:rounded-3xl border border-slate-100 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-800/20 flex items-center justify-between hover:border-slate-200 dark:hover:border-slate-700 hover:bg-white dark:hover:bg-gray-800 transition-all"
                 >
                   <div className="flex items-center gap-5">
@@ -1164,7 +1305,7 @@ const DocumentPreviewModal = ({ isOpen, onClose, document: docRecord }) => {
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
             {docRecord?.fileUrl && (
-              <button 
+              <button
                 onClick={() => window.open(`http://localhost:5001${docRecord.fileUrl}`, '_blank')}
                 className="hidden sm:flex p-3 rounded-2xl bg-indigo-500 hover:bg-indigo-600 transition-all items-center gap-2 font-bold text-sm text-white border-none"
               >
@@ -1389,6 +1530,12 @@ const EditProfileModal = ({ isOpen, onClose, employee, onSaveProfile }) => {
   const [nationality, setNationality] = useState(employee.nationality || '');
   const [bloodGroup, setBloodGroup] = useState(employee.bloodGroup || '');
   const [emergencyContact, setEmergencyContact] = useState(employee.emergencyContact || '');
+  const [employeeCode, setEmployeeCode] = useState(employee.employeeCode || '');
+  const [dateOfJoin, setDateOfJoin] = useState(employee.dateOfJoin || '');
+  const [designation, setDesignation] = useState(employee.designation || '');
+  const [workArea, setWorkArea] = useState(employee.workArea || '');
+  const [reportingTo, setReportingTo] = useState(employee.reportingTo || '');
+  const [securityLevel, setSecurityLevel] = useState(employee.securityLevel || '');
   const [avatarUrl, setAvatarUrl] = useState(employee.avatar || '');
   const [avatarFile, setAvatarFile] = useState(null);
   const [profileError, setProfileError] = useState('');
@@ -1406,6 +1553,12 @@ const EditProfileModal = ({ isOpen, onClose, employee, onSaveProfile }) => {
     setNationality(employee.nationality || '');
     setBloodGroup(employee.bloodGroup || '');
     setEmergencyContact(employee.emergencyContact || '');
+    setEmployeeCode(employee.employeeCode || '');
+    setDateOfJoin(employee.dateOfJoin || '');
+    setDesignation(employee.designation || '');
+    setWorkArea(employee.workArea || '');
+    setReportingTo(employee.reportingTo || '');
+    setSecurityLevel(employee.securityLevel || '');
     setAvatarUrl(employee.avatar || '');
     setAvatarFile(null);
     setProfileError('');
@@ -1460,6 +1613,12 @@ const EditProfileModal = ({ isOpen, onClose, employee, onSaveProfile }) => {
       nationality: nationality.trim(),
       bloodGroup: bloodGroup.trim(),
       emergencyContact: emergencyContact.trim(),
+      employeeCode: employeeCode.trim(),
+      dateOfJoin: dateOfJoin.trim(),
+      designation: designation.trim(),
+      workArea: workArea.trim(),
+      reportingTo: reportingTo.trim(),
+      securityLevel: securityLevel.trim(),
       avatar: avatarUrl || employee.avatar,
     };
 
@@ -1595,6 +1754,71 @@ const EditProfileModal = ({ isOpen, onClose, employee, onSaveProfile }) => {
                     onChange={(e) => setAddress(e.target.value)}
                     className="w-full px-4 py-3 rounded-2xl bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 text-gray-900 dark:text-white font-bold outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400"
                     placeholder="Street, Area, City"
+                  />
+                </div>
+
+                {/* Employment Fields */}
+                <div className="sm:col-span-2 pt-4 border-t border-gray-100 dark:border-gray-800">
+                  <h3 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-widest mb-4">Employment Details</h3>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Employee Code</label>
+                  <input
+                    value={employeeCode}
+                    onChange={(e) => setEmployeeCode(e.target.value)}
+                    className="w-full px-4 py-3 rounded-2xl bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 text-gray-900 dark:text-white font-bold outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400"
+                    placeholder="e.g. TF-EXE-402"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Date of Join</label>
+                  <input
+                    value={dateOfJoin}
+                    onChange={(e) => setDateOfJoin(e.target.value)}
+                    className="w-full px-4 py-3 rounded-2xl bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 text-gray-900 dark:text-white font-bold outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400"
+                    placeholder="e.g. 15 June 2023"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Designation</label>
+                  <input
+                    value={designation}
+                    onChange={(e) => setDesignation(e.target.value)}
+                    className="w-full px-4 py-3 rounded-2xl bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 text-gray-900 dark:text-white font-bold outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400"
+                    placeholder="e.g. Senior Field Executive"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Work Area</label>
+                  <input
+                    value={workArea}
+                    onChange={(e) => setWorkArea(e.target.value)}
+                    className="w-full px-4 py-3 rounded-2xl bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 text-gray-900 dark:text-white font-bold outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400"
+                    placeholder="e.g. Central Bengaluru Zone"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Reporting To</label>
+                  <input
+                    value={reportingTo}
+                    onChange={(e) => setReportingTo(e.target.value)}
+                    className="w-full px-4 py-3 rounded-2xl bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 text-gray-900 dark:text-white font-bold outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400"
+                    placeholder="e.g. Ananya Sharma (Manager)"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Security Level</label>
+                  <input
+                    value={securityLevel}
+                    onChange={(e) => setSecurityLevel(e.target.value)}
+                    className="w-full px-4 py-3 rounded-2xl bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 text-gray-900 dark:text-white font-bold outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400"
+                    placeholder="e.g. Field Access - Level 1"
                   />
                 </div>
                 <div className="space-y-2">
@@ -1980,7 +2204,7 @@ const DeleteConfirmationModal = ({ isOpen, onClose, onConfirm, documentName }) =
           <p className="text-gray-500 dark:text-gray-400 font-medium leading-relaxed mb-8">
             Are you sure you want to delete <span className="font-black text-gray-900 dark:text-white">"{documentName || 'this file'}"</span>? This action cannot be undone.
           </p>
-          
+
           <div className="flex w-full gap-4">
             <button
               onClick={onClose}
@@ -2045,6 +2269,11 @@ const EmployeeProfile = () => {
     nationality: '',
     bloodGroup: '',
     emergencyContact: '',
+    employeeCode: '',
+    dateOfJoin: '',
+    workArea: '',
+    reportingTo: '',
+    securityLevel: '',
     avatar: ''
   });
   const [profileLoading, setProfileLoading] = useState(true);
@@ -2089,13 +2318,13 @@ const EmployeeProfile = () => {
       case 'personal':
         return <div className="animate-in fade-in slide-in-from-bottom-4 duration-500"><PersonalInfoContent employee={employee} /></div>;
       case 'employment':
-        return <div className="animate-in fade-in slide-in-from-bottom-4 duration-500"><EmploymentSection /></div>;
+        return <div className="animate-in fade-in slide-in-from-bottom-4 duration-500"><EmploymentSection employee={employee} /></div>;
       case 'documents':
-        return <div className="animate-in fade-in slide-in-from-bottom-4 duration-500"><DocumentsContent 
-          documents={documents} 
-          onEditDocument={(doc) => { setEditingDocument(doc); setIsEditDocumentOpen(true); }} 
-          onViewDocument={(doc) => { setViewingDocument(doc); setIsViewModalOpen(true); }} 
-          onAddDocument={() => { setEditingDocument(null); setIsEditDocumentOpen(true); }} 
+        return <div className="animate-in fade-in slide-in-from-bottom-4 duration-500"><DocumentsContent
+          documents={documents}
+          onEditDocument={(doc) => { setEditingDocument(doc); setIsEditDocumentOpen(true); }}
+          onViewDocument={(doc) => { setViewingDocument(doc); setIsViewModalOpen(true); }}
+          onAddDocument={() => { setEditingDocument(null); setIsEditDocumentOpen(true); }}
           onDeleteDocument={(doc) => setDeleteModalConfig({
             isOpen: true,
             documentId: doc._id,
@@ -2111,26 +2340,22 @@ const EmployeeProfile = () => {
     <div className="max-w-6xl mx-auto pb-20 px-4 sm:px-0">
       <div className="animate-in duration-500">
         <ScrollStyles />
-        <div className="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-4">
-        <div>
-          <h1 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">Your Profile</h1>
-          <p className="text-gray-500 font-medium">Manage your field performance and professional records</p>
+
+        <div className="space-y-12">
+          <ProfileHeader
+            employee={employee}
+            onEditProfile={() => setIsEditProfileOpen(true)}
+            onOpenSettings={() => {
+              setActiveTab('settings');
+              setIsNavigationOpen(true);
+            }}
+            onShareProfile={() => setIsShareModalOpen(true)}
+            onOpenNavigation={() => setIsNavigationOpen(true)}
+          />
+
+          <EmploymentSection employee={employee} />
+          <NotificationsSection />
         </div>
-      </div>
-
-      <ProfileHeader
-        employee={employee}
-        onEditProfile={() => setIsEditProfileOpen(true)}
-        onOpenSettings={() => {
-          setActiveTab('settings');
-          setIsNavigationOpen(true);
-        }}
-        onShareProfile={() => setIsShareModalOpen(true)}
-        onOpenNavigation={() => setIsNavigationOpen(true)}
-      />
-
-      <EmploymentSection />
-      <NotificationsSection />
       </div>
 
       <EditProfileModal
@@ -2188,8 +2413,8 @@ const EmployeeProfile = () => {
           setIsViewModalOpen(true);
         }}
         onEditProfile={() => {
-           setIsNavigationOpen(false);
-           setIsEditProfileOpen(true);
+          setIsNavigationOpen(false);
+          setIsEditProfileOpen(true);
         }}
         onDeleteDocument={(doc) => setDeleteModalConfig({
           isOpen: true,
