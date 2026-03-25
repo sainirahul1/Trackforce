@@ -12,6 +12,7 @@ const app = express();
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Basic Route
 app.get('/', (req, res) => {
@@ -26,6 +27,7 @@ app.use('/api/orders', require('./routes/orderRoutes'));
 app.use('/api/activity', require('./routes/activityRoutes'));
 app.use('/api/tracking', require('./routes/trackingRoutes'));
 app.use('/api/stats', require('./routes/statsRoutes'));
+app.use('/api/employee', require('./routes/employee/employeeRoutes'));
 
 // Super Admin Routes
 app.use('/api/superadmin/companies', require('./routes/superadmin/companyRoutes'));
