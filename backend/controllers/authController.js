@@ -67,7 +67,7 @@ exports.getMe = async (req, res) => {
   try {
     const user = await User.findById(req.user.id).populate('tenant');
     if (!user) return res.status(404).json({ message: 'User not found' });
-    
+
     res.json({
       _id: user._id,
       name: user.name,
@@ -77,6 +77,7 @@ exports.getMe = async (req, res) => {
       tenant: user.tenant?._id,
       tenantStatus: user.tenant?.onboardingStatus || 'active',
       isDeactivated: user.isDeactivated,
+      profile: user.profile || {},
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -105,6 +106,46 @@ exports.login = async (req, res) => {
       });
     } else {
       res.status(401).json({ message: 'Invalid email or password' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Update user profile
+// @route   PUT /api/auth/profile
+// @access  Private
+exports.updateProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+
+    if (user) {
+      user.name = req.body.name || user.name;
+
+      // Update nested profile properties
+      user.profile = {
+        ...user.profile,
+        phone: req.body.phone !== undefined ? req.body.phone : user.profile?.phone,
+        address: req.body.address !== undefined ? req.body.address : user.profile?.address,
+        dob: req.body.dob !== undefined ? req.body.dob : user.profile?.dob,
+        gender: req.body.gender !== undefined ? req.body.gender : user.profile?.gender,
+        nationality: req.body.nationality !== undefined ? req.body.nationality : user.profile?.nationality,
+        bloodGroup: req.body.bloodGroup !== undefined ? req.body.bloodGroup : user.profile?.bloodGroup,
+        emergencyContact: req.body.emergencyContact !== undefined ? req.body.emergencyContact : user.profile?.emergencyContact,
+        allergies: req.body.allergies !== undefined ? req.body.allergies : user.profile?.allergies,
+        location: req.body.location !== undefined ? req.body.location : user.profile?.location,
+      };
+
+      const updatedUser = await user.save();
+
+      res.json({
+        _id: updatedUser._id,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        profile: updatedUser.profile
+      });
+    } else {
+      res.status(404).json({ message: 'User not found' });
     }
   } catch (error) {
     res.status(500).json({ message: error.message });

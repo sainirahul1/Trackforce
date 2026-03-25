@@ -97,13 +97,13 @@ const ProgressRing = ({ label, current, target, color }) => {
  * RevenueCard Component
  * Displays a weekly revenue visualization inspired by the Orders page.
  */
-const RevenueCard = () => {
+const RevenueCard = ({ revenueData }) => {
   const data = {
     labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
     datasets: [
       {
         label: 'Revenue',
-        data: [12000, 19000, 15000, 25000, 22000, 30000, 28000],
+        data: revenueData?.weeklyData || [0, 0, 0, 0, 0, 0, 0],
         borderColor: '#10b981',
         backgroundColor: (context) => {
           const chart = context.chart;
@@ -173,10 +173,7 @@ const RevenueCard = () => {
         </div>
 
         <div className="space-y-1">
-          <p className="text-3xl font-black text-slate-800">₹84,200</p>
-          <div className="flex items-center justify-center gap-1.5 text-emerald-600 text-[10px] font-black uppercase tracking-widest bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity">
-            View Analytics
-          </div>
+          <p className="text-3xl font-black text-slate-800">₹{revenueData?.totalWeekly?.toLocaleString() || '0'}</p>
         </div>
       </div>
     </Link>
@@ -187,13 +184,13 @@ const RevenueCard = () => {
  * CapabilitiesCard Component
  * Displays a radar chart of the employee's "Capabilities and Power".
  */
-const CapabilitiesCard = () => {
+const CapabilitiesCard = ({ capabilities }) => {
   const data = {
     labels: ['Efficiency', 'Reliability', 'Speed', 'Accuracy', 'Engagement'],
     datasets: [
       {
         label: 'Capabilities',
-        data: [85, 90, 75, 95, 80],
+        data: capabilities?.length === 5 ? capabilities : [0, 0, 0, 0, 0],
         backgroundColor: 'rgba(99, 102, 241, 0.2)',
         borderColor: '#6366f1',
         borderWidth: 3,
@@ -266,7 +263,7 @@ const CapabilitiesCard = () => {
  * Renders a sophisticated card for each entry in the Recent Activity timeline.
  */
 const ActivityItem = ({ activity, isLast }) => (
-  <div className="flex gap-6 relative group/item">
+  <Link to="/employee/activity" className="flex gap-6 relative group/item">
     {/* Refined Timeline Connector */}
     {!isLast && (
       <div className="absolute left-[23px] top-[50px] bottom-[-30px] w-px bg-gradient-to-b from-indigo-200 via-indigo-100 to-transparent dark:from-indigo-900 dark:via-indigo-950 dark:to-transparent opacity-50 group-hover/item:opacity-100 transition-opacity duration-700" />
@@ -306,7 +303,7 @@ const ActivityItem = ({ activity, isLast }) => (
         {activity.desc}
       </p>
     </div>
-  </div>
+  </Link>
 );
 
 // =============================================================================
@@ -319,7 +316,12 @@ import { getActivities } from '../../services/activityService';
 const EmployeeDashboard = () => {
   // --- State Hooks ---
   const [isOnDuty, setIsOnDuty] = useState(false);
-  const [statsData, setStatsData] = useState({ visitsToday: 0, ordersToday: 0, tasksToday: 0 });
+  const [statsData, setStatsData] = useState({ 
+    visitsToday: 0, ordersToday: 0, tasksToday: 0,
+    revenueData: { weeklyData: [], totalWeekly: 0 },
+    capabilities: [],
+    nextTarget: null
+  });
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
   
@@ -374,9 +376,9 @@ const EmployeeDashboard = () => {
 
   // --- Mock Data ---
   const stats = [
-    { label: "Visits", value: statsData.visitsToday.toString(), color: 'from-blue-500 to-cyan-400' },
+    { label: "Visits", value: statsData?.visitsToday?.toString() || "0", color: 'from-blue-500 to-cyan-400', link: '/employee/visits' },
     { label: "Duty", value: isOnDuty ? 'ON' : 'OFF', color: 'from-emerald-500 to-teal-400' },
-    { label: "Orders", value: statsData.ordersToday.toString(), color: 'from-purple-500 to-indigo-400' }
+    { label: "Orders", value: statsData?.ordersToday?.toString() || "0", color: 'from-purple-500 to-indigo-400', link: '/employee/orders' }
   ];
 
   if (loading) return <div className="flex items-center justify-center min-h-screen"><Loader2 className="animate-spin text-primary-main" size={48} /></div>;
@@ -408,43 +410,54 @@ const EmployeeDashboard = () => {
           {/* Header Controls (Stats Grid with Integrated Shift Toggle) */}
           <div className="flex flex-col items-end gap-6 w-full lg:w-auto">
             <div className="grid grid-cols-3 gap-4 w-full sm:w-auto">
-              {stats.map((stat, idx) => (
-                <div key={idx} className="flex flex-col items-center justify-center p-4 md:p-6 bg-white/10 backdrop-blur-xl rounded-[2rem] border border-white/10 hover:bg-white/20 transition-all duration-300 min-w-[120px] md:min-w-[160px] shadow-lg group relative overflow-hidden">
-                  <span className="text-[11px] font-black text-white/40 uppercase tracking-[0.2em] mb-2 group-hover:text-white/60 transition-colors">{stat.label}</span>
-                  <div className="flex flex-col items-center">
-                    <span className="text-3xl md:text-4xl font-black text-white mb-1">{stat.value}</span>
-                    {stat.trend && (
-                      <span className="text-[9px] font-black text-indigo-300 uppercase tracking-wider opacity-80">{stat.trend}</span>
-                    )}
-                  </div>
-
-                  {/* Integrated Toggle for "Active" (Shift Control) */}
-                  {stat.label === "Duty" && (
-                    <div className="mt-4 flex flex-col items-center space-y-3 pt-4 border-t border-white/10 w-full animate-in fade-in slide-in-from-top-2 duration-500">
-                      <div className="flex flex-col items-center">
-                        <span className={`text-[10px] font-black uppercase tracking-widest leading-none mb-1 ${isOnDuty ? 'text-green-300 shadow-green-500/50' : 'text-slate-400'}`}>
-                          {isOnDuty ? 'Active Tracking' : 'Tracking Off'}
-                        </span>
-                        {isOnDuty && (
-                          <div className="absolute top-2 right-2 flex h-2 w-2">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-                          </div>
-                        )}
-                      </div>
-                      <button
-                        onClick={handleToggleShift}
-                        className={`relative inline-flex h-7 w-12 items-center rounded-full transition-all duration-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 scale-90 ${isOnDuty ? 'bg-gradient-to-r from-green-500 to-emerald-500' : 'bg-slate-700'}`}
-                        role="switch"
-                        aria-checked={isOnDuty}
-                      >
-                        <span className="sr-only">Toggle shift</span>
-                        <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-xl transition-all duration-500 ${isOnDuty ? 'translate-x-[1.3rem]' : 'translate-x-1'}`} />
-                      </button>
+              {stats.map((stat, idx) => {
+                const CardContent = (
+                  <>
+                    <span className="text-[11px] font-black text-white/40 uppercase tracking-[0.2em] mb-2 group-hover:text-white/60 transition-colors">{stat.label}</span>
+                    <div className="flex flex-col items-center">
+                      <span className="text-3xl md:text-4xl font-black text-white mb-1">{stat.value}</span>
                     </div>
-                  )}
-                </div>
-              ))}
+
+                    {/* Integrated Toggle for "Active" (Shift Control) */}
+                    {stat.label === "Duty" && (
+                      <div className="mt-4 flex flex-col items-center space-y-3 pt-4 border-t border-white/10 w-full animate-in fade-in slide-in-from-top-2 duration-500">
+                        <div className="flex flex-col items-center">
+                          <span className={`text-[10px] font-black uppercase tracking-widest leading-none mb-1 ${isOnDuty ? 'text-green-300 shadow-green-500/50' : 'text-slate-400'}`}>
+                            {isOnDuty ? 'Active Tracking' : 'Tracking Off'}
+                          </span>
+                          {isOnDuty && (
+                            <div className="absolute top-2 right-2 flex h-2 w-2">
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                              <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                            </div>
+                          )}
+                        </div>
+                        <button
+                          onClick={(e) => { e.preventDefault(); handleToggleShift(); }}
+                          className={`relative inline-flex h-7 w-12 items-center rounded-full transition-all duration-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 scale-90 ${isOnDuty ? 'bg-gradient-to-r from-green-500 to-emerald-500' : 'bg-slate-700'}`}
+                          role="switch"
+                          aria-checked={isOnDuty}
+                        >
+                          <span className="sr-only">Toggle shift</span>
+                          <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-xl transition-all duration-500 ${isOnDuty ? 'translate-x-[1.3rem]' : 'translate-x-1'}`} />
+                        </button>
+                      </div>
+                    )}
+                  </>
+                );
+
+                const cardClasses = "flex flex-col items-center justify-center p-4 md:p-6 bg-white/10 backdrop-blur-xl rounded-[2rem] border border-white/10 hover:bg-white/20 transition-all duration-300 min-w-[120px] md:min-w-[160px] shadow-lg group relative overflow-hidden";
+
+                return stat.link ? (
+                  <Link key={idx} to={stat.link} className={cardClasses}>
+                    {CardContent}
+                  </Link>
+                ) : (
+                  <div key={idx} className={cardClasses}>
+                    {CardContent}
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -452,8 +465,8 @@ const EmployeeDashboard = () => {
 
       {/* 2. Metrics Row: Revenue, Performance, and Capabilities Cards */}
       <section className="flex flex-col lg:flex-row justify-end items-center gap-6 md:gap-8">
-        <RevenueCard />
-        <CapabilitiesCard />
+        <RevenueCard revenueData={statsData.revenueData} />
+        <CapabilitiesCard capabilities={statsData.capabilities} />
         <Link
           to="/employee/tasks"
           className="w-full max-w-[320px] aspect-square bg-white dark:bg-slate-900 text-gray-900 dark:text-white p-7 rounded-[3rem] shadow-xl relative overflow-hidden group transition-all duration-700 border border-gray-100 dark:border-slate-800 hover:border-indigo-500/30 block hover:-translate-y-1 active:scale-[0.98]"
@@ -472,8 +485,8 @@ const EmployeeDashboard = () => {
             </div>
 
             <div className="grid grid-cols-2 gap-6 w-full px-2">
-              <ProgressRing label="Visits" current={12} target={15} color="text-blue-500" />
-              <ProgressRing label="Tasks" current={8} target={10} color="text-emerald-500" />
+              <ProgressRing label="Visits" current={statsData.visitsToday || 0} target={15} color="text-blue-500" />
+              <ProgressRing label="Tasks" current={statsData.tasksToday || 0} target={10} color="text-emerald-500" />
             </div>
 
             <div className="mt-3 w-16 h-1 bg-gray-100 rounded-full" />
@@ -486,7 +499,7 @@ const EmployeeDashboard = () => {
         {/* Next Target Destination Card */}
         <div className="relative group">
           <Link
-            to="/employee/tasks"
+            to="/employee/tasks?priority=high"
             className={`${UI_TOKENS.cardBase} p-8 md:p-10 rounded-[3rem] shadow-2xl block transition-all duration-700 hover:shadow-indigo-500/10 hover:-translate-y-1 active:scale-[0.98] outline-none group-hover:border-indigo-500/30 overflow-hidden`}
           >
             {/* Soft background accents */}
@@ -501,7 +514,7 @@ const EmployeeDashboard = () => {
                 <span className="text-2xl tracking-tighter">Next Target</span>
               </h2>
               <div className="inline-flex items-center px-4 py-1.5 bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 text-[10px] font-black uppercase tracking-[0.2em] rounded-full border border-rose-100 dark:border-rose-500/20 shadow-sm">
-                Critical priority
+                {(statsData.nextTarget?.priority || 'Standard').toUpperCase()}
               </div>
             </div>
 
@@ -512,11 +525,11 @@ const EmployeeDashboard = () => {
                 <div className="flex-1 space-y-6">
                   <div className="space-y-2">
                     <h3 className="text-3xl font-black text-gray-900 dark:text-white leading-none tracking-tight group-hover:text-indigo-600 transition-colors">
-                      Global Tech Solutions HQ
+                      {statsData.nextTarget?.store || 'No Tasks'}
                     </h3>
                     <div className="flex items-center text-gray-500 dark:text-gray-400">
                       <MapIcon size={16} className="mr-2 text-indigo-500 opacity-70" />
-                      <span className="text-sm font-bold uppercase tracking-widest opacity-80">Sector 4, North Zone</span>
+                      <span className="text-sm font-bold uppercase tracking-widest opacity-80">{statsData.nextTarget?.address || 'N/A'}</span>
                     </div>
                   </div>
 
@@ -524,12 +537,12 @@ const EmployeeDashboard = () => {
                   <div className="flex items-center gap-6 py-4 border-y border-gray-100 dark:border-gray-800/50">
                     <div className="flex flex-col">
                       <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Travel</span>
-                      <span className="text-lg font-black text-slate-800 dark:text-white">18 mins</span>
+                      <span className="text-lg font-black text-slate-800 dark:text-white">{statsData.nextTarget?.travelTime || 'N/A'}</span>
                     </div>
                     <div className="w-px h-8 bg-gray-100 dark:bg-gray-800" />
                     <div className="flex flex-col">
                       <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Distance</span>
-                      <span className="text-lg font-black text-slate-800 dark:text-white">4.2 km</span>
+                      <span className="text-lg font-black text-slate-800 dark:text-white">{statsData.nextTarget?.distance || 'N/A'}</span>
                     </div>
                   </div>
                 </div>

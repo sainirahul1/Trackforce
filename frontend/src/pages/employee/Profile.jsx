@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import { User, Briefcase, FileText, Activity, LayoutDashboard, Settings, Mail, Phone, MapPin, MoreVertical, ShieldCheck, TrendingUp, ShoppingBag, Map as MapIcon, Clock, HeartPulse, Building, Shield, UserCheck, Calendar, CheckCircle, Download, ExternalLink, Bell, Globe, LogOut, Share2, Eye, EyeOff, Lock, AlertTriangle, Smartphone, Wifi, X, MessageSquare, Copy, Pencil, UploadCloud, ChevronDown, CheckCircle2, Filter, Search, GripVertical, MoreHorizontal, Info, Users, Menu } from 'lucide-react';
 import { useNotifications } from '../../context/NotificationContext';
 
@@ -1326,6 +1327,8 @@ const EditProfileModal = ({ isOpen, onClose, employee, onSaveProfile }) => {
   const [nationality, setNationality] = useState(employee.nationality || '');
   const [bloodGroup, setBloodGroup] = useState(employee.bloodGroup || '');
   const [emergencyContact, setEmergencyContact] = useState(employee.emergencyContact || '');
+  const [dob, setDob] = useState(employee.dob || '');
+  const [allergies, setAllergies] = useState(employee.allergies || '');
   const [avatarUrl, setAvatarUrl] = useState(employee.avatar || '');
   const [avatarFile, setAvatarFile] = useState(null);
   const [profileError, setProfileError] = useState('');
@@ -1343,6 +1346,8 @@ const EditProfileModal = ({ isOpen, onClose, employee, onSaveProfile }) => {
     setNationality(employee.nationality || '');
     setBloodGroup(employee.bloodGroup || '');
     setEmergencyContact(employee.emergencyContact || '');
+    setDob(employee.dob || '');
+    setAllergies(employee.allergies || '');
     setAvatarUrl(employee.avatar || '');
     setAvatarFile(null);
     setProfileError('');
@@ -1397,6 +1402,8 @@ const EditProfileModal = ({ isOpen, onClose, employee, onSaveProfile }) => {
       nationality: nationality.trim(),
       bloodGroup: bloodGroup.trim(),
       emergencyContact: emergencyContact.trim(),
+      dob: dob.trim(),
+      allergies: allergies.trim(),
       avatar: avatarUrl || employee.avatar,
     };
 
@@ -1568,6 +1575,24 @@ const EditProfileModal = ({ isOpen, onClose, employee, onSaveProfile }) => {
                     onChange={(e) => setEmergencyContact(e.target.value)}
                     className="w-full px-4 py-3 rounded-2xl bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 text-gray-900 dark:text-white font-bold outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400"
                     placeholder="Name (Relation) - Phone"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Date of Birth</label>
+                  <input
+                    value={dob}
+                    onChange={(e) => setDob(e.target.value)}
+                    type="date"
+                    className="w-full px-4 py-3 rounded-2xl bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 text-gray-900 dark:text-white font-bold outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Allergies</label>
+                  <input
+                    value={allergies}
+                    onChange={(e) => setAllergies(e.target.value)}
+                    className="w-full px-4 py-3 rounded-2xl bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 text-gray-900 dark:text-white font-bold outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400"
+                    placeholder="None Reported"
                   />
                 </div>
               </div>
@@ -1930,16 +1955,59 @@ const EmployeeProfile = () => {
     designation: 'Senior Field Executive',
     team: 'Delta Team',
     status: 'On Duty',
-    email: 'person@trackforce.com',
-    phone: '+91 91234 56789',
-    location: 'Bengaluru, Karnataka',
-    address: 'Indiranagar, Bengaluru, KA',
-    gender: 'Male',
-    nationality: 'Indian',
-    bloodGroup: 'A+ Positive',
-    emergencyContact: 'Deepika (Sister) - 9876543210',
+    email: '',
+    phone: '',
+    location: '',
+    address: '',
+    gender: '',
+    nationality: '',
+    dob: '',
+    bloodGroup: '',
+    emergencyContact: '',
+    allergies: '',
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix'
   });
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const userInfo = JSON.parse(localStorage.getItem('user'));
+        if (!userInfo || !userInfo.token) return;
+        const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
+        const { data } = await axios.get('/api/auth/me', config);
+        setEmployee(prev => ({
+          ...prev,
+          name: data.name || prev.name,
+          email: data.email || prev.email,
+          phone: data.profile?.phone || prev.phone,
+          address: data.profile?.address || prev.address,
+          dob: data.profile?.dob || prev.dob,
+          gender: data.profile?.gender || prev.gender,
+          nationality: data.profile?.nationality || prev.nationality,
+          bloodGroup: data.profile?.bloodGroup || prev.bloodGroup,
+          emergencyContact: data.profile?.emergencyContact || prev.emergencyContact,
+          allergies: data.profile?.allergies || prev.allergies,
+          location: data.profile?.location || prev.location,
+        }));
+      } catch (err) {
+        console.error("Error fetching profile", err);
+      }
+    };
+    fetchProfile();
+  }, []);
+
+  const handleSaveProfile = async (updates) => {
+    try {
+      const userInfo = JSON.parse(localStorage.getItem('user'));
+      if (userInfo && userInfo.token) {
+        const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
+        await axios.put('/api/auth/profile', updates, config);
+      }
+      setEmployee(prev => ({ ...prev, ...updates }));
+    } catch (err) {
+      console.error("Failed to update profile", err);
+    }
+  };
 
   const tabs = [
     { id: 'personal', label: 'Profile Info', icon: User },
@@ -1990,14 +2058,14 @@ const EmployeeProfile = () => {
         isOpen={isEditProfileOpen}
         onClose={() => setIsEditProfileOpen(false)}
         employee={employee}
-        onSaveProfile={(updates) => setEmployee((prev) => ({ ...prev, ...updates }))}
+        onSaveProfile={handleSaveProfile}
       />
 
       <AccountSettingsPanel
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
         employee={employee}
-        onSaveProfile={(updates) => setEmployee((prev) => ({ ...prev, ...updates }))}
+        onSaveProfile={handleSaveProfile}
       />
 
       <ShareProfileModal
@@ -2027,7 +2095,7 @@ const EmployeeProfile = () => {
            setIsNavigationOpen(false);
            setIsEditProfileOpen(true);
         }}
-        onSaveProfile={(updates) => setEmployee((prev) => ({ ...prev, ...updates }))}
+        onSaveProfile={handleSaveProfile}
       />
 
       <PersonalInfoModal

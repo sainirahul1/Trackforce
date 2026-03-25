@@ -39,6 +39,13 @@ const userSchema = new mongoose.Schema({
     skills: [String],
     team: String,
     designation: String,
+    dob: String,
+    gender: String,
+    nationality: String,
+    bloodGroup: String,
+    emergencyContact: String,
+    allergies: String,
+    location: String,
   },
   isDeactivated: {
     type: Boolean,
