@@ -63,6 +63,9 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  lastLogoutAt: {
+    type: Date,
+  },
   createdAt: {
     type: Date,
     default: Date.now,

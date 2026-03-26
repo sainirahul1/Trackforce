@@ -7,7 +7,14 @@ const {
   getManagers, 
   createManager, 
   updateManager, 
-  deleteManager 
+  deleteManager,
+  getTenantSettings,
+  updateGeneralInfo,
+  updatePassword,
+  updateLocalization,
+  updateAccountPreferences,
+  requestDataExport,
+  signOutAllManagers
 } = require('../controllers/tenantController');
 const { protect } = require('../middleware/authMiddleware');
 const tenantMiddleware = require('../middleware/tenantMiddleware');
@@ -25,5 +32,14 @@ router.get('/managers', getManagers);
 router.post('/managers', createManager);
 router.put('/managers/:id', updateManager);
 router.delete('/managers/:id', deleteManager);
+
+// Settings routes
+router.get('/settings', getTenantSettings);
+router.put('/settings/general', updateGeneralInfo);
+router.put('/settings/password', updatePassword);
+router.put('/settings/localization', updateLocalization);
+router.put('/settings/account', updateAccountPreferences);
+router.post('/settings/signout-managers', signOutAllManagers);
+router.get('/settings/export', requestDataExport);
 
 module.exports = router;

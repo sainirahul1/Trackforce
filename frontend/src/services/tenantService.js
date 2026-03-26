@@ -80,6 +80,62 @@ export const deleteEmployee = async (id) => {
 };
 
 
+// Get tenant settings
+export const getSettings = async () => {
+  const response = await axios.get(`${API_URL}/settings`, {
+    headers: getAuthHeader(),
+  });
+  return response.data;
+};
+
+// Update General Info
+export const updateGeneralInfo = async (generalData) => {
+  const response = await axios.put(`${API_URL}/settings/general`, generalData, {
+    headers: getAuthHeader(),
+  });
+  return response.data;
+};
+
+// Update Password
+export const updatePassword = async (passwordData) => {
+  const response = await axios.put(`${API_URL}/settings/password`, passwordData, {
+    headers: getAuthHeader(),
+  });
+  return response.data;
+};
+
+// Update Localization
+export const updateLocalization = async (localizationData) => {
+  const response = await axios.put(`${API_URL}/settings/localization`, localizationData, {
+    headers: getAuthHeader(),
+  });
+  return response.data;
+};
+
+// Update Account Preferences
+export const updateAccountPreferences = async (accountData) => {
+  const response = await axios.put(`${API_URL}/settings/account`, accountData, {
+    headers: getAuthHeader(),
+  });
+  return response.data;
+};
+
+// Request Data Export
+export const requestDataExport = async () => {
+  const response = await axios.get(`${API_URL}/settings/export`, {
+    headers: getAuthHeader(),
+    responseType: 'blob',
+  });
+  return response.data;
+};
+
+// Sign out all managers
+export const signOutAllManagers = async () => {
+  const response = await axios.post(`${API_URL}/settings/signout-managers`, {}, {
+    headers: getAuthHeader(),
+  });
+  return response.data;
+};
 
 const tenantService = {
   getManagers,
@@ -91,6 +147,13 @@ const tenantService = {
   updateEmployee,
   deleteEmployee,
 
+  getSettings,
+  updateGeneralInfo,
+  updatePassword,
+  updateLocalization,
+  updateAccountPreferences,
+  requestDataExport,
+  signOutAllManagers,
 };
 
 export default tenantService;

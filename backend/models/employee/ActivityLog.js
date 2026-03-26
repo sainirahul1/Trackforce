@@ -13,8 +13,18 @@ const activityLogSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['login', 'logout', 'start_tracking', 'stop_tracking', 'visit_start', 'visit_end', 'order_placed'],
+    enum: [
+      'start_tracking', 'stop_tracking', 
+      'visit_start', 'visit_end', 
+      'order_placed', 'alert', 'route_deviation', 'task_assigned'
+    ],
     required: true,
+  },
+  title: String, // Optional human-readable title
+  status: {
+    type: String,
+    enum: ['success', 'warning', 'info', 'default', 'urgent'],
+    default: 'default'
   },
   details: String,
   metadata: {

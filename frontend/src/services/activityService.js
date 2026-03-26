@@ -1,4 +1,3 @@
-import { getAuthHeader } from './authService';
 
 const getBaseUrl = () => {
   let url = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
@@ -8,6 +7,28 @@ const getBaseUrl = () => {
 };
 const BASE_URL = getBaseUrl();
 const API_URL = `${BASE_URL}/activity`;
+const getAuthHeader = () => {
+    const user = JSON.parse(localStorage.getItem('user'));
+    return user && user.token ? { Authorization: `Bearer ${user.token}` } : {};
+};
+
+// Get all field executives for the sidebar
+export const getExecutives = async () => {
+  const response = await fetch(`${API_URL}/executives`, {
+    headers: getAuthHeader()
+  });
+  if (!response.ok) throw new Error('Failed to fetch executives');
+  return response.json();
+};
+
+// Get activity logs for a specific user ID
+export const getLogsByUser = async (userId) => {
+  const response = await fetch(`${API_URL}/user/${userId}`, {
+    headers: getAuthHeader()
+  });
+  if (!response.ok) throw new Error('Failed to fetch user logs');
+  return response.json();
+};
 
 export const getActivities = async () => {
   const response = await fetch(API_URL, {

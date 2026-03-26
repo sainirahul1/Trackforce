@@ -25,6 +25,12 @@ const protect = async (req, res, next) => {
         return res.status(401).json({ message: 'Not authorized, user not found' });
       }
 
+      // Check if session was invalidated (token issued before lastLogoutAt)
+      if (req.user.lastLogoutAt && decoded.iat * 1000 < new Date(req.user.lastLogoutAt).getTime()) {
+        console.log("Protect MW: Session invalidated by global logout");
+        return res.status(401).json({ message: 'Session invalidated, please login again' });
+      }
+
       return next();
     } catch (error) {
       console.error("Protect MW: Token verification failed:", error.message);
