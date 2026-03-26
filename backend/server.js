@@ -9,24 +9,33 @@ dotenv.config({ path: path.join(__dirname, '.env') });
 const app = express();
 
 // Middleware
-// Middleware
 const corsOptions = {
   origin: function (origin, callback) {
-    if (!origin || origin.includes('localhost') || origin.includes('127.0.0.1')) {
-      return callback(null, true);
+    // Allow if no origin (mobile, curl, etc.)
+    if (!origin) return callback(null, true);
+
+    const allowedOrigins = [
+      'http://localhost:5173',
+      'http://localhost:3000',
+      'http://localhost:5000',
+      'http://localhost:5001',
+      'http://127.0.0.1:5173',
+    ];
+
+    const isAllowedOrigin = allowedOrigins.includes(origin);
+    const isVercel = origin.endsWith('.vercel.app');
+    const isLocalhost = origin.includes('localhost') || origin.includes('127.0.0.1');
+    const isProdFrontend = process.env.FRONTEND_URL && origin.startsWith(process.env.FRONTEND_URL.replace(/\/$/, ''));
+
+    if (isAllowedOrigin || isVercel || isLocalhost || isProdFrontend) {
+      callback(null, true);
+    } else {
+      callback(null, false);
     }
-    // Allow any vercel.app subdomain (for branch/preview deploys)
-    if (origin.includes('.vercel.app')) {
-      return callback(null, true);
-    }
-    // Allow explicit FRONTEND_URL (strip trailing slash for comparison)
-    const allowed = process.env.FRONTEND_URL?.replace(/\/$/, '');
-    if (origin.replace(/\/$/, '') === allowed) {
-      return callback(null, true);
-    }
-    callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
   optionsSuccessStatus: 200
 };
 app.use(cors(corsOptions));
