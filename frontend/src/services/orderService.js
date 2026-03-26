@@ -10,6 +10,14 @@ export const getOrders = async () => {
   return response.json();
 };
 
+export const getOrderStats = async () => {
+  const response = await fetch(`${API_URL}/stats`, {
+    headers: getAuthHeader()
+  });
+  if (!response.ok) throw new Error('Failed to fetch order stats');
+  return response.json();
+};
+
 export const createOrderAPI = async (orderData) => {
   const response = await fetch(API_URL, {
     method: 'POST',
