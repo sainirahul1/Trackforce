@@ -8,7 +8,7 @@ const Profile = () => {
   
   const [profileData, setProfileData] = useState({
     name: 'Loading...',
-    role: 'Tenant Administrator',
+    role: 'Super Administrator',
     company: 'Loading...',
     location: '',
     email: '',
@@ -27,7 +27,7 @@ const Profile = () => {
         setProfileData(prev => ({
           ...prev,
           name: data.name || prev.name,
-          role: data.profile?.designation || (data.role === 'tenant' ? 'Tenant Administrator' : data.role),
+          role: data.profile?.designation || (data.role === 'superadmin' ? 'Super Administrator' : data.role),
           company: data.company || prev.company,
           email: data.email || prev.email,
           phone: data.profile?.phone || prev.phone,
@@ -186,11 +186,11 @@ const Profile = () => {
 
       <div className="space-y-8">
         <div className="bg-white dark:bg-gray-900 rounded-[2.5rem] p-8 border border-gray-100 dark:border-gray-800 shadow-sm space-y-6">
-          <h2 className="text-lg font-black text-gray-900 dark:text-white border-b border-gray-50 dark:border-gray-800 pb-4">Professional Details</h2>
+          <h2 className="text-lg font-black text-gray-900 dark:text-white border-b border-gray-50 dark:border-gray-800 pb-4">Platform Privileges & Details</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div className="space-y-1">
-              <label className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">Tenant ID</label>
-              <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl font-bold text-gray-800 dark:text-gray-200 border border-transparent truncate">#TNT-90210-TF</div>
+              <label className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">Superadmin UID</label>
+              <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl font-bold text-gray-800 dark:text-gray-200 border border-transparent truncate">SYS-ROOT-001</div>
             </div>
             <div className="space-y-1">
               <label className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">Join Date</label>
@@ -199,19 +199,19 @@ const Profile = () => {
               </div>
             </div>
             <div className="space-y-1">
-              <label className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">Workspace Region</label>
+              <label className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">Deployment Hub</label>
               <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl font-bold text-gray-800 dark:text-gray-200 truncate">
                 <MapPin size={16} className="text-gray-400 shrink-0" /> <span className="truncate">US East (N. Virginia)</span>
               </div>
             </div>
             <div className="space-y-1">
-              <label className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">Primary Access Node</label>
+              <label className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">Global Control Node</label>
               <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl font-bold text-gray-800 dark:text-gray-200 truncate">
                 <Building size={16} className="text-gray-400 shrink-0" /> <span className="truncate">Manhattan HQ Node</span>
               </div>
             </div>
             <div className="space-y-1">
-              <label className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">Tenant License Key</label>
+              <label className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">Master Access Key</label>
               <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl font-bold text-gray-800 dark:text-gray-200 truncate">
                 <Key size={16} className="text-gray-400 shrink-0" /> <span className="truncate">****-****-X9Y2</span>
               </div>
@@ -219,37 +219,37 @@ const Profile = () => {
             <div className="space-y-1">
               <label className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">Compliance Standard</label>
               <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl font-bold text-gray-800 dark:text-gray-200 truncate">
-                <ShieldCheck size={16} className="text-emerald-500 shrink-0" /> <span className="truncate">SOC 2 Type II</span>
+                <ShieldCheck size={16} className="text-emerald-500 shrink-0" /> <span className="truncate">SOC 2 Type II & ISO 27001</span>
               </div>
             </div>
           </div>
         </div>
 
         <div className="bg-white dark:bg-gray-900 rounded-[2.5rem] p-8 border border-gray-100 dark:border-gray-800 shadow-sm space-y-6">
-          <h2 className="text-lg font-black text-gray-900 dark:text-white border-b border-gray-50 dark:border-gray-800 pb-4">Tenant Workspace Information</h2>
+          <h2 className="text-lg font-black text-gray-900 dark:text-white border-b border-gray-50 dark:border-gray-800 pb-4">Platform Management Configuration</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <div className="space-y-1">
-              <label className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">Workspace Domain</label>
+              <label className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">Deployment Domain</label>
               <div className="flex items-center gap-3 p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-2xl font-bold text-indigo-700 dark:text-indigo-400 border border-transparent truncate">
-                <Globe size={16} className="shrink-0" /> <span className="truncate">trackforce.io</span>
+                <Globe size={16} className="shrink-0" /> <span className="truncate">admin.trackforce.io</span>
               </div>
             </div>
             <div className="space-y-1">
-              <label className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">Subscription Tier</label>
+              <label className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">Access Level</label>
               <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl font-bold text-gray-800 dark:text-gray-200 truncate">
-                <ShieldCheck size={16} className="text-emerald-500 shrink-0" /> <span className="truncate">Enterprise Plus</span>
+                <ShieldCheck size={16} className="text-emerald-500 shrink-0" /> <span className="truncate">System Administrator (Tier 0)</span>
               </div>
             </div>
             <div className="space-y-1">
-              <label className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">Total Licenses</label>
+              <label className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">System Nodes</label>
               <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl font-bold text-gray-800 dark:text-gray-200 truncate">
-                <Users size={16} className="text-gray-400 shrink-0" /> <span className="truncate">1,250 Active Users</span>
+                <Users size={16} className="text-gray-400 shrink-0" /> <span className="truncate">Global Infrastructure</span>
               </div>
             </div>
             <div className="space-y-1">
-              <label className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">Billing Cycle</label>
+              <label className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">Next Audit</label>
               <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl font-bold text-gray-800 dark:text-gray-200 truncate">
-                <Calendar size={16} className="text-gray-400 shrink-0" /> <span className="truncate">Renews Dec 31, 2026</span>
+                <Calendar size={16} className="text-gray-400 shrink-0" /> <span className="truncate">Dec 31, 2026</span>
               </div>
             </div>
           </div>

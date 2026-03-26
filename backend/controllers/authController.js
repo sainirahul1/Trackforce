@@ -121,10 +121,15 @@ exports.updateProfile = async (req, res) => {
 
     if (user) {
       user.name = req.body.name || user.name;
+      user.company = req.body.company !== undefined ? req.body.company : user.company;
+      if (req.body.email) {
+        user.email = req.body.email; // allow email update
+      }
 
       // Update nested profile properties
       user.profile = {
         ...user.profile,
+        designation: req.body.designation !== undefined ? req.body.designation : user.profile?.designation,
         phone: req.body.phone !== undefined ? req.body.phone : user.profile?.phone,
         address: req.body.address !== undefined ? req.body.address : user.profile?.address,
         dob: req.body.dob !== undefined ? req.body.dob : user.profile?.dob,
@@ -137,12 +142,14 @@ exports.updateProfile = async (req, res) => {
         department: req.body.department !== undefined ? req.body.department : user.profile?.department,
       };
 
+      user.markModified('profile');
       const updatedUser = await user.save();
 
       res.json({
         _id: updatedUser._id,
         name: updatedUser.name,
         email: updatedUser.email,
+        company: updatedUser.company,
         profile: updatedUser.profile
       });
     } else {
