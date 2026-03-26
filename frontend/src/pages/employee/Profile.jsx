@@ -1308,7 +1308,7 @@ const DocumentPreviewModal = ({ isOpen, onClose, document: docRecord }) => {
           <div className="flex items-center gap-2 sm:gap-3">
             {docRecord?.fileUrl && (
               <button
-                onClick={() => window.open(`http://localhost:5001${docRecord.fileUrl}`, '_blank')}
+                onClick={() => window.open(`${(import.meta.env.VITE_API_URL || 'http://localhost:5001/api').replace('/api', '')}${docRecord.fileUrl}`, '_blank')}
                 className="hidden sm:flex p-3 rounded-2xl bg-indigo-500 hover:bg-indigo-600 transition-all items-center gap-2 font-bold text-sm text-white border-none"
               >
                 <ExternalLink size={20} /> View Original
@@ -2341,8 +2341,9 @@ const EmployeeProfile = () => {
       try {
         const userInfo = JSON.parse(localStorage.getItem('user'));
         if (!userInfo || !userInfo.token) return;
+        const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
         const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
-        const { data } = await axios.get('/api/auth/me', config);
+        const { data } = await axios.get(`${BASE_URL}/auth/me`, config);
         setEmployee(prev => ({
           ...prev,
           name: data.name || prev.name,
@@ -2368,8 +2369,9 @@ const EmployeeProfile = () => {
     try {
       const userInfo = JSON.parse(localStorage.getItem('user'));
       if (userInfo && userInfo.token) {
+        const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
         const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
-        await axios.put('/api/auth/profile', updates, config);
+        await axios.put(`${BASE_URL}/auth/profile`, updates, config);
       }
       setEmployee(prev => ({ ...prev, ...updates }));
     } catch (err) {

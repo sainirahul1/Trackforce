@@ -611,7 +611,7 @@ const ManagerProfile = () => {
               >
                 {managerData.profileImage ? (
                   <img 
-                    src={managerData.profileImage.startsWith('data:') ? managerData.profileImage : `http://localhost:5001${managerData.profileImage}`} 
+                    src={managerData.profileImage.startsWith('data:') ? managerData.profileImage : `${(import.meta.env.VITE_API_URL || 'http://localhost:5001/api').replace('/api', '')}${managerData.profileImage}`} 
                     alt="Profile" 
                     className="w-full h-full object-cover" 
                   />

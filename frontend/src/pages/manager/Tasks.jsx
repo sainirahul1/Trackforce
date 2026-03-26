@@ -45,9 +45,10 @@ const ManagerTasks = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
+      const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
       const [fetchedTasks, fetchedEmployees] = await Promise.all([
         getTasks(),
-        fetch('http://localhost:5001/api/tenant/employees', {
+        fetch(`${BASE_URL}/tenant/employees`, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
           }

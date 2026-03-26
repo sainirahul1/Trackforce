@@ -9,8 +9,24 @@ dotenv.config({ path: path.join(__dirname, '.env') });
 const app = express();
 
 // Middleware
+// Middleware
 const corsOptions = {
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: function (origin, callback) {
+    if (!origin || origin.includes('localhost') || origin.includes('127.0.0.1')) {
+      return callback(null, true);
+    }
+    // Allow any vercel.app subdomain (for branch/preview deploys)
+    if (origin.includes('.vercel.app')) {
+      return callback(null, true);
+    }
+    // Allow explicit FRONTEND_URL (strip trailing slash for comparison)
+    const allowed = process.env.FRONTEND_URL?.replace(/\/$/, '');
+    if (origin.replace(/\/$/, '') === allowed) {
+      return callback(null, true);
+    }
+    callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true,
   optionsSuccessStatus: 200
 };
 app.use(cors(corsOptions));
