@@ -72,6 +72,15 @@ export const deleteEmployee = async (id) => {
   return response;
 };
 
+// Get Manager Dashboard Stats
+export const getManagerDashboardStats = async () => {
+  // Using the stats endpoint which is outside the /tenant controller but needs the auth header
+  const response = await axios.get('http://localhost:5001/api/stats/manager-dashboard', {
+    headers: getAuthHeader(),
+  });
+  return response.data;
+};
+
 const tenantService = {
   getManagers,
   createManager,
@@ -81,6 +90,7 @@ const tenantService = {
   createEmployee,
   updateEmployee,
   deleteEmployee,
+  getManagerDashboardStats,
 };
 
 export default tenantService;

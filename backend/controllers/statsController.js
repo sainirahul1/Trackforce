@@ -1,6 +1,8 @@
 const StoreVisit = require('../models/employee/StoreVisit');
 const Order = require('../models/employee/Order');
 const EmployeeDashboard = require('../models/employee/Dashboard');
+const User = require('../models/tenant/User');
+const ActivityLog = require('../models/employee/ActivityLog');
 
 /**
  * Compute Field Mastery Capabilities from the last 30 days of store visits.
@@ -147,6 +149,73 @@ exports.getDashboardStats = async (req, res) => {
       revenueData: { weeklyData, totalWeekly },
       capabilities: dashSettings.capabilities,
       nextTarget
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.getManagerDashboardStats = async (req, res) => {
+  try {
+    const tenantId = req.tenantId;
+    const today = new Date();
+    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+
+    // 1. Total Revenue (This Month)
+    const ordersThisMonth = await Order.find({
+      tenant: tenantId,
+      createdAt: { $gte: startOfMonth }
+    }).select('totalAmount');
+    
+    const totalRevenue = ordersThisMonth.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
+    
+    // We could calculate last month's revenue for a trend, but for now we'll just return the total
+    const formattedRevenue = `₹${totalRevenue > 100000 ? (totalRevenue / 100000).toFixed(1) + 'L' : totalRevenue}`;
+
+    // 2. Active Fleet
+    const employees = await User.find({ role: 'employee', tenant: tenantId });
+    const totalFleet = employees.length;
+    // Active fleet is those 'On Duty' or actively tracking
+    const activeFleet = employees.filter(emp => emp.status === 'On Duty' || emp.isTracking).length;
+
+    // 3. Success Rate (This Month)
+    const visitsThisMonth = await StoreVisit.find({
+      tenant: tenantId,
+      createdAt: { $gte: startOfMonth }
+    }).select('status');
+    const totalVisits = visitsThisMonth.length;
+    const completedVisits = visitsThisMonth.filter(v => v.status === 'completed').length;
+    const successRate = totalVisits > 0 ? Math.round((completedVisits / totalVisits) * 100) : 0;
+
+    // 4. Critical Updates / System Logs
+    const criticalUpdatesRaw = await ActivityLog.find({ tenant: tenantId })
+      .sort({ timestamp: -1 })
+      .limit(5)
+      .populate('user', 'name');
+
+    const criticalUpdates = criticalUpdatesRaw.map((log, index) => {
+      let type = 'info';
+      if (log.type === 'start_tracking' || log.type === 'visit_start') type = 'success';
+      else if (log.type === 'stop_tracking' || log.type === 'logout') type = 'alert';
+
+      return {
+        id: log._id || index,
+        type: type, // 'alert', 'success', 'info'
+        message: `${log.user ? log.user.name : 'Unknown User'}: ${log.type.replace('_', ' ')}`,
+        time: log.timestamp,
+        logType: log.type
+      };
+    });
+
+    res.json({
+      totalRevenue: formattedRevenue,
+      revenueRaw: totalRevenue,
+      activeFleet: `${activeFleet}/${totalFleet}`,
+      fleetActiveCount: activeFleet,
+      fleetTotalCount: totalFleet,
+      successRate: `${successRate}%`,
+      successRateRaw: successRate,
+      criticalUpdates
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
