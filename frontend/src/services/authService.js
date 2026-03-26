@@ -71,7 +71,51 @@ export const getMe = async () => {
   return data;
 };
 
+export const updateProfile = async (userData) => {
+  const response = await fetch(`${API_URL}/profile`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      ...getAuthHeader(),
+    },
+    body: JSON.stringify(userData),
+  });
+
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.message || 'Failed to update profile');
+  return data;
+};
+
+export const uploadProfileImage = async (formData) => {
+  const response = await fetch(`${API_URL}/profile-image`, {
+    method: 'PUT',
+    headers: {
+      ...getAuthHeader(),
+    },
+    body: formData,
+  });
+
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.message || 'Failed to upload profile image');
+  return data;
+};
+
 export const getAuthHeader = () => {
   const token = localStorage.getItem('token');
   return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
+export const updatePassword = async (passwordData) => {
+  const response = await fetch(`${API_URL}/update-password`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      ...getAuthHeader(),
+    },
+    body: JSON.stringify(passwordData),
+  });
+
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.message || 'Failed to update password');
+  return data;
 };
