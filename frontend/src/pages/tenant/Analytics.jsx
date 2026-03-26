@@ -16,6 +16,8 @@ import {
   ArrowDownRight,
   ChevronDown,
   ChevronUp,
+  ChevronLeft,
+  ChevronRight,
   Info,
   Layers,
   MousePointer2,
@@ -39,6 +41,7 @@ import {
 import { Line } from 'react-chartjs-2';
 import DashboardCard from '../../components/DashboardCard';
 import DataTable from '../../components/DataTable';
+import { getManagers } from '../../services/tenantService';
 
 ChartJS.register(
   CategoryScale,
@@ -60,6 +63,33 @@ const Analytics = () => {
   const [timeRange, setTimeRange] = useState('Last Quarter');
   const [showTimeRangeDropdown, setShowTimeRangeDropdown] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+
+  // New states for real-time data and pagination
+  const [managers, setManagers] = useState([]);
+  const [isLoadingManagers, setIsLoadingManagers] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(5);
+
+  React.useEffect(() => {
+    const fetchManagers = async () => {
+      try {
+        setIsLoadingManagers(true);
+        const data = await getManagers();
+        setManagers(data);
+      } catch (error) {
+        console.error('Error fetching managers:', error);
+      } finally {
+        setIsLoadingManagers(false);
+      }
+    };
+    fetchManagers();
+  }, []);
+
+  const totalPages = Math.ceil(managers.length / itemsPerPage);
+  const paginatedManagers = managers.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   const handleDownloadReport = () => {
     if (isDownloading) return;
@@ -132,13 +162,7 @@ const Analytics = () => {
     },
   };
 
-  // Mock Data
-  const managerPerformance = [
-    { id: 1, name: 'Alex Johnson', team: 'Field Sales A', targets: '92%', rating: 4.8, status: 'Top Performer' },
-    { id: 2, name: 'Sarah Williams', team: 'Operations East', targets: '88%', rating: 4.5, status: 'On Track' },
-    { id: 3, name: 'Michael Chen', team: 'Direct Marketing', targets: '75%', rating: 3.9, status: 'Under Review' },
-    { id: 4, name: 'Emma Davis', team: 'Field Sales B', targets: '95%', rating: 4.9, status: 'Top Performer' },
-  ];
+  // Manager columns definition moved below state
 
   const managerColumns = [
     { header: 'Manager', accessor: 'name', render: (row) => (
@@ -149,29 +173,21 @@ const Analytics = () => {
         <span className="font-bold">{row.name}</span>
       </div>
     )},
-    { header: 'Team', accessor: 'team' },
-    { header: 'Goal Attain.', accessor: 'targets' },
-    { header: 'Rating', accessor: 'rating', render: (row) => (
-      <div className="flex items-center gap-1 text-amber-500">
-        <Trophy size={14} />
-        <span>{row.rating}</span>
-      </div>
+    { header: 'Organization', accessor: 'company', render: (row) => (
+      <span className="font-bold text-indigo-600 dark:text-indigo-400">{row.company}</span>
     )},
+    { header: 'Team', accessor: 'profile', render: (row) => row.profile?.team || 'N/A' },
+    { header: 'Designation', accessor: 'profile', render: (row) => row.profile?.designation || 'N/A' },
     { header: 'Status', accessor: 'status', render: (row) => (
       <span className={`px-2 py-1 rounded-lg text-[10px] font-black uppercase ${
-        row.status === 'Top Performer' ? 'bg-emerald-100 text-emerald-600' : 
-        row.status === 'Under Review' ? 'bg-rose-100 text-rose-600' : 'bg-blue-100 text-blue-600'
+        row.status === 'Active' ? 'bg-emerald-100 text-emerald-600' : 
+        row.status === 'Inactive' ? 'bg-rose-100 text-rose-600' : 'bg-blue-100 text-blue-600'
       }`}>
         {row.status}
       </span>
     )},
   ];
 
-  const risks = [
-    { title: 'Delayed Shipments', impact: 'High', zone: 'North Region', icon: AlertTriangle, color: 'text-rose-500', details: '3 shipments stuck in transit due to weather. ETA +48h.' },
-    { title: 'Resource Shortage', impact: 'Medium', zone: 'West Coast', icon: Activity, color: 'text-amber-500', details: '2 field executives on leave. Regional backup requested.' },
-    { title: 'Compliance Gap', impact: 'High', zone: 'All Zones', icon: AlertTriangle, color: 'text-rose-500', details: 'Quarterly safety training pending for 15% of staff.' },
-  ];
 
   const overviewMetrics = [
     { 
@@ -335,10 +351,10 @@ const Analytics = () => {
               <div>
                 <h2 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">{manager.name}</h2>
                 <div className="flex items-center gap-3 mt-1.5">
-                  <span className="text-sm font-bold text-indigo-600 uppercase tracking-widest">{manager.team}</span>
+                  <span className="text-sm font-bold text-indigo-600 uppercase tracking-widest">{manager.company}</span>
                   <span className={`px-2 py-0.5 rounded-lg text-[10px] font-black uppercase ${
-                    manager.status === 'Top Performer' ? 'bg-emerald-100 text-emerald-600' : 
-                    manager.status === 'Under Review' ? 'bg-rose-100 text-rose-600' : 'bg-blue-100 text-blue-600'
+                    manager.status === 'Active' ? 'bg-emerald-100 text-emerald-600' : 
+                    manager.status === 'Inactive' ? 'bg-rose-100 text-rose-600' : 'bg-blue-100 text-blue-600'
                   }`}>
                     {manager.status}
                   </span>
@@ -357,24 +373,24 @@ const Analytics = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
               <div className="bg-white dark:bg-gray-800 p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700">
                 <div className="flex items-center gap-3 mb-4 text-emerald-600">
-                  <Trophy size={20} />
-                  <span className="text-xs font-bold uppercase tracking-widest text-gray-400">Rating</span>
+                  <Briefcase size={20} />
+                  <span className="text-xs font-bold uppercase tracking-widest text-gray-400">Designation</span>
                 </div>
-                <p className="text-3xl font-black text-gray-900 dark:text-white">{manager.rating}<span className="text-lg text-gray-400">/5.0</span></p>
+                <p className="text-xl font-black text-gray-900 dark:text-white">{manager.profile?.designation || 'N/A'}</p>
               </div>
               <div className="bg-white dark:bg-gray-800 p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700">
                 <div className="flex items-center gap-3 mb-4 text-indigo-600">
-                  <Target size={20} />
-                  <span className="text-xs font-bold uppercase tracking-widest text-gray-400">Attainment</span>
+                  <Users size={20} />
+                  <span className="text-xs font-bold uppercase tracking-widest text-gray-400">Team</span>
                 </div>
-                <p className="text-3xl font-black text-gray-900 dark:text-white">{manager.targets}</p>
+                <p className="text-xl font-black text-gray-900 dark:text-white">{manager.profile?.team || 'N/A'}</p>
               </div>
               <div className="bg-white dark:bg-gray-800 p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700">
                 <div className="flex items-center gap-3 mb-4 text-blue-600">
-                  <Users size={20} />
-                  <span className="text-xs font-bold uppercase tracking-widest text-gray-400">Team Size</span>
+                  <Calendar size={20} />
+                  <span className="text-xs font-bold uppercase tracking-widest text-gray-400">Joined</span>
                 </div>
-                <p className="text-3xl font-black text-gray-900 dark:text-white">24<span className="text-sm tracking-normal font-medium text-gray-400 block mt-1">Active Members</span></p>
+                <p className="text-xl font-black text-gray-900 dark:text-white">{new Date(manager.createdAt).toLocaleDateString()}</p>
               </div>
             </div>
 
@@ -629,68 +645,64 @@ const Analytics = () => {
         </div>
       </div>
 
-      {/* Manager Performance & Risk Analysis */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Manager Performance Analysis */}
+      {/* Manager Performance Analysis - Expanded */}
+      <div className="grid grid-cols-1 gap-6">
         <div className="bg-white dark:bg-gray-900 p-8 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm flex flex-col">
           <div className="flex items-center justify-between mb-6">
             <div className="space-y-1">
               <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
                 Manager Performance Analysis
               </h3>
-              <p className="text-xs text-gray-400 font-medium">Individual leadership efficiency metrics</p>
+              <p className="text-xs text-gray-400 font-medium">Individual leadership efficiency metrics and organization details</p>
             </div>
-            <button className="text-indigo-600 text-xs font-black uppercase tracking-widest hover:underline">View All</button>
+            <div className="flex items-center gap-2">
+              <span className="px-3 py-1 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 rounded-lg text-[10px] font-black uppercase">
+                {managers.length} Total Managers
+              </span>
+            </div>
           </div>
           
-          <DataTable columns={managerColumns} data={managerPerformance} onRowClick={(row) => setSelectedManager(row)} />
-        </div>
+          <DataTable 
+            columns={managerColumns} 
+            data={paginatedManagers} 
+            isLoading={isLoadingManagers}
+            onRowClick={(row) => setSelectedManager(row)} 
+          />
 
-        {/* Exception and Risk Analysis */}
-        <div className="bg-white dark:bg-gray-900 p-8 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm">
-          <div className="flex items-center justify-between mb-6">
-            <div className="space-y-1">
-              <h3 className="font-bold text-gray-900 dark:text-white">Exception & Risk Analysis</h3>
-              <p className="text-xs text-gray-400 font-medium">Operational flags and risk assessment</p>
-            </div>
-            <span className="px-3 py-1 bg-rose-50 dark:bg-rose-900/20 text-rose-600 rounded-lg text-[10px] font-black uppercase">3 Active Issues</span>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4">
-            {risks.map((risk, i) => (
-              <div 
-                key={i} 
-                className={`flex flex-col p-4 rounded-2xl border border-gray-100 dark:border-gray-800 hover:border-indigo-500 transition-all group`}
+          {/* Pagination Controls */}
+          <div className="mt-8 flex items-center justify-between pt-6 border-t border-gray-50 dark:border-gray-800">
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+              Showing {Math.min(managers.length, (currentPage - 1) * itemsPerPage + 1)} to {Math.min(managers.length, currentPage * itemsPerPage)} of {managers.length}
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+                className="p-2 border border-gray-100 dark:border-gray-800 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-30 transition-all"
               >
-                <div className="flex items-center justify-between w-full">
-                  <div className="flex items-center gap-4">
-                    <div className={`w-12 h-12 rounded-xl bg-gray-50 dark:bg-gray-800 flex items-center justify-center ${risk.color} group-hover:scale-110 transition-transform`}>
-                      <risk.icon size={24} />
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-gray-900 dark:text-white">{risk.title}</h4>
-                      <p className="text-xs text-gray-400 font-medium">{risk.zone}</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className={`text-xs font-black uppercase tracking-widest ${risk.impact === 'High' ? 'text-rose-600' : 'text-amber-600'}`}>{risk.impact} Impact</p>
-                    <p className="text-[10px] text-gray-400 font-bold uppercase">Priority</p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-8 p-6 bg-gradient-to-br from-indigo-600 to-indigo-700 rounded-3xl text-white relative overflow-hidden group">
-            <div className="relative z-10 flex items-center justify-between">
-              <div className="space-y-1">
-                <p className="text-sm font-bold opacity-80 uppercase tracking-widest">System Health</p>
-                <h3 className="text-3xl font-black">94.8%</h3>
-                <p className="text-xs font-medium opacity-80">All operations within safe threshold</p>
-              </div>
-              <Activity size={40} className="opacity-20 group-hover:scale-125 transition-transform duration-500" />
+                <ChevronLeft size={18} />
+              </button>
+              {[...Array(totalPages)].map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setCurrentPage(i + 1)}
+                  className={`w-8 h-8 rounded-xl text-xs font-black transition-all ${
+                    currentPage === i + 1 
+                      ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200' 
+                      : 'text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'
+                  }`}
+                >
+                  {i + 1}
+                </button>
+              ))}
+              <button
+                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                disabled={currentPage === totalPages || totalPages === 0}
+                className="p-2 border border-gray-100 dark:border-gray-800 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-30 transition-all"
+              >
+                <ChevronRight size={18} />
+              </button>
             </div>
-            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-white/20 transition-all duration-500"></div>
           </div>
         </div>
       </div>
