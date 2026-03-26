@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { login } from '../../services/authService';
 import { ShieldCheck, Lock, Mail, ChevronRight, Loader2 } from 'lucide-react';
@@ -31,23 +31,30 @@ const LoginPage = () => {
     { label: 'Select Test Account', email: '', password: '' },
     { label: 'Super Admin', email: 'superadmin@trackforce.com', password: 'admin123' },
 
-    { label: '--- ReatchAll ---', email: '', password: '' },
-    { label: 'ReatchAll Tenant', email: 'admin@reatchall.com', password: 'password123' },
-    { label: 'ReatchAll Manager', email: 'manager@reatchall.com', password: 'password123' },
-    { label: 'ReatchAll Employee 1', email: 'employee@reatchall.com', password: 'password123' },
-    { label: 'ReatchAll Employee 2', email: 'employee2@reatchall.com', password: 'password123' },
-    { label: 'ReatchAll Employee 3', email: 'employee3@reatchall.com', password: 'password123' },
-    { label: 'ReatchAll Employee 4', email: 'employee4@reatchall.com', password: 'password123' },
+    { label: '--- ReatchAll (Org) ---', email: '', password: '' },
+    { label: 'RA Tenant', email: 'admin@reatchall.com', password: 'password123' },
+    { label: 'RA Mgr 1', email: 'manager1@reatchall.com', password: 'password123' },
+    { label: 'RA Mgr 2', email: 'manager2@reatchall.com', password: 'password123' },
+    { label: 'RA Mgr 3', email: 'manager3@reatchall.com', password: 'password123' },
+    { label: 'RA Emp 1', email: 'employee1@reatchall.com', password: 'password123' },
+    { label: 'RA Emp 2', email: 'employee2@reatchall.com', password: 'password123' },
+    { label: 'RA Emp 3', email: 'employee3@reatchall.com', password: 'password123' },
 
-    { label: '--- MetaLogistics ---', email: '', password: '' },
-    { label: 'MetaLogistics Tenant', email: 'admin@metalogistics.com', password: 'password123' },
-    { label: 'MetaLogistics Manager', email: 'manager@metalogistics.com', password: 'password123' },
-    { label: 'MetaLogistics Employee', email: 'employee@metalogistics.com', password: 'password123' },
+    { label: '--- TechFlow ---', email: '', password: '' },
+    { label: 'TF Manager', email: 'manager@techflow.com', password: 'password123' },
+    { label: 'TF Employee', email: 'field@techflow.com', password: 'password123' },
 
-    { label: '--- SwiftDelivery ---', email: '', password: '' },
-    { label: 'SwiftDelivery Tenant', email: 'admin@swiftdelivery.com', password: 'password123' },
-    { label: 'SwiftDelivery Manager', email: 'manager@swiftdelivery.com', password: 'password123' },
-    { label: 'SwiftDelivery Employee', email: 'employee@swiftdelivery.com', password: 'password123' },
+    { label: '--- Global Logistics ---', email: '', password: '' },
+    { label: 'GL Manager', email: 'manager@glg.com', password: 'password123' },
+    { label: 'GL Employee', email: 'field@glg.com', password: 'password123' },
+
+    { label: '--- Retail Pulse ---', email: '', password: '' },
+    { label: 'RP Manager', email: 'manager@retailpulse.com', password: 'password123' },
+    { label: 'RP Employee', email: 'field@retailpulse.com', password: 'password123' },
+
+    { label: '--- EcoEnergy ---', email: '', password: '' },
+    { label: 'EE Manager', email: 'manager@ecoenergy.com', password: 'password123' },
+    { label: 'EE Employee', email: 'field@ecoenergy.com', password: 'password123' },
   ];
 
   const handleQuickLogin = (e) => {

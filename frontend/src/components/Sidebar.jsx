@@ -28,12 +28,12 @@ const Sidebar = ({ role, user, isCollapsed, onToggle }) => {
       { name: 'Settings', icon: Settings, path: '/tenant/settings' },
     ],
     manager: [
-      { name: 'Dashboard', icon: LayoutDashboard, path: '/manager/dashboard' },
+      { name: 'Dashboard', icon: LayoutDashboard, path: '/manager/analytics' },
       { name: 'Live Tracking', icon: Map, path: '/manager/live' },
       { name: 'Mission Board', icon: ClipboardList, path: '/manager/tasks' },
       { name: 'Visits', icon: Camera, path: '/manager/visits' },
       { name: 'Inventory/Orders', icon: ShoppingBag, path: '/manager/inventory' },
-      { name: 'Analytics', icon: Activity, path: '/manager/analytics' },
+      // { name: 'Analytics', icon: Activity, path: '/manager/analytics' },
       { name: 'Team', icon: Users, path: '/manager/team' },
       { name: 'Activity Log', icon: Clock, path: '/manager/activity' },
       { name: 'Profile', icon: User, path: '/manager/profile' },
@@ -74,8 +74,8 @@ const Sidebar = ({ role, user, isCollapsed, onToggle }) => {
             key={item.path}
             to={item.path}
             className={({ isActive }) => `flex items-center ${isCollapsed ? 'justify-center' : 'space-x-3 px-4'} py-3 rounded-2xl font-bold text-sm transition-all relative group ${isActive
-                ? 'bg-indigo-50 text-indigo-600 shadow-inner dark:bg-indigo-900/20'
-                : 'text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
+              ? 'bg-indigo-50 text-indigo-600 shadow-inner dark:bg-indigo-900/20'
+              : 'text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
               }`}
           >
             <item.icon size={20} className={isCollapsed ? 'shrink-0' : ''} />

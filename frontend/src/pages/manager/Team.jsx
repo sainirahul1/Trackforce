@@ -211,10 +211,10 @@ const TeamPrintLayout = ({ stats, members }) => (
       {/* 5. Authentication & Compliance */}
       <section className="grid grid-cols-2 gap-8">
         <div className="bg-gray-50/50 p-8 rounded-[2rem] border border-dashed border-gray-300">
-           <p className="flex items-center gap-2 mb-4 font-black text-gray-400 uppercase tracking-widest text-[10px]"><Activity size={12} /> System Status</p>
-           <p className="text-xs text-gray-600 font-medium leading-relaxed">
-             All listed personnel are verified through biometric check-ins and GPS-stamped site visits. This registry is synchronized in real-time with hub operations.
-           </p>
+          <p className="flex items-center gap-2 mb-4 font-black text-gray-400 uppercase tracking-widest text-[10px]"><Activity size={12} /> System Status</p>
+          <p className="text-xs text-gray-600 font-medium leading-relaxed">
+            All listed personnel are verified through biometric check-ins and GPS-stamped site visits. This registry is synchronized in real-time with hub operations.
+          </p>
         </div>
         <div className="flex flex-col justify-end items-end gap-2 text-right opacity-30">
           <p className="text-[9px] font-bold uppercase tracking-widest">Digital Authentication</p>
@@ -226,7 +226,7 @@ const TeamPrintLayout = ({ stats, members }) => (
 
     {/* Footer */}
     <div className="mt-16 pt-8 border-t border-gray-100 text-center">
-       <p className="text-[9px] font-black uppercase tracking-[0.4em] text-gray-300">Internal Administration • Confidential Documentation</p>
+      <p className="text-[9px] font-black uppercase tracking-[0.4em] text-gray-300">Internal Administration • Confidential Documentation</p>
     </div>
   </div>
 );
@@ -242,6 +242,14 @@ const ManagerTeam = () => {
     { label: 'Low Performers', value: '0', unit: 'Members', icon: AlertTriangle, color: 'text-red-600', bg: 'bg-red-50', progress: 0, barColor: 'bg-red-500' },
   ]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [searchTerm, setSearchTerm] = useState('');
+  const itemsPerPage = 7;
+
+  // Reset page on search
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
 
   // Modal & Edit states
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -328,7 +336,7 @@ const ManagerTeam = () => {
 
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        
+
         const todayVisits = visitsResponse.filter(visit => {
           const visitDate = new Date(visit.createdAt || visit.timestamp);
           return visitDate >= today;
@@ -338,7 +346,7 @@ const ManagerTeam = () => {
           const empVisits = todayVisits.filter(v => v.employee && typeof v.employee === 'object' ? v.employee._id === emp._id : v.employee === emp._id).length;
           // Extract zone name from profile or fallback
           const zoneName = emp.profile && (emp.profile.zone || emp.profile.team) ? (emp.profile.zone || emp.profile.team) : 'Unassigned';
-          
+
           return {
             id: emp._id,
             name: emp.name,
@@ -374,42 +382,42 @@ const ManagerTeam = () => {
         const lowPerformersCount = formattedMembers.filter(m => m.visitsToday < 4).length;
 
         setStats([
-          { 
-            label: 'Active Members', 
-            value: `${activeCount}/${formattedMembers.length}`, 
+          {
+            label: 'Active Members',
+            value: `${activeCount}/${formattedMembers.length}`,
             unit: 'Active',
-            icon: Users, 
-            color: 'text-blue-600', 
+            icon: Users,
+            color: 'text-blue-600',
             bg: 'bg-blue-50',
             progress: formattedMembers.length > 0 ? Math.round((activeCount / formattedMembers.length) * 100) : 0,
             barColor: 'bg-blue-500'
           },
-          { 
-            label: 'Target Achievement', 
-            value: `${targetPercent}%`, 
+          {
+            label: 'Target Achievement',
+            value: `${targetPercent}%`,
             unit: 'Achieved',
-            icon: CheckCircle2, 
-            color: 'text-emerald-600', 
+            icon: CheckCircle2,
+            color: 'text-emerald-600',
             bg: 'bg-emerald-50',
             progress: Math.min(targetPercent, 100),
             barColor: 'bg-emerald-500'
           },
-          { 
-            label: 'Avg. Visits per Employee', 
-            value: avgVisits, 
+          {
+            label: 'Avg. Visits per Employee',
+            value: avgVisits,
             unit: 'per person',
-            icon: BarChart3, 
-            color: 'text-purple-600', 
+            icon: BarChart3,
+            color: 'text-purple-600',
             bg: 'bg-purple-50',
             progress: Math.min(Math.round((parseFloat(avgVisits) / 8) * 100), 100),
             barColor: 'bg-purple-500'
           },
-          { 
-            label: 'Low Performers', 
-            value: lowPerformersCount.toString(), 
+          {
+            label: 'Low Performers',
+            value: lowPerformersCount.toString(),
             unit: 'Members',
-            icon: AlertTriangle, 
-            color: 'text-red-600', 
+            icon: AlertTriangle,
+            color: 'text-red-600',
             bg: 'bg-red-50',
             progress: formattedMembers.length > 0 ? Math.round((lowPerformersCount / formattedMembers.length) * 100) : 0,
             barColor: 'bg-red-500'
@@ -426,8 +434,8 @@ const ManagerTeam = () => {
   }, []);
 
   const columns = [
-    { 
-      header: 'Member', 
+    {
+      header: 'Member',
       accessor: 'name',
       render: (row) => (
         <div className="flex items-center space-x-3">
@@ -439,8 +447,8 @@ const ManagerTeam = () => {
         </div>
       )
     },
-    { 
-      header: 'Zone', 
+    {
+      header: 'Zone',
       accessor: 'zone',
       render: (row) => (
         <span className="text-sm font-semibold text-gray-700 bg-gray-50 px-3 py-1 rounded-lg">
@@ -448,14 +456,13 @@ const ManagerTeam = () => {
         </span>
       )
     },
-    { 
-      header: 'Status', 
+    {
+      header: 'Status',
       accessor: 'status',
       render: (row) => (
-        <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
-          row.status === 'On Duty' ? 'bg-green-100 text-green-700' : 
-          row.status === 'Off Duty' ? 'bg-gray-100 text-gray-700' : 'bg-orange-100 text-orange-700'
-        }`}>
+        <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${row.status === 'On Duty' ? 'bg-green-100 text-green-700' :
+            row.status === 'Off Duty' ? 'bg-gray-100 text-gray-700' : 'bg-orange-100 text-orange-700'
+          }`}>
           {row.status}
         </span>
       )
@@ -471,8 +478,8 @@ const ManagerTeam = () => {
               <span>Target: 8</span>
             </div>
             <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-blue-500 rounded-full" 
+              <div
+                className="h-full bg-blue-500 rounded-full"
                 style={{ width: `${(row.visitsToday / 8) * 100}%` }}
               />
             </div>
@@ -649,7 +656,7 @@ const ManagerTeam = () => {
           {activeTab === 'personal' && (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2 bg-white dark:bg-gray-900 p-8 rounded-[2rem] border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-md transition-all">
-                 <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-2 mb-8">
+                <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-2 mb-8">
                   <User size={14} className="text-blue-500" />
                   Personal Information
                 </h3>
@@ -714,7 +721,7 @@ const ManagerTeam = () => {
           {activeTab === 'employment' && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div className="bg-white dark:bg-gray-900 p-8 rounded-[2rem] border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-md transition-all">
-                 <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-2 mb-8">
+                <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-2 mb-8">
                   <Building2 size={14} className="text-blue-500" />
                   Employment Details
                 </h3>
@@ -770,8 +777,8 @@ const ManagerTeam = () => {
           {activeTab === 'documents' && (
             <div className="bg-white dark:bg-gray-900 p-8 rounded-[2rem] border border-gray-100 dark:border-gray-800 shadow-sm">
               <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-2 mb-8">
-                 <FileSignature size={14} className="text-indigo-500" />
-                 Verified Credentials & Documents
+                <FileSignature size={14} className="text-indigo-500" />
+                Verified Credentials & Documents
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {[
@@ -813,9 +820,9 @@ const ManagerTeam = () => {
 
           {activeTab === 'activities' && (
             <div className="bg-white dark:bg-gray-900 p-8 lg:p-10 rounded-[2rem] border border-gray-100 dark:border-gray-800 shadow-sm max-w-3xl mx-auto">
-               <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-2 mb-8">
-                 <Activity size={14} className="text-indigo-500" />
-                 Recent Timeline
+              <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-2 mb-8">
+                <Activity size={14} className="text-indigo-500" />
+                Recent Timeline
               </h3>
               <div className="space-y-6 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-gray-200 dark:before:via-gray-800 before:to-transparent">
                 {[
@@ -833,7 +840,7 @@ const ManagerTeam = () => {
                       </div>
                       <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-3">{act.desc}</p>
                       <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 flex items-center gap-1.5 opacity-60">
-                         <Clock size={10} /> {act.time}
+                        <Clock size={10} /> {act.time}
                       </span>
                     </div>
                   </div>
@@ -869,47 +876,51 @@ const ManagerTeam = () => {
                   </div>
                 )}
               </div>
-              
+
               <div className="space-y-3">
                 <div className="flex items-baseline space-x-1">
                   <p className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">{stat.value}</p>
                   <p className="text-sm font-bold text-gray-400">{stat.unit}</p>
                 </div>
-                
+
                 <div className="w-full h-1.5 bg-gray-50 dark:bg-gray-800 rounded-full overflow-hidden">
-                  <div 
+                  <div
                     className={`h-full ${stat.barColor} rounded-full transition-all duration-1000 ease-out`}
                     style={{ width: `${stat.progress}%` }}
                   />
                 </div>
-                
+
                 <p className="text-sm font-bold text-gray-500 dark:text-gray-400 tracking-wide uppercase">{stat.label}</p>
               </div>
             </div>
           ))}
-        </div>
-
-        <div className="bg-white dark:bg-gray-900 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
+        </div>        <div className="bg-white dark:bg-gray-900 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 shadow-xl shadow-gray-200/20 dark:shadow-none overflow-hidden relative">
           <div className="p-8 border-b border-gray-50 dark:border-gray-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500" size={20} />
-              <input 
-                type="text" 
-                placeholder="Search team members..." 
-                className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500/10 outline-none transition-all font-semibold"
+            <div>
+              <h2 className="text-xl font-black text-gray-900 dark:text-white tracking-tight">Personnel Registry</h2>
+              <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mt-1">Total Members: {teamMembers.length}</p>
+            </div>
+            <div className="relative group min-w-[300px]">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-500 transition-colors" size={18} />
+               <input
+                type="text"
+                placeholder="Search by name, zone or designation..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl text-sm font-bold text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500/10 outline-none transition-all placeholder:text-gray-400 dark:placeholder:text-gray-600"
               />
             </div>
             <div className="flex items-center space-x-3">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={handleExportReport}
                 className="flex items-center space-x-2 border-gray-200 dark:border-gray-700 dark:text-gray-100 bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl px-6 py-2.5 group"
               >
                 <Download size={18} className="group-hover:translate-y-0.5 transition-transform" />
                 <span className="font-bold hidden sm:inline">Export Report</span>
               </Button>
-              <Button 
-                variant="tenant" 
+              <Button
+                variant="tenant"
                 onClick={() => setIsModalOpen(true)}
                 className="flex items-center space-x-2 bg-indigo-600 text-white shadow-lg shadow-indigo-200 dark:shadow-none hover:bg-indigo-700 rounded-xl px-6 py-2.5 group"
               >
@@ -918,12 +929,63 @@ const ManagerTeam = () => {
               </Button>
             </div>
           </div>
-          <div className="px-2">
-            <DataTable 
-              columns={columns} 
-              data={teamMembers} 
-              onRowClick={(row) => setSelectedEmployee(row)}
-            />
+          <div className="p-4">
+            {(() => {
+              const filteredData = teamMembers.filter(m =>
+                m.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                m.zone.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                m.designation.toLowerCase().includes(searchTerm.toLowerCase())
+              );
+              const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+              const startIndex = (currentPage - 1) * itemsPerPage;
+              const paginatedData = filteredData.slice(startIndex, startIndex + itemsPerPage);
+
+              return (
+                <>
+                  <DataTable
+                    columns={columns}
+                    data={paginatedData}
+                    onRowClick={(row) => setSelectedEmployee(row)}
+                  />
+
+                  {/* Pagination Footer */}
+                  {totalPages > 1 && (
+                    <div className="flex items-center justify-center gap-2 mt-8 pb-4">
+                      <button
+                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                        disabled={currentPage === 1}
+                        className="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest bg-white dark:bg-gray-800 border border-slate-200 dark:border-slate-800 text-slate-400 disabled:opacity-30 hover:text-blue-500 transition-all font-sans"
+                      >
+                        Prev
+                      </button>
+
+                      <div className="flex items-center gap-1">
+                        {[...Array(totalPages)].map((_, i) => (
+                          <button
+                            key={i + 1}
+                            onClick={() => setCurrentPage(i + 1)}
+                            className={`w-8 h-8 rounded-lg text-[10px] font-black transition-all ${currentPage === i + 1
+                                ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30'
+                                : 'bg-white dark:bg-gray-800 text-slate-400 hover:text-blue-500 border border-slate-200 dark:border-slate-800'
+                              }`}
+                          >
+                            {i + 1}
+                          </button>
+                        ))}
+                      </div>
+
+                      <button
+                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                        disabled={currentPage === totalPages}
+                        className="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest bg-white dark:bg-gray-800 border border-slate-200 dark:border-slate-800 text-slate-400 disabled:opacity-30 hover:text-blue-500 transition-all font-sans"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
           </div>
         </div>
       </div>
@@ -954,27 +1016,27 @@ const ManagerTeam = () => {
               <div className="grid grid-cols-2 gap-6">
                 <div>
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.25em] ml-1">Full Name</label>
-                  <input required type="text" value={newEmployee.name} onChange={e => setNewEmployee({...newEmployee, name: e.target.value})} className="w-full px-5 py-3 mt-1 bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus:border-indigo-500/20 rounded-2xl font-bold outline-none" placeholder="Jane Doe" />
+                  <input required type="text" value={newEmployee.name} onChange={e => setNewEmployee({ ...newEmployee, name: e.target.value })} className="w-full px-5 py-3 mt-1 bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus:border-indigo-500/20 rounded-2xl font-bold outline-none" placeholder="Jane Doe" />
                 </div>
                 <div>
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.25em] ml-1">Zone</label>
-                  <input required type="text" value={newEmployee.zone} onChange={e => setNewEmployee({...newEmployee, zone: e.target.value})} className="w-full px-5 py-3 mt-1 bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus:border-indigo-500/20 rounded-2xl font-bold outline-none" placeholder="Zone B" />
+                  <input required type="text" value={newEmployee.zone} onChange={e => setNewEmployee({ ...newEmployee, zone: e.target.value })} className="w-full px-5 py-3 mt-1 bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus:border-indigo-500/20 rounded-2xl font-bold outline-none" placeholder="Zone B" />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-6">
                 <div>
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.25em] ml-1">Work Email</label>
-                  <input required type="email" value={newEmployee.email} onChange={e => setNewEmployee({...newEmployee, email: e.target.value})} className="w-full px-5 py-3 mt-1 bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus:border-indigo-500/20 rounded-2xl font-bold outline-none" placeholder="jane@org.com" />
+                  <input required type="email" value={newEmployee.email} onChange={e => setNewEmployee({ ...newEmployee, email: e.target.value })} className="w-full px-5 py-3 mt-1 bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus:border-indigo-500/20 rounded-2xl font-bold outline-none" placeholder="jane@org.com" />
                 </div>
                 <div>
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.25em] ml-1">Password</label>
-                  <input required type="password" value={newEmployee.password} onChange={e => setNewEmployee({...newEmployee, password: e.target.value})} className="w-full px-5 py-3 mt-1 bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus:border-indigo-500/20 rounded-2xl font-bold outline-none" placeholder="••••••••" />
+                  <input required type="password" value={newEmployee.password} onChange={e => setNewEmployee({ ...newEmployee, password: e.target.value })} className="w-full px-5 py-3 mt-1 bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus:border-indigo-500/20 rounded-2xl font-bold outline-none" placeholder="••••••••" />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-6">
                 <div>
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.25em] ml-1">Designation</label>
-                  <select required value={newEmployee.designation} onChange={e => setNewEmployee({...newEmployee, designation: e.target.value})} className="w-full px-5 py-3 mt-1 bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus:border-indigo-500/20 rounded-2xl font-bold outline-none">
+                  <select required value={newEmployee.designation} onChange={e => setNewEmployee({ ...newEmployee, designation: e.target.value })} className="w-full px-5 py-3 mt-1 bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus:border-indigo-500/20 rounded-2xl font-bold outline-none">
                     <option value="Employee">Employee</option>
                     <option value="Field Executive">Field Executive</option>
                     <option value="Senior Associate">Senior Associate</option>
@@ -982,7 +1044,7 @@ const ManagerTeam = () => {
                 </div>
                 <div>
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.25em] ml-1">Status</label>
-                  <select required value={newEmployee.status} onChange={e => setNewEmployee({...newEmployee, status: e.target.value})} className="w-full px-5 py-3 mt-1 bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus:border-indigo-500/20 rounded-2xl font-bold outline-none">
+                  <select required value={newEmployee.status} onChange={e => setNewEmployee({ ...newEmployee, status: e.target.value })} className="w-full px-5 py-3 mt-1 bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus:border-indigo-500/20 rounded-2xl font-bold outline-none">
                     <option value="Active">Active</option>
                     <option value="Inactive">Inactive</option>
                     <option value="On Duty">On Duty</option>
@@ -1023,17 +1085,17 @@ const ManagerTeam = () => {
               <div className="grid grid-cols-2 gap-6">
                 <div>
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.25em] ml-1">Full Name</label>
-                  <input required type="text" value={editingEmployee?.name || ''} onChange={e => setEditingEmployee({...editingEmployee, name: e.target.value})} className="w-full px-5 py-3 mt-1 bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus:border-indigo-500/20 rounded-2xl font-bold outline-none" />
+                  <input required type="text" value={editingEmployee?.name || ''} onChange={e => setEditingEmployee({ ...editingEmployee, name: e.target.value })} className="w-full px-5 py-3 mt-1 bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus:border-indigo-500/20 rounded-2xl font-bold outline-none" />
                 </div>
                 <div>
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.25em] ml-1">Zone</label>
-                  <input required type="text" value={editingEmployee?.zone || ''} onChange={e => setEditingEmployee({...editingEmployee, zone: e.target.value})} className="w-full px-5 py-3 mt-1 bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus:border-indigo-500/20 rounded-2xl font-bold outline-none" />
+                  <input required type="text" value={editingEmployee?.zone || ''} onChange={e => setEditingEmployee({ ...editingEmployee, zone: e.target.value })} className="w-full px-5 py-3 mt-1 bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus:border-indigo-500/20 rounded-2xl font-bold outline-none" />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-6">
                 <div>
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.25em] ml-1">Designation</label>
-                  <select required value={editingEmployee?.designation || ''} onChange={e => setEditingEmployee({...editingEmployee, designation: e.target.value})} className="w-full px-5 py-3 mt-1 bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus:border-indigo-500/20 rounded-2xl font-bold outline-none">
+                  <select required value={editingEmployee?.designation || ''} onChange={e => setEditingEmployee({ ...editingEmployee, designation: e.target.value })} className="w-full px-5 py-3 mt-1 bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus:border-indigo-500/20 rounded-2xl font-bold outline-none">
                     <option value="Employee">Employee</option>
                     <option value="Field Executive">Field Executive</option>
                     <option value="Senior Associate">Senior Associate</option>
@@ -1041,7 +1103,7 @@ const ManagerTeam = () => {
                 </div>
                 <div>
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.25em] ml-1">Status</label>
-                  <select required value={editingEmployee?.status || ''} onChange={e => setEditingEmployee({...editingEmployee, status: e.target.value})} className="w-full px-5 py-3 mt-1 bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus:border-indigo-500/20 rounded-2xl font-bold outline-none">
+                  <select required value={editingEmployee?.status || ''} onChange={e => setEditingEmployee({ ...editingEmployee, status: e.target.value })} className="w-full px-5 py-3 mt-1 bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus:border-indigo-500/20 rounded-2xl font-bold outline-none">
                     <option value="Active">Active</option>
                     <option value="Inactive">Inactive</option>
                     <option value="On Duty">On Duty</option>

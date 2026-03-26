@@ -12,7 +12,7 @@ exports.getTasks = async (req, res) => {
     }
 
     const tasks = await Task.find(query)
-    .select('-evidence -checklist')
+    .select('-checklist')
     .populate('employee', 'name email')
     .sort({ date: -1 });
     
@@ -28,6 +28,23 @@ exports.getTasks = async (req, res) => {
 // @route   GET /api/employee/tasks/:id
 // @access  Private
 exports.getTaskById = async (req, res) => {
+  try {
+    const task = await Task.findOne({ _id: req.params.id, tenant: req.tenantId });
+    
+    if (!task) {
+      return res.status(404).json({ message: 'Task not found' });
+    }
+
+    res.json(task);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Get single task details by ID (alternative)
+// @route   GET /api/employee/tasks/detail/:id
+// @access  Private
+exports.getTaskDetail = async (req, res) => {
   try {
     const task = await Task.findOne({ _id: req.params.id, tenant: req.tenantId });
     

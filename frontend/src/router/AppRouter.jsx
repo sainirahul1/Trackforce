@@ -14,7 +14,7 @@ import NotificationsSuperAdmin from '../pages/superadmin/Notifications';
 import SettingsSuperAdmin from '../pages/superadmin/Settings';
 import TenantDashboard from '../pages/tenant/Dashboard';
 import TenantEmployees from '../pages/tenant/Employees';
-import ManagerDashboard from '../pages/manager/Dashboard';
+// import ManagerDashboard from '../pages/manager/Dashboard';
 import ManagerTeam from '../pages/manager/Team';
 import EmployeeDetails from '../pages/manager/EmployeeDetails';
 import LiveTracking from '../pages/manager/LiveTracking';
@@ -86,7 +86,7 @@ const AppRouter = () => (
 
     {/* Manager Routes */}
     <Route path="/manager" element={<DashboardLayout allowedRole="manager" />}>
-      <Route path="dashboard" element={<ManagerDashboard />} />
+      {/* <Route path="dashboard" element={<ManagerDashboard />} /> */}
       <Route path="team" element={<ManagerTeam />} />
       <Route path="team/:id" element={<EmployeeDetails />} />
       <Route path="live" element={<LiveTracking />} />

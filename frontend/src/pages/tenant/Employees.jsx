@@ -33,6 +33,13 @@ const EmployeeList = () => {
   const [statusFilter, setStatusFilter] = useState('All');
   const [showSuccess, setShowSuccess] = useState(false);
   const [addedManagerName, setAddedManagerName] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 7;
+
+  // Reset page on search or filter
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, statusFilter]);
 
   useEffect(() => {
     if (isModalOpen) {
@@ -626,7 +633,59 @@ const EmployeeList = () => {
             </div>
           </div>
         </div>
-        <DataTable columns={columns} data={filteredEmployees} onRowClick={(row) => setSelectedManager(row)} />
+        <div className="p-4">
+          {(() => {
+            const totalPages = Math.ceil(filteredEmployees.length / itemsPerPage);
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const paginatedEmployees = filteredEmployees.slice(startIndex, startIndex + itemsPerPage);
+
+            return (
+              <>
+                <DataTable
+                  columns={columns}
+                  data={paginatedEmployees}
+                  onRowClick={(row) => setSelectedManager(row)}
+                />
+
+                {/* Pagination Footer */}
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-center gap-2 mt-8 pb-4">
+                    <button
+                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                      disabled={currentPage === 1}
+                      className="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest bg-white dark:bg-gray-800 border border-slate-200 dark:border-slate-800 text-slate-400 disabled:opacity-30 hover:text-blue-500 transition-all font-sans"
+                    >
+                      Prev
+                    </button>
+
+                    <div className="flex items-center gap-1">
+                      {[...Array(totalPages)].map((_, i) => (
+                        <button
+                          key={i + 1}
+                          onClick={() => setCurrentPage(i + 1)}
+                          className={`w-8 h-8 rounded-lg text-[10px] font-black transition-all ${currentPage === i + 1
+                              ? 'bg-[#4f46e5] text-white shadow-lg shadow-indigo-500/30'
+                              : 'bg-white dark:bg-gray-800 text-slate-400 hover:text-indigo-500 border border-slate-200 dark:border-slate-800'
+                            }`}
+                        >
+                          {i + 1}
+                        </button>
+                      ))}
+                    </div>
+
+                    <button
+                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                      disabled={currentPage === totalPages}
+                      className="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest bg-white dark:bg-gray-800 border border-slate-200 dark:border-slate-800 text-slate-400 disabled:opacity-30 hover:text-blue-500 transition-all font-sans"
+                    >
+                      Next
+                    </button>
+                  </div>
+                )}
+              </>
+            );
+          })()}
+        </div>
       </div>
 
       {/* Modal */}
