@@ -2298,13 +2298,11 @@ const EmployeeProfile = () => {
     emergencyContact: '',
     allergies: '',
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix',
-    emergencyContact: '',
     employeeCode: '',
     dateOfJoin: '',
     workArea: '',
     reportingTo: '',
-    securityLevel: '',
-    avatar: ''
+    securityLevel: ''
   });
   const [profileLoading, setProfileLoading] = useState(true);
 
