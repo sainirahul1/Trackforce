@@ -1,4 +1,6 @@
 const User = require('../models/tenant/User');
+const TenantSettings = require('../models/tenant/Settings');
+const bcrypt = require('bcryptjs');
 
 // @desc    Get all employees for a tenant
 // @route   GET /api/tenant/employees
@@ -124,6 +126,233 @@ exports.deleteManager = async (req, res) => {
 
     await User.deleteOne({ _id: id });
     res.json({ message: 'Manager removed' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Get tenant settings
+// @route   GET /api/tenant/settings
+// @access  Private (Tenant)
+exports.getTenantSettings = async (req, res) => {
+  try {
+    const tenantId = req.tenantId || req.user.tenant;
+    if (!tenantId) {
+      return res.status(400).json({ message: 'Tenant ID is missing' });
+    }
+
+    let settings = await TenantSettings.findOne({ tenantId });
+    if (!settings) {
+      console.log(`Settings not found for tenant ${tenantId}, creating new document...`);
+      settings = await TenantSettings.create({ tenantId });
+      console.log('Created settings with defaults:', settings);
+    }
+    res.json(settings);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Update General Info
+// @route   PUT /api/tenant/settings/general
+// @access  Private (Tenant)
+exports.updateGeneralInfo = async (req, res) => {
+  try {
+    const { companyName, officialEmail, hqAddress, logoUrl } = req.body;
+    const tenantId = req.tenantId || req.user.tenant;
+
+    console.log(`[DEBUG] Update General Request for tenant ${tenantId}:`, { 
+      companyName, 
+      officialEmail, 
+      hqAddress,
+      hasLogo: !!logoUrl 
+    });
+
+    if (!tenantId) {
+      return res.status(400).json({ message: 'Tenant ID is missing' });
+    }
+
+    let settings = await TenantSettings.findOne({ tenantId });
+    
+    if (!settings) {
+      console.log(`[DEBUG] No settings document found, creating one...`);
+      settings = new TenantSettings({ tenantId });
+    }
+
+    // Explicitly update fields using standard assignment for reliable change tracking
+    if (!settings.general) settings.general = {};
+    settings.general.companyName = companyName || settings.general.companyName || '';
+    settings.general.officialEmail = officialEmail || settings.general.officialEmail || '';
+    settings.general.hqAddress = hqAddress || settings.general.hqAddress || '';
+    if (logoUrl) settings.general.logoUrl = logoUrl;
+
+    console.log(`[DEBUG] Settings state before save:`, JSON.stringify(settings.general));
+    
+    const updatedSettings = await settings.save();
+    
+    console.log(`[DEBUG] Saved to Atlas successfully:`, updatedSettings.general.companyName);
+    res.json(updatedSettings);
+  } catch (error) {
+    console.error(`[ERROR] General Info Update Failure:`, error.message);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Update Password
+// @route   PUT /api/tenant/settings/password
+// @access  Private (Tenant)
+exports.updatePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    const user = await User.findById(req.user.id);
+    const tenantId = req.tenantId || req.user.tenant;
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const isMatch = await user.matchPassword(currentPassword);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Invalid current password' });
+    }
+
+    user.password = newPassword;
+    await user.save();
+
+    // Also update security metadata in tenant settings to comply with "all related in same collection"
+    if (tenantId) {
+      await TenantSettings.findOneAndUpdate(
+        { tenantId },
+        { $set: { 'security.lastPasswordChange': new Date() } },
+        { upsert: true }
+      );
+    }
+
+    res.json({ message: 'Password updated successfully' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Update Localization
+// @route   PUT /api/tenant/settings/localization
+// @access  Private (Tenant)
+exports.updateLocalization = async (req, res) => {
+  try {
+    const { timezone, language } = req.body;
+    const tenantId = req.tenantId || req.user.tenant;
+
+    console.log(`[DEBUG] Update Localization for tenant ${tenantId}:`, { timezone, language });
+
+    if (!tenantId) {
+      return res.status(400).json({ message: 'Tenant ID is missing' });
+    }
+
+    let settings = await TenantSettings.findOne({ tenantId });
+    
+    if (!settings) {
+      settings = new TenantSettings({ tenantId });
+    }
+
+    if (!settings.localization) settings.localization = {};
+    settings.localization.timezone = timezone || settings.localization.timezone || 'EST';
+    settings.localization.language = language || settings.localization.language || 'en';
+
+    const updatedSettings = await settings.save();
+    
+    console.log(`[DEBUG] Localization Save Result:`, updatedSettings.localization);
+    res.json(updatedSettings);
+  } catch (error) {
+    console.error(`[ERROR] Localization Update Failure:`, error.message);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Update Account Preferences
+// @route   PUT /api/tenant/settings/account
+// @access  Private (Tenant)
+exports.updateAccountPreferences = async (req, res) => {
+  try {
+    const { status, featureFlags } = req.body;
+    const tenantId = req.tenantId || req.user.tenant;
+
+    console.log(`[DEBUG] Update Account Prefs for tenant ${tenantId}:`, { status, featureFlags });
+
+    if (!tenantId) {
+      return res.status(400).json({ message: 'Tenant ID is missing' });
+    }
+
+    let settings = await TenantSettings.findOne({ tenantId });
+    
+    if (!settings) {
+      settings = new TenantSettings({ tenantId });
+    }
+
+    if (!settings.account) settings.account = {};
+    settings.account.status = status || settings.account.status || 'Active';
+    settings.account.featureFlags = featureFlags || [];
+
+    const updatedSettings = await settings.save();
+    
+    console.log(`[DEBUG] Account Save Result:`, updatedSettings.account);
+    res.json(updatedSettings);
+  } catch (error) {
+    console.error(`[ERROR] Account Update Failure:`, error.message);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Request Data Export
+// @route   GET /api/tenant/settings/export
+// @access  Private (Tenant)
+exports.requestDataExport = async (req, res) => {
+  try {
+    // Generate some basic data export for the tenant
+    const managers = await User.find({ tenant: req.tenantId, role: 'manager' }).select('-password');
+    const employees = await User.find({ tenant: req.tenantId, role: 'employee' }).select('-password');
+    const settings = await TenantSettings.findOne({ tenantId: req.tenantId });
+
+    const exportData = {
+      tenantId: req.tenantId,
+      exportedAt: new Date(),
+      settings: settings || {},
+      managers,
+      employees,
+    };
+
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', 'attachment; filename=tenant_data_export.json');
+    res.send(JSON.stringify(exportData, null, 2));
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Sign out all managers for a tenant
+// @route   POST /api/tenant/settings/signout-managers
+// @access  Private (Tenant)
+exports.signOutAllManagers = async (req, res) => {
+  try {
+    const tenantId = req.tenantId || req.user.tenant;
+
+    if (!tenantId) {
+      return res.status(400).json({ message: 'Tenant ID is missing' });
+    }
+
+    // 1. Update lastLogoutAt for all managers of this tenant (for auth middleware)
+    await User.updateMany(
+      { tenant: tenantId, role: 'manager' },
+      { $set: { lastLogoutAt: new Date() } }
+    );
+
+    // 2. Store the security event in the central tenant.settings collection as requested
+    await TenantSettings.findOneAndUpdate(
+      { tenantId },
+      { $set: { 'security.globalSignOutAt': new Date() } },
+      { upsert: true }
+    );
+
+    res.json({ message: 'Successfully signed out all the managers' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
