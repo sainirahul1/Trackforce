@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:5001/api/superadmin';
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+const API_URL = `${BASE_URL}/superadmin`;
 
 const getAuthHeader = () => {
   const token = localStorage.getItem('token');

@@ -2303,8 +2303,7 @@ const EmployeeProfile = () => {
     dateOfJoin: '',
     workArea: '',
     reportingTo: '',
-    securityLevel: '',
-    avatar: ''
+    securityLevel: ''
   });
   const [profileLoading, setProfileLoading] = useState(true);
 

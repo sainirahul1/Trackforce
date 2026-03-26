@@ -1,4 +1,6 @@
-const API_URL = 'http://localhost:5001/api/auth';
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+const API_URL = `${BASE_URL}/auth`;
+
 
 export const login = async (email, password) => {
   const response = await fetch(`${API_URL}/login`, {
@@ -63,11 +65,11 @@ export const getMe = async () => {
 
   const data = await response.json();
   if (!response.ok) throw new Error(data.message);
-  
+
   // Update local storage with fresh status
   const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
   localStorage.setItem('user', JSON.stringify({ ...storedUser, ...data }));
-  
+
   return data;
 };
 

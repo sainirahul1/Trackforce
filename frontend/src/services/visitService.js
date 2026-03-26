@@ -1,6 +1,7 @@
 import { getAuthHeader } from './authService';
 
-const API_URL = 'http://localhost:5001/api/visits';
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+const API_URL = `${BASE_URL}/visits`;
 
 export const getVisits = async () => {
   const response = await fetch(API_URL, {

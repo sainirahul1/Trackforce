@@ -1,6 +1,7 @@
 import { getAuthHeader } from './authService';
 
-const API_URL = 'http://localhost:5001/api';
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+const API_URL = BASE_URL;
 
 export const startTracking = async () => {
   const response = await fetch(`${API_URL}/tracking/start`, {

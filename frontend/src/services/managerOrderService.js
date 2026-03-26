@@ -1,6 +1,7 @@
 import { getAuthHeader } from './authService';
 
-const API_URL = 'http://127.0.0.1:5001/api/manager/inventory-orders';
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+const API_URL = `${BASE_URL}/manager/inventory-orders`;
 
 export const getManagerStats = async () => {
   const response = await fetch(`${API_URL}/stats`, {

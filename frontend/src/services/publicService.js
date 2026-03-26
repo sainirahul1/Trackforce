@@ -1,6 +1,7 @@
 // publicService.js
 
-const API_URL = 'http://localhost:5001/api/public';
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+const API_URL = `${BASE_URL}/public`;
 
 /**
  * Fetch global public settings without authentication
