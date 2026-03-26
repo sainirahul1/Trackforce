@@ -13,6 +13,7 @@ const Sidebar = ({ role, user, isCollapsed, onToggle }) => {
       { name: 'System Alerts', icon: Bell, path: '/superadmin/notifications' },
       { name: 'Platform Settings', icon: Settings, path: '/superadmin/settings' },
       { name: 'Support Issues', icon: AlertCircle, path: '/superadmin/issues' },
+      { name: 'Profile', icon: User, path: '/superadmin/profile' },
     ],
     tenant: [
       { name: 'Dashboard', icon: LayoutDashboard, path: '/tenant/dashboard' },

@@ -36,6 +36,7 @@ import SettingsTenant from '../pages/tenant/Settings';
 import NotificationsTenant from '../pages/tenant/Notifications';
 import TenantProfile from '../pages/tenant/Profile';
 import SuperAdminIssues from '../pages/superadmin/Issues';
+import SuperAdminProfile from '../pages/superadmin/Profile';
 
 // Employee Portal
 import EmployeeDashboard from '../pages/employee/Dashboard';
@@ -64,6 +65,7 @@ const AppRouter = () => (
       <Route path="notifications" element={<NotificationsSuperAdmin />} />
       <Route path="settings" element={<SettingsSuperAdmin />} />
       <Route path="issues" element={<SuperAdminIssues />} />
+      <Route path="profile" element={<SuperAdminProfile />} />
       <Route index element={<Navigate to="dashboard" replace />} />
     </Route>
 
