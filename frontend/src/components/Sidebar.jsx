@@ -1,9 +1,10 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, Users, Building2, ClipboardList, Map, Settings, LogOut, ShieldCheck, Bell, ShoppingBag, Camera, Clock, AlertCircle, ChevronLeft, ChevronRight, Menu, Activity, User, Lock, CreditCard } from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
 
 const Sidebar = ({ role, user, isCollapsed, onToggle }) => {
+  const navigate = useNavigate();
   const menuItems = {
     superadmin: [
       { name: 'Dashboard', icon: LayoutDashboard, path: '/superadmin/dashboard' },
@@ -103,7 +104,7 @@ const Sidebar = ({ role, user, isCollapsed, onToggle }) => {
             )}
           </div>
           <button
-            onClick={() => { localStorage.clear(); window.location.href = '/login'; }}
+            onClick={() => { localStorage.clear(); navigate('/login'); }}
             className="p-2 text-gray-400 hover:text-red-600 transition-colors shrink-0"
             title="Logout"
           >
