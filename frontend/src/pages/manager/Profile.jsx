@@ -611,7 +611,12 @@ const ManagerProfile = () => {
               >
                 {managerData.profileImage ? (
                   <img 
-                    src={managerData.profileImage.startsWith('data:') ? managerData.profileImage : `${(import.meta.env.VITE_API_URL || 'http://localhost:5001/api').replace('/api', '')}${managerData.profileImage}`} 
+                    src={managerData.profileImage.startsWith('data:') ? managerData.profileImage : (() => {
+                      let url = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+                      url = url.replace(/\/$/, '');
+                      if (!url.endsWith('/api')) url += '/api';
+                      return `${url.replace('/api', '')}${managerData.profileImage}`;
+                    })()} 
                     alt="Profile" 
                     className="w-full h-full object-cover" 
                   />

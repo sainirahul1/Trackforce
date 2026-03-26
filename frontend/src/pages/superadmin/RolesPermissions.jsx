@@ -18,7 +18,13 @@ import {
 import Button from '../../components/Button';
 
 // Base API URL - point to the backend server
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+const getBaseUrl = () => {
+  let url = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+  url = url.replace(/\/$/, '');
+  if (!url.endsWith('/api')) url += '/api';
+  return url;
+};
+const BASE_URL = getBaseUrl();
 const API_BASE_URL = `${BASE_URL}/superadmin/manage`;
 
 const RolesPermissions = () => {

@@ -1,6 +1,12 @@
 import { getAuthHeader } from './authService';
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+const getBaseUrl = () => {
+  let url = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+  url = url.replace(/\/$/, '');
+  if (!url.endsWith('/api')) url += '/api';
+  return url;
+};
+const BASE_URL = getBaseUrl();
 const API_URL = `${BASE_URL}/employee/tasks`;
 
 export const getTasks = async () => {

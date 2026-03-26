@@ -45,7 +45,13 @@ const ManagerTasks = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+      const getBaseUrl = () => {
+        let url = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+        url = url.replace(/\/$/, '');
+        if (!url.endsWith('/api')) url += '/api';
+        return url;
+      };
+      const BASE_URL = getBaseUrl();
       const [fetchedTasks, fetchedEmployees] = await Promise.all([
         getTasks(),
         fetch(`${BASE_URL}/tenant/employees`, {
