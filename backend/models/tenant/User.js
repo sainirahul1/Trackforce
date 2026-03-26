@@ -45,6 +45,8 @@ const userSchema = new mongoose.Schema({
     bloodGroup: String,
     emergencyContact: String,
     allergies: String,
+    department: String,
+    profileImage: String,
     location: String,
   },
   isDeactivated: {

@@ -134,6 +134,7 @@ exports.updateProfile = async (req, res) => {
         emergencyContact: req.body.emergencyContact !== undefined ? req.body.emergencyContact : user.profile?.emergencyContact,
         allergies: req.body.allergies !== undefined ? req.body.allergies : user.profile?.allergies,
         location: req.body.location !== undefined ? req.body.location : user.profile?.location,
+        department: req.body.department !== undefined ? req.body.department : user.profile?.department,
       };
 
       const updatedUser = await user.save();
@@ -146,6 +147,54 @@ exports.updateProfile = async (req, res) => {
       });
     } else {
       res.status(404).json({ message: 'User not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Upload profile image
+// @route   PUT /api/auth/profile-image
+// @access  Private
+exports.uploadProfileImage = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'Please upload an image' });
+    }
+
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Convert buffer to Base64 string
+    const base64Image = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+    user.profile.profileImage = base64Image;
+    await user.save();
+
+    res.json({
+      message: 'Profile image uploaded successfully to database',
+      profileImage: base64Image
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Update user password
+// @route   PUT /api/auth/update-password
+// @access  Private
+exports.updatePassword = async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+  try {
+    const user = await User.findById(req.user._id);
+
+    if (user && (await user.matchPassword(currentPassword))) {
+      user.password = newPassword;
+      await user.save();
+      res.json({ message: 'Password updated successfully' });
+    } else {
+      res.status(401).json({ message: 'Invalid current password' });
     }
   } catch (error) {
     res.status(500).json({ message: error.message });
