@@ -13,9 +13,10 @@ const generateToken = (id) => {
 // @access  Public
 exports.register = async (req, res) => {
   const { name, company, email, password, role } = req.body;
+  const normalizedEmail = email.toLowerCase();
 
   try {
-    const userExists = await User.findOne({ email });
+    const userExists = await User.findOne({ email: normalizedEmail });
 
     if (userExists) {
       return res.status(400).json({ message: 'User already exists' });
@@ -87,9 +88,10 @@ exports.getMe = async (req, res) => {
 // @access  Public
 exports.login = async (req, res) => {
   const { email, password } = req.body;
+  const normalizedEmail = email.toLowerCase();
 
   try {
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email: normalizedEmail });
 
     if (user && (await user.matchPassword(password))) {
       const populatedUser = await User.findById(user._id).populate('tenant');

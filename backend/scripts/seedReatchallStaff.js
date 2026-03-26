@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const User = require('../models/tenant/User');
 const Tenant = require('../models/superadmin/Tenant');
 const path = require('path');
+const bcrypt = require('bcryptjs');
 require('dotenv').config({ path: path.join(__dirname, '../.env') });
 
 const seedReatchallStaff = async () => {
@@ -21,13 +22,16 @@ const seedReatchallStaff = async () => {
     const managers = [];
 
     // 2. Create/Update Managers (4 to 13)
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash('password123', salt);
+
     for (let i = 4; i <= 13; i++) {
       const email = `manager${i}@reatchall.com`;
       const manager = await User.findOneAndUpdate(
         { email },
         {
           name: `ReatchAll Manager ${i}`,
-          password: 'password123', // Note: pre-save hook will hash this if it changes
+          password: hashedPassword,
           role: 'manager',
           tenant: tenant._id,
           company: tenant.name,
@@ -51,7 +55,7 @@ const seedReatchallStaff = async () => {
         { email },
         {
           name: `ReatchAll Employee ${i}`,
-          password: 'password123',
+          password: hashedPassword,
           role: 'employee',
           tenant: tenant._id,
           manager: managers[index]._id,
