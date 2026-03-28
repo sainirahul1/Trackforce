@@ -1,7 +1,16 @@
 import React from 'react';
-import { ShieldAlert, Mail, Phone, Lock } from 'lucide-react';
+import { ShieldAlert, Mail, Phone, Lock, LogOut } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const SuspendedOverlay = () => {
+  const navigate = useNavigate();
+
+  const handleBackToLogin = () => {
+    localStorage.clear();
+    navigate('/login');
+    window.location.reload(); // Force reload to clear any remaining state
+  };
+
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-6 bg-gray-900/60 backdrop-blur-2xl animate-in fade-in duration-700">
       <div className="bg-white dark:bg-gray-900 w-full max-w-xl rounded-[3.5rem] shadow-[0_32px_128px_-16px_rgba(0,0,0,0.5)] overflow-hidden border border-white/10 relative group">
@@ -24,7 +33,7 @@ const SuspendedOverlay = () => {
 
           <div className="grid grid-cols-1 gap-4 mb-10">
             <div className="flex items-center gap-4 p-5 bg-gray-50 dark:bg-gray-800/50 rounded-3xl border border-gray-100 dark:border-gray-800 hover:scale-[1.02] transition-transform cursor-pointer group/item">
-              <div className="w-12 h-12 bg-white dark:bg-gray-800 rounded-2xl flex items-center justify-center text-gray-400 group-hover/item:text-indigo-500 transition-colors shadow-sm">
+              <div className="w-12 h-12 bg-white dark:bg-gray-800 rounded-2xl flex items-center justify-center text-gray-400 group-hover/item:text-rose-500 transition-colors shadow-sm">
                 <Mail size={20} />
               </div>
               <div className="text-left">
@@ -34,12 +43,22 @@ const SuspendedOverlay = () => {
             </div>
           </div>
 
-          <div className="space-y-4">
-            <p className="text-xs font-black text-rose-500/60 uppercase tracking-[0.3em] animate-pulse">
-              Restricted Access Environment
-            </p>
-            <div className="h-1.5 w-32 bg-gray-100 dark:bg-gray-800 rounded-full mx-auto overflow-hidden">
-              <div className="h-full bg-rose-500 w-1/3 animate-progress" />
+          <div className="flex flex-col gap-6">
+            <button
+               onClick={handleBackToLogin}
+               className="w-full py-5 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-[2rem] font-black uppercase tracking-widest text-xs flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-gray-200 dark:shadow-none"
+            >
+              <LogOut size={18} />
+              Back to Login
+            </button>
+
+            <div className="space-y-4">
+              <p className="text-xs font-black text-rose-500/60 uppercase tracking-[0.3em] animate-pulse">
+                Restricted Access Environment
+              </p>
+              <div className="h-1.5 w-32 bg-gray-100 dark:bg-gray-800 rounded-full mx-auto overflow-hidden">
+                <div className="h-full bg-rose-500 w-1/3 animate-progress" />
+              </div>
             </div>
           </div>
         </div>

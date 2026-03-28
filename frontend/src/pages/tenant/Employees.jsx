@@ -26,20 +26,22 @@ const EmployeeList = () => {
   const [selectedManager, setSelectedManager] = useState(null);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [newManager, setNewManager] = useState({ name: '', email: '', password: '', zone: '', designation: 'Operations Manager', status: 'Active' });
+  const [newMember, setNewMember] = useState({ name: '', email: '', password: '', zone: '', designation: 'Operations Manager', status: 'Active', role: 'manager' });
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editingManager, setEditingManager] = useState(null);
+  const [editingMember, setEditingMember] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [showSuccess, setShowSuccess] = useState(false);
   const [addedManagerName, setAddedManagerName] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('managers');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 7;
 
-  // Reset page on search or filter
+  // Reset page on search, filter, or tab change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, statusFilter]);
+  }, [searchQuery, statusFilter, activeTab]);
 
   useEffect(() => {
     if (isModalOpen) {
@@ -53,8 +55,12 @@ const EmployeeList = () => {
   }, [isModalOpen, isEditModalOpen]);
 
   useEffect(() => {
-    fetchManagers();
-    fetchTeamMembers();
+    const loadData = async () => {
+      setIsLoading(true);
+      await Promise.all([fetchManagers(), fetchTeamMembers()]);
+      setIsLoading(false);
+    };
+    loadData();
   }, []);
 
   const fetchTeamMembers = async () => {
@@ -91,76 +97,115 @@ const EmployeeList = () => {
     }
   };
 
-  const stats = [
-    { label: 'Total Managers', value: employees.length.toString(), icon: Users, color: 'text-indigo-600', bg: 'bg-indigo-50', filter: 'All' },
-    { label: 'Active Managers', value: employees.filter(e => e.status === 'On Duty').length.toString(), icon: Activity, color: 'text-emerald-600', bg: 'bg-emerald-50', filter: 'On Duty' },
-    { label: 'Inactive Managers', value: employees.filter(e => e.status !== 'On Duty').length.toString(), icon: Shield, color: 'text-rose-600', bg: 'bg-rose-50', filter: 'Inactive' },
-    { label: 'Total Zones', value: new Set(employees.map(e => e.zone)).size.toString(), icon: Activity, color: 'text-blue-600', bg: 'bg-blue-50', filter: 'All' },
+  const managerStats = [
+    { label: 'Management', value: employees.length.toString(), icon: Shield, color: 'text-indigo-600', bg: 'bg-indigo-50', filter: 'All', role: 'managers' },
+    { label: 'Active', value: employees.filter(e => e.status !== 'Inactive').length.toString(), icon: Activity, color: 'text-emerald-600', bg: 'bg-emerald-50', filter: 'Active', role: 'managers' },
+    { label: 'Inactive', value: employees.filter(e => e.status === 'Inactive').length.toString(), icon: X, color: 'text-rose-600', bg: 'bg-rose-50', filter: 'Inactive', role: 'managers' },
   ];
 
-  const handleAddManager = async (e) => {
+  const employeeStats = [
+    { label: 'Field Staff', value: teamMembers.length.toString(), icon: Users, color: 'text-blue-600', bg: 'bg-blue-50', filter: 'All', role: 'employees' },
+    { label: 'Active', value: teamMembers.filter(e => e.status !== 'Inactive').length.toString(), icon: Activity, color: 'text-emerald-600', bg: 'bg-emerald-50', filter: 'Active', role: 'employees' },
+    { label: 'Inactive', value: teamMembers.filter(e => e.status === 'Inactive').length.toString(), icon: X, color: 'text-rose-600', bg: 'bg-rose-50', filter: 'Inactive', role: 'employees' },
+  ];
+
+  const handleAddMember = async (e) => {
     e.preventDefault();
     try {
-      const response = await tenantService.createManager(newManager);
+      const isManager = newMember.role === 'manager';
+      const response = isManager
+        ? await tenantService.createManager(newMember)
+        : await tenantService.createEmployee(newMember);
+
       const m = response.data;
-      const manager = {
-        id: m._id,
-        name: m.name,
-        email: m.email,
-        designation: m.profile?.designation || 'Manager',
-        status: m.status || 'On Duty',
-        zone: m.profile?.zone || m.profile?.team || 'N/A',
-        avatar: `https://i.pravatar.cc/150?u=${m._id}`
-      };
-      setEmployees([manager, ...employees]);
-      setAddedManagerName(newManager.name);
+      if (isManager) {
+        const manager = {
+          id: m._id,
+          name: m.name,
+          email: m.email,
+          designation: m.profile?.designation || 'Manager',
+          status: m.status || 'On Duty',
+          zone: m.profile?.zone || m.profile?.team || 'N/A',
+          avatar: `https://i.pravatar.cc/150?u=${m._id}`
+        };
+        setEmployees([manager, ...employees]);
+      } else {
+        const employee = {
+          id: m._id,
+          name: m.name,
+          role: m.profile?.designation || 'Employee',
+          status: m.isDeactivated ? 'Inactive' : 'Active',
+          lastActivity: new Date().toISOString()
+        };
+        setTeamMembers([employee, ...teamMembers]);
+      }
+
+      setAddedManagerName(newMember.name);
       setIsModalOpen(false);
-      setNewManager({ name: '', email: '', password: '', zone: '', designation: 'Operations Manager', status: 'Active' });
+      setNewMember({ name: '', email: '', password: '', zone: '', designation: 'Operations Manager', status: 'Active', role: isManager ? 'manager' : 'employee' });
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
     } catch (error) {
-      console.error('Failed to create manager:', error);
-      alert(error.response?.data?.message || 'Failed to create manager');
+      console.error('Failed to create member:', error);
+      alert(error.response?.data?.message || 'Failed to create member');
     }
   };
 
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     try {
-      await tenantService.updateManager(editingManager.id, editingManager);
-      setEmployees(employees.map(emp => emp.id === editingManager.id ? { ...emp, name: editingManager.name, zone: editingManager.zone, designation: editingManager.designation, status: editingManager.status } : emp));
+      const isManager = editingMember.role === 'manager';
+      if (isManager) {
+        await tenantService.updateManager(editingMember.id, editingMember);
+        setEmployees(employees.map(emp => emp.id === editingMember.id ? { ...emp, name: editingMember.name, zone: editingMember.zone, designation: editingMember.designation, status: editingMember.status } : emp));
+      } else {
+        await tenantService.updateEmployee(editingMember.id, editingMember);
+        setTeamMembers(teamMembers.map(emp => emp.id === editingMember.id ? { ...emp, name: editingMember.name, role: editingMember.designation, status: editingMember.status } : emp));
+      }
       setIsEditModalOpen(false);
-      setEditingManager(null);
+      setEditingMember(null);
       setShowSuccess(true);
-      setAddedManagerName(editingManager.name);
+      setAddedManagerName(editingMember.name);
       setTimeout(() => setShowSuccess(false), 3000);
     } catch (err) {
-      console.error('Failed to edit manager:', err);
-      alert('Failed to edit manager');
+      console.error('Failed to update member:', err);
+      alert('Failed to update member');
     }
   };
 
-  const handleSuspendManager = async (id, currentStatus) => {
+  const handleSuspendMember = async (id, currentStatus, role) => {
+    const isManager = role === 'manager';
     const newStatus = currentStatus === 'Inactive' ? 'Active' : 'Inactive';
     try {
-      await tenantService.updateManager(id, { status: newStatus });
-      setEmployees(employees.map(emp => emp.id === id ? { ...emp, status: newStatus } : emp));
+      if (isManager) {
+        await tenantService.updateManager(id, { status: newStatus });
+        setEmployees(employees.map(emp => emp.id === id ? { ...emp, status: newStatus } : emp));
+      } else {
+        await tenantService.updateEmployee(id, { status: newStatus });
+        setTeamMembers(teamMembers.map(emp => emp.id === id ? { ...emp, status: newStatus } : emp));
+      }
     } catch (err) {
       console.error(err);
       alert('Failed to update status');
     }
   };
 
-  const handleDeleteManager = async (id) => {
-    if (window.confirm("Are you sure you want to delete this manager?")) {
+  const handleDeleteMember = async (id, role) => {
+    const isManager = role === 'manager';
+    if (window.confirm(`Are you sure you want to delete this ${isManager ? 'manager' : 'employee'}?`)) {
       try {
-        await tenantService.deleteManager(id);
-        const filtered = employees.filter(emp => emp.id !== id);
-        setEmployees(filtered);
-        setSelectedManager(null);
+        if (isManager) {
+          await tenantService.deleteManager(id);
+          setEmployees(employees.filter(emp => emp.id !== id));
+          setSelectedManager(null);
+        } else {
+          await tenantService.deleteEmployee(id);
+          setTeamMembers(teamMembers.filter(emp => emp.id !== id));
+          setSelectedEmployee(null);
+        }
       } catch (error) {
-        console.error('Failed to delete manager:', error);
-        alert('Failed to delete manager');
+        console.error('Failed to delete member:', error);
+        alert('Failed to delete member');
       }
     }
   };
@@ -190,11 +235,15 @@ const EmployeeList = () => {
     document.body.removeChild(link);
   };
 
-  const filteredEmployees = employees.filter(emp => {
-    const matchesSearch = emp.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      emp.zone.toLowerCase().includes(searchQuery.toLowerCase());
+  const filteredData = (activeTab === 'managers' ? employees : teamMembers).filter(emp => {
+    const name = emp.name || '';
+    const zone = emp.zone || emp.role || '';
+    const matchesSearch = name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      zone.toLowerCase().includes(searchQuery.toLowerCase());
+
     const matchesStatus = statusFilter === 'All' ||
-      (statusFilter === 'Inactive' ? emp.status !== 'On Duty' : emp.status === statusFilter);
+      (statusFilter === 'Active' ? emp.status !== 'Inactive' : emp.status === 'Inactive');
+
     return matchesSearch && matchesStatus;
   });
 
@@ -258,7 +307,7 @@ const EmployeeList = () => {
         <div className="flex items-center justify-end space-x-2" onClick={(e) => e.stopPropagation()}>
           <button
             onClick={() => {
-              setEditingManager(row);
+              setEditingMember({ ...row, role: 'manager' });
               setIsEditModalOpen(true);
             }}
             title="Edit Manager"
@@ -267,14 +316,14 @@ const EmployeeList = () => {
             <Edit size={16} />
           </button>
           <button
-            onClick={() => handleSuspendManager(row.id, row.status)}
-            title={row.status === 'Inactive' ? 'Re-activate' : 'Suspend Op'}
+            onClick={() => handleSuspendMember(row.id, row.status, 'manager')}
+            title={row.status === 'Inactive' ? '激活' : 'Suspend Op'}
             className={`p-2 rounded-lg transition-colors ${row.status === 'Inactive' ? 'text-emerald-500 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-900/20 dark:hover:bg-emerald-900/40' : 'text-orange-500 bg-orange-50 hover:bg-orange-100 dark:bg-orange-900/20 dark:hover:bg-orange-900/40'}`}
           >
             <Ban size={16} />
           </button>
           <button
-            onClick={() => handleDeleteManager(row.id)}
+            onClick={() => handleDeleteMember(row.id, 'manager')}
             title="Delete Profile"
             className="p-2 text-rose-500 bg-rose-50 hover:bg-rose-100 dark:bg-rose-900/20 dark:hover:bg-rose-900/40 rounded-lg transition-colors"
           >
@@ -285,14 +334,122 @@ const EmployeeList = () => {
     },
   ];
 
+  const employeeColumns = [
+    {
+      header: 'Employee',
+      accessor: 'name',
+      render: (row) => (
+        <div className="flex items-center space-x-4">
+          <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold text-lg border border-indigo-100 dark:border-indigo-800/50">
+            {row.name.charAt(0)}
+          </div>
+          <div>
+            <p className="font-black text-gray-900 dark:text-white text-base leading-tight">{row.name}</p>
+            <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mt-0.5">{row.role}</p>
+          </div>
+        </div>
+      ),
+    },
+    {
+      header: 'Status',
+      accessor: 'status',
+      render: (row) => (
+        <span className={`inline-flex items-center px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider border backdrop-blur-sm shadow-sm ${row.status === 'Active' ? 'bg-emerald-50/80 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800' :
+          'bg-gray-50/80 text-gray-700 border-gray-200 dark:bg-gray-800/50 dark:text-gray-400 dark:border-gray-700'
+          }`}>
+          {row.status}
+        </span>
+      ),
+    },
+    {
+      header: 'Security',
+      accessor: 'id',
+      render: () => (
+        <div className="flex items-center space-x-2 bg-indigo-50 dark:bg-indigo-900/20 px-3 py-1.5 rounded-xl w-max border border-indigo-100 dark:border-indigo-800/50 backdrop-blur-sm shadow-sm">
+          <Shield size={14} className="text-indigo-500 dark:text-indigo-400" />
+          <span className="text-xs font-bold text-indigo-700 dark:text-indigo-400">Verified</span>
+        </div>
+      ),
+    },
+    {
+      header: 'Actions',
+      accessor: 'actions',
+      render: (row) => (
+        <div className="flex items-center justify-end space-x-2" onClick={(e) => e.stopPropagation()}>
+          <button
+            onClick={() => {
+              setEditingMember({ ...row, role: 'employee', designation: row.role });
+              setIsEditModalOpen(true);
+            }}
+            title="Edit Employee"
+            className="p-2 text-indigo-500 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/20 dark:hover:bg-indigo-900/40 rounded-lg transition-colors"
+          >
+            <Edit size={16} />
+          </button>
+          <button
+            onClick={() => handleSuspendMember(row.id, row.status, 'employee')}
+            title={row.status === 'Inactive' ? 'Re-activate' : 'Suspend Op'}
+            className={`p-2 rounded-lg transition-colors ${row.status === 'Inactive' ? 'text-emerald-500 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-900/20 dark:hover:bg-emerald-900/40' : 'text-orange-500 bg-orange-50 hover:bg-orange-100 dark:bg-orange-900/20 dark:hover:bg-orange-900/40'}`}
+          >
+            <Ban size={16} />
+          </button>
+          <button
+            onClick={() => handleDeleteMember(row.id, 'employee')}
+            title="Delete Profile"
+            className="p-2 text-rose-500 bg-rose-50 hover:bg-rose-100 dark:bg-rose-900/20 dark:hover:bg-rose-900/40 rounded-lg transition-colors"
+          >
+            <Trash2 size={16} />
+          </button>
+          <button
+            onClick={() => setSelectedEmployee(row)}
+            title="View Details"
+            className="p-2 text-gray-500 bg-gray-50 hover:bg-gray-100 dark:bg-gray-800/50 dark:hover:bg-gray-800 rounded-lg transition-colors"
+          >
+            <Clock size={16} />
+          </button>
+        </div>
+      ),
+    },
+  ];
+
   if (selectedEmployee) {
     return (
       <div className="space-y-6 animate-in fade-in duration-500 overflow-x-hidden">
-        <div className="flex items-center space-x-4">
-          <Button variant="ghost" onClick={() => setSelectedEmployee(null)} className="p-2 border border-gray-100 dark:border-gray-800 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-            <ArrowLeft size={20} className="text-gray-600 dark:text-gray-400" />
-          </Button>
-          <h1 className="text-2xl font-black text-gray-900 dark:text-white">Employee Profile</h1>
+        <div className="flex items-center justify-between w-full">
+          <div className="flex items-center space-x-4">
+            <Button variant="ghost" onClick={() => setSelectedEmployee(null)} className="p-2 border border-gray-100 dark:border-gray-800 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+              <ArrowLeft size={20} className="text-gray-600 dark:text-gray-400" />
+            </Button>
+            <h1 className="text-2xl font-black text-gray-900 dark:text-white">Employee Profile</h1>
+          </div>
+          <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setEditingMember({
+                  id: selectedEmployee.id,
+                  name: selectedEmployee.name,
+                  designation: selectedEmployee.role,
+                  status: selectedEmployee.status,
+                  role: 'employee',
+                  zone: selectedEmployee.zone || ''
+                });
+                setIsEditModalOpen(true);
+              }}
+              className="p-2 border border-indigo-100 dark:border-indigo-800/50 rounded-xl hover:bg-indigo-50 dark:hover:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 transition-colors flex items-center"
+            >
+              <Edit size={18} />
+              <span className="ml-2 font-bold text-xs uppercase tracking-wider">Edit</span>
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={() => handleDeleteMember(selectedEmployee.id, 'employee')}
+              className="p-2 border border-rose-100 text-rose-500 rounded-xl hover:bg-rose-50 dark:border-rose-900/40 dark:hover:bg-rose-900/20 transition-colors flex items-center"
+            >
+              <X size={18} />
+              <span className="ml-2 font-bold text-xs uppercase tracking-wider">Delete</span>
+            </Button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative">
@@ -394,7 +551,7 @@ const EmployeeList = () => {
             </Button>
             <h1 className="text-2xl font-black text-gray-900 dark:text-white">Manager Profile</h1>
           </div>
-          <Button variant="ghost" onClick={() => handleDeleteManager(selectedManager.id)} className="p-2 border border-rose-100 text-rose-500 rounded-xl hover:bg-rose-50 dark:border-rose-900/40 dark:hover:bg-rose-900/20 transition-colors flex items-center">
+          <Button variant="ghost" onClick={() => handleDeleteMember(selectedManager.id, 'manager')} className="p-2 border border-rose-100 text-rose-500 rounded-xl hover:bg-rose-50 dark:border-rose-900/40 dark:hover:bg-rose-900/20 transition-colors flex items-center">
             <X size={20} />
             <span className="ml-2 font-bold text-sm">Delete Manager</span>
           </Button>
@@ -535,6 +692,37 @@ const EmployeeList = () => {
     );
   }
 
+  const StatSkeleton = () => (
+    <div className="bg-white dark:bg-gray-900 p-4 rounded-[2rem] border border-gray-100 dark:border-gray-800 shadow-sm animate-pulse">
+      <div className="flex items-center space-x-4">
+        <div className="w-11 h-11 rounded-2xl bg-gray-100 dark:bg-gray-800" />
+        <div className="space-y-2">
+          <div className="h-2 w-16 bg-gray-100 dark:bg-gray-800 rounded" />
+          <div className="h-6 w-10 bg-gray-100 dark:bg-gray-800 rounded" />
+        </div>
+      </div>
+    </div>
+  );
+
+  const TableSkeleton = () => (
+    <div className="space-y-4 animate-pulse">
+      {[...Array(itemsPerPage)].map((_, i) => (
+        <div key={i} className="flex items-center justify-between p-4 bg-gray-50/50 dark:bg-gray-800/20 rounded-2xl">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-gray-200 dark:bg-gray-700" />
+            <div className="space-y-2">
+              <div className="h-4 w-32 bg-gray-200 dark:bg-gray-700 rounded-lg" />
+              <div className="h-3 w-24 bg-gray-200 dark:bg-gray-700 rounded-lg opacity-50" />
+            </div>
+          </div>
+          <div className="h-8 w-24 bg-gray-200 dark:bg-gray-700 rounded-xl" />
+          <div className="h-8 w-32 bg-gray-200 dark:bg-gray-700 rounded-xl hidden md:block" />
+          <div className="h-8 w-20 bg-gray-200 dark:bg-gray-700 rounded-xl" />
+        </div>
+      ))}
+    </div>
+  );
+
   return (
     <div className="space-y-8 animate-in fade-in duration-500 relative overflow-x-hidden">
       {/* Decorative Background SVG */}
@@ -555,7 +743,7 @@ const EmployeeList = () => {
             <Users size={32} strokeWidth={1.5} />
           </div>
           <div>
-            <h1 className="text-3xl lg:text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight">Manager Directory</h1>
+            <h1 className="text-3xl lg:text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight">Organization Directory</h1>
             <p className="text-gray-500 dark:text-gray-400 mt-2 font-medium">Manage and monitor your team leadership</p>
           </div>
         </div>
@@ -575,47 +763,133 @@ const EmployeeList = () => {
             onClick={() => setIsModalOpen(true)}
           >
             <UserPlus size={18} />
-            <span>Add Manager</span>
+            <span>Add Member</span>
           </Button>
         </div>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((stat, i) => (
-          <div
-            key={i}
-            onClick={() => setStatusFilter(stat.filter)}
-            className={`bg-white dark:bg-gray-900 p-4 rounded-[2rem] border transition-all group relative overflow-hidden cursor-pointer ${statusFilter === stat.filter ? 'border-indigo-500 shadow-lg shadow-indigo-100 dark:shadow-none translate-y-[-4px]' : 'border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-md'
-              }`}
-          >
-            <div className={`absolute -right-4 -top-4 w-16 h-16 rounded-full ${stat.bg} opacity-20 dark:opacity-10 group-hover:scale-150 transition-transform duration-700`} />
-            <div className="flex items-center space-x-4 relative">
-              <div className={`w-11 h-11 rounded-2xl ${stat.bg} ${stat.color} dark:bg-opacity-20 flex items-center justify-center group-hover:rotate-[10deg] transition-transform duration-500 shadow-inner`}>
-                <stat.icon size={20} />
-              </div>
-              <div>
-                <p className="text-[9px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-0.5">{stat.label}</p>
-                <p className="text-2xl font-black text-gray-900 dark:text-white leading-none">{stat.value}</p>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {isLoading ? (
+          <>
+            <div className="bg-white dark:bg-gray-900 p-8 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 shadow-sm space-y-4">
+              <div className="h-4 w-32 bg-gray-100 dark:bg-gray-800 rounded animate-pulse" />
+              <div className="grid grid-cols-3 gap-4">
+                {[...Array(3)].map((_, i) => <StatSkeleton key={i} />)}
               </div>
             </div>
-          </div>
-        ))}
+            <div className="bg-white dark:bg-gray-900 p-8 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 shadow-sm space-y-4">
+              <div className="h-4 w-32 bg-gray-100 dark:bg-gray-800 rounded animate-pulse" />
+              <div className="grid grid-cols-3 gap-4">
+                {[...Array(3)].map((_, i) => <StatSkeleton key={i} />)}
+              </div>
+            </div>
+          </>
+        ) : (
+          <>
+            {/* Manager Block */}
+            <div className="bg-white dark:bg-gray-900 p-8 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 shadow-sm flex flex-col gap-6 relative overflow-hidden group/m">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50/50 dark:bg-indigo-900/10 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none" />
+              <div className="flex items-center justify-between">
+                <h3 className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.25em]">Management Oversight</h3>
+                <Shield size={14} className="text-indigo-400 opacity-50" />
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                {managerStats.map((stat, i) => (
+                  <div
+                    key={i}
+                    onClick={() => {
+                      setActiveTab('managers');
+                      setStatusFilter(stat.filter);
+                    }}
+                    className={`p-4 rounded-3xl border transition-all cursor-pointer relative overflow-hidden flex flex-col gap-2 ${statusFilter === stat.filter && activeTab === 'managers' ? 'bg-indigo-50/50 border-indigo-200 dark:bg-indigo-900/20 dark:border-indigo-800' : 'bg-gray-50/50 dark:bg-gray-800/30 border-transparent hover:border-gray-200 dark:hover:border-gray-700'}`}
+                  >
+                    <div className={`${stat.color} flex items-center justify-between`}>
+                      <stat.icon size={16} strokeWidth={2.5} />
+                      <span className="text-lg font-black">{stat.value}</span>
+                    </div>
+                    <span className="text-[8px] font-bold text-gray-400 uppercase tracking-widest">{stat.label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Employee Block */}
+            <div className="bg-white dark:bg-gray-900 p-8 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 shadow-sm flex flex-col gap-6 relative overflow-hidden group/e">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50/50 dark:bg-blue-900/10 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none" />
+              <div className="flex items-center justify-between">
+                <h3 className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.25em]">Field Operations</h3>
+                <Users size={14} className="text-blue-400 opacity-50" />
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                {employeeStats.map((stat, i) => (
+                  <div
+                    key={i}
+                    onClick={() => {
+                      setActiveTab('employees');
+                      setStatusFilter(stat.filter);
+                    }}
+                    className={`p-4 rounded-3xl border transition-all cursor-pointer relative overflow-hidden flex flex-col gap-2 ${statusFilter === stat.filter && activeTab === 'employees' ? 'bg-blue-50/50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800' : 'bg-gray-50/50 dark:bg-gray-800/30 border-transparent hover:border-gray-200 dark:hover:border-gray-700'}`}
+                  >
+                    <div className={`${stat.color} flex items-center justify-between`}>
+                      <stat.icon size={16} strokeWidth={2.5} />
+                      <span className="text-lg font-black">{stat.value}</span>
+                    </div>
+                    <span className="text-[8px] font-bold text-gray-400 uppercase tracking-widest">{stat.label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
       </div>
+
 
       {/* Table with search */}
       <div className="bg-white dark:bg-gray-900 rounded-[2rem] border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
-        <div className="p-6 border-b border-gray-50 dark:border-gray-800 flex items-center justify-between">
-          <div className="relative w-80">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500" size={18} />
-            <input
-              type="text"
-              placeholder="Search managers..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-gray-800 border-none rounded-xl text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500/10 outline-none transition-all"
-            />
+        <div className="p-6 border-b border-gray-50 dark:border-gray-800 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+          <div className="flex flex-col md:flex-row md:items-center gap-6">
+            {/* Tab Navigation */}
+            <div className="flex space-x-1 bg-gray-100/50 dark:bg-gray-800/50 p-1 rounded-2xl w-max border border-gray-100 dark:border-gray-800/50">
+              <button
+                onClick={() => setActiveTab('managers')}
+                className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 flex items-center gap-2 ${activeTab === 'managers'
+                  ? 'bg-white dark:bg-gray-900 text-indigo-600 shadow-sm'
+                  : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'
+                  }`}
+              >
+                Managers
+              </button>
+              <button
+                onClick={() => setActiveTab('employees')}
+                className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 flex items-center gap-2 ${activeTab === 'employees'
+                  ? 'bg-white dark:bg-gray-900 text-indigo-600 shadow-sm'
+                  : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'
+                  }`}
+              >
+                Field Staff
+              </button>
+            </div>
+
+            <div className="relative w-full md:w-80">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500" size={18} />
+              <input
+                type="text"
+                placeholder={`Search ${activeTab === 'managers' ? 'managers' : 'employees'}...`}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-gray-800 border-none rounded-xl text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500/10 outline-none transition-all"
+              />
+            </div>
+
+            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-blue-50/50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/50 rounded-xl shadow-sm hover:scale-105 transition-all">
+              <MapPin size={14} className="text-blue-500" />
+              <span className="text-[10px] font-black text-blue-700 dark:text-blue-400 uppercase tracking-widest leading-none">
+                {new Set([...employees.map(e => e.zone), ...teamMembers.map(e => e.zone || 'N/A')].filter(Boolean)).size} Zones
+              </span>
+            </div>
           </div>
+
           <div className="flex items-center space-x-3">
             <div className="flex items-center bg-gray-50 dark:bg-gray-800 rounded-xl px-3 py-2 border border-transparent focus-within:border-indigo-500/20 transition-all shadow-sm hover:bg-gray-100 dark:hover:bg-gray-750">
               <Activity size={16} className="text-emerald-500 dark:text-emerald-400 mr-2" />
@@ -634,57 +908,61 @@ const EmployeeList = () => {
           </div>
         </div>
         <div className="p-4">
-          {(() => {
-            const totalPages = Math.ceil(filteredEmployees.length / itemsPerPage);
-            const startIndex = (currentPage - 1) * itemsPerPage;
-            const paginatedEmployees = filteredEmployees.slice(startIndex, startIndex + itemsPerPage);
+          {isLoading ? (
+            <TableSkeleton />
+          ) : (
+            (() => {
+              const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+              const startIndex = (currentPage - 1) * itemsPerPage;
+              const paginatedEmployees = filteredData.slice(startIndex, startIndex + itemsPerPage);
 
-            return (
-              <>
-                <DataTable
-                  columns={columns}
-                  data={paginatedEmployees}
-                  onRowClick={(row) => setSelectedManager(row)}
-                />
+              return (
+                <>
+                  <DataTable
+                    columns={activeTab === 'managers' ? columns : employeeColumns}
+                    data={paginatedEmployees}
+                    onRowClick={(row) => activeTab === 'managers' ? setSelectedManager(row) : setSelectedEmployee(row)}
+                  />
 
-                {/* Pagination Footer */}
-                {totalPages > 1 && (
-                  <div className="flex items-center justify-center gap-2 mt-8 pb-4">
-                    <button
-                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                      disabled={currentPage === 1}
-                      className="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest bg-white dark:bg-gray-800 border border-slate-200 dark:border-slate-800 text-slate-400 disabled:opacity-30 hover:text-blue-500 transition-all font-sans"
-                    >
-                      Prev
-                    </button>
+                  {/* Pagination Footer */}
+                  {totalPages > 1 && (
+                    <div className="flex items-center justify-center gap-2 mt-8 pb-4">
+                      <button
+                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                        disabled={currentPage === 1}
+                        className="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest bg-white dark:bg-gray-800 border border-slate-200 dark:border-slate-800 text-slate-400 disabled:opacity-30 hover:text-blue-500 transition-all font-sans"
+                      >
+                        Prev
+                      </button>
 
-                    <div className="flex items-center gap-1">
-                      {[...Array(totalPages)].map((_, i) => (
-                        <button
-                          key={i + 1}
-                          onClick={() => setCurrentPage(i + 1)}
-                          className={`w-8 h-8 rounded-lg text-[10px] font-black transition-all ${currentPage === i + 1
+                      <div className="flex items-center gap-1">
+                        {[...Array(totalPages)].map((_, i) => (
+                          <button
+                            key={i + 1}
+                            onClick={() => setCurrentPage(i + 1)}
+                            className={`w-8 h-8 rounded-lg text-[10px] font-black transition-all ${currentPage === i + 1
                               ? 'bg-[#4f46e5] text-white shadow-lg shadow-indigo-500/30'
                               : 'bg-white dark:bg-gray-800 text-slate-400 hover:text-indigo-500 border border-slate-200 dark:border-slate-800'
-                            }`}
-                        >
-                          {i + 1}
-                        </button>
-                      ))}
-                    </div>
+                              }`}
+                          >
+                            {i + 1}
+                          </button>
+                        ))}
+                      </div>
 
-                    <button
-                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                      disabled={currentPage === totalPages}
-                      className="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest bg-white dark:bg-gray-800 border border-slate-200 dark:border-slate-800 text-slate-400 disabled:opacity-30 hover:text-blue-500 transition-all font-sans"
-                    >
-                      Next
-                    </button>
-                  </div>
-                )}
-              </>
-            );
-          })()}
+                      <button
+                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                        disabled={currentPage === totalPages}
+                        className="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest bg-white dark:bg-gray-800 border border-slate-200 dark:border-slate-800 text-slate-400 disabled:opacity-30 hover:text-blue-500 transition-all font-sans"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  )}
+                </>
+              );
+            })()
+          )}
         </div>
       </div>
 
@@ -706,8 +984,8 @@ const EmployeeList = () => {
                   <UserPlus size={28} strokeWidth={1.5} />
                 </div>
                 <div>
-                  <h2 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">Add New Manager</h2>
-                  <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 mt-1 uppercase tracking-[0.2em]">Register a new team leader</p>
+                  <h2 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">Add Team Member</h2>
+                  <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 mt-1 uppercase tracking-[0.2em]">Register a new {newMember.role === 'manager' ? 'team leader' : 'field staff'}</p>
                 </div>
               </div>
               <button
@@ -718,26 +996,51 @@ const EmployeeList = () => {
               </button>
             </div>
 
-            <form onSubmit={handleAddManager} className="space-y-8">
+            <form onSubmit={handleAddMember} className="space-y-8">
+              <div className="bg-gray-50 dark:bg-gray-800/30 p-1.5 rounded-2xl border border-gray-100 dark:border-gray-800/50 mb-8 flex">
+                <button
+                  type="button"
+                  onClick={() => setNewMember({ ...newMember, role: 'manager' })}
+                  className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${newMember.role === 'manager'
+                    ? 'bg-white dark:bg-gray-800 text-indigo-600 shadow-sm'
+                    : 'text-gray-400 hover:text-gray-600'
+                    }`}
+                >
+                  <Shield size={14} />
+                  Manager
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setNewMember({ ...newMember, role: 'employee' })}
+                  className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${newMember.role === 'employee'
+                    ? 'bg-white dark:bg-gray-800 text-indigo-600 shadow-sm'
+                    : 'text-gray-400 hover:text-gray-600'
+                    }`}
+                >
+                  <Users size={14} />
+                  Employee
+                </button>
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="space-y-3">
-                  <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.25em] ml-1">Manager Name</label>
+                  <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.25em] ml-1">Full Name</label>
                   <input
                     required
                     type="text"
-                    value={newManager.name}
-                    onChange={(e) => setNewManager({ ...newManager, name: e.target.value })}
+                    value={newMember.name}
+                    onChange={(e) => setNewMember({ ...newMember, name: e.target.value })}
                     className="w-full px-6 py-4 bg-gray-50/50 dark:bg-gray-800/50 border-2 border-transparent focus:border-emerald-500/20 rounded-2xl text-gray-900 dark:text-white font-bold transition-all outline-none placeholder:text-gray-300"
                     placeholder="e.g. John Doe"
                   />
                 </div>
                 <div className="space-y-3">
-                  <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.25em] ml-1">Zone</label>
+                  <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.25em] ml-1">Zone / Area</label>
                   <input
                     required
                     type="text"
-                    value={newManager.zone}
-                    onChange={(e) => setNewManager({ ...newManager, zone: e.target.value })}
+                    value={newMember.zone}
+                    onChange={(e) => setNewMember({ ...newMember, zone: e.target.value })}
                     className="w-full px-6 py-4 bg-gray-50/50 dark:bg-gray-800/50 border-2 border-transparent focus:border-emerald-500/20 rounded-2xl text-gray-900 dark:text-white font-bold transition-all outline-none placeholder:text-gray-300"
                     placeholder="e.g. Zone Alpha"
                   />
@@ -745,23 +1048,23 @@ const EmployeeList = () => {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="space-y-3">
-                  <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.25em] ml-1">Manager Email</label>
+                  <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.25em] ml-1">Email Address</label>
                   <input
                     required
                     type="email"
-                    value={newManager.email}
-                    onChange={(e) => setNewManager({ ...newManager, email: e.target.value })}
+                    value={newMember.email}
+                    onChange={(e) => setNewMember({ ...newMember, email: e.target.value })}
                     className="w-full px-6 py-4 bg-gray-50/50 dark:bg-gray-800/50 border-2 border-transparent focus:border-emerald-500/20 rounded-2xl text-gray-900 dark:text-white font-bold transition-all outline-none placeholder:text-gray-300"
                     placeholder="e.g. john@example.com"
                   />
                 </div>
                 <div className="space-y-3">
-                  <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.25em] ml-1">Password</label>
+                  <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.25em] ml-1">Set Password</label>
                   <input
                     required
                     type="password"
-                    value={newManager.password}
-                    onChange={(e) => setNewManager({ ...newManager, password: e.target.value })}
+                    value={newMember.password}
+                    onChange={(e) => setNewMember({ ...newMember, password: e.target.value })}
                     className="w-full px-6 py-4 bg-gray-50/50 dark:bg-gray-800/50 border-2 border-transparent focus:border-emerald-500/20 rounded-2xl text-gray-900 dark:text-white font-bold transition-all outline-none placeholder:text-gray-300"
                     placeholder="••••••••"
                   />
@@ -773,14 +1076,25 @@ const EmployeeList = () => {
                   <div className="relative group">
                     <select
                       required
-                      value={newManager.designation}
-                      onChange={(e) => setNewManager({ ...newManager, designation: e.target.value })}
+                      value={newMember.designation}
+                      onChange={(e) => setNewMember({ ...newMember, designation: e.target.value })}
                       className="w-full px-6 py-4 bg-gray-50/50 dark:bg-gray-800/50 border-2 border-transparent focus:border-emerald-500/20 rounded-2xl text-gray-900 dark:text-white font-bold transition-all outline-none appearance-none cursor-pointer"
                     >
-                      <option value="Operations Manager">Operations Manager</option>
-                      <option value="Regional Manager">Regional Manager</option>
-                      <option value="Team Lead">Team Lead</option>
-                      <option value="Project Manager">Project Manager</option>
+                      {newMember.role === 'manager' ? (
+                        <>
+                          <option value="Operations Manager">Operations Manager</option>
+                          <option value="Regional Manager">Regional Manager</option>
+                          <option value="Team Lead">Team Lead</option>
+                          <option value="Project Manager">Project Manager</option>
+                        </>
+                      ) : (
+                        <>
+                          <option value="Employee">Employee</option>
+                          <option value="Field Agent">Field Agent</option>
+                          <option value="Supervisor">Supervisor</option>
+                          <option value="Technician">Technician</option>
+                        </>
+                      )}
                     </select>
                     <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
                       <Users size={18} />
@@ -788,12 +1102,12 @@ const EmployeeList = () => {
                   </div>
                 </div>
                 <div className="space-y-3">
-                  <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.25em] ml-1">Manager Status</label>
+                  <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.25em] ml-1">Status</label>
                   <div className="relative group">
                     <select
                       required
-                      value={newManager.status}
-                      onChange={(e) => setNewManager({ ...newManager, status: e.target.value })}
+                      value={newMember.status}
+                      onChange={(e) => setNewMember({ ...newMember, status: e.target.value })}
                       className="w-full px-6 py-4 bg-gray-50/50 dark:bg-gray-800/50 border-2 border-transparent focus:border-emerald-500/20 rounded-2xl text-gray-900 dark:text-white font-bold transition-all outline-none appearance-none cursor-pointer"
                     >
                       <option value="Active">Active</option>
@@ -820,7 +1134,7 @@ const EmployeeList = () => {
                   type="submit"
                   className="flex-1 py-5 rounded-2xl text-xs font-black uppercase tracking-[0.2em] bg-[#00966d] text-white shadow-xl shadow-emerald-100 dark:shadow-none transition-all hover:bg-[#007b5a] hover:scale-[1.02] active:scale-95"
                 >
-                  Save Manager
+                  Complete Registration
                 </button>
               </div>
             </form>
@@ -846,8 +1160,8 @@ const EmployeeList = () => {
                   <Edit size={28} strokeWidth={1.5} />
                 </div>
                 <div>
-                  <h2 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">Edit Manager</h2>
-                  <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 mt-1 uppercase tracking-[0.2em]">Update manager details</p>
+                  <h2 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">Edit {editingMember?.role === 'manager' ? 'Manager' : 'Employee'}</h2>
+                  <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 mt-1 uppercase tracking-[0.2em]">Update {editingMember?.role === 'manager' ? 'manager' : 'employee'} details</p>
                 </div>
               </div>
               <button
@@ -861,22 +1175,22 @@ const EmployeeList = () => {
             <form onSubmit={handleEditSubmit} className="space-y-8">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="space-y-3">
-                  <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.25em] ml-1">Manager Name</label>
+                  <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.25em] ml-1">Full Name</label>
                   <input
                     required
                     type="text"
-                    value={editingManager?.name || ''}
-                    onChange={(e) => setEditingManager({ ...editingManager, name: e.target.value })}
+                    value={editingMember?.name || ''}
+                    onChange={(e) => setEditingMember({ ...editingMember, name: e.target.value })}
                     className="w-full px-6 py-4 bg-gray-50/50 dark:bg-gray-800/50 border-2 border-transparent focus:border-indigo-500/20 rounded-2xl text-gray-900 dark:text-white font-bold transition-all outline-none"
                   />
                 </div>
                 <div className="space-y-3">
-                  <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.25em] ml-1">Zone</label>
+                  <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.25em] ml-1">Zone / Area</label>
                   <input
                     required
                     type="text"
-                    value={editingManager?.zone || ''}
-                    onChange={(e) => setEditingManager({ ...editingManager, zone: e.target.value })}
+                    value={editingMember?.zone || ''}
+                    onChange={(e) => setEditingMember({ ...editingMember, zone: e.target.value })}
                     className="w-full px-6 py-4 bg-gray-50/50 dark:bg-gray-800/50 border-2 border-transparent focus:border-indigo-500/20 rounded-2xl text-gray-900 dark:text-white font-bold transition-all outline-none"
                   />
                 </div>
@@ -887,14 +1201,25 @@ const EmployeeList = () => {
                   <div className="relative group">
                     <select
                       required
-                      value={editingManager?.designation || 'Operations Manager'}
-                      onChange={(e) => setEditingManager({ ...editingManager, designation: e.target.value })}
+                      value={editingMember?.designation || 'Operations Manager'}
+                      onChange={(e) => setEditingMember({ ...editingMember, designation: e.target.value })}
                       className="w-full px-6 py-4 bg-gray-50/50 dark:bg-gray-800/50 border-2 border-transparent focus:border-indigo-500/20 rounded-2xl text-gray-900 dark:text-white font-bold transition-all outline-none appearance-none cursor-pointer"
                     >
-                      <option value="Operations Manager">Operations Manager</option>
-                      <option value="Regional Manager">Regional Manager</option>
-                      <option value="Team Lead">Team Lead</option>
-                      <option value="Project Manager">Project Manager</option>
+                      {editingMember?.role === 'manager' ? (
+                        <>
+                          <option value="Operations Manager">Operations Manager</option>
+                          <option value="Regional Manager">Regional Manager</option>
+                          <option value="Team Lead">Team Lead</option>
+                          <option value="Project Manager">Project Manager</option>
+                        </>
+                      ) : (
+                        <>
+                          <option value="Employee">Employee</option>
+                          <option value="Field Agent">Field Agent</option>
+                          <option value="Supervisor">Supervisor</option>
+                          <option value="Technician">Technician</option>
+                        </>
+                      )}
                     </select>
                     <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
                       <Users size={18} />
@@ -902,12 +1227,12 @@ const EmployeeList = () => {
                   </div>
                 </div>
                 <div className="space-y-3">
-                  <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.25em] ml-1">Manager Status</label>
+                  <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.25em] ml-1">Current Status</label>
                   <div className="relative group">
                     <select
                       required
-                      value={editingManager?.status || 'Active'}
-                      onChange={(e) => setEditingManager({ ...editingManager, status: e.target.value })}
+                      value={editingMember?.status || 'Active'}
+                      onChange={(e) => setEditingMember({ ...editingMember, status: e.target.value })}
                       className="w-full px-6 py-4 bg-gray-50/50 dark:bg-gray-800/50 border-2 border-transparent focus:border-indigo-500/20 rounded-2xl text-gray-900 dark:text-white font-bold transition-all outline-none appearance-none cursor-pointer"
                     >
                       <option value="Active">Active</option>
@@ -934,7 +1259,7 @@ const EmployeeList = () => {
                   type="submit"
                   className="flex-1 py-5 rounded-2xl text-xs font-black uppercase tracking-[0.2em] bg-[#4f46e5] text-white shadow-xl shadow-indigo-100 dark:shadow-none transition-all hover:bg-[#4338ca] hover:scale-[1.02] active:scale-95"
                 >
-                  Update Manager
+                  Update Member
                 </button>
               </div>
             </form>
@@ -943,12 +1268,11 @@ const EmployeeList = () => {
         document.body
       )}
 
-      {/* Success Toast */}
       {showSuccess && createPortal(
         <div className="fixed top-8 left-1/2 -translate-x-1/2 z-[160] animate-in slide-in-from-top-5 duration-300">
           <div className="bg-emerald-600 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center space-x-3 border-2 border-emerald-500/50 backdrop-blur-md">
             <CheckCircle2 size={20} className="text-emerald-100" />
-            <p className="font-bold tracking-tight">Manager "{addedManagerName}" added successfully!</p>
+            <p className="font-bold tracking-tight">"{addedManagerName}" recorded successfully!</p>
           </div>
         </div>,
         document.body
