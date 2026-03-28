@@ -55,6 +55,7 @@ app.use('/api/visits', require('./routes/visitRoutes'));
 app.use('/api/orders', require('./routes/orderRoutes'));
 app.use('/api/activity', require('./routes/activityRoutes'));
 app.use('/api/tracking', require('./routes/trackingRoutes'));
+app.use('/api/notifications', require('./routes/notificationRoutes'));
 
 app.use('/api/employee', require('./routes/employee/employeeRoutes'));
 
