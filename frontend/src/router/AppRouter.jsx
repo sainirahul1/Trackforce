@@ -14,7 +14,8 @@ import NotificationsSuperAdmin from '../pages/superadmin/Notifications';
 import SettingsSuperAdmin from '../pages/superadmin/Settings';
 import TenantDashboard from '../pages/tenant/Dashboard';
 import TenantEmployees from '../pages/tenant/Employees';
-// import ManagerDashboard from '../pages/manager/Dashboard';
+import ManagerDetails from '../pages/tenant/ManagerDetails';
+
 import ManagerTeam from '../pages/manager/Team';
 import EmployeeDetails from '../pages/manager/EmployeeDetails';
 import LiveTracking from '../pages/manager/LiveTracking';
@@ -55,7 +56,6 @@ const AppRouter = () => (
     <Route path="/login" element={<LoginPage />} />
     <Route path="/signup" element={<SignupPage />} />
 
-
     {/* Super Admin Routes */}
     <Route path="/superadmin" element={<DashboardLayout allowedRole="superadmin" />}>
       <Route path="dashboard" element={<SuperAdminDashboard />} />
@@ -73,6 +73,7 @@ const AppRouter = () => (
     <Route path="/tenant" element={<DashboardLayout allowedRole="tenant" />}>
       <Route path="dashboard" element={<TenantDashboard />} />
       <Route path="employees" element={<TenantEmployees />} />
+      <Route path="employees/:id" element={<ManagerDetails />} />
       <Route path="live" element={<LiveTrackingTenant />} />
       <Route path="visits" element={<VisitsTenant />} />
       <Route path="orders" element={<OrdersTenant />} />

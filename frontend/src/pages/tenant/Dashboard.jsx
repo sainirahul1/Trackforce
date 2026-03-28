@@ -1,62 +1,75 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Users, Activity, Globe, DollarSign,
   ChevronRight, ArrowUpRight, CheckCircle2, UserCheck,
   ShieldCheck, Briefcase, CreditCard,
   LayoutGrid, Settings, ExternalLink, History, Box, AlertCircle,
-  TrendingUp, Clock, Plus, Filter, MoreHorizontal
+  TrendingUp, Clock, Plus, Filter, MoreHorizontal, Search
 } from 'lucide-react';
 import { 
   Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, ArcElement 
 } from 'chart.js';
+import tenantService from '../../services/tenantService';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, ArcElement);
 
 const TenantDashboard = () => {
-  const [visibleCount, setVisibleCount] = useState(5);
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState(null);
+  const [managers, setManagers] = useState([]);
+  const [totalManagers, setTotalManagers] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [totalPages, setTotalPages] = useState(0);
+  const limit = 5;
 
-  // SaaS Tenant & Subscription Data
-  const tenantInfo = {
-    name: 'TrackForce Enterprise',
-    domain: 'trackforce.io',
-    tenantId: 'TRN-7742-XP91',
-    status: 'Active',
-    plan: 'Enterprise Nexus',
-    tier: 'Premium'
+  useEffect(() => {
+    fetchStats();
+  }, []);
+
+  useEffect(() => {
+    fetchManagers();
+  }, [currentPage, searchQuery]);
+
+  const fetchStats = async () => {
+    try {
+      const data = await tenantService.getDashboardStats();
+      setStats(data);
+    } catch (error) {
+      console.error('Failed to fetch dashboard stats:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const subscription = {
-    totalSeats: 500,
-    usedSeats: 450,
-    renewalDate: 'Dec 20, 2026',
-    daysLeft: 275,
-    billingCycle: 'Annual'
+  const fetchManagers = async () => {
+    try {
+      const data = await tenantService.getDashboardManagers(currentPage, limit, searchQuery);
+      setManagers(data.managers);
+      setTotalManagers(data.total);
+      setTotalPages(data.totalPages);
+    } catch (error) {
+      console.error('Failed to fetch managers:', error);
+    }
   };
 
+  if (loading || !stats) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  const { tenantInfo, subscription, recentActions } = stats;
   const usagePercent = (subscription.usedSeats / subscription.totalSeats) * 100;
 
-  // 30+ Dummy Managers for Pagination/Expansion Strategy
-  const allManagers = Array.from({ length: 32 }, (_, i) => ({
-    id: i + 1,
-    name: i === 0 ? 'Siddharth Malhotra' : i === 1 ? 'Ananya Rao' : i === 2 ? 'Vikram Singh' : i === 3 ? 'Meera Kapoor' : `Operations Manager #${i + 1}`,
-    region: i % 4 === 0 ? 'North' : i % 4 === 1 ? 'South' : i % 4 === 2 ? 'West' : 'East',
-    employees: Math.floor(Math.random() * (25 - 5 + 1)) + 5,
-    efficiency: `${Math.floor(Math.random() * (99 - 85 + 1)) + 85}%`,
-    initial: i === 0 ? 'SM' : i === 1 ? 'AR' : i === 2 ? 'VS' : i === 3 ? 'MK' : `M${i + 1}`,
-  }));
+  const handleManagerClick = (manager) => {
+    navigate(`/tenant/employees/${manager._id}`);
+  };
 
-  const visibleManagers = allManagers.slice(0, visibleCount);
-
-  // SaaS-relevant Recent Actions
-  const recentActions = [
-    { id: 1, title: 'New Seat Provisioning', desc: 'Added 5 Field Executives for South Zone.', actor: 'Admin', time: '5m' },
-    { id: 2, title: 'Subscription Auto-Renewal', desc: 'Payment processed for Annual Nexus plan.', actor: 'System', time: '1h' },
-    { id: 3, title: 'Security Key Rotation', desc: 'API keys successfully rotated for all managers.', actor: 'DevOps', time: '3h' },
-    { id: 4, title: 'Personnel Offboarding', desc: 'Removed 2 inactive users as per audit policy.', actor: 'HR Manager', time: '5h' },
-    { id: 5, title: 'Regional Threshold Warning', desc: 'North zone capacity reached 95%.', actor: 'Automator', time: '1d' },
-    { id: 6, title: 'Configuration Update', desc: 'Enabled MFA for all administrative roles.', actor: 'Global Admin', time: '1d' },
-    { id: 7, title: 'Report Exported', desc: 'Q1 Compliance Audit exported as PDF.', actor: 'Compliance Lead', time: '2d' },
-  ];
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700 pb-12">
@@ -158,7 +171,7 @@ const TenantDashboard = () => {
                  <p className="text-[8px] font-black text-gray-500 dark:text-gray-400/80 uppercase tracking-widest mt-2 px-1">Nexus Limit</p>
                </div>
                <div className="text-center p-3 rounded-2xl bg-emerald-50/30 dark:bg-emerald-900/10 border-2 border-emerald-500/30 transition-all hover:border-emerald-500/50">
-                 <h4 className="text-2xl font-black text-emerald-500 leading-none tracking-tighter">{subscription.totalSeats - subscription.usedSeats}</h4>
+                 <h4 className="text-2xl font-black text-emerald-500 leading-none tracking-tighter">{subscription.available}</h4>
                  <p className="text-[8px] font-black text-gray-500 dark:text-gray-400/80 uppercase tracking-widest mt-2 px-1">Available</p>
                </div>
             </div>
@@ -177,19 +190,37 @@ const TenantDashboard = () => {
               <p className="text-[10px] font-black text-gray-500 dark:text-gray-400 tracking-widest mt-4 italic">Strategic organizational overview</p>
             </div>
             <div className="flex items-center gap-4">
+               <div className="relative">
+                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
+                 <input 
+                    type="text"
+                    placeholder="Search Nodes..."
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    className="pl-9 pr-4 py-2 bg-blue-50/50 dark:bg-blue-900/20 border-2 border-blue-500/10 rounded-2xl text-[10px] font-black uppercase tracking-widest outline-none focus:border-blue-500/30 transition-all w-48"
+                 />
+               </div>
                <div className="flex items-center gap-3 px-4 py-2 bg-blue-50/50 dark:bg-blue-900/20 border-2 border-blue-500/10 rounded-2xl shadow-sm group hover:border-blue-500/30 transition-all">
                   <div className="w-2 h-2 rounded-full bg-blue-600 animate-pulse shadow-[0_0_8px_rgba(37,99,235,0.4)]"></div>
                   <div className="flex flex-col">
                     <span className="text-[8px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest leading-none">Nodes</span>
-                    <span className="text-lg font-black text-blue-600 tracking-tighter leading-none mt-1">{allManagers.length}</span>
+                    <span className="text-lg font-black text-blue-600 tracking-tighter leading-none mt-1">{totalManagers}</span>
                   </div>
                </div>
             </div>
           </div>
 
-          <div className="flex flex-col gap-4 transition-all duration-500 ease-in-out">
-            {visibleManagers.map((m) => (
-              <div key={m.id} className="group bg-white dark:bg-gray-800 rounded-full border-2 border-blue-500/20 p-4 pl-6 pr-8 shadow-sm transition-all hover:shadow-xl hover:border-blue-500/50 cursor-pointer flex items-center justify-between gap-6 relative overflow-hidden backdrop-blur-sm">
+          <div className="flex flex-col gap-4 transition-all duration-500 ease-in-out min-h-[400px]">
+            {managers.map((m) => (
+              <div 
+                key={m._id} 
+                onClick={() => handleManagerClick(m)}
+                className="group bg-white dark:bg-gray-800 rounded-full border-2 border-blue-500/20 p-4 pl-6 pr-8 shadow-sm transition-all hover:shadow-xl hover:border-blue-500/50 cursor-pointer flex items-center justify-between gap-6 relative overflow-hidden backdrop-blur-sm"
+              >
+
                 <div className="absolute inset-y-0 left-0 w-1.5 bg-blue-600 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                 
                 <div className="flex items-center gap-4 flex-1">
@@ -224,26 +255,37 @@ const TenantDashboard = () => {
             ))}
           </div>
 
-          <div className="flex justify-center items-center gap-4 mt-8">
-            {visibleCount > 5 && (
-              <button 
-                onClick={() => setVisibleCount(5)}
-                className="flex items-center gap-2 px-5 py-2.5 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 text-gray-500 hover:border-blue-600 hover:text-blue-600 transition-all rounded-xl text-[9px] font-black uppercase tracking-widest shadow-lg shadow-blue-500/5 active:scale-95 group"
-              >
-                <ChevronRight size={10} className="rotate-180 group-hover:-translate-x-0.5 transition-transform" />
-                <span>Back to 5</span>
-              </button>
-            )}
+          <div className="flex justify-center items-center gap-2 mt-8">
+            <button 
+              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+              className="p-2.5 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 text-gray-500 hover:border-blue-600 hover:text-blue-600 disabled:opacity-30 transition-all rounded-xl shadow-lg active:scale-95 group"
+            >
+              <ChevronRight size={14} className="rotate-180" />
+            </button>
             
-            {visibleCount < allManagers.length && (
-              <button 
-                onClick={() => setVisibleCount(Math.min(visibleCount + 5, allManagers.length))}
-                className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white hover:bg-blue-700 transition-all rounded-xl text-[9px] font-black uppercase tracking-widest shadow-lg shadow-blue-600/20 active:scale-95 group"
-              >
-                <span>View More</span>
-                <ChevronRight size={10} className="group-hover:translate-x-0.5 transition-transform" />
-              </button>
-            )}
+            <div className="flex items-center gap-1">
+              {[...Array(totalPages)].map((_, i) => (
+                <button
+                  key={i + 1}
+                  onClick={() => setCurrentPage(i + 1)}
+                  className={`w-10 h-10 rounded-xl text-[10px] font-black transition-all ${currentPage === i + 1
+                      ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30'
+                      : 'bg-white dark:bg-gray-800 text-gray-400 hover:text-blue-600 border-2 border-transparent'
+                    }`}
+                >
+                  {i + 1}
+                </button>
+              ))}
+            </div>
+
+            <button 
+              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages}
+              className="p-2.5 bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-30 transition-all rounded-xl shadow-lg active:scale-95 group"
+            >
+              <ChevronRight size={14} />
+            </button>
           </div>
         </div>
 
@@ -259,10 +301,10 @@ const TenantDashboard = () => {
             </div>
             
             <div className="space-y-7">
-              {recentActions.map((action) => (
-                <div key={action.id} className="relative pl-7 group">
+              {recentActions.map((action, index) => (
+                <div key={action._id || index} className="relative pl-7 group">
                    <div className="absolute left-0 top-1 w-2 h-2 rounded-full bg-blue-600 ring-4 ring-blue-50 dark:ring-blue-900/20 group-hover:scale-125 transition-transform shadow-[0_0_10px_rgba(37,99,235,0.4)]"></div>
-                   {action.id !== recentActions.length && (
+                   {index !== recentActions.length - 1 && (
                      <div className="absolute left-0.75 top-3 bottom-[-1.75rem] w-[1px] bg-gray-100 dark:bg-gray-700 ml-[3.5px]"></div>
                    )}
                    <div className="space-y-1">

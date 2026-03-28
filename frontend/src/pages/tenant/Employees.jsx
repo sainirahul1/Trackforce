@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import DataTable from '../../components/DataTable';
 import tenantService from '../../services/tenantService';
@@ -21,6 +22,7 @@ const getRelativeTime = (timestamp) => {
 };
 
 const EmployeeList = () => {
+  const location = useLocation();
   const [employees, setEmployees] = useState([]);
   const [teamMembers, setTeamMembers] = useState([]);
   const [selectedManager, setSelectedManager] = useState(null);
@@ -90,6 +92,15 @@ const EmployeeList = () => {
       console.error('Failed to fetch managers:', error);
     }
   };
+
+  useEffect(() => {
+    if (location.state?.openManagerId && employees.length > 0) {
+      const manager = employees.find(e => e.id === location.state.openManagerId);
+      if (manager) {
+        setSelectedManager(manager);
+      }
+    }
+  }, [location.state, employees]);
 
   const stats = [
     { label: 'Total Managers', value: employees.length.toString(), icon: Users, color: 'text-indigo-600', bg: 'bg-indigo-50', filter: 'All' },

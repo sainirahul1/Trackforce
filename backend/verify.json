@@ -1,0 +1,7 @@
+{
+  "tenant": "ReatchAll",
+  "limit": 1000,
+  "used": 27,
+  "nodes": 15,
+  "firstManager": "ReatchAll Manager"
+}

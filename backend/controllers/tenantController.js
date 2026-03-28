@@ -7,7 +7,7 @@ const bcrypt = require('bcryptjs');
 // @access  Private (Manager/Tenant)
 exports.getEmployees = async (req, res) => {
   try {
-    const employees = await User.find({ 
+    const employees = await User.find({
       tenant: req.tenantId,
       role: 'employee'
     }).select('-password');
@@ -18,12 +18,51 @@ exports.getEmployees = async (req, res) => {
   }
 };
 
+// @desc    Get a single employee/manager by ID
+// @route   GET /api/tenant/employees/:id
+// @access  Private (Tenant)
+exports.getEmployeeById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const tenantId = req.tenantId || req.user.tenant;
+
+    const employee = await User.findOne({
+      _id: id,
+      tenant: tenantId
+    }).select('-password');
+
+    if (!employee) {
+      return res.status(404).json({ message: 'Employee not found' });
+    }
+
+    // Convert to object for easier manipulation
+    const employeeData = employee.toObject();
+
+    // If the user is a manager, fetch their subordinates
+    if (employee.role === 'manager') {
+      const subordinates = await User.find({
+        manager: id,
+        tenant: tenantId
+      }).select('_id name role status profile updatedAt createdAt').lean();
+
+      employeeData.subordinates = subordinates;
+    }
+
+    res.json(employeeData);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+
+
+
 // @desc    Get all managers for a tenant
 // @route   GET /api/tenant/managers
 // @access  Private (Tenant)
 exports.getManagers = async (req, res) => {
   try {
-    const managers = await User.find({ 
+    const managers = await User.find({
       tenant: req.tenantId,
       role: 'manager'
     }).select('-password');
@@ -89,7 +128,7 @@ exports.updateManager = async (req, res) => {
 
     if (name) manager.name = name;
     if (status) manager.status = status;
-    
+
     if (!manager.profile) {
       manager.profile = {};
     }
@@ -97,7 +136,7 @@ exports.updateManager = async (req, res) => {
     if (team !== undefined) manager.profile.team = team;
     if (zone !== undefined) manager.profile.zone = zone;
     if (designation !== undefined) manager.profile.designation = designation;
-    
+
     // Kept map for legacy compatibility
     if (status === 'Inactive') manager.isDeactivated = true;
     else if (status === 'On Duty' || status === 'Active') manager.isDeactivated = false;
@@ -187,7 +226,7 @@ exports.updateEmployee = async (req, res) => {
 
     if (name) employee.name = name;
     if (status) employee.status = status;
-    
+
     if (!employee.profile) {
       employee.profile = {};
     }
@@ -195,7 +234,7 @@ exports.updateEmployee = async (req, res) => {
     if (team !== undefined) employee.profile.team = team;
     if (zone !== undefined) employee.profile.zone = zone;
     if (designation !== undefined) employee.profile.designation = designation;
-    
+
     if (status !== undefined) {
       if (status === 'Inactive') employee.isDeactivated = true;
       else if (status === 'On Duty' || status === 'Active') employee.isDeactivated = false;
@@ -242,11 +281,11 @@ exports.updateGeneralInfo = async (req, res) => {
     const { companyName, officialEmail, hqAddress, logoUrl } = req.body;
     const tenantId = req.tenantId || req.user.tenant;
 
-    console.log(`[DEBUG] Update General Request for tenant ${tenantId}:`, { 
-      companyName, 
-      officialEmail, 
+    console.log(`[DEBUG] Update General Request for tenant ${tenantId}:`, {
+      companyName,
+      officialEmail,
       hqAddress,
-      hasLogo: !!logoUrl 
+      hasLogo: !!logoUrl
     });
 
     if (!tenantId) {
@@ -254,7 +293,7 @@ exports.updateGeneralInfo = async (req, res) => {
     }
 
     let settings = await TenantSettings.findOne({ tenantId });
-    
+
     if (!settings) {
       console.log(`[DEBUG] No settings document found, creating one...`);
       settings = new TenantSettings({ tenantId });
@@ -268,9 +307,9 @@ exports.updateGeneralInfo = async (req, res) => {
     if (logoUrl) settings.general.logoUrl = logoUrl;
 
     console.log(`[DEBUG] Settings state before save:`, JSON.stringify(settings.general));
-    
+
     const updatedSettings = await settings.save();
-    
+
     console.log(`[DEBUG] Saved to Atlas successfully:`, updatedSettings.general.companyName);
     res.json(updatedSettings);
   } catch (error) {
@@ -350,7 +389,7 @@ exports.updateLocalization = async (req, res) => {
     }
 
     let settings = await TenantSettings.findOne({ tenantId });
-    
+
     if (!settings) {
       settings = new TenantSettings({ tenantId });
     }
@@ -360,7 +399,7 @@ exports.updateLocalization = async (req, res) => {
     settings.localization.language = language || settings.localization.language || 'en';
 
     const updatedSettings = await settings.save();
-    
+
     console.log(`[DEBUG] Localization Save Result:`, updatedSettings.localization);
     res.json(updatedSettings);
   } catch (error) {
@@ -384,7 +423,7 @@ exports.updateAccountPreferences = async (req, res) => {
     }
 
     let settings = await TenantSettings.findOne({ tenantId });
-    
+
     if (!settings) {
       settings = new TenantSettings({ tenantId });
     }
@@ -394,7 +433,7 @@ exports.updateAccountPreferences = async (req, res) => {
     settings.account.featureFlags = featureFlags || [];
 
     const updatedSettings = await settings.save();
-    
+
     console.log(`[DEBUG] Account Save Result:`, updatedSettings.account);
     res.json(updatedSettings);
   } catch (error) {
