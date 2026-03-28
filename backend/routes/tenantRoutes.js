@@ -14,7 +14,10 @@ const {
   updateLocalization,
   updateAccountPreferences,
   requestDataExport,
-  signOutAllManagers
+  signOutAllManagers,
+  getSubscription,
+  updateSubscription,
+  getAvailablePlans,
 } = require('../controllers/tenantController');
 const { protect } = require('../middleware/authMiddleware');
 const tenantMiddleware = require('../middleware/tenantMiddleware');
@@ -41,5 +44,9 @@ router.put('/settings/localization', updateLocalization);
 router.put('/settings/account', updateAccountPreferences);
 router.post('/settings/signout-managers', signOutAllManagers);
 router.get('/settings/export', requestDataExport);
+// Subscription routes (Tenant-only)
+router.get('/subscription', getSubscription);
+router.put('/subscription', updateSubscription);
+router.get('/available-plans', getAvailablePlans);
 
 module.exports = router;

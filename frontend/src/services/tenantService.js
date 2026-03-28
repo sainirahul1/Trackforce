@@ -80,22 +80,35 @@ export const deleteEmployee = async (id) => {
 };
 
 
+<<<<<<< HEAD
 // Get tenant settings
 export const getSettings = async () => {
   const response = await axios.get(`${API_URL}/settings`, {
+=======
+// Get subscription details (Tenant only)
+export const getSubscription = async () => {
+  const response = await axios.get(`${API_URL}/subscription`, {
+>>>>>>> ten_sub
     headers: getAuthHeader(),
   });
   return response.data;
 };
 
+<<<<<<< HEAD
 // Update General Info
 export const updateGeneralInfo = async (generalData) => {
   const response = await axios.put(`${API_URL}/settings/general`, generalData, {
+=======
+// Update subscription details (Tenant only)
+export const updateSubscription = async (subscriptionData) => {
+  const response = await axios.put(`${API_URL}/subscription`, subscriptionData, {
+>>>>>>> ten_sub
     headers: getAuthHeader(),
   });
   return response.data;
 };
 
+<<<<<<< HEAD
 // Update Password
 export const updatePassword = async (passwordData) => {
   const response = await axios.put(`${API_URL}/settings/password`, passwordData, {
@@ -132,6 +145,11 @@ export const requestDataExport = async () => {
 // Sign out all managers
 export const signOutAllManagers = async () => {
   const response = await axios.post(`${API_URL}/settings/signout-managers`, {}, {
+=======
+// Get available plans (Tenant only)
+export const getAvailablePlans = async () => {
+  const response = await axios.get(`${API_URL}/available-plans`, {
+>>>>>>> ten_sub
     headers: getAuthHeader(),
   });
   return response.data;
@@ -154,6 +172,9 @@ const tenantService = {
   updateAccountPreferences,
   requestDataExport,
   signOutAllManagers,
+  getSubscription,
+  updateSubscription,
+  getAvailablePlans,
 };
 
 export default tenantService;

@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const Tenant = require('../../models/superadmin/Tenant');
 const Subscription = require('../../models/superadmin/Subscription');
 const User = require('../../models/tenant/User');
@@ -49,12 +50,17 @@ exports.provisionTenant = async (req, res) => {
   const { name, domain, adminEmail, password, plan, planId, industry } = req.body;
 
   try {
-    // Determine employee limit based on plan
-    let employeeLimit = 50;
-    if (planId) {
-      const sub = await Subscription.findById(planId);
-      if (sub) employeeLimit = sub.employeeLimit;
-    } else {
+    // 0. Fetch Subscription details once if planId is provided
+    let dbSub = null;
+    if (planId && mongoose.Types.ObjectId.isValid(planId)) {
+      dbSub = await Subscription.findById(planId);
+    } else if (plan) {
+      dbSub = await Subscription.findOne({ name: plan, isActive: true });
+    }
+
+    // Determine employee limit and features based on DB or provided plan name
+    let employeeLimit = dbSub ? dbSub.employeeLimit : 50;
+    if (!dbSub && plan) {
       const planLimits = { basic: 10, premium: 50, enterprise: 1000 };
       employeeLimit = planLimits[plan?.toLowerCase()] || 50;
     }
@@ -65,21 +71,30 @@ exports.provisionTenant = async (req, res) => {
       domain,
       industry: industry || 'Technology',
       subscription: {
-        planId: planId || null,
-        plan: plan || 'basic',
+        planId: dbSub ? dbSub._id : null,
+        plan: dbSub ? dbSub.name : (plan || 'basic'),
         status: 'active',
         employeeLimit
       }
     });
 
     // 2. Create Tenant Admin User (password is auto-hashed by User model's pre-save hook)
+    // Synchronize the subscription object for the tenant admin user
     const adminUser = await User.create({
       name: `${name} Admin`,
       email: adminEmail,
       password: password || 'admin123',
       role: 'tenant',
       company: name,
-      tenant: tenant._id
+      tenant: tenant._id,
+      subscription: {
+        plan: dbSub ? dbSub.name : (plan || 'basic'),
+        status: 'active',
+        price: dbSub ? Number(dbSub.price || 0) : 0,
+        startDate: new Date(),
+        employeeLimit,
+        features: dbSub ? dbSub.features || [] : []
+      }
     });
 
     res.status(201).json({
@@ -141,6 +156,30 @@ exports.updateTenant = async (req, res) => {
     );
     
     if (!tenant) return res.status(404).json({ message: 'Tenant not found' });
+
+    // Sync subscription update to the Tenant Admin User
+    if (updateData.subscription) {
+      const subDetails = updateData.subscription;
+      let dbSub = null;
+      if (subDetails.planId && mongoose.Types.ObjectId.isValid(subDetails.planId)) {
+        dbSub = await Subscription.findById(subDetails.planId);
+      } else if (subDetails.plan) {
+        dbSub = await Subscription.findOne({ name: subDetails.plan, isActive: true });
+      }
+
+      await User.findOneAndUpdate(
+        { tenant: tenant._id, role: 'tenant' },
+        { 
+          $set: { 
+            "subscription.plan": subDetails.plan,
+            "subscription.employeeLimit": subDetails.employeeLimit,
+            "subscription.price": dbSub ? Number(dbSub.price) : 0,
+            "subscription.features": dbSub ? dbSub.features : []
+          } 
+        }
+      );
+    }
+    
     res.json(tenant);
   } catch (error) {
     res.status(400).json({ message: error.message });

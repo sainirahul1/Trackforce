@@ -1,6 +1,10 @@
 const User = require('../models/tenant/User');
+<<<<<<< HEAD
 const TenantSettings = require('../models/tenant/Settings');
 const bcrypt = require('bcryptjs');
+=======
+const Subscription = require('../models/superadmin/Subscription');
+>>>>>>> ten_sub
 
 // @desc    Get all employees for a tenant
 // @route   GET /api/tenant/employees
@@ -330,6 +334,48 @@ exports.updatePassword = async (req, res) => {
     }
 
     res.json({ message: 'Password updated successfully' });
+// @desc    Get subscription details for the logged-in tenant
+// @route   GET /api/tenant/subscription
+// @access  Private (Tenant only)
+exports.getSubscription = async (req, res) => {
+  try {
+    if (req.user.role !== 'tenant') {
+      return res.status(403).json({ message: 'Access denied. Tenant role required.' });
+    }
+
+    const tenantUser = await User.findById(req.user.id).select('subscription name company email');
+
+    if (!tenantUser) {
+      return res.status(404).json({ message: 'Tenant not found' });
+    }
+
+    // Count current active employees under this tenant
+    const employeeCount = await User.countDocuments({
+      tenant: tenantUser._id,
+      role: 'employee',
+      isDeactivated: { $ne: true },
+    });
+
+    const sub = tenantUser.subscription || {};
+
+    res.json({
+      subscription: {
+        plan: sub.plan || 'Free',
+        status: sub.status || 'trial',
+        price: sub.price || 0,
+        startDate: sub.startDate || null,
+        nextBillingDate: sub.nextBillingDate || null,
+        trialEndsAt: sub.trialEndsAt || null,
+        employeeLimit: sub.employeeLimit || 5,
+        features: sub.features || [],
+        paymentMethod: sub.paymentMethod || {},
+        billingHistory: sub.billingHistory || [],
+      },
+      employeeCount,
+      tenantName: tenantUser.name,
+      company: tenantUser.company,
+      email: tenantUser.email,
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -424,6 +470,13 @@ exports.requestDataExport = async (req, res) => {
     res.setHeader('Content-Type', 'application/json');
     res.setHeader('Content-Disposition', 'attachment; filename=tenant_data_export.json');
     res.send(JSON.stringify(exportData, null, 2));
+// @desc    Get all available subscription plans
+// @route   GET /api/tenant/available-plans
+// @access  Private (Tenant)
+exports.getAvailablePlans = async (req, res) => {
+  try {
+    const plans = await Subscription.find({ isActive: true });
+    res.json(plans);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -454,6 +507,78 @@ exports.signOutAllManagers = async (req, res) => {
     );
 
     res.json({ message: 'Successfully signed out all the managers' });
+// @desc    Update subscription details for the logged-in tenant
+// @route   PUT /api/tenant/subscription
+// @access  Private (Tenant only)
+exports.updateSubscription = async (req, res) => {
+  try {
+    if (req.user.role !== 'tenant') {
+      return res.status(403).json({ message: 'Access denied. Tenant role required.' });
+    }
+
+    const { plan, status, price, startDate, nextBillingDate, trialEndsAt, employeeLimit, features, paymentMethod, billingEntry } = req.body;
+
+    // Fetch plan details from database if a plan name is provided
+    let dbPlan = null;
+    if (plan) {
+      dbPlan = await Subscription.findOne({ name: plan, isActive: true });
+    }
+
+    const tenantUser = await User.findById(req.user.id);
+    if (!tenantUser) {
+      return res.status(404).json({ message: 'Tenant not found' });
+    }
+
+    if (!tenantUser.subscription) {
+      tenantUser.subscription = {};
+    }
+
+    if (plan) {
+      tenantUser.subscription.plan = plan;
+      // Auto-set defaults for price, limit, and features from DB if matched, otherwise keep current or use provided
+      if (!price) tenantUser.subscription.price = dbPlan ? Number(dbPlan.price) : tenantUser.subscription.price;
+      if (!employeeLimit) tenantUser.subscription.employeeLimit = dbPlan ? dbPlan.employeeLimit : tenantUser.subscription.employeeLimit;
+      if (!features) tenantUser.subscription.features = (dbPlan && dbPlan.features) ? dbPlan.features : tenantUser.subscription.features;
+    }
+    if (status !== undefined) tenantUser.subscription.status = status;
+    if (price !== undefined) tenantUser.subscription.price = price;
+    if (startDate) tenantUser.subscription.startDate = new Date(startDate);
+    if (nextBillingDate) tenantUser.subscription.nextBillingDate = new Date(nextBillingDate);
+    if (trialEndsAt) tenantUser.subscription.trialEndsAt = new Date(trialEndsAt);
+    if (employeeLimit !== undefined) tenantUser.subscription.employeeLimit = employeeLimit;
+    if (features !== undefined) tenantUser.subscription.features = features;
+    if (paymentMethod) {
+      tenantUser.subscription.paymentMethod = {
+        ...tenantUser.subscription.paymentMethod,
+        ...paymentMethod,
+      };
+    }
+    // Push a new billing record if provided
+    if (billingEntry) {
+      if (!tenantUser.subscription.billingHistory) {
+        tenantUser.subscription.billingHistory = [];
+      }
+      tenantUser.subscription.billingHistory.push({
+        amount: billingEntry.amount,
+        date: billingEntry.date ? new Date(billingEntry.date) : new Date(),
+        description: billingEntry.description || '',
+        status: billingEntry.status || 'pending',
+      });
+    }
+
+    await tenantUser.save();
+
+    const employeeCount = await User.countDocuments({
+      tenant: tenantUser._id,
+      role: 'employee',
+      isDeactivated: { $ne: true },
+    });
+
+    res.json({
+      message: 'Subscription updated successfully',
+      subscription: tenantUser.subscription,
+      employeeCount,
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

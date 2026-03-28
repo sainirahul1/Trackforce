@@ -64,6 +64,73 @@ const userSchema = new mongoose.Schema({
     enum: ['Active', 'Inactive', 'On Duty', 'Off Duty', 'On Leave'],
     default: 'Active',
   },
+  subscription: {
+    plan: {
+      type: String,
+      default: 'Free',
+    },
+    status: {
+      type: String,
+      enum: ['active', 'trial', 'expired', 'inactive'],
+      default: 'trial',
+    },
+    price: {
+      type: Number,
+      default: 0,
+    },
+    startDate: {
+      type: Date,
+    },
+    nextBillingDate: {
+      type: Date,
+    },
+    trialEndsAt: {
+      type: Date,
+    },
+    employeeLimit: {
+      type: Number,
+      default: 5,
+    },
+    features: {
+      type: [String],
+      default: [],
+    },
+    paymentMethod: {
+      type: {
+        type: String,
+        default: 'card',
+      },
+      last4: {
+        type: String,
+        default: '',
+      },
+      brand: {
+        type: String,
+        default: 'VISA',
+      },
+    },
+    billingHistory: [
+      {
+        amount: {
+          type: Number,
+          required: true,
+        },
+        date: {
+          type: Date,
+          default: Date.now,
+        },
+        description: {
+          type: String,
+          default: '',
+        },
+        status: {
+          type: String,
+          enum: ['paid', 'failed', 'pending'],
+          default: 'pending',
+        },
+      },
+    ],
+  },
   isTracking: {
     type: Boolean,
     default: false,
