@@ -1,4 +1,5 @@
 const Profile = require('../../models/employee/Profile');
+const User = require('../../models/tenant/User');
 
 // @desc    Get current user's profile
 // @route   GET /api/profile/me
@@ -60,6 +61,40 @@ const updateMyProfile = async (req, res) => {
         ...updates,
       });
     }
+
+    // Sync with User model (tenant.users collection)
+    const userUpdates = {
+      name: updates.name,
+      email: updates.email,
+      profile: {
+        designation: updates.designation,
+        phone: updates.phone,
+        address: updates.address,
+        dob: updates.dob,
+        gender: updates.gender,
+        nationality: updates.nationality,
+        bloodGroup: updates.bloodGroup,
+        emergencyContact: updates.emergencyContact,
+        allergies: updates.allergies,
+        location: updates.location,
+        employeeCode: updates.employeeCode,
+        dateOfJoin: updates.dateOfJoin,
+        workArea: updates.workArea,
+        reportingTo: updates.reportingTo,
+        securityLevel: updates.securityLevel,
+        profileImage: updates.avatar, // Mapping avatar to profileImage
+      }
+    };
+
+    // Clean up undefined fields for User update
+    Object.keys(userUpdates).forEach(key => userUpdates[key] === undefined && delete userUpdates[key]);
+    if (userUpdates.profile) {
+      Object.keys(userUpdates.profile).forEach(key => userUpdates.profile[key] === undefined && delete userUpdates.profile[key]);
+      // If profile object is empty after cleaning, remove it
+      if (Object.keys(userUpdates.profile).length === 0) delete userUpdates.profile;
+    }
+
+    await User.findByIdAndUpdate(req.user._id, { $set: userUpdates });
 
     res.json(profile);
   } catch (error) {

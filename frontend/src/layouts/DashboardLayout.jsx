@@ -84,14 +84,14 @@ const DashboardLayout = ({ allowedRole }) => {
       <div className="print:hidden">
         <Sidebar 
           role={storedRole} 
-          user={storedUser} 
+          user={localUser} 
           isCollapsed={isSidebarCollapsed} 
           onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)} 
         />
       </div>
       <div className={`flex-1 ${isSidebarCollapsed ? 'ml-20' : 'ml-64'} flex flex-col min-h-screen transition-all duration-300 print:ml-0 print:p-0 overflow-x-hidden`}>
         <div className="print:hidden">
-          <Navbar user={storedUser} />
+          <Navbar user={localUser} />
         </div>
         <main className="flex-1 p-4 sm:p-6 overflow-y-auto text-gray-900 dark:text-gray-100 print:p-0">
           <div className="max-w-7xl mx-auto print:max-w-none print:m-0">
