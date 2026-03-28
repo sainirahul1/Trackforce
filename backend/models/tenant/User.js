@@ -49,6 +49,11 @@ const userSchema = new mongoose.Schema({
     department: String,
     profileImage: String,
     location: String,
+    employeeCode: String,
+    dateOfJoin: String,
+    workArea: String,
+    reportingTo: String,
+    securityLevel: String,
   },
   isDeactivated: {
     type: Boolean,

@@ -2458,6 +2458,9 @@ const EmployeeProfile = () => {
           try {
             const saved = await updateMyProfile(updates);
             setEmployee(saved);
+            // Sync with localStorage
+            const userInfo = JSON.parse(localStorage.getItem('user') || '{}');
+            localStorage.setItem('user', JSON.stringify({ ...userInfo, name: saved.name, email: saved.email }));
           } catch (err) {
             console.error('Failed to save profile:', err.message);
             // Still update locally so the UI isn't stale
@@ -2474,6 +2477,9 @@ const EmployeeProfile = () => {
           try {
             const saved = await updateMyProfile(updates);
             setEmployee(saved);
+            // Sync with localStorage
+            const userInfo = JSON.parse(localStorage.getItem('user') || '{}');
+            localStorage.setItem('user', JSON.stringify({ ...userInfo, name: saved.name, email: saved.email }));
           } catch (err) {
             console.error('Failed to save settings:', err.message);
             setEmployee((prev) => ({ ...prev, ...updates }));
@@ -2517,6 +2523,9 @@ const EmployeeProfile = () => {
           try {
             const saved = await updateMyProfile(updates);
             setEmployee(saved);
+            // Sync with localStorage
+            const userInfo = JSON.parse(localStorage.getItem('user') || '{}');
+            localStorage.setItem('user', JSON.stringify({ ...userInfo, name: saved.name, email: saved.email }));
           } catch (err) {
             console.error('Failed to save profile:', err.message);
             setEmployee((prev) => ({ ...prev, ...updates }));
