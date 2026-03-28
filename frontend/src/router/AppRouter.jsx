@@ -46,6 +46,9 @@ import EmployeeOrders from '../pages/employee/Orders';
 import EmployeeActivity from '../pages/employee/Activity';
 import EmployeeTasks from '../pages/employee/Tasks';
 
+// Shared Notifications Page
+import NotificationsPage from '../pages/shared/NotificationsPage';
+
 const AppRouter = () => (
   <Routes>
     {/* Public Landing Page */}
@@ -99,6 +102,7 @@ const AppRouter = () => (
       <Route path="activity" element={<ManagerActivityLog />} />
       <Route path="profile" element={<ManagerProfile />} />
       <Route path="issues" element={<ManagerIssues />} />
+      <Route path="notifications" element={<NotificationsPage />} />
       <Route index element={<Navigate to="team" replace />} />
     </Route>
 
@@ -110,6 +114,7 @@ const AppRouter = () => (
       <Route path="orders" element={<EmployeeOrders />} />
       <Route path="activity" element={<EmployeeActivity />} />
       <Route path="tasks" element={<EmployeeTasks />} />
+      <Route path="notifications" element={<NotificationsPage />} />
       <Route index element={<Navigate to="dashboard" replace />} />
     </Route>
 

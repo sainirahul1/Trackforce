@@ -6,16 +6,16 @@ const notificationSchema = new mongoose.Schema({
     ref: 'User',
     required: true,
   },
-  sender: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-  },
   type: {
     type: String,
-    enum: ['task', 'reminder', 'message', 'alert'],
+    enum: ['task', 'reminder', 'message', 'alert', 'success', 'account', 'system'],
     required: true,
   },
-  message: {
+  title: {
+    type: String,
+    required: true,
+  },
+  desc: {
     type: String,
     required: true,
   },
@@ -23,9 +23,10 @@ const notificationSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
-  timestamp: {
-    type: Date,
-    default: Date.now,
+  priority: {
+    type: String,
+    enum: ['low', 'medium', 'high'],
+    default: 'low',
   },
 }, { timestamps: true, collection: 'tenant.notifications' });
 

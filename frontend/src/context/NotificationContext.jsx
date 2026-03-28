@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
+import notificationService from '../services/notificationService';
 
 const NotificationContext = createContext();
 
@@ -10,201 +11,105 @@ export const useNotifications = () => {
     return context;
 };
 
+const getRelativeTime = (date) => {
+    const now = new Date();
+    const past = new Date(date);
+    const diffMs = now - past;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return past.toLocaleDateString();
+};
+
 export const NotificationProvider = ({ children }) => {
-    const [executiveList, setExecutiveList] = useState([
-        { 
-            id: 1, 
-            title: 'New Route Assigned', 
-            desc: 'Manager Ananya has assigned North Zone 04 to you.', 
-            time: '5m ago', 
-            type: 'alert', 
-            isRead: false,
-            priority: 'high'
-        },
-        { 
-            id: 4, 
-            title: 'Visit Reminder', 
-            desc: 'Upcoming visit at Heritage Fresh scheduled for 2:30 PM.', 
-            time: '15m ago', 
-            type: 'message', 
-            isRead: false,
-            priority: 'low'
-        },
-        { 
-            id: 3, 
-            title: 'Selfie Required', 
-            desc: 'Please upload a selfie to verify your current visit.', 
-            time: '25m ago', 
-            type: 'alert', 
-            isRead: false,
-            priority: 'high'
-        },
-        { 
-            id: 2, 
-            title: 'Order Confirmed', 
-            desc: 'Order #ORD-892 for Reliance Fresh is now verified.', 
-            time: '1h ago', 
-            type: 'success', 
-            isRead: false,
-            priority: 'low'
-        },
-        { 
-            id: 5, 
-            title: 'Visit Completed', 
-            desc: 'Data sync successful for More Megamart visit.', 
-            time: '2h ago', 
-            type: 'success', 
-            isRead: true,
-            priority: 'low'
-        },
-        { 
-            id: 6, 
-            title: 'New Task Assigned', 
-            desc: 'Collect branding materials from the regional hub.', 
-            time: '4h ago', 
-            type: 'message', 
-            isRead: false,
-            priority: 'low'
-        },
-        { 
-            id: 7, 
-            title: 'Low Stock Alert', 
-            desc: 'Stock for "Premium Energy Drink" is low at North Zone outlets.', 
-            time: '6h ago', 
-            type: 'alert', 
-            isRead: false,
-            priority: 'high'
-        },
-        { 
-            id: 8, 
-            title: 'Payment Received', 
-            desc: 'Collection of ₹45,000 from Fresh Mart has been processed.', 
-            time: 'Today', 
-            type: 'success', 
-            isRead: true,
-            priority: 'high'
-        },
-        { 
-            id: 9, 
-            title: 'Daily Report Reminder', 
-            desc: 'Please submit your end-of-day summary by 7 PM.', 
-            time: 'Today', 
-            type: 'message', 
-            isRead: false,
-            priority: 'high'
-        },
-    ]);
+    const [notifications, setNotifications] = useState([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const pollingRef = useRef(null);
 
-    const [managerList, setManagerList] = useState([
-        { 
-            id: 101, 
-            title: 'Executive Checked-in', 
-            desc: 'Akash has started his route in South Zone 02.', 
-            time: '5m ago', 
-            type: 'success', 
-            isRead: false,
-            priority: 'low'
-        },
-        { 
-            id: 108, 
-            title: 'High Value Order Alert', 
-            desc: 'Suresh just closed a ₹1.5L order at Star Bazaar.', 
-            time: '15m ago', 
-            type: 'alert', 
-            isRead: false,
-            priority: 'high'
-        },
-        { 
-            id: 109, 
-            title: 'Executive Missed Visit', 
-            desc: 'Priya missed her scheduled appointment at 11 AM.', 
-            time: '30m ago', 
-            type: 'alert', 
-            isRead: false,
-            priority: 'high'
-        },
-        { 
-            id: 104, 
-            title: 'Target Achieved by Executive', 
-            desc: 'Vikram has completed 100% of his daily target.', 
-            time: '1h ago', 
-            type: 'success', 
-            isRead: false,
-            priority: 'high'
-        },
-        { 
-            id: 110, 
-            title: 'Executive Check-out', 
-            desc: 'Rahul completed his final visit for the day.', 
-            time: '1h ago', 
-            type: 'success', 
-            isRead: true,
-            priority: 'low'
-        },
-        { 
-            id: 111, 
-            title: 'Route Not Started', 
-            desc: 'Kiran hasn\'t logged in to his assigned route yet.', 
-            time: '2h ago', 
-            type: 'alert', 
-            isRead: false,
-            priority: 'high'
-        },
-        { 
-            id: 112, 
-            title: 'Low Performance Alert', 
-            desc: 'Team efficiency is 15% below target in Central Zone.', 
-            time: '3h ago', 
-            type: 'alert', 
-            isRead: false,
-            priority: 'high'
-        },
-        { 
-            id: 102, 
-            title: 'Daily Report Submitted', 
-            desc: 'Megha has uploaded her end-of-day field report.', 
-            time: '4h ago', 
-            type: 'message', 
-            isRead: true,
-            priority: 'low'
-        },
-        { 
-            id: 103, 
-            title: 'New Leave Request', 
-            desc: 'Rohit from West Zone has requested sick leave.', 
-            time: '5h ago', 
-            type: 'message', 
-            isRead: false,
-            priority: 'high'
-        },
-    ]);
+    const fetchNotifications = useCallback(async () => {
+        const token = localStorage.getItem('token');
+        if (!token) return; // Not logged in
 
-    const markAllAsRead = useCallback((category) => {
-        if (category === 'executive' || !category) {
-            setExecutiveList(prev => prev.map(n => ({ ...n, isRead: true })));
-        }
-        if (category === 'manager' || !category) {
-            setManagerList(prev => prev.map(n => ({ ...n, isRead: true })));
+        try {
+            setIsLoading(true);
+            const data = await notificationService.getAll();
+            const mapped = data.map(n => ({
+                ...n,
+                id: n._id,
+                time: getRelativeTime(n.createdAt),
+            }));
+            setNotifications(mapped);
+        } catch (error) {
+            console.error('Failed to fetch notifications:', error);
+        } finally {
+            setIsLoading(false);
         }
     }, []);
 
-    const markAsRead = useCallback((id) => {
-        setExecutiveList(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
-        setManagerList(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
-    }, []);
+    // Fetch on mount, then poll every 60 seconds for new notifications
+    useEffect(() => {
+        fetchNotifications();
 
-    const unreadCount = executiveList.filter(n => !n.isRead).length + managerList.filter(n => !n.isRead).length;
+        pollingRef.current = setInterval(fetchNotifications, 60000);
+
+        return () => {
+            if (pollingRef.current) clearInterval(pollingRef.current);
+        };
+    }, [fetchNotifications]);
+
+    const markAsRead = useCallback(async (id) => {
+        // Optimistic update
+        setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
+        try {
+            await notificationService.markAsRead(id);
+        } catch (error) {
+            console.error('Failed to mark as read:', error);
+            // Revert on failure
+            fetchNotifications();
+        }
+    }, [fetchNotifications]);
+
+    const markAllAsRead = useCallback(async () => {
+        // Optimistic update
+        setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+        try {
+            await notificationService.markAllAsRead();
+        } catch (error) {
+            console.error('Failed to mark all as read:', error);
+            fetchNotifications();
+        }
+    }, [fetchNotifications]);
+
+    const deleteNotification = useCallback(async (id) => {
+        // Optimistic update
+        setNotifications(prev => prev.filter(n => n.id !== id));
+        try {
+            await notificationService.delete(id);
+        } catch (error) {
+            console.error('Failed to delete notification:', error);
+            fetchNotifications();
+        }
+    }, [fetchNotifications]);
+
+    const unreadCount = notifications.filter(n => !n.isRead).length;
 
     const value = {
-        executiveList,
-        setExecutiveList,
-        managerList,
-        setManagerList,
+        notifications,
+        allNotifications: notifications,
         unreadCount,
-        markAllAsRead,
+        isLoading,
         markAsRead,
-        // Combined for navbar dropdown
-        allNotifications: [...executiveList, ...managerList].sort((a, b) => b.id - a.id)
+        markAllAsRead,
+        deleteNotification,
+        refetch: fetchNotifications,
+        // Legacy compat
+        executiveList: notifications.filter(n => n.type !== 'account' && n.type !== 'system'),
+        managerList: notifications,
     };
 
     return (
