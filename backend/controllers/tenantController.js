@@ -1,10 +1,7 @@
 const User = require('../models/tenant/User');
-<<<<<<< HEAD
 const TenantSettings = require('../models/tenant/Settings');
 const bcrypt = require('bcryptjs');
-=======
 const Subscription = require('../models/superadmin/Subscription');
->>>>>>> ten_sub
 
 // @desc    Get all employees for a tenant
 // @route   GET /api/tenant/employees
@@ -334,6 +331,10 @@ exports.updatePassword = async (req, res) => {
     }
 
     res.json({ message: 'Password updated successfully' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 // @desc    Get subscription details for the logged-in tenant
 // @route   GET /api/tenant/subscription
 // @access  Private (Tenant only)
@@ -470,6 +471,10 @@ exports.requestDataExport = async (req, res) => {
     res.setHeader('Content-Type', 'application/json');
     res.setHeader('Content-Disposition', 'attachment; filename=tenant_data_export.json');
     res.send(JSON.stringify(exportData, null, 2));
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 // @desc    Get all available subscription plans
 // @route   GET /api/tenant/available-plans
 // @access  Private (Tenant)
@@ -507,6 +512,10 @@ exports.signOutAllManagers = async (req, res) => {
     );
 
     res.json({ message: 'Successfully signed out all the managers' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 // @desc    Update subscription details for the logged-in tenant
 // @route   PUT /api/tenant/subscription
 // @access  Private (Tenant only)
