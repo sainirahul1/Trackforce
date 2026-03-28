@@ -73,6 +73,29 @@ export const deleteEmployee = async (id) => {
 };
 
 
+// Get subscription details (Tenant only)
+export const getSubscription = async () => {
+  const response = await axios.get(`${API_URL}/subscription`, {
+    headers: getAuthHeader(),
+  });
+  return response.data;
+};
+
+// Update subscription details (Tenant only)
+export const updateSubscription = async (subscriptionData) => {
+  const response = await axios.put(`${API_URL}/subscription`, subscriptionData, {
+    headers: getAuthHeader(),
+  });
+  return response.data;
+};
+
+// Get available plans (Tenant only)
+export const getAvailablePlans = async () => {
+  const response = await axios.get(`${API_URL}/available-plans`, {
+    headers: getAuthHeader(),
+  });
+  return response.data;
+};
 
 const tenantService = {
   getManagers,
@@ -83,7 +106,9 @@ const tenantService = {
   createEmployee,
   updateEmployee,
   deleteEmployee,
-
+  getSubscription,
+  updateSubscription,
+  getAvailablePlans,
 };
 
 export default tenantService;
