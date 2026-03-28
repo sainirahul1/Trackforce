@@ -4,6 +4,24 @@ const Subscription = require('../../models/superadmin/Subscription');
 const User = require('../../models/tenant/User');
 const bcrypt = require('bcryptjs');
 
+// Deep Deletion Models
+const Document = require('../../models/employee/Document');
+const SupplierVisit = require('../../models/employee/SupplierVisit');
+const StoreVisit = require('../../models/employee/StoreVisit');
+const TrackingSession = require('../../models/employee/TrackingSession');
+const Location = require('../../models/employee/Location');
+const EmployeeDashboard = require('../../models/employee/Dashboard');
+const ActivityLog = require('../../models/employee/ActivityLog');
+const Task = require('../../models/employee/Task');
+const Order = require('../../models/employee/Order');
+const Profile = require('../../models/employee/Profile');
+const Collaboration = require('../../models/manager/Collaboration');
+const ManagerOrder = require('../../models/manager/ManagerOrder');
+const Analytics = require('../../models/manager/Analytics');
+const AuditLog = require('../../models/superadmin/AuditLog');
+const TenantSettings = require('../../models/tenant/Settings');
+const Notification = require('../../models/tenant/Notification');
+
 // @desc    Get all tenants/companies
 // @route   GET /api/superadmin/companies
 // @access  Private/SuperAdmin
@@ -208,13 +226,36 @@ exports.toggleTenantSuspension = async (req, res) => {
 // @access  Private/SuperAdmin
 exports.deleteTenant = async (req, res) => {
   try {
-    const tenant = await Tenant.findByIdAndDelete(req.params.id);
+    const tenantId = req.params.id;
+    const tenant = await Tenant.findByIdAndDelete(tenantId);
     if (!tenant) return res.status(404).json({ message: 'Tenant not found' });
     
-    // Optionally delete associated users
-    await User.deleteMany({ tenant: req.params.id });
+    // 1. Gather all users belonging to this tenant to delete user-specific data (like Notifications)
+    const users = await User.find({ tenant: tenantId }).select('_id');
+    const userIds = users.map(u => u._id);
+
+    // 2. Perform Deep Deletion concurrently across all affected collections
+    await Promise.all([
+      User.deleteMany({ tenant: tenantId }),
+      TenantSettings.deleteMany({ tenantId: tenantId }),
+      Document.deleteMany({ tenant: tenantId }),
+      SupplierVisit.deleteMany({ tenant: tenantId }),
+      StoreVisit.deleteMany({ tenant: tenantId }),
+      TrackingSession.deleteMany({ tenant: tenantId }),
+      Location.deleteMany({ tenant: tenantId }),
+      EmployeeDashboard.deleteMany({ tenant: tenantId }),
+      ActivityLog.deleteMany({ tenant: tenantId }),
+      Task.deleteMany({ tenant: tenantId }),
+      Order.deleteMany({ tenant: tenantId }),
+      Profile.deleteMany({ tenant: tenantId }),
+      Collaboration.deleteMany({ tenant: tenantId }),
+      ManagerOrder.deleteMany({ tenant: tenantId }),
+      Analytics.deleteMany({ tenant: tenantId }),
+      AuditLog.deleteMany({ tenant: tenantId }),
+      Notification.deleteMany({ recipient: { $in: userIds } })
+    ]);
     
-    res.json({ message: 'Tenant and associated users deleted successfully' });
+    res.json({ message: 'Tenant and all associated data records deleted successfully' });
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
