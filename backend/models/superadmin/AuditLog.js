@@ -1,6 +1,11 @@
 const mongoose = require('mongoose');
 
 const auditLogSchema = new mongoose.Schema({
+  tenant: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Tenant',
+    required: true
+  },
   user: {
     type: String,
     required: true

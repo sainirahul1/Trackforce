@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import DataTable from '../../components/DataTable';
 import tenantService from '../../services/tenantService';
@@ -21,6 +22,7 @@ const getRelativeTime = (timestamp) => {
 };
 
 const EmployeeList = () => {
+  const location = useLocation();
   const [employees, setEmployees] = useState([]);
   const [teamMembers, setTeamMembers] = useState([]);
   const [selectedManager, setSelectedManager] = useState(null);
@@ -101,6 +103,22 @@ const EmployeeList = () => {
     { label: 'Management', value: employees.length.toString(), icon: Shield, color: 'text-indigo-600', bg: 'bg-indigo-50', filter: 'All', role: 'managers' },
     { label: 'Active', value: employees.filter(e => e.status !== 'Inactive').length.toString(), icon: Activity, color: 'text-emerald-600', bg: 'bg-emerald-50', filter: 'Active', role: 'managers' },
     { label: 'Inactive', value: employees.filter(e => e.status === 'Inactive').length.toString(), icon: X, color: 'text-rose-600', bg: 'bg-rose-50', filter: 'Inactive', role: 'managers' },
+  ]
+
+  useEffect(() => {
+    if (location.state?.openManagerId && employees.length > 0) {
+      const manager = employees.find(e => e.id === location.state.openManagerId);
+      if (manager) {
+        setSelectedManager(manager);
+      }
+    }
+  }, [location.state, employees]);
+
+  const stats = [
+    { label: 'Total Managers', value: employees.length.toString(), icon: Users, color: 'text-indigo-600', bg: 'bg-indigo-50', filter: 'All' },
+    { label: 'Active Managers', value: employees.filter(e => e.status === 'On Duty').length.toString(), icon: Activity, color: 'text-emerald-600', bg: 'bg-emerald-50', filter: 'On Duty' },
+    { label: 'Inactive Managers', value: employees.filter(e => e.status !== 'On Duty').length.toString(), icon: Shield, color: 'text-rose-600', bg: 'bg-rose-50', filter: 'Inactive' },
+    { label: 'Total Zones', value: new Set(employees.map(e => e.zone)).size.toString(), icon: Activity, color: 'text-blue-600', bg: 'bg-blue-50', filter: 'All' },
   ];
 
   const employeeStats = [

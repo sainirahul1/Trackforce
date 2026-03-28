@@ -1,6 +1,7 @@
 const express = require('express');
 const { 
   getEmployees, 
+  getEmployeeById,
   createEmployee,
   updateEmployee,
   deleteEmployee,
@@ -19,6 +20,10 @@ const {
   updateSubscription,
   getAvailablePlans,
 } = require('../controllers/tenantController');
+const { 
+  getDashboardStats, 
+  getDashboardManagers 
+} = require('../controllers/dashboardController');
 const { protect } = require('../middleware/authMiddleware');
 const tenantMiddleware = require('../middleware/tenantMiddleware');
 const router = express.Router();
@@ -27,6 +32,7 @@ router.use(protect);
 router.use(tenantMiddleware);
 
 router.get('/employees', getEmployees);
+router.get('/employees/:id', getEmployeeById);
 router.post('/employees', createEmployee);
 router.put('/employees/:id', updateEmployee);
 router.delete('/employees/:id', deleteEmployee);
@@ -48,5 +54,9 @@ router.get('/settings/export', requestDataExport);
 router.get('/subscription', getSubscription);
 router.put('/subscription', updateSubscription);
 router.get('/available-plans', getAvailablePlans);
+
+// Dashboard routes
+router.get('/dashboard-stats', getDashboardStats);
+router.get('/dashboard-managers', getDashboardManagers);
 
 module.exports = router;

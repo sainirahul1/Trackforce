@@ -55,6 +55,14 @@ export const getEmployees = async () => {
   return response.data;
 };
 
+// Get an employee by ID
+export const getEmployeeById = async (id) => {
+  const response = await axios.get(`${API_URL}/employees/${id}`, {
+    headers: getAuthHeader(),
+  });
+  return response.data;
+};
+
 // Create an employee
 export const createEmployee = async (employeeData) => {
   const response = await axios.post(`${API_URL}/employees`, employeeData, {
@@ -161,12 +169,28 @@ export const getAvailablePlans = async () => {
   return response.data;
 };
 
+// Dashboard methods
+export const getDashboardStats = async () => {
+  const response = await axios.get(`${API_URL}/dashboard-stats`, {
+    headers: getAuthHeader(),
+  });
+  return response.data;
+};
+
+export const getDashboardManagers = async (page = 1, limit = 5, search = '') => {
+  const response = await axios.get(`${API_URL}/dashboard-managers?page=${page}&limit=${limit}&search=${search}`, {
+    headers: getAuthHeader(),
+  });
+  return response.data;
+};
+
 const tenantService = {
   getManagers,
   createManager,
   updateManager,
   deleteManager,
   getEmployees,
+  getEmployeeById,
   createEmployee,
   updateEmployee,
   deleteEmployee,
@@ -181,6 +205,8 @@ const tenantService = {
   getSubscription,
   updateSubscription,
   getAvailablePlans,
+  getDashboardStats,
+  getDashboardManagers,
 };
 
 export default tenantService;
