@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { MapPin, Navigation, Clock, CheckCircle2, ChevronRight, Calendar, AlertCircle, Phone, Image as ImageIcon, Camera, Map, X, Users, Store, FileText, MessageSquare } from 'lucide-react';
-import Button from '../../components/Button';
+import Button from '../../components/ui/Button';
 
-import { getVisits, getVisitById } from '../../services/visitService';
+import { getVisits, getVisitById } from '../../services/employee/visitService';
 
 const EmployeeVisits = () => {
   const [selectedVisit, setSelectedVisit] = useState(null);

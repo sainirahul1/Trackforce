@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import DataTable from '../../components/DataTable';
-import Skeleton from '../../components/Skeleton';
-import Button from '../../components/Button';
-import superadminService from '../../services/superadminService';
+import DataTable from '../../components/ui/DataTable';
+import Skeleton from '../../components/ui/Skeleton';
+import Button from '../../components/ui/Button';
+import superadminService from '../../services/superadmin/superadminService';
 import {
   Plus,
   Search,
@@ -60,7 +60,7 @@ const CompaniesList = () => {
   const [editingUser, setEditingUser] = useState(null);
   const [provisionEntity, setProvisionEntity] = useState('organization'); // 'organization', 'manager', 'employee'
   const [userFormData, setUserFormData] = useState({ name: '', email: '', password: '', role: 'employee', tenantId: '' });
-  
+
   // Modal Pagination State
   const [modalCurrentPage, setModalCurrentPage] = useState(1);
   const modalPageSize = 5;
@@ -292,7 +292,7 @@ const CompaniesList = () => {
         const q = statusFilter.toLowerCase();
         const userStatus = (user.status || 'Active').toLowerCase();
         const tenantStatus = (user.tenant?.onboardingStatus || 'active').toLowerCase();
-        
+
         if (q === 'active') {
           if (userStatus !== 'active') return false;
         } else {
@@ -494,7 +494,7 @@ const CompaniesList = () => {
               className="p-2 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-xl text-gray-400 hover:text-indigo-600 transition-all flex items-center justify-center"
               title="Analytics"
             >
-              <PieChart size={16} />
+
             </button>
             <button
               onClick={(e) => {
@@ -1218,7 +1218,7 @@ const CompaniesList = () => {
                 setActiveModalTab('overview');
                 fetchTenantUsers(row._id);
               }} />
-              
+
               {/* Global Pagination Controls */}
               {loading ? (
                 <div className="flex items-center justify-between px-4 py-3 bg-gray-50/50 dark:bg-gray-800/20 rounded-2xl border border-gray-100 dark:border-gray-800">
@@ -1259,7 +1259,7 @@ const CompaniesList = () => {
           ) : (
             <div className="space-y-4">
               <DataTable columns={userColumns} data={paginatedGlobalUsers} loading={loadingGlobalUsers} onRowClick={() => { }} />
-              
+
               {/* Global Pagination Controls for Users */}
               {loadingGlobalUsers ? (
                 <div className="flex items-center justify-between px-4 py-3 bg-gray-50/50 dark:bg-gray-800/20 rounded-2xl border border-gray-100 dark:border-gray-800">
@@ -1384,188 +1384,188 @@ const CompaniesList = () => {
                   <div className="flex-1">
                     {/* Tab: Overview */}
                     {activeModalTab === 'overview' && (
-                  <div className="animate-in fade-in duration-300">
-                    <h3 className="text-lg font-black text-gray-900 dark:text-white mb-6 flex items-center gap-2">
-                      <ShieldCheck className="text-blue-500" size={20} /> License & Capacity Metrics
-                    </h3>
+                      <div className="animate-in fade-in duration-300">
+                        <h3 className="text-lg font-black text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+                          <ShieldCheck className="text-blue-500" size={20} /> License & Capacity Metrics
+                        </h3>
 
-                    {/* Dynamic License Utilization */}
-                    <div className="bg-white dark:bg-gray-800 p-6 rounded-[1.5rem] border border-gray-100 dark:border-gray-700 shadow-sm mb-6">
-                      <div className="flex justify-between items-end mb-4">
-                        <div>
-                          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Total Active Nodes</p>
-                          <h4 className="text-2xl font-black text-gray-900 dark:text-white">
-                            {selectedTenant.userCount || 0} <span className="text-sm text-gray-400 font-medium">/ {selectedTenant.subscription?.employeeLimit || 50} licensed</span>
-                          </h4>
+                        {/* Dynamic License Utilization */}
+                        <div className="bg-white dark:bg-gray-800 p-6 rounded-[1.5rem] border border-gray-100 dark:border-gray-700 shadow-sm mb-6">
+                          <div className="flex justify-between items-end mb-4">
+                            <div>
+                              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Total Active Nodes</p>
+                              <h4 className="text-2xl font-black text-gray-900 dark:text-white">
+                                {selectedTenant.userCount || 0} <span className="text-sm text-gray-400 font-medium">/ {selectedTenant.subscription?.employeeLimit || 50} licensed</span>
+                              </h4>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-xs font-bold text-blue-600 dark:text-blue-400">
+                                {((selectedTenant.userCount || 0) / (selectedTenant.subscription?.employeeLimit || 50) * 100).toFixed(1)}% Bound
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Progress Bar Container */}
+                          <div className="h-2 w-full bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden flex">
+                            <div
+                              className={`h-full transition-all duration-1000 ${((selectedTenant.userCount || 0) / (selectedTenant.subscription?.employeeLimit || 50) * 100) > 90 ? 'bg-rose-500' : 'bg-blue-500'}`}
+                              style={{ width: `${Math.min(((selectedTenant.userCount || 0) / (selectedTenant.subscription?.employeeLimit || 50) * 100), 100)}%` }}
+                            />
+                          </div>
                         </div>
-                        <div className="text-right">
-                          <p className="text-xs font-bold text-blue-600 dark:text-blue-400">
-                            {((selectedTenant.userCount || 0) / (selectedTenant.subscription?.employeeLimit || 50) * 100).toFixed(1)}% Bound
-                          </p>
+
+                        {/* Compact 2x2 Grid */}
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="bg-white dark:bg-gray-800 p-5 rounded-[1.5rem] border border-gray-100 dark:border-gray-700 shadow-sm flex items-center gap-4 hover:border-gray-200 dark:hover:border-gray-600 transition-colors">
+                            <div className="p-3 bg-blue-50 dark:bg-blue-900/30 rounded-xl text-blue-600">
+                              <Users size={18} />
+                            </div>
+                            <div>
+                              <p className="text-[10px] uppercase font-black tracking-widest text-gray-400 mb-0.5 leading-none">Management</p>
+                              <p className="text-sm font-bold text-gray-900 dark:text-white">{selectedTenant.managerCount || 0} Active Staff</p>
+                            </div>
+                          </div>
+
+                          <div className="bg-white dark:bg-gray-800 p-5 rounded-[1.5rem] border border-gray-100 dark:border-gray-700 shadow-sm flex items-center gap-4 hover:border-gray-200 dark:hover:border-gray-600 transition-colors">
+                            <div className="p-3 bg-emerald-50 dark:bg-emerald-900/30 rounded-xl text-emerald-600">
+                              <Globe size={18} />
+                            </div>
+                            <div>
+                              <p className="text-[10px] uppercase font-black tracking-widest text-gray-400 mb-0.5 leading-none">Field Force</p>
+                              <p className="text-sm font-bold text-gray-900 dark:text-white">{selectedTenant.employeeCount || 0} Ground Agents</p>
+                            </div>
+                          </div>
+
+                          <div className="bg-white dark:bg-gray-800 p-5 rounded-[1.5rem] border border-gray-100 dark:border-gray-700 shadow-sm flex items-center gap-4 hover:border-gray-200 dark:hover:border-gray-600 transition-colors">
+                            <div className="p-3 bg-purple-50 dark:bg-purple-900/30 rounded-xl text-purple-600">
+                              <ShieldCheck size={18} />
+                            </div>
+                            <div className="w-full">
+                              <p className="text-[10px] uppercase font-black tracking-widest text-gray-400 mb-0.5 leading-none">Billing Tier</p>
+                              <select
+                                value={selectedTenant.subscription?.plan || 'premium'}
+                                onChange={handlePlanChange}
+                                className="w-full bg-transparent text-sm font-bold text-gray-900 dark:text-white capitalize border-none p-0 focus:ring-0 cursor-pointer outline-none appearance-none"
+                              >
+                                <option className="text-gray-900" value="basic">Basic (10 Nodes)</option>
+                                <option className="text-gray-900" value="premium">Premium (50 Nodes)</option>
+                                <option className="text-gray-900" value="enterprise">Enterprise (1000 Nodes)</option>
+                              </select>
+                            </div>
+                          </div>
+
+                          <div className="bg-white dark:bg-gray-800 p-5 rounded-[1.5rem] border border-gray-100 dark:border-gray-700 shadow-sm flex items-center gap-4 hover:border-gray-200 dark:hover:border-gray-600 transition-colors">
+                            <div className="p-3 bg-rose-50 dark:bg-rose-900/30 rounded-xl text-rose-600">
+                              <X size={18} />
+                            </div>
+                            <div>
+                              <p className="text-[10px] uppercase font-black tracking-widest text-gray-400 mb-0.5 leading-none">Renewal Status</p>
+                              <p className="text-sm font-bold text-gray-900 dark:text-white">{selectedTenant.subscription?.expiry ? new Date(selectedTenant.subscription.expiry).toLocaleDateString() : 'Auto-renewing'}</p>
+                            </div>
+                          </div>
                         </div>
                       </div>
-
-                      {/* Progress Bar Container */}
-                      <div className="h-2 w-full bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden flex">
-                        <div
-                          className={`h-full transition-all duration-1000 ${((selectedTenant.userCount || 0) / (selectedTenant.subscription?.employeeLimit || 50) * 100) > 90 ? 'bg-rose-500' : 'bg-blue-500'}`}
-                          style={{ width: `${Math.min(((selectedTenant.userCount || 0) / (selectedTenant.subscription?.employeeLimit || 50) * 100), 100)}%` }}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Compact 2x2 Grid */}
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="bg-white dark:bg-gray-800 p-5 rounded-[1.5rem] border border-gray-100 dark:border-gray-700 shadow-sm flex items-center gap-4 hover:border-gray-200 dark:hover:border-gray-600 transition-colors">
-                        <div className="p-3 bg-blue-50 dark:bg-blue-900/30 rounded-xl text-blue-600">
-                          <Users size={18} />
-                        </div>
-                        <div>
-                          <p className="text-[10px] uppercase font-black tracking-widest text-gray-400 mb-0.5 leading-none">Management</p>
-                          <p className="text-sm font-bold text-gray-900 dark:text-white">{selectedTenant.managerCount || 0} Active Staff</p>
-                        </div>
-                      </div>
-
-                      <div className="bg-white dark:bg-gray-800 p-5 rounded-[1.5rem] border border-gray-100 dark:border-gray-700 shadow-sm flex items-center gap-4 hover:border-gray-200 dark:hover:border-gray-600 transition-colors">
-                        <div className="p-3 bg-emerald-50 dark:bg-emerald-900/30 rounded-xl text-emerald-600">
-                          <Globe size={18} />
-                        </div>
-                        <div>
-                          <p className="text-[10px] uppercase font-black tracking-widest text-gray-400 mb-0.5 leading-none">Field Force</p>
-                          <p className="text-sm font-bold text-gray-900 dark:text-white">{selectedTenant.employeeCount || 0} Ground Agents</p>
-                        </div>
-                      </div>
-
-                      <div className="bg-white dark:bg-gray-800 p-5 rounded-[1.5rem] border border-gray-100 dark:border-gray-700 shadow-sm flex items-center gap-4 hover:border-gray-200 dark:hover:border-gray-600 transition-colors">
-                        <div className="p-3 bg-purple-50 dark:bg-purple-900/30 rounded-xl text-purple-600">
-                          <ShieldCheck size={18} />
-                        </div>
-                        <div className="w-full">
-                          <p className="text-[10px] uppercase font-black tracking-widest text-gray-400 mb-0.5 leading-none">Billing Tier</p>
-                          <select
-                            value={selectedTenant.subscription?.plan || 'premium'}
-                            onChange={handlePlanChange}
-                            className="w-full bg-transparent text-sm font-bold text-gray-900 dark:text-white capitalize border-none p-0 focus:ring-0 cursor-pointer outline-none appearance-none"
-                          >
-                            <option className="text-gray-900" value="basic">Basic (10 Nodes)</option>
-                            <option className="text-gray-900" value="premium">Premium (50 Nodes)</option>
-                            <option className="text-gray-900" value="enterprise">Enterprise (1000 Nodes)</option>
-                          </select>
-                        </div>
-                      </div>
-
-                      <div className="bg-white dark:bg-gray-800 p-5 rounded-[1.5rem] border border-gray-100 dark:border-gray-700 shadow-sm flex items-center gap-4 hover:border-gray-200 dark:hover:border-gray-600 transition-colors">
-                        <div className="p-3 bg-rose-50 dark:bg-rose-900/30 rounded-xl text-rose-600">
-                          <X size={18} />
-                        </div>
-                        <div>
-                          <p className="text-[10px] uppercase font-black tracking-widest text-gray-400 mb-0.5 leading-none">Renewal Status</p>
-                          <p className="text-sm font-bold text-gray-900 dark:text-white">{selectedTenant.subscription?.expiry ? new Date(selectedTenant.subscription.expiry).toLocaleDateString() : 'Auto-renewing'}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
                     )}
 
                     {/* Tab: Users (Managers, Employees) */}
                     {activeModalTab !== 'overview' && (
-                  <div className="flex-1 flex flex-col animate-in fade-in duration-300">
-                    <div className="flex justify-between items-center mb-6">
-                      <h3 className="text-lg font-black text-gray-900 dark:text-white capitalize">{activeModalTab === 'tenant' ? 'Tenant Admins' : activeModalTab + 's'}</h3>
-                      <button onClick={() => { setEditingUser(null); setUserFormData({ name: '', email: '', password: '', role: activeModalTab, tenantId: selectedTenant._id }); setProvisionEntity(activeModalTab); setShowModal(true); }} className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-xl font-bold flex items-center space-x-2 text-sm shadow-sm transition-colors">
-                        <UserPlus size={16} /> <span className="capitalize">Add {activeModalTab}</span>
-                      </button>
-                    </div>
+                      <div className="flex-1 flex flex-col animate-in fade-in duration-300">
+                        <div className="flex justify-between items-center mb-6">
+                          <h3 className="text-lg font-black text-gray-900 dark:text-white capitalize">{activeModalTab === 'tenant' ? 'Tenant Admins' : activeModalTab + 's'}</h3>
+                          <button onClick={() => { setEditingUser(null); setUserFormData({ name: '', email: '', password: '', role: activeModalTab, tenantId: selectedTenant._id }); setProvisionEntity(activeModalTab); setShowModal(true); }} className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-xl font-bold flex items-center space-x-2 text-sm shadow-sm transition-colors">
+                            <UserPlus size={16} /> <span className="capitalize">Add {activeModalTab}</span>
+                          </button>
+                        </div>
 
-                    {loadingUsers ? (
-                      <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 overflow-hidden shadow-sm">
-                        <div className="bg-gray-50 dark:bg-gray-900/50 px-6 py-4 flex gap-4 border-b border-gray-100 dark:border-gray-700">
-                          <Skeleton className="h-4 flex-1" />
-                          <Skeleton className="h-4 flex-1" />
-                          <Skeleton className="h-4 w-20" />
-                        </div>
-                        <div className="p-6 space-y-6">
-                          {[1, 2, 3].map(i => (
-                            <div key={i} className="flex gap-4">
-                              <Skeleton className="h-5 flex-1" />
-                              <Skeleton className="h-5 flex-1" />
-                              <Skeleton className="h-5 w-20" />
+                        {loadingUsers ? (
+                          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 overflow-hidden shadow-sm">
+                            <div className="bg-gray-50 dark:bg-gray-900/50 px-6 py-4 flex gap-4 border-b border-gray-100 dark:border-gray-700">
+                              <Skeleton className="h-4 flex-1" />
+                              <Skeleton className="h-4 flex-1" />
+                              <Skeleton className="h-4 w-20" />
                             </div>
-                          ))}
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="flex flex-col flex-1">
-                        <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 overflow-hidden shadow-sm">
-                          <table className="w-full text-left border-collapse">
-                            <thead className="bg-gray-50 dark:bg-gray-900/50">
-                              <tr>
-                                <th className="px-6 py-4 text-[10px] font-black text-gray-500 uppercase tracking-widest border-b border-gray-100 dark:border-gray-700">Name & Email</th>
-                                <th className="px-6 py-4 text-[10px] font-black text-gray-500 uppercase tracking-widest border-b border-gray-100 dark:border-gray-700">Status</th>
-                                <th className="px-6 py-4 text-[10px] font-black text-gray-500 uppercase tracking-widest border-b border-gray-100 dark:border-gray-700 text-right">Actions</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {(() => {
-                                const filtered = tenantUsers.filter(u => u.role === activeModalTab);
-                                const start = (modalCurrentPage - 1) * modalPageSize;
-                                const paginated = filtered.slice(start, start + modalPageSize);
-                                
-                                if (filtered.length === 0) {
-                                  return <tr><td colSpan="3" className="px-6 py-10 text-center text-gray-500 font-medium text-sm">No users found for this role.</td></tr>;
-                                }
-                                
-                                return paginated.map(user => (
-                                  <tr key={user._id} className="border-b border-gray-50 dark:border-gray-800/60 last:border-0 hover:bg-gray-50 dark:hover:bg-gray-800/80 transition-colors">
-                                    <td className="px-6 py-4">
-                                      <p className="font-bold text-gray-900 dark:text-white text-sm">{user.name}</p>
-                                      <p className="text-xs text-gray-500 mt-0.5">{user.email}</p>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                      <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider ${user.status === 'Active' ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400' : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'}`}>
-                                        {user.status || 'Active'}
-                                      </span>
-                                    </td>
-                                    <td className="px-6 py-4 text-right">
-                                      <div className="flex items-center justify-end space-x-1">
-                                        <button onClick={() => { setEditingUser(user); setUserFormData({ name: user.name, email: user.email, password: '', role: user.role, tenantId: selectedTenant._id }); setProvisionEntity(user.role); setShowModal(true); }} className="p-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-gray-400 hover:text-blue-500 rounded-xl transition-colors"><Edit size={16} /></button>
-                                        <button onClick={() => handleDeleteUser(user._id)} className="p-2 hover:bg-rose-50 dark:hover:bg-rose-900/20 text-gray-400 hover:text-rose-500 rounded-xl transition-colors"><Trash2 size={16} /></button>
-                                      </div>
-                                    </td>
+                            <div className="p-6 space-y-6">
+                              {[1, 2, 3].map(i => (
+                                <div key={i} className="flex gap-4">
+                                  <Skeleton className="h-5 flex-1" />
+                                  <Skeleton className="h-5 flex-1" />
+                                  <Skeleton className="h-5 w-20" />
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex flex-col flex-1">
+                            <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 overflow-hidden shadow-sm">
+                              <table className="w-full text-left border-collapse">
+                                <thead className="bg-gray-50 dark:bg-gray-900/50">
+                                  <tr>
+                                    <th className="px-6 py-4 text-[10px] font-black text-gray-500 uppercase tracking-widest border-b border-gray-100 dark:border-gray-700">Name & Email</th>
+                                    <th className="px-6 py-4 text-[10px] font-black text-gray-500 uppercase tracking-widest border-b border-gray-100 dark:border-gray-700">Status</th>
+                                    <th className="px-6 py-4 text-[10px] font-black text-gray-500 uppercase tracking-widest border-b border-gray-100 dark:border-gray-700 text-right">Actions</th>
                                   </tr>
-                                ));
-                              })()}
-                            </tbody>
-                          </table>
-                        </div>
+                                </thead>
+                                <tbody>
+                                  {(() => {
+                                    const filtered = tenantUsers.filter(u => u.role === activeModalTab);
+                                    const start = (modalCurrentPage - 1) * modalPageSize;
+                                    const paginated = filtered.slice(start, start + modalPageSize);
 
-                        {/* Modal Pagination Controls */}
-                        {tenantUsers.filter(u => u.role === activeModalTab).length > modalPageSize && (
-                          <div className="mt-4 flex items-center justify-between px-2">
-                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                              Page {modalCurrentPage} of {Math.ceil(tenantUsers.filter(u => u.role === activeModalTab).length / modalPageSize)}
-                            </p>
-                            <div className="flex gap-2">
-                              <button
-                                disabled={modalCurrentPage === 1}
-                                onClick={() => setModalCurrentPage(prev => prev - 1)}
-                                className="p-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                              >
-                                <RotateCcw size={14} className="rotate-90" />
-                              </button>
-                              <button
-                                disabled={modalCurrentPage >= Math.ceil(tenantUsers.filter(u => u.role === activeModalTab).length / modalPageSize)}
-                                onClick={() => setModalCurrentPage(prev => prev + 1)}
-                                className="p-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                              >
-                                <ChevronRight size={14} />
-                              </button>
+                                    if (filtered.length === 0) {
+                                      return <tr><td colSpan="3" className="px-6 py-10 text-center text-gray-500 font-medium text-sm">No users found for this role.</td></tr>;
+                                    }
+
+                                    return paginated.map(user => (
+                                      <tr key={user._id} className="border-b border-gray-50 dark:border-gray-800/60 last:border-0 hover:bg-gray-50 dark:hover:bg-gray-800/80 transition-colors">
+                                        <td className="px-6 py-4">
+                                          <p className="font-bold text-gray-900 dark:text-white text-sm">{user.name}</p>
+                                          <p className="text-xs text-gray-500 mt-0.5">{user.email}</p>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                          <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider ${user.status === 'Active' ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400' : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'}`}>
+                                            {user.status || 'Active'}
+                                          </span>
+                                        </td>
+                                        <td className="px-6 py-4 text-right">
+                                          <div className="flex items-center justify-end space-x-1">
+                                            <button onClick={() => { setEditingUser(user); setUserFormData({ name: user.name, email: user.email, password: '', role: user.role, tenantId: selectedTenant._id }); setProvisionEntity(user.role); setShowModal(true); }} className="p-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-gray-400 hover:text-blue-500 rounded-xl transition-colors"><Edit size={16} /></button>
+                                            <button onClick={() => handleDeleteUser(user._id)} className="p-2 hover:bg-rose-50 dark:hover:bg-rose-900/20 text-gray-400 hover:text-rose-500 rounded-xl transition-colors"><Trash2 size={16} /></button>
+                                          </div>
+                                        </td>
+                                      </tr>
+                                    ));
+                                  })()}
+                                </tbody>
+                              </table>
                             </div>
+
+                            {/* Modal Pagination Controls */}
+                            {tenantUsers.filter(u => u.role === activeModalTab).length > modalPageSize && (
+                              <div className="mt-4 flex items-center justify-between px-2">
+                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                                  Page {modalCurrentPage} of {Math.ceil(tenantUsers.filter(u => u.role === activeModalTab).length / modalPageSize)}
+                                </p>
+                                <div className="flex gap-2">
+                                  <button
+                                    disabled={modalCurrentPage === 1}
+                                    onClick={() => setModalCurrentPage(prev => prev - 1)}
+                                    className="p-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                                  >
+                                    <RotateCcw size={14} className="rotate-90" />
+                                  </button>
+                                  <button
+                                    disabled={modalCurrentPage >= Math.ceil(tenantUsers.filter(u => u.role === activeModalTab).length / modalPageSize)}
+                                    onClick={() => setModalCurrentPage(prev => prev + 1)}
+                                    className="p-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                                  >
+                                    <ChevronRight size={14} />
+                                  </button>
+                                </div>
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
-                    )}
-                  </div>
                     )}
                   </div>
                 </div>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ShoppingBag, TrendingUp, DollarSign, ArrowUpRight, ArrowDownRight, Package, Search, User, ChevronLeft, ChevronRight } from 'lucide-react';
-import { getOrders, getOrderStats } from '../../services/orderService';
+import { getOrders, getOrderStats } from '../../services/employee/orderService';
 
 const Orders = () => {
   const [orders, setOrders] = useState([]);

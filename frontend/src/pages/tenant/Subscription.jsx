@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { CreditCard, Check, Zap, Shield, Crown, RefreshCw, AlertCircle, Sparkles } from 'lucide-react';
-import { getSubscription, updateSubscription, getAvailablePlans } from '../../services/tenantService';
+import { getSubscription, updateSubscription, getAvailablePlans } from '../../services/core/tenantService';
 
 // Icon mapping for dynamic plans
 const ICON_MAP = {

@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { register } from '../../services/authService';
+import { register } from '../../services/core/authService';
 import { ShieldCheck, Lock, Mail, User, Building2, ChevronRight, Loader2, CheckCircle2, ArrowLeft } from 'lucide-react';
-import Button from '../../components/Button';
-import ThemeToggle from '../../components/ThemeToggle';
+import Button from '../../components/ui/Button';
+import ThemeToggle from '../../components/ui/ThemeToggle';
 
 const SignupPage = () => {
   const [form, setForm] = useState({ name: '', company: '', email: '', password: '', confirm: '' });

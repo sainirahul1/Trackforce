@@ -332,8 +332,8 @@ const ActivityItem = ({ activity, isLast }) => (
 // MAIN COMPONENT: EmployeeDashboard
 // =============================================================================
 
-import { getDashboardStats, startTracking, stopTracking } from '../../services/trackingService';
-import { getActivities } from '../../services/activityService';
+import { getDashboardStats, startTracking, stopTracking } from '../../services/employee/trackingService';
+import { getActivities } from '../../services/employee/activityService';
 
 const EmployeeDashboard = () => {
   // --- State Hooks ---

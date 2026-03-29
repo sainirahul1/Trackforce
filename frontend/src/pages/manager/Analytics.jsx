@@ -11,9 +11,9 @@ import {
   Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Filler, Tooltip
 } from 'chart.js';
 import { Line, Bar } from 'react-chartjs-2';
-import tenantService from '../../services/tenantService';
-import { getTasks, getTaskById } from '../../services/taskService';
-import { getVisitById, updateVisit } from '../../services/visitService';
+import tenantService from '../../services/core/tenantService';
+import { getTasks, getTaskById } from '../../services/employee/taskService';
+import { getVisitById, updateVisit } from '../../services/employee/visitService';
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Filler, Tooltip);
 
 const IntelligenceSuite = () => {

@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { createPortal } from 'react-dom';
-import DataTable from '../../components/DataTable';
-import tenantService from '../../services/tenantService';
-import Button from '../../components/Button';
+import DataTable from '../../components/ui/DataTable';
+import tenantService from '../../services/core/tenantService';
+import Button from '../../components/ui/Button';
 import { UserPlus, Search, Download, Shield, Users, Activity, CheckCircle2, X, ArrowLeft, Mail, Phone, MapPin, Briefcase, Calendar, User, Clock, Edit, Trash2, Ban } from 'lucide-react';
 
 const getRelativeTime = (timestamp) => {

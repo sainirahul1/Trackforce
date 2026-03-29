@@ -39,9 +39,9 @@ import {
   Filler
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
-import DashboardCard from '../../components/DashboardCard';
-import DataTable from '../../components/DataTable';
-import { getManagers } from '../../services/tenantService';
+import DashboardCard from '../../components/ui/DashboardCard';
+import DataTable from '../../components/ui/DataTable';
+import { getManagers } from '../../services/core/tenantService';
 
 ChartJS.register(
   CategoryScale,

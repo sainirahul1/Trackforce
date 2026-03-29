@@ -17,9 +17,9 @@ import {
   Layers,
   ArrowUpRight
 } from 'lucide-react';
-import Button from '../../components/Button';
-import Skeleton from '../../components/Skeleton';
-import superadminService from '../../services/superadminService';
+import Button from '../../components/ui/Button';
+import Skeleton from '../../components/ui/Skeleton';
+import superadminService from '../../services/superadmin/superadminService';
 
 const Subscriptions = () => {
   const [plans, setPlans] = useState([]);

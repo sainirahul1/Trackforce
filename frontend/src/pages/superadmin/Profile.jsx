@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { User, Mail, Phone, MapPin, Building, ShieldCheck, Camera, Edit3, Key, Briefcase, X, Save, Calendar, Clock, Users, Globe, Loader2 } from 'lucide-react';
-import Skeleton from '../../components/Skeleton';
-import { getMe, updateProfile as updateAuthProfile, uploadProfileImage as uploadAuthImage } from '../../services/authService';
+import Skeleton from '../../components/ui/Skeleton';
+import { getMe, updateProfile as updateAuthProfile, uploadProfileImage as uploadAuthImage } from '../../services/core/authService';
 import { useAuth } from '../../context/AuthContext';
 
 const Profile = () => {

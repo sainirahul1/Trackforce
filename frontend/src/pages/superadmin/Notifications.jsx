@@ -13,8 +13,8 @@ import {
   ExternalLink,
   Users
 } from 'lucide-react';
-import Button from '../../components/Button';
-import superadminService from '../../services/superadminService';
+import Button from '../../components/ui/Button';
+import superadminService from '../../services/superadmin/superadminService';
 
 const mockNotifications = [
   {

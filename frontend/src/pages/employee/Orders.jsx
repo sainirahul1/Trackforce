@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 // Import theme context for global dark mode
 import { useTheme } from "../../context/ThemeContext";
-import { getOrders, createOrderAPI, updateOrderAPI } from "../../services/orderService";
+import { getOrders, createOrderAPI, updateOrderAPI } from "../../services/employee/orderService";
 
 // Main Employee Orders Component
 const EmployeeOrders = () => {

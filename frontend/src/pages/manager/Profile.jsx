@@ -6,7 +6,7 @@ import {
   ShieldCheck, CreditCard, Laptop, Smartphone,
   Calendar, Lock, AlertTriangle, Clock, Activity, X, MoreVertical, Sliders
 } from 'lucide-react';
-import { updateProfile as updateAuthProfile, getMe, uploadProfileImage as uploadAuthImage, updatePassword } from '../../services/authService';
+import { updateProfile as updateAuthProfile, getMe, uploadProfileImage as uploadAuthImage, updatePassword } from '../../services/core/authService';
 import { useAuth } from '../../context/AuthContext';
 import { Loader2 } from 'lucide-react';
 

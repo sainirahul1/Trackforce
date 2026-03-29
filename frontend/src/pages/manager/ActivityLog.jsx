@@ -6,7 +6,7 @@ import {
   Map, CheckCircle, XCircle, TrendingUp, MoreVertical,
   Mail, MessageSquare, X, ArrowLeft
 } from 'lucide-react';
-import { getExecutives, getLogsByUser } from '../../services/activityService';
+import { getExecutives, getLogsByUser } from '../../services/employee/activityService';
 
 const ManagerActivityLog = () => {
   const [activeTab, setActiveTab] = useState('All');

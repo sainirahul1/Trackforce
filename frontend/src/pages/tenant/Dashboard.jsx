@@ -10,7 +10,7 @@ import {
 import { 
   Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, ArcElement 
 } from 'chart.js';
-import tenantService from '../../services/tenantService';
+import tenantService from '../../services/core/tenantService';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, ArcElement);
 

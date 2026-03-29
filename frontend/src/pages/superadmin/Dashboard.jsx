@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Building2, Users, MonitorSmartphone, Activity, TrendingUp, Globe, ShieldCheck, Zap, PieChart as PieChartIcon, Download } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import DashboardCard from '../../components/DashboardCard';
-import DataTable from '../../components/DataTable';
-import superadminService from '../../services/superadminService';
-import Skeleton from '../../components/Skeleton';
+import DashboardCard from '../../components/ui/DashboardCard';
+import DataTable from '../../components/ui/DataTable';
+import superadminService from '../../services/superadmin/superadminService';
+import Skeleton from '../../components/ui/Skeleton';
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {

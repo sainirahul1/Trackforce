@@ -1,6 +1,6 @@
 // modification of the code
 import React, { useState, useEffect } from 'react';
-import * as taskService from '../../services/taskService';
+import * as taskService from '../../services/employee/taskService';
 import {
   CheckCircle2,
   Circle,
@@ -46,7 +46,7 @@ import {
   ExternalLink
 } from 'lucide-react';
 import { useOutletContext } from 'react-router-dom';
-import Button from '../../components/Button';
+import Button from '../../components/ui/Button';
 
 // --- Sub-components (Consolidated & Styled) ---
 

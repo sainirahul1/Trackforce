@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { MapPin, ShoppingBag, LogIn, Navigation, Store, Download, Clock, XCircle, Activity, Loader2 } from 'lucide-react';
-import { getActivities } from '../../services/activityService';
+import { getActivities } from '../../services/employee/activityService';
 
 const EmployeeActivity = () => {
   const [activities, setActivities] = useState([]);

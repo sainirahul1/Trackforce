@@ -7,7 +7,7 @@ import {
   Check, X, MessageSquare, MoreHorizontal, Mail, Phone, ArrowLeft,
   ChevronDown, History
 } from 'lucide-react';
-import { getVisits, getVisitById, updateVisit } from '../../services/visitService';
+import { getVisits, getVisitById, updateVisit } from '../../services/employee/visitService';
 
 /**
  * VisitRow Component

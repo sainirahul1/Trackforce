@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { login as authServiceLogin } from '../../services/authService';
+import { login as authServiceLogin } from '../../services/core/authService';
 import { ShieldCheck, Lock, Mail, ChevronRight, Loader2, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import Button from '../../components/Button';
-import ThemeToggle from '../../components/ThemeToggle';
+import Button from '../../components/ui/Button';
+import ThemeToggle from '../../components/ui/ThemeToggle';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');

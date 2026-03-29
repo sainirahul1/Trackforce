@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Building, Lock, Globe, Save, User, Activity, Download, Eye, EyeOff } from 'lucide-react';
-import tenantService from '../../services/tenantService';
+import tenantService from '../../services/core/tenantService';
 
 const Settings = () => {
   const [logoPreview, setLogoPreview] = useState(null);

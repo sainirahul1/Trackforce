@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, User, Mail, Phone, MapPin, Briefcase, Activity, Calendar, Shield, Clock } from 'lucide-react';
-import Button from '../../components/Button';
-import tenantService from '../../services/tenantService';
+import Button from '../../components/ui/Button';
+import tenantService from '../../services/core/tenantService';
 
 const ManagerDetails = () => {
   const { id } = useParams();

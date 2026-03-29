@@ -49,13 +49,13 @@ app.get('/', (req, res) => {
 });
 
 // Routes
-app.use('/api/public', require('./routes/publicRoutes'));
-app.use('/api/auth', require('./routes/authRoutes'));
-app.use('/api/visits', require('./routes/visitRoutes'));
-app.use('/api/orders', require('./routes/orderRoutes'));
-app.use('/api/activity', require('./routes/activityRoutes'));
-app.use('/api/tracking', require('./routes/trackingRoutes'));
-app.use('/api/notifications', require('./routes/notificationRoutes'));
+app.use('/api/public', require('./routes/core/publicRoutes'));
+app.use('/api/auth', require('./routes/core/authRoutes'));
+app.use('/api/visits', require('./routes/employee/visitRoutes'));
+app.use('/api/orders', require('./routes/employee/orderRoutes'));
+app.use('/api/activity', require('./routes/employee/activityRoutes'));
+app.use('/api/tracking', require('./routes/employee/trackingRoutes'));
+app.use('/api/notifications', require('./routes/tenant/notificationRoutes'));
 
 app.use('/api/employee', require('./routes/employee/employeeRoutes'));
 
@@ -66,7 +66,7 @@ app.use('/api/superadmin/analytics', require('./routes/superadmin/analyticsRoute
 app.use('/api/superadmin/notifications', require('./routes/superadmin/notificationRoutes'));
 app.use('/api/superadmin/settings', require('./routes/superadmin/settingsRoutes'));
 app.use('/api/superadmin/manage', require('./routes/superadmin/roleManagementRoutes'));
-app.use('/api/tenant', require('./routes/tenantRoutes'));
+app.use('/api/tenant', require('./routes/tenant/tenantRoutes'));
 app.use('/api/manager/inventory-orders', require('./routes/manager/inventoryOrderRoutes'));
 
 // Employee Routes

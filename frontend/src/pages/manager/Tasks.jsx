@@ -9,7 +9,7 @@ import {
   Edit2, Trash2, ArrowRightCircle, ChevronRight,
   Layout, LayoutPanelLeft, Columns, Settings, Trello
 } from 'lucide-react';
-import { getTasks, createTask, updateTask, deleteTask } from '../../services/taskService';
+import { getTasks, createTask, updateTask, deleteTask } from '../../services/employee/taskService';
 
 const ManagerTasks = () => {
   const [activeTab, setActiveTab] = useState('board'); // 'board' or 'list'

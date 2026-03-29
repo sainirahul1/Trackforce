@@ -1,12 +1,12 @@
 import React from 'react';
 import { Outlet, Navigate } from 'react-router-dom';
-import Sidebar from '../components/Sidebar';
-import Navbar from '../components/Navbar';
-import HelpCenter from '../components/HelpCenter';
-import SuspendedOverlay from '../components/SuspendedOverlay';
-import MaintenanceOverlay from '../components/MaintenanceOverlay';
-import * as authService from '../services/authService';
-import { getPublicSettings } from '../services/publicService';
+import Sidebar from '../components/layout/Sidebar';
+import Navbar from '../components/layout/Navbar';
+import HelpCenter from '../components/layout/HelpCenter';
+import SuspendedOverlay from '../components/overlays/SuspendedOverlay';
+import MaintenanceOverlay from '../components/overlays/MaintenanceOverlay';
+import * as authService from '../services/core/authService';
+import { getPublicSettings } from '../services/core/publicService';
 import { useAuth } from '../context/AuthContext';
 
 const DashboardLayout = ({ allowedRole }) => {

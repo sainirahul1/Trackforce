@@ -10,7 +10,7 @@ import {
 import { Chart as ChartJS, registerables } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
 import { useNavigate } from 'react-router-dom';
-import { getManagerStats, getRevenueChartData, getRecentOrders } from '../../services/managerOrderService';
+import { getManagerStats, getRevenueChartData, getRecentOrders } from '../../services/manager/managerOrderService';
 
 ChartJS.register(...registerables);
 

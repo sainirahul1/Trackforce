@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ShieldCheck, Menu, X, ChevronRight } from 'lucide-react';
-import ThemeToggle from '../ThemeToggle';
+import ThemeToggle from '../ui/ThemeToggle';
 
 const LandingNavbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);

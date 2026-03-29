@@ -5,9 +5,9 @@ import axios from 'axios';
 import { User, Briefcase, FileText, Activity, LayoutDashboard, Settings, Mail, Phone, MapPin, MoreVertical, ShieldCheck, TrendingUp, ShoppingBag, Map as MapIcon, Clock, HeartPulse, Building, Shield, UserCheck, Calendar, CheckCircle, Download, ExternalLink, Bell, Globe, LogOut, Share2, Eye, EyeOff, Lock, AlertTriangle, Smartphone, Wifi, X, MessageSquare, Copy, Pencil, UploadCloud, ChevronDown, CheckCircle2, Filter, Search, GripVertical, MoreHorizontal, Info, Users, Menu, Plus, Trash2, Camera, Loader2 } from 'lucide-react';
 import { useNotifications } from '../../context/NotificationContext';
 import { useAuth } from '../../context/AuthContext';
-import { uploadProfileImage } from '../../services/authService';
-import { getMyProfile, updateMyProfile, changePassword } from '../../services/profileService';
-import { fetchDocuments, uploadDocument, updateDocumentService, deleteDocumentService } from '../../services/documentService';
+import { uploadProfileImage } from '../../services/core/authService';
+import { getMyProfile, updateMyProfile, changePassword } from '../../services/employee/profileService';
+import { fetchDocuments, uploadDocument, updateDocumentService, deleteDocumentService } from '../../services/employee/documentService';
 
 const ScrollStyles = () => (
   <style>{`

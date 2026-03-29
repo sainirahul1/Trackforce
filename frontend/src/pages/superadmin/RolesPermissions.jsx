@@ -15,8 +15,8 @@ import {
   MoreVertical,
   Key
 } from 'lucide-react';
-import Button from '../../components/Button';
-import Skeleton from '../../components/Skeleton';
+import Button from '../../components/ui/Button';
+import Skeleton from '../../components/ui/Skeleton';
 
 // Base API URL - point to the backend server
 const getBaseUrl = () => {

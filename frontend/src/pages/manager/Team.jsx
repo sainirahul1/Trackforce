@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import DataTable from '../../components/DataTable';
-import tenantService from '../../services/tenantService';
-import { getVisits } from '../../services/visitService';
+import DataTable from '../../components/ui/DataTable';
+import tenantService from '../../services/core/tenantService';
+import { getVisits } from '../../services/employee/visitService';
 import { Users, Search, Download, CheckCircle2, BarChart3, AlertTriangle, MapPin, Activity, Mail, Phone, Linkedin, Briefcase, GraduationCap, ShieldCheck, FileText, Globe, Loader2, Edit, Trash2, Ban, X, UserPlus, ArrowLeft, Calendar, Clock, Shield, User, FileSignature, HeartPulse, Building2, Flame, Droplets, Map } from 'lucide-react';
-import Button from '../../components/Button';
+import Button from '../../components/ui/Button';
 
 // --- Print-Only Consolidated Layout (Team Operation Application) ---
 const TeamPrintLayout = ({ stats, members }) => (
