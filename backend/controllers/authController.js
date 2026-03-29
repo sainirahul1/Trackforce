@@ -51,6 +51,7 @@ exports.register = async (req, res) => {
         tenant: user.tenant,
         tenantStatus: populatedUser.tenant?.onboardingStatus || 'active',
         isDeactivated: user.isDeactivated,
+        profile: user.profile || {},
         token: generateToken(user._id),
       });
     } else {
@@ -104,6 +105,7 @@ exports.login = async (req, res) => {
         tenant: user.tenant,
         tenantStatus: populatedUser.tenant?.onboardingStatus || 'active',
         isDeactivated: user.isDeactivated,
+        profile: user.profile || {},
         token: generateToken(user._id),
       });
     } else {
@@ -180,6 +182,18 @@ exports.uploadProfileImage = async (req, res) => {
     const base64Image = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
     user.profile.profileImage = base64Image;
     await user.save();
+
+    // Sync with Employee Profile model if it exists
+    try {
+      const Profile = require('../models/employee/Profile');
+      await Profile.findOneAndUpdate(
+        { employeeId: user._id },
+        { $set: { avatar: base64Image } }
+      );
+    } catch (profileError) {
+      // Profile might not exist for non-employee roles, ignore or log
+      console.log('Skipping employee profile sync for non-employee role');
+    }
 
     res.json({
       message: 'Profile image uploaded successfully to database',

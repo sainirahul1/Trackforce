@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DataTable from '../../components/DataTable';
+import Skeleton from '../../components/Skeleton';
 import Button from '../../components/Button';
 import superadminService from '../../services/superadminService';
 import {
@@ -376,16 +377,11 @@ const CompaniesList = () => {
     setPlanFilter('');
   };
 
-  const stats = backendStats ? [
-    { label: 'Total Organizations', value: backendStats.totalOrganizations?.toString() || '0', icon: Building2, color: 'text-indigo-600', bg: 'bg-indigo-50' },
-    { label: 'Active Organizations', value: backendStats.activeOrganizations?.toString() || '0', icon: ShieldCheck, color: 'text-blue-600', bg: 'bg-blue-50' },
-    { label: 'Global Workforce Nodes', value: backendStats.globalWorkforceNodes?.toString() || '0', icon: Users, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-    { label: 'Avg System Utilization', value: `${backendStats.avgUtilization || '0.0'}%`, icon: PieChart, color: 'text-purple-600', bg: 'bg-purple-50' },
-  ] : [
-    { label: 'Total Organizations', value: '...', icon: Building2, color: 'text-indigo-600', bg: 'bg-indigo-50' },
-    { label: 'Active Organizations', value: '...', icon: ShieldCheck, color: 'text-blue-600', bg: 'bg-blue-50' },
-    { label: 'Global Workforce Nodes', value: '...', icon: Users, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-    { label: 'Avg System Utilization', value: '...', icon: PieChart, color: 'text-purple-600', bg: 'bg-purple-50' }
+  const stats = [
+    { label: 'Total Organizations', value: backendStats?.totalOrganizations?.toString() || '0', icon: Building2, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+    { label: 'Active Organizations', value: backendStats?.activeOrganizations?.toString() || '0', icon: ShieldCheck, color: 'text-blue-600', bg: 'bg-blue-50' },
+    { label: 'Global Workforce Nodes', value: backendStats?.globalWorkforceNodes?.toString() || '0', icon: Users, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+    { label: 'Avg System Utilization', value: `${backendStats?.avgUtilization || '0.0'}%`, icon: PieChart, color: 'text-purple-600', bg: 'bg-purple-50' },
   ];
 
   const handleProvision = async (e) => {
@@ -548,31 +544,42 @@ const CompaniesList = () => {
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">{globalActiveTab === 'organizations' ? 'Organization Registry' : 'Global User Registry'}</h1>
-          <p className="text-gray-500 dark:text-gray-400 font-medium mt-1">Global oversight of multi-tenant infrastructure and licenses</p>
-        </div>
-        <Button
-          onClick={() => {
-            if (globalActiveTab === 'organizations') {
-              setEditingTenant(null);
-              setProvisionEntity('organization');
-              setFormData({ name: '', domain: '', adminEmail: '', password: '', plan: 'Premium', planId: '', industry: '', initialManagers: [], initialEmployees: [] });
-              setShowModal(true);
-            } else {
-              setEditingUser(null);
-              const entityType = globalActiveTab === 'tenant admin' ? 'tenant' : globalActiveTab;
-              setProvisionEntity(entityType);
-              setUserFormData({ name: '', email: '', password: '', role: entityType, tenantId: '' });
-              setShowModal(true);
-            }
-          }}
-          variant="primary"
-          className="flex items-center space-x-2 shadow-xl shadow-indigo-100 dark:shadow-none rounded-2xl py-3 px-6"
-        >
-          <Plus size={18} />
-          <span className="font-bold capitalize max-w-[150px] truncate">Add</span>
-        </Button>
+        {loading ? (
+          <div className="space-y-3">
+            <Skeleton className="h-9 w-64 uppercase tracking-tight" />
+            <Skeleton className="h-4 w-[28rem] font-medium" />
+          </div>
+        ) : (
+          <div>
+            <h1 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">{globalActiveTab === 'organizations' ? 'Organization Registry' : 'Global User Registry'}</h1>
+            <p className="text-gray-500 dark:text-gray-400 font-medium mt-1">Global oversight of multi-tenant infrastructure and licenses</p>
+          </div>
+        )}
+        {loading ? (
+          <Skeleton className="h-12 w-32 rounded-2xl" />
+        ) : (
+          <Button
+            onClick={() => {
+              if (globalActiveTab === 'organizations') {
+                setEditingTenant(null);
+                setProvisionEntity('organization');
+                setFormData({ name: '', domain: '', adminEmail: '', password: '', plan: 'Premium', planId: '', industry: '', initialManagers: [], initialEmployees: [] });
+                setShowModal(true);
+              } else {
+                setEditingUser(null);
+                const entityType = globalActiveTab === 'tenant admin' ? 'tenant' : globalActiveTab;
+                setProvisionEntity(entityType);
+                setUserFormData({ name: '', email: '', password: '', role: entityType, tenantId: '' });
+                setShowModal(true);
+              }
+            }}
+            variant="primary"
+            className="flex items-center space-x-2 shadow-xl shadow-indigo-100 dark:shadow-none rounded-2xl py-3 px-6"
+          >
+            <Plus size={18} />
+            <span className="font-bold capitalize max-w-[150px] truncate">Add</span>
+          </Button>
+        )}
       </div>
 
       {/* Provisioning Modal */}
@@ -954,13 +961,25 @@ const CompaniesList = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
         {stats.map((stat, i) => (
           <div key={i} className="bg-white dark:bg-gray-900 p-6 rounded-[2rem] border border-gray-100 dark:border-gray-800 flex items-center space-x-5 shadow-sm">
-            <div className={`p-4 rounded-2xl ${stat.bg} ${stat.color} dark:bg-opacity-10 shadow-sm border border-transparent hover:border-white/20 transition-all`}>
-              <stat.icon size={24} />
-            </div>
-            <div>
-              <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest leading-none">{stat.label}</p>
-              <p className="text-2xl font-black text-gray-900 dark:text-white mt-1.5">{stat.value}</p>
-            </div>
+            {loading ? (
+              <>
+                <Skeleton variant="rounded" className="w-14 h-14" />
+                <div className="space-y-2 flex-grow">
+                  <Skeleton className="h-3 w-3/4" />
+                  <Skeleton className="h-6 w-1/2" />
+                </div>
+              </>
+            ) : (
+              <>
+                <div className={`p-4 rounded-2xl ${stat.bg} ${stat.color} dark:bg-opacity-10 shadow-sm border border-transparent hover:border-white/20 transition-all`}>
+                  <stat.icon size={24} />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest leading-none">{stat.label}</p>
+                  <p className="text-2xl font-black text-gray-900 dark:text-white mt-1.5">{stat.value}</p>
+                </div>
+              </>
+            )}
           </div>
         ))}
       </div>
@@ -972,131 +991,182 @@ const CompaniesList = () => {
             <div className="flex flex-col md:flex-row md:items-center gap-6 flex-1">
               {/* Search */}
               <div className="relative w-full md:max-w-md">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500" size={18} />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder={`Search ${globalActiveTab}...`}
-                  className="w-full pl-12 pr-6 py-3 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl text-sm font-medium text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500/10 outline-none transition-all"
-                />
-                {searchQuery && (
-                  <button
-                    onClick={() => setSearchQuery('')}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg text-gray-400 transition-colors"
-                  >
-                    <X size={14} />
-                  </button>
+                {loading || loadingGlobalUsers ? (
+                  <Skeleton className="h-11 w-full rounded-2xl" />
+                ) : (
+                  <>
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500" size={18} />
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder={`Search ${globalActiveTab}...`}
+                      className="w-full pl-12 pr-6 py-3 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl text-sm font-medium text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500/10 outline-none transition-all"
+                    />
+                    {searchQuery && (
+                      <button
+                        onClick={() => setSearchQuery('')}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg text-gray-400 transition-colors"
+                      >
+                        <X size={14} />
+                      </button>
+                    )}
+                  </>
                 )}
               </div>
 
-              {/* Tab Navigation (Beside Search) */}
-              <div className="flex bg-gray-50 dark:bg-gray-800 p-1 rounded-2xl border border-gray-100 dark:border-gray-700/50 shadow-inner">
-                {[
-                  { id: 'organizations', label: 'Organizations', icon: Building2 },
-                  { id: 'manager', label: 'Managers', icon: ShieldCheck },
-                  { id: 'employee', label: 'Employees', icon: Users }
-                ].map((tab) => (
+              {/* Industry Filter / Advanced Filters */}
+              <div className="flex items-center space-x-3 shrink-0">
+                {loading || loadingGlobalUsers ? (
+                  <>
+                    <Skeleton className="h-11 w-40 rounded-2xl" />
+                    <Skeleton className="h-11 w-32 rounded-2xl" />
+                  </>
+                ) : (
+                  <>
+                    {/* Industry Dropdown */}
+                    <select
+                      value={industryFilter}
+                      onChange={(e) => setIndustryFilter(e.target.value)}
+                      className="bg-gray-50 dark:bg-gray-800 border-none rounded-2xl text-xs font-bold px-4 py-3 outline-none cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-gray-700 dark:text-gray-300"
+                    >
+                      <option value="">All Industries</option>
+                      {industries.map(ind => (
+                        <option key={ind} value={ind}>{ind}</option>
+                      ))}
+                    </select>
+
+                    {/* Advanced Filters Button */}
+                    <Button
+                      onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+                      variant="outline"
+                      className={`flex items-center space-x-2 rounded-2xl px-4 py-3 border-gray-200 dark:border-gray-700 transition-all ${showAdvancedFilters ? 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-800 text-indigo-600' : 'text-gray-600 dark:text-gray-300'
+                        }`}
+                    >
+                      <Filter size={18} />
+                      <span className="font-bold">Filters</span>
+                      {activeFilterCount > 0 && (
+                        <span className="ml-1 w-5 h-5 bg-indigo-600 text-white text-[10px] font-black rounded-full flex items-center justify-center">
+                          {activeFilterCount}
+                        </span>
+                      )}
+                    </Button>
+                  </>
+                )}
+
+                {/* Clear All */}
+                {(searchQuery || activeFilterCount > 0) && !loading && (
                   <button
-                    key={tab.id}
-                    onClick={() => setGlobalActiveTab(tab.id)}
-                    className={`flex items-center space-x-2 px-4 py-2 rounded-xl transition-all duration-300 ${globalActiveTab === tab.id
-                      ? 'bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-400 shadow-sm font-black'
-                      : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 font-bold'
-                      }`}
+                    onClick={clearAllFilters}
+                    className="flex items-center space-x-1.5 text-xs font-bold text-rose-500 hover:text-rose-600 transition-colors px-3 py-3"
                   >
-                    <tab.icon size={14} />
-                    <span className="text-[10px] uppercase tracking-wider">{tab.label}</span>
+                    <RotateCcw size={14} />
+                    <span>Reset</span>
                   </button>
-                ))}
+                )}
+                {loading && (activeFilterCount > 0 || searchQuery) && (
+                  <Skeleton className="h-8 w-20 rounded-xl" />
+                )}
               </div>
             </div>
 
-            <div className="flex items-center space-x-3 shrink-0">
-              {/* Industry Dropdown */}
-              <select
-                value={industryFilter}
-                onChange={(e) => setIndustryFilter(e.target.value)}
-                className="bg-gray-50 dark:bg-gray-800 border-none rounded-2xl text-xs font-bold px-4 py-3 outline-none cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-gray-700 dark:text-gray-300"
-              >
-                <option value="">All Industries</option>
-                {industries.map(ind => (
-                  <option key={ind} value={ind}>{ind}</option>
-                ))}
-              </select>
-
-              {/* Advanced Filters Button */}
-              <Button
-                onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-                variant="outline"
-                className={`flex items-center space-x-2 rounded-2xl px-4 py-3 border-gray-200 dark:border-gray-700 transition-all ${showAdvancedFilters ? 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-800 text-indigo-600' : 'text-gray-600 dark:text-gray-300'
-                  }`}
-              >
-                <Filter size={18} />
-                <span className="font-bold">Filters</span>
-                {activeFilterCount > 0 && (
-                  <span className="ml-1 w-5 h-5 bg-indigo-600 text-white text-[10px] font-black rounded-full flex items-center justify-center">
-                    {activeFilterCount}
-                  </span>
-                )}
-              </Button>
-
-              {/* Clear All */}
-              {(searchQuery || activeFilterCount > 0) && (
+            {/* Global View Tabs */}
+            <div className="flex bg-gray-50 dark:bg-gray-800 p-1 rounded-2xl border border-gray-100 dark:border-gray-700/50 shadow-inner">
+              {[
+                { id: 'organizations', label: 'Organizations', icon: Building2 },
+                { id: 'tenant admin', label: 'Managers', icon: ShieldCheck },
+                { id: 'employee', label: 'Employees', icon: Users }
+              ].map((tab) => (
                 <button
-                  onClick={clearAllFilters}
-                  className="flex items-center space-x-1.5 text-xs font-bold text-rose-500 hover:text-rose-600 transition-colors px-3 py-3"
+                  key={tab.id}
+                  onClick={() => setGlobalActiveTab(tab.id)}
+                  className={`flex items-center space-x-2 px-5 py-2.5 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all duration-300 ${globalActiveTab === tab.id
+                    ? 'bg-white dark:bg-gray-900 text-indigo-600 shadow-md transform scale-[1.02]'
+                    : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'
+                    }`}
                 >
-                  <RotateCcw size={14} />
-                  <span>Reset</span>
+                  {loading || loadingGlobalUsers ? (
+                    <Skeleton className="h-3 w-20" />
+                  ) : (
+                    <>
+                      <tab.icon size={14} />
+                      <span>{tab.label}</span>
+                    </>
+                  )}
                 </button>
-              )}
+              ))}
             </div>
           </div>
 
           {/* Advanced Filters Panel */}
           {showAdvancedFilters && (
-            <div className="flex flex-wrap items-center gap-3 pt-4 border-t border-gray-50 dark:border-gray-800 animate-in slide-in-from-top-2 duration-200">
-              <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Filter by:</span>
+            <div className="flex flex-wrap items-center gap-6 pt-6 border-t border-gray-50 dark:border-gray-800 animate-in slide-in-from-top-2 duration-300">
+              <div className="flex items-center gap-3">
+                {loading ? (
+                  <Skeleton className="h-3 w-16" />
+                ) : (
+                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Filter by:</span>
+                )}
+              </div>
 
               {/* Status Filter */}
-              <div className="flex items-center space-x-1.5">
-                <span className="text-[10px] font-bold text-gray-500">Status:</span>
-                {['active', 'pending', 'suspended'].map(status => (
-                  <button
-                    key={status}
-                    onClick={() => setStatusFilter(statusFilter === status ? '' : status)}
-                    className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all ${statusFilter === status
-                      ? status === 'active' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-100'
-                        : status === 'pending' ? 'bg-amber-500 text-white shadow-lg shadow-amber-100'
-                          : 'bg-rose-600 text-white shadow-lg shadow-rose-100'
-                      : 'bg-gray-50 dark:bg-gray-800 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700'
-                      }`}
-                  >
-                    {status}
-                  </button>
-                ))}
+              <div className="flex items-center gap-4">
+                {loading ? (
+                  <Skeleton className="h-3 w-12" />
+                ) : (
+                  <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Status</span>
+                )}
+                <div className="flex items-center gap-2">
+                  {['active', 'pending', 'suspended'].map(status => (
+                    loading ? (
+                      <Skeleton key={status} className="h-8 w-20 rounded-xl" />
+                    ) : (
+                      <button
+                        key={status}
+                        onClick={() => setStatusFilter(statusFilter === status ? '' : status)}
+                        className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all duration-300 ${statusFilter === status
+                          ? status === 'active' ? 'bg-emerald-600 text-white shadow-lg'
+                            : status === 'pending' ? 'bg-amber-500 text-white shadow-lg'
+                              : 'bg-rose-600 text-white shadow-lg'
+                          : 'bg-gray-50 dark:bg-gray-800 text-gray-400 hover:text-gray-600 dark:hover:text-white'
+                          }`}
+                      >
+                        {status}
+                      </button>
+                    )
+                  ))}
+                </div>
               </div>
 
               {globalActiveTab === 'organizations' && (
                 <>
-                  <div className="w-px h-6 bg-gray-200 dark:bg-gray-700 mx-1" />
+                  <div className="w-px h-6 bg-gray-100 dark:bg-gray-800" />
 
                   {/* Plan Filter */}
-                  <div className="flex items-center space-x-1.5">
-                    <span className="text-[10px] font-bold text-gray-500">Plan:</span>
-                    {subscriptions.map(sub => (
-                      <button
-                        key={sub._id}
-                        onClick={() => setPlanFilter(planFilter === sub.name ? '' : sub.name)}
-                        className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all ${planFilter === sub.name
-                          ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100'
-                          : 'bg-gray-50 dark:bg-gray-800 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700'
-                          }`}
-                      >
-                        {sub.name}
-                      </button>
-                    ))}
+                  <div className="flex items-center gap-4">
+                    {loading ? (
+                      <Skeleton className="h-3 w-10" />
+                    ) : (
+                      <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Plan</span>
+                    )}
+                    <div className="flex items-center gap-2">
+                      {loading ? (
+                        [1, 2, 3].map(i => <Skeleton key={i} className="h-8 w-24 rounded-xl" />)
+                      ) : (
+                        subscriptions.map(sub => (
+                          <button
+                            key={sub._id}
+                            onClick={() => setPlanFilter(planFilter === sub.name ? '' : sub.name)}
+                            className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-[0.1em] transition-all duration-300 ${planFilter === sub.name
+                              ? 'bg-indigo-600 text-white shadow-lg'
+                              : 'bg-gray-50 dark:bg-gray-800 text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400'
+                              }`}
+                          >
+                            {sub.name}
+                          </button>
+                        ))
+                      )}
+                    </div>
                   </div>
                 </>
               )}
@@ -1104,72 +1174,86 @@ const CompaniesList = () => {
           )}
 
           {/* Active filter summary */}
-          {(searchQuery || activeFilterCount > 0) && (
-            <div className="flex items-center space-x-2 text-xs text-gray-500">
-              <span className="font-bold">
-                Showing {globalActiveTab === 'organizations' ? filteredCompanies.length : filteredGlobalUsers.length} of {globalActiveTab === 'organizations' ? companies.length : globalUsers.length} {globalActiveTab === 'organizations' ? 'organizations' : globalActiveTab === 'manager' ? 'managers' : 'employees'}
-              </span>
-              {searchQuery && (
-                <span className="bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 px-2 py-0.5 rounded-lg text-[10px] font-black">
-                  Search: "{searchQuery}"
+          {loading || loadingGlobalUsers ? (
+            <Skeleton className="h-4 w-64" />
+          ) : (
+            (searchQuery || activeFilterCount > 0) && (
+              <div className="flex items-center space-x-2 text-xs text-gray-500">
+                <span className="font-bold">
+                  Showing {globalActiveTab === 'organizations' ? filteredCompanies.length : filteredGlobalUsers.length} of {globalActiveTab === 'organizations' ? companies.length : globalUsers.length} {globalActiveTab === 'organizations' ? 'organizations' : globalActiveTab === 'manager' ? 'managers' : 'employees'}
                 </span>
-              )}
-              {industryFilter && (
-                <span className="bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded-lg text-[10px] font-black flex items-center space-x-1">
-                  <span>Industry: {industryFilter}</span>
-                  <button onClick={() => setIndustryFilter('')} className="hover:text-blue-800"><X size={10} /></button>
-                </span>
-              )}
-              {statusFilter && (
-                <span className="bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-lg text-[10px] font-black flex items-center space-x-1">
-                  <span>Status: {statusFilter}</span>
-                  <button onClick={() => setStatusFilter('')} className="hover:text-emerald-800"><X size={10} /></button>
-                </span>
-              )}
-              {planFilter && (
-                <span className="bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 px-2 py-0.5 rounded-lg text-[10px] font-black flex items-center space-x-1">
-                  <span>Plan: {planFilter}</span>
-                  <button onClick={() => setPlanFilter('')} className="hover:text-purple-800"><X size={10} /></button>
-                </span>
-              )}
-            </div>
+                {searchQuery && (
+                  <span className="bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 px-2 py-0.5 rounded-lg text-[10px] font-black">
+                    Search: "{searchQuery}"
+                  </span>
+                )}
+                {industryFilter && (
+                  <span className="bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded-lg text-[10px] font-black flex items-center space-x-1">
+                    <span>Industry: {industryFilter}</span>
+                    <button onClick={() => setIndustryFilter('')} className="hover:text-blue-800"><X size={10} /></button>
+                  </span>
+                )}
+                {statusFilter && (
+                  <span className="bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-lg text-[10px] font-black flex items-center space-x-1">
+                    <span>Status: {statusFilter}</span>
+                    <button onClick={() => setStatusFilter('')} className="hover:text-emerald-800"><X size={10} /></button>
+                  </span>
+                )}
+                {planFilter && (
+                  <span className="bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 px-2 py-0.5 rounded-lg text-[10px] font-black flex items-center space-x-1">
+                    <span>Plan: {planFilter}</span>
+                    <button onClick={() => setPlanFilter('')} className="hover:text-purple-800"><X size={10} /></button>
+                  </span>
+                )}
+              </div>
+            )
           )}
         </div>
 
         <div className="px-4 pb-4 mt-2">
           {globalActiveTab === 'organizations' ? (
             <div className="space-y-4">
-              <DataTable columns={columns} data={paginatedCompanies} loading={loading} onRowClick={(row) => {
+              <DataTable columns={columns} data={paginatedCompanies} isLoading={loading} onRowClick={(row) => {
                 setSelectedTenant(row);
                 setActiveModalTab('overview');
                 fetchTenantUsers(row._id);
               }} />
               
               {/* Global Pagination Controls */}
-              {filteredCompanies.length > globalPageSize && (
+              {loading ? (
                 <div className="flex items-center justify-between px-4 py-3 bg-gray-50/50 dark:bg-gray-800/20 rounded-2xl border border-gray-100 dark:border-gray-800">
-                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">
-                    Page {globalCurrentPage} of {Math.ceil(filteredCompanies.length / globalPageSize)}
-                    <span className="ml-4 text-gray-300 dark:text-gray-600">|</span>
-                    <span className="ml-4">{filteredCompanies.length} Total Organizations</span>
-                  </p>
+                  <Skeleton className="h-4 w-48" />
                   <div className="flex gap-2">
-                    <button
-                      disabled={globalCurrentPage === 1}
-                      onClick={() => setGlobalCurrentPage(prev => prev - 1)}
-                      className="p-2.5 rounded-xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-800 transition-all text-gray-600 dark:text-gray-400 shadow-sm"
-                    >
-                      <RotateCcw size={14} className="rotate-90" />
-                    </button>
-                    <button
-                      disabled={globalCurrentPage >= Math.ceil(filteredCompanies.length / globalPageSize)}
-                      onClick={() => setGlobalCurrentPage(prev => prev + 1)}
-                      className="p-2.5 rounded-xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-800 transition-all text-gray-600 dark:text-gray-400 shadow-sm"
-                    >
-                      <ChevronRight size={14} />
-                    </button>
+                    <Skeleton className="h-10 w-10 rounded-xl" />
+                    <Skeleton className="h-10 w-10 rounded-xl" />
                   </div>
                 </div>
+              ) : (
+                filteredCompanies.length > globalPageSize && (
+                  <div className="flex items-center justify-between px-4 py-3 bg-gray-50/50 dark:bg-gray-800/20 rounded-2xl border border-gray-100 dark:border-gray-800">
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">
+                      Page {globalCurrentPage} of {Math.ceil(filteredCompanies.length / globalPageSize)}
+                      <span className="ml-4 text-gray-300 dark:text-gray-600">|</span>
+                      <span className="ml-4">{filteredCompanies.length} Total Organizations</span>
+                    </p>
+                    <div className="flex gap-2">
+                      <button
+                        disabled={globalCurrentPage === 1}
+                        onClick={() => setGlobalCurrentPage(prev => prev - 1)}
+                        className="p-2.5 rounded-xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-800 transition-all text-gray-600 dark:text-gray-400 shadow-sm"
+                      >
+                        <RotateCcw size={14} className="rotate-90" />
+                      </button>
+                      <button
+                        disabled={globalCurrentPage >= Math.ceil(filteredCompanies.length / globalPageSize)}
+                        onClick={() => setGlobalCurrentPage(prev => prev + 1)}
+                        className="p-2.5 rounded-xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-800 transition-all text-gray-600 dark:text-gray-400 shadow-sm"
+                      >
+                        <ChevronRight size={14} />
+                      </button>
+                    </div>
+                  </div>
+                )
               )}
             </div>
           ) : (
@@ -1177,30 +1261,40 @@ const CompaniesList = () => {
               <DataTable columns={userColumns} data={paginatedGlobalUsers} loading={loadingGlobalUsers} onRowClick={() => { }} />
               
               {/* Global Pagination Controls for Users */}
-              {filteredGlobalUsers.length > globalPageSize && (
+              {loadingGlobalUsers ? (
                 <div className="flex items-center justify-between px-4 py-3 bg-gray-50/50 dark:bg-gray-800/20 rounded-2xl border border-gray-100 dark:border-gray-800">
-                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">
-                    Page {globalCurrentPage} of {Math.ceil(filteredGlobalUsers.length / globalPageSize)}
-                    <span className="ml-4 text-gray-300 dark:text-gray-600">|</span>
-                    <span className="ml-4 text-indigo-600 dark:text-indigo-400 uppercase">{globalActiveTab}s</span>
-                  </p>
+                  <Skeleton className="h-4 w-48" />
                   <div className="flex gap-2">
-                    <button
-                      disabled={globalCurrentPage === 1}
-                      onClick={() => setGlobalCurrentPage(prev => prev - 1)}
-                      className="p-2.5 rounded-xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-800 transition-all text-gray-600 dark:text-gray-400 shadow-sm"
-                    >
-                      <RotateCcw size={14} className="rotate-90" />
-                    </button>
-                    <button
-                      disabled={globalCurrentPage >= Math.ceil(filteredGlobalUsers.length / globalPageSize)}
-                      onClick={() => setGlobalCurrentPage(prev => prev + 1)}
-                      className="p-2.5 rounded-xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-800 transition-all text-gray-600 dark:text-gray-400 shadow-sm"
-                    >
-                      <ChevronRight size={14} />
-                    </button>
+                    <Skeleton className="h-10 w-10 rounded-xl" />
+                    <Skeleton className="h-10 w-10 rounded-xl" />
                   </div>
                 </div>
+              ) : (
+                filteredGlobalUsers.length > globalPageSize && (
+                  <div className="flex items-center justify-between px-4 py-3 bg-gray-50/50 dark:bg-gray-800/20 rounded-2xl border border-gray-100 dark:border-gray-800">
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">
+                      Page {globalCurrentPage} of {Math.ceil(filteredGlobalUsers.length / globalPageSize)}
+                      <span className="ml-4 text-gray-300 dark:text-gray-600">|</span>
+                      <span className="ml-4 text-indigo-600 dark:text-indigo-400 uppercase">{globalActiveTab}s</span>
+                    </p>
+                    <div className="flex gap-2">
+                      <button
+                        disabled={globalCurrentPage === 1}
+                        onClick={() => setGlobalCurrentPage(prev => prev - 1)}
+                        className="p-2.5 rounded-xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-800 transition-all text-gray-600 dark:text-gray-400 shadow-sm"
+                      >
+                        <RotateCcw size={14} className="rotate-90" />
+                      </button>
+                      <button
+                        disabled={globalCurrentPage >= Math.ceil(filteredGlobalUsers.length / globalPageSize)}
+                        onClick={() => setGlobalCurrentPage(prev => prev + 1)}
+                        className="p-2.5 rounded-xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-800 transition-all text-gray-600 dark:text-gray-400 shadow-sm"
+                      >
+                        <ChevronRight size={14} />
+                      </button>
+                    </div>
+                  </div>
+                )
               )}
             </div>
           )}
@@ -1384,7 +1478,22 @@ const CompaniesList = () => {
                     </div>
 
                     {loadingUsers ? (
-                      <div className="py-12 text-center text-gray-500 font-bold animate-pulse">Fetching users...</div>
+                      <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 overflow-hidden shadow-sm">
+                        <div className="bg-gray-50 dark:bg-gray-900/50 px-6 py-4 flex gap-4 border-b border-gray-100 dark:border-gray-700">
+                          <Skeleton className="h-4 flex-1" />
+                          <Skeleton className="h-4 flex-1" />
+                          <Skeleton className="h-4 w-20" />
+                        </div>
+                        <div className="p-6 space-y-6">
+                          {[1, 2, 3].map(i => (
+                            <div key={i} className="flex gap-4">
+                              <Skeleton className="h-5 flex-1" />
+                              <Skeleton className="h-5 flex-1" />
+                              <Skeleton className="h-5 w-20" />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
                     ) : (
                       <div className="flex flex-col flex-1">
                         <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 overflow-hidden shadow-sm">

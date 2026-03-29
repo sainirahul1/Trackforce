@@ -18,6 +18,7 @@ import {
   ArrowUpRight
 } from 'lucide-react';
 import Button from '../../components/Button';
+import Skeleton from '../../components/Skeleton';
 import superadminService from '../../services/superadminService';
 
 const Subscriptions = () => {
@@ -167,105 +168,157 @@ const Subscriptions = () => {
           { label: 'Active Subs', value: stats.activeSubscribers, icon: Users, color: 'purple' },
           { label: 'Avg. Retention', value: stats.retention, change: '+0.4%', icon: Settings, color: 'emerald' },
         ].map((stat, i) => (
-          <div key={i} className="bg-white dark:bg-gray-900 p-5 rounded-[2rem] border border-gray-100 dark:border-gray-800 shadow-sm flex items-center gap-5 transition-transform hover:-translate-y-1">
-            <div className={`p-4 rounded-2xl bg-${stat.color}-50 dark:bg-${stat.color}-500/10 text-${stat.color}-600 dark:text-${stat.color}-400 flex-shrink-0`}>
-              <stat.icon size={24} />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex justify-between items-center mb-1.5">
-                <p className="text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest truncate">{stat.label}</p>
-                {stat.change && <span className="text-emerald-600 dark:text-emerald-400 text-[10px] font-black px-1.5 py-0.5 bg-emerald-50 dark:bg-emerald-500/10 rounded border border-emerald-100 dark:border-emerald-800">{stat.change}</span>}
-              </div>
-              <h3 className="text-2xl font-black text-gray-900 dark:text-white leading-none">{stat.value}</h3>
-            </div>
+          <div key={i} className="bg-white dark:bg-gray-900 p-5 rounded-[2rem] border border-gray-100 dark:border-gray-800 shadow-sm flex items-center gap-5 transition-transform">
+            {loading ? (
+              <>
+                <Skeleton variant="rounded" className="w-14 h-14" />
+                <div className="space-y-2 flex-grow">
+                  <div className="flex justify-between">
+                    <Skeleton className="h-3 w-2/5" />
+                    <Skeleton className="h-3 w-1/5 rounded-md" />
+                  </div>
+                  <Skeleton className="h-6 w-1/2" />
+                </div>
+              </>
+            ) : (
+              <>
+                <div className={`p-4 rounded-2xl bg-${stat.color}-50 dark:bg-${stat.color}-500/10 text-${stat.color}-600 dark:text-${stat.color}-400 flex-shrink-0`}>
+                  <stat.icon size={24} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex justify-between items-center mb-1.5">
+                    <p className="text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest truncate">{stat.label}</p>
+                    {stat.change && <span className="text-emerald-600 dark:text-emerald-400 text-[10px] font-black px-1.5 py-0.5 bg-emerald-50 dark:bg-emerald-500/10 rounded border border-emerald-100 dark:border-emerald-800">{stat.change}</span>}
+                  </div>
+                  <h3 className="text-2xl font-black text-gray-900 dark:text-white leading-none">{stat.value}</h3>
+                </div>
+              </>
+            )}
           </div>
         ))}
       </div>
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">Subscription Plans</h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1 font-medium">Manage platform pricing, feature limits, and subscription tiers.</p>
-        </div>
-        <Button
-          variant="primary"
-          onClick={() => setShowModal(true)}
-          className="rounded-2xl py-3 px-6 shadow-xl shadow-indigo-100 dark:shadow-none flex items-center gap-2"
-        >
-          <Plus size={18} />
-          <span className="font-bold">Create New Plan</span>
-        </Button>
+        {loading ? (
+          <div className="space-y-3">
+            <Skeleton className="h-9 w-72 uppercase tracking-tight" />
+            <Skeleton className="h-4 w-[32rem] font-medium" />
+          </div>
+        ) : (
+          <div>
+            <h1 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">Subscription Plans</h1>
+            <p className="text-gray-500 dark:text-gray-400 mt-1 font-medium">Manage platform pricing, feature limits, and subscription tiers.</p>
+          </div>
+        )}
+        {loading ? (
+          <Skeleton className="h-12 w-52 rounded-2xl" />
+        ) : (
+          <Button
+            variant="primary"
+            onClick={() => setShowModal(true)}
+            className="rounded-2xl py-3 px-6 shadow-xl shadow-indigo-100 dark:shadow-none flex items-center gap-2"
+          >
+            <Plus size={18} />
+            <span className="font-bold">Create New Plan</span>
+          </Button>
+        )}
       </div>
 
 
       {/* Plan Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {plans.map((plan) => (
-          <div
-            key={plan._id}
-            className={`relative bg-white dark:bg-gray-900 rounded-[2.5rem] border-2 transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl hover:shadow-indigo-800/10 ${plan.isPopular ? 'border-indigo-900' : 'border-gray-100 dark:border-gray-800 hover:border-indigo-900 dark:hover:border-indigo-900'
-              } p-8 group`}
-          >
-            {plan.isPopular && (
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-indigo-500 text-white px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg">
-                Most Popular
-              </div>
-            )}
-
-            <div className="flex justify-between items-start mb-6">
-              <div className={`p-4 rounded-2xl bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3`}>
-                {(() => {
-                  const IconComp = iconMap[plan.icon] || Zap;
-                  return <IconComp size={24} />;
-                })()}
-              </div>
-              <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button
-                  onClick={() => handleEditClick(plan)}
-                  className="p-2 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-xl text-gray-400 hover:text-indigo-600 transition-colors"
-                >
-                  {/* <Edit2 size={16} /> */}
-                </button>
-                <button
-                  onClick={() => handleDeletePlan(plan._id)}
-                  className="p-2 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl text-gray-400 hover:text-red-600 transition-colors"
-                >
-                  <Trash2 size={16} />
-                </button>
-              </div>
-            </div>
-
-            <h3 className="text-xl font-black text-gray-900 dark:text-white mb-2">{plan.name}</h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-6 font-medium leading-relaxed">
-              {plan.description}
-            </p>
-
-            <div className="flex items-baseline gap-1 mb-8">
-              <span className="text-4xl font-black text-gray-900 dark:text-white">${plan.price}</span>
-              <span className="text-gray-400 font-bold text-sm">/{plan.interval}</span>
-            </div>
-
-            <div className="space-y-4 mb-8">
-              {plan.features.map((feature, i) => (
-                <div key={i} className="flex items-center gap-3">
-                  <div className="w-5 h-5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center text-emerald-500 shrink-0">
-                    <Check size={12} strokeWidth={3} />
-                  </div>
-                  <span className="text-sm font-bold text-gray-600 dark:text-gray-300">{feature}</span>
+        {loading ? (
+          [1, 2, 3].map(i => (
+            <div key={i} className="bg-white dark:bg-gray-900 rounded-[2.5rem] border-2 border-gray-100 dark:border-gray-800 p-8 space-y-6">
+              <div className="flex justify-between items-start">
+                <Skeleton variant="rounded" className="w-14 h-14" />
+                <div className="flex gap-2">
+                  <Skeleton className="w-8 h-8 rounded-xl" />
+                  <Skeleton className="w-8 h-8 rounded-xl" />
                 </div>
-              ))}
+              </div>
+              <div className="space-y-3">
+                <Skeleton className="h-6 w-3/4" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-5/6" />
+              </div>
+              <Skeleton className="h-10 w-1/2" />
+              <div className="space-y-3 pt-4">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-full" />
+              </div>
+              <Skeleton className="h-12 w-full rounded-2xl" />
             </div>
-
-            <Button
-              variant={plan.isPopular ? 'primary' : 'outline'}
-              onClick={() => handleEditClick(plan)}
-              className="w-full py-4 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 group/btn"
+          ))
+        ) : (
+          plans.map((plan) => (
+            <div
+              key={plan._id}
+              className={`relative bg-white dark:bg-gray-900 rounded-[2.5rem] border-2 transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl hover:shadow-indigo-800/10 ${plan.isPopular ? 'border-indigo-900' : 'border-gray-100 dark:border-gray-800 hover:border-indigo-900 dark:hover:border-indigo-900'
+                } p-8 group`}
             >
-              Manage Tier
-              <ArrowRight size={16} className="group-hover/btn:translate-x-1 transition-transform" />
-            </Button>
-          </div>
-        ))}
+              {plan.isPopular && (
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-indigo-500 text-white px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg">
+                  Most Popular
+                </div>
+              )}
+
+              <div className="flex justify-between items-start mb-6">
+                <div className={`p-4 rounded-2xl bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3`}>
+                  {(() => {
+                    const IconComp = iconMap[plan.icon] || Zap;
+                    return <IconComp size={24} />;
+                  })()}
+                </div>
+                <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button
+                    onClick={() => handleEditClick(plan)}
+                    className="p-2 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-xl text-gray-400 hover:text-indigo-600 transition-colors"
+                  >
+                    {/* <Edit2 size={16} /> */}
+                  </button>
+                  <button
+                    onClick={() => handleDeletePlan(plan._id)}
+                    className="p-2 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl text-gray-400 hover:text-red-600 transition-colors"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              </div>
+
+              <h3 className="text-xl font-black text-gray-900 dark:text-white mb-2">{plan.name}</h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-6 font-medium leading-relaxed">
+                {plan.description}
+              </p>
+
+              <div className="flex items-baseline gap-1 mb-8">
+                <span className="text-4xl font-black text-gray-900 dark:text-white">${plan.price}</span>
+                <span className="text-gray-400 font-bold text-sm">/{plan.interval}</span>
+              </div>
+
+              <div className="space-y-4 mb-8">
+                {plan.features.map((feature, i) => (
+                  <div key={i} className="flex items-center gap-3">
+                    <div className="w-5 h-5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center text-emerald-500 shrink-0">
+                      <Check size={12} strokeWidth={3} />
+                    </div>
+                    <span className="text-sm font-bold text-gray-600 dark:text-gray-300">{feature}</span>
+                  </div>
+                ))}
+              </div>
+
+              <Button
+                variant={plan.isPopular ? 'primary' : 'outline'}
+                onClick={() => handleEditClick(plan)}
+                className="w-full py-4 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 group/btn"
+              >
+                Manage Tier
+                <ArrowRight size={16} className="group-hover/btn:translate-x-1 transition-transform" />
+              </Button>
+            </div>
+          ))
+        )}
       </div>
 
       {/* Create Plan Modal */}

@@ -2,9 +2,11 @@ import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, Users, Building2, ClipboardList, Map, Settings, LogOut, ShieldCheck, Bell, ShoppingBag, Camera, Clock, AlertCircle, ChevronLeft, ChevronRight, Menu, Activity, User, Lock, CreditCard } from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
+import { useAuth } from '../context/AuthContext';
 
 const Sidebar = ({ role, user, isCollapsed, onToggle }) => {
   const navigate = useNavigate();
+  const { logout } = useAuth();
   const menuItems = {
     superadmin: [
       { name: 'Dashboard', icon: LayoutDashboard, path: '/superadmin/dashboard' },
@@ -93,8 +95,16 @@ const Sidebar = ({ role, user, isCollapsed, onToggle }) => {
       <div className="p-4 border-t border-gray-100 dark:border-gray-800">
         <div className={`flex items-center ${isCollapsed ? 'flex-col gap-4' : 'justify-between'} p-2 rounded-2xl bg-gray-50 dark:bg-gray-800/50`}>
           <div className={`flex items-center ${isCollapsed ? 'flex-col text-center' : 'space-x-3'} overflow-hidden`}>
-            <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center text-indigo-600 font-bold shrink-0">
-              {user?.name?.charAt(0) || 'U'}
+            <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center text-indigo-600 font-bold shrink-0 overflow-hidden">
+              {user?.profile?.profileImage ? (
+                <img 
+                  src={user.profile.profileImage.startsWith('data:') ? user.profile.profileImage : `http://localhost:5001${user.profile.profileImage}`} 
+                  alt="DP" 
+                  className="w-full h-full object-cover" 
+                />
+              ) : (
+                user?.name?.charAt(0) || 'U'
+              )}
             </div>
             {!isCollapsed && (
               <div className="flex flex-col min-w-0 animate-in fade-in duration-300">
@@ -104,7 +114,7 @@ const Sidebar = ({ role, user, isCollapsed, onToggle }) => {
             )}
           </div>
           <button
-            onClick={() => { localStorage.clear(); navigate('/login'); }}
+            onClick={() => { logout(); navigate('/login'); }}
             className="p-2 text-gray-400 hover:text-red-600 transition-colors shrink-0"
             title="Logout"
           >

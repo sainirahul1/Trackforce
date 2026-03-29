@@ -7,6 +7,7 @@ import SuspendedOverlay from '../components/SuspendedOverlay';
 import MaintenanceOverlay from '../components/MaintenanceOverlay';
 import * as authService from '../services/authService';
 import { getPublicSettings } from '../services/publicService';
+import { useAuth } from '../context/AuthContext';
 
 const DashboardLayout = ({ allowedRole }) => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = React.useState(false);
@@ -15,25 +16,9 @@ const DashboardLayout = ({ allowedRole }) => {
   const [isCheckingMaintenance, setIsCheckingMaintenance] = React.useState(true);
   
   const storedRole = localStorage.getItem('role');
-  let storedUser = {};
-  try {
-    storedUser = JSON.parse(localStorage.getItem('user') || '{}');
-  } catch (e) {
-    console.error("Failed to parse user from localStorage", e);
-  }
-
-  const [localUser, setLocalUser] = React.useState(storedUser);
+  const { user: localUser, refreshUser } = useAuth();
 
   React.useEffect(() => {
-    const fetchStatus = async () => {
-      try {
-        const freshUser = await authService.getMe();
-        setLocalUser(freshUser);
-      } catch (e) {
-        console.error("Failed to fetch user status", e);
-      }
-    };
-
     const fetchMaintenanceStatus = async () => {
       try {
         const settings = await getPublicSettings();
@@ -49,16 +34,17 @@ const DashboardLayout = ({ allowedRole }) => {
       }
     };
 
-    if (storedRole && storedRole !== 'superadmin') {
-      fetchStatus();
-      fetchMaintenanceStatus();
-      
-      // Real-time polling every 15 seconds
-      const intervalId = setInterval(() => {
+    if (storedRole) {
+      if (storedRole !== 'superadmin') {
         fetchMaintenanceStatus();
-      }, 15000);
+        
+        // Real-time polling every 15 seconds
+        const intervalId = setInterval(() => {
+          fetchMaintenanceStatus();
+        }, 15000);
 
-      return () => clearInterval(intervalId);
+        return () => clearInterval(intervalId);
+      }
     } else {
       setIsCheckingMaintenance(false);
     }

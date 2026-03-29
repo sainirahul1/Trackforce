@@ -7,6 +7,8 @@ import {
   Calendar, Lock, AlertTriangle, Clock, Activity, X, MoreVertical, Sliders
 } from 'lucide-react';
 import { updateProfile as updateAuthProfile, getMe, uploadProfileImage as uploadAuthImage, updatePassword } from '../../services/authService';
+import { useAuth } from '../../context/AuthContext';
+import { Loader2 } from 'lucide-react';
 
 /**
  * ManagerProfile Component
@@ -16,6 +18,9 @@ const ManagerProfile = () => {
   const [activeTab, setActiveTab] = useState('notifications');
   const [isSaved, setIsSaved] = useState(false);
   const [profileImage, setProfileImage] = useState(null);
+  const [isSavingAvatar, setIsSavingAvatar] = useState(false);
+  const [profileLoading, setProfileLoading] = useState(true);
+  const { refreshUser } = useAuth();
   const fileInputRef = useRef(null);
 
   // States for toggles
@@ -60,6 +65,7 @@ const ManagerProfile = () => {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
+        setProfileLoading(true);
         const data = await getMe();
         setManagerData(prev => ({
           ...prev,
@@ -80,6 +86,8 @@ const ManagerProfile = () => {
         }));
       } catch (error) {
         console.error('Failed to fetch profile:', error);
+      } finally {
+        setProfileLoading(false);
       }
     };
     fetchProfile();
@@ -136,13 +144,20 @@ const ManagerProfile = () => {
       const formData = new FormData();
       formData.append('image', file);
       try {
+        setIsSavingAvatar(true);
         const response = await uploadAuthImage(formData);
         const imageUrl = response.profileImage; // Direct Base64 URL
         setProfileImage(imageUrl);
         setManagerData(prev => ({ ...prev, profileImage: imageUrl }));
+        
+        // SYNC WITH GLOBAL STATE (Sidebar, Navbar)
+        await refreshUser();
+        
       } catch (error) {
         console.error('Failed to upload image:', error);
         alert(error.message || 'Failed to upload profile image');
+      } finally {
+        setIsSavingAvatar(false);
       }
     }
   };
@@ -463,9 +478,9 @@ const ManagerProfile = () => {
     </div>
   );
 
-  const ManagerInformationSection = ({ managerData, onEdit }) => {
+  const ManagerInformationSection = ({ managerData, onEdit, loading }) => {
     const details = [
-      { label: 'Manager Code', value: 'TF-MGR-002', icon: Shield },
+      { label: 'Manager Code', value: 'TF-MGR-' + (managerData?._id?.slice(-5).toUpperCase() || '002'), icon: Shield },
       { label: 'Date of Join', value: managerData.joinDate || 'Jan 2024', icon: Calendar },
       { label: 'Designation', value: managerData.role, icon: Building2 },
       { label: 'Department', value: managerData.department, icon: Activity },
@@ -488,7 +503,11 @@ const ManagerProfile = () => {
                 </div>
                 <div>
                   <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">{detail.label}</p>
-                  <p className="mt-1 text-base font-black text-gray-800 dark:text-gray-200">{detail.value}</p>
+                  {loading ? (
+                    <div className="h-5 w-32 bg-gray-100 dark:bg-gray-800 animate-pulse rounded-md mt-1" />
+                  ) : (
+                    <p className="mt-1 text-base font-black text-gray-800 dark:text-gray-200">{detail.value || '---'}</p>
+                  )}
                 </div>
               </div>
             ))}
@@ -607,39 +626,63 @@ const ManagerProfile = () => {
                 accept="image/*"
               />
               <div
-                className="w-32 h-32 md:w-40 md:h-40 rounded-[3rem] bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-4xl md:text-5xl font-black text-white shadow-2xl rotate-3 group-hover:rotate-0 transition-transform duration-500 overflow-hidden"
+                className="w-32 h-32 md:w-40 md:h-40 rounded-[3rem] bg-indigo-50 dark:bg-slate-800 flex items-center justify-center text-4xl md:text-5xl font-black text-indigo-600 dark:text-indigo-400 shadow-2xl rotate-3 group-hover:rotate-0 transition-transform duration-500 overflow-hidden relative"
               >
-                {managerData.profileImage ? (
-                  <img 
-                    src={managerData.profileImage.startsWith('data:') ? managerData.profileImage : (() => {
-                      let url = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
-                      url = url.replace(/\/$/, '');
-                      if (!url.endsWith('/api')) url += '/api';
-                      return `${url.replace('/api', '')}${managerData.profileImage}`;
-                    })()} 
-                    alt="Profile" 
-                    className="w-full h-full object-cover" 
-                  />
+                {profileLoading ? (
+                  <div className="absolute inset-0 bg-gray-200 dark:bg-gray-800 animate-pulse" />
                 ) : (
-                  managerData.avatar
+                  <>
+                    {(managerData.profileImage || profileImage) ? (
+                      <img 
+                        src={(managerData.profileImage || profileImage).startsWith('data:') ? (managerData.profileImage || profileImage) : (() => {
+                          let url = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+                          url = url.replace(/\/$/, '');
+                          if (!url.endsWith('/api')) url += '/api';
+                          return `${url.replace('/api', '')}${(managerData.profileImage || profileImage)}`;
+                        })()} 
+                        alt="Profile" 
+                        className="w-full h-full object-cover" 
+                      />
+                    ) : (
+                      <span className="text-indigo-600 dark:text-indigo-400">{managerData.avatar}</span>
+                    )}
+                    {isSavingAvatar && (
+                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center text-white">
+                        <Loader2 className="animate-spin" />
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
-              <button
-                onClick={triggerFileInput}
-                className="absolute -bottom-2 -right-2 p-3 bg-white dark:bg-gray-900 rounded-2xl text-gray-900 dark:text-white shadow-xl hover:scale-110 active:scale-95 transition-all"
-              >
-                <Camera size={20} />
-              </button>
+              {!profileLoading && (
+                <button
+                  onClick={triggerFileInput}
+                  disabled={isSavingAvatar}
+                  className="absolute -bottom-2 -right-2 p-3 bg-white dark:bg-gray-900 rounded-2xl text-gray-900 dark:text-white shadow-xl hover:scale-110 active:scale-95 transition-all"
+                >
+                  <Camera size={20} />
+                </button>
+              )}
             </div>
 
-            <div className="text-center md:text-left space-y-4">
+            <div className="text-center md:text-left space-y-4 flex-1">
               <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-gray-900/5 dark:bg-white/10 backdrop-blur-md border border-gray-900/10 dark:border-white/20 rounded-full">
                 <ShieldCheck size={14} className="text-emerald-500 dark:text-emerald-400" />
                 <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-600 dark:text-white/90">Identity Verified</span>
               </div>
-              <h1 className="text-4xl md:text-5xl font-black tracking-tighter leading-none text-gray-900 dark:text-white">
-                {managerData.name}
-              </h1>
+              
+              {profileLoading ? (
+                <div className="space-y-3">
+                  <div className="h-12 w-64 bg-gray-200 dark:bg-gray-800 animate-pulse rounded-2xl" />
+                  <div className="h-6 w-48 bg-gray-100 dark:bg-gray-800/50 animate-pulse rounded-xl" />
+                </div>
+              ) : (
+                <>
+                  <h1 className="text-4xl md:text-5xl font-black tracking-tighter leading-none text-gray-900 dark:text-white">
+                    {managerData.name}
+                  </h1>
+                </>
+              )}
               <div className="flex flex-wrap justify-center md:justify-start gap-4">
                 <div className="flex items-center gap-2 text-gray-500 dark:text-slate-400 font-medium text-sm">
                   <Building2 size={16} />
@@ -679,6 +722,7 @@ const ManagerProfile = () => {
         <ManagerInformationSection 
           managerData={managerData} 
           onEdit={() => setIsEditModalOpen(true)} 
+          loading={profileLoading}
         />
 
         {/* 3. Settings Content Area - Refined to Horizontal Navigation */}

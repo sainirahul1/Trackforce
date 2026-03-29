@@ -1,15 +1,18 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { User, Mail, Phone, MapPin, Building, ShieldCheck, Camera, Edit3, Key, Briefcase, X, Save, Calendar, Clock, Users, Globe } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Building, ShieldCheck, Camera, Edit3, Key, Briefcase, X, Save, Calendar, Clock, Users, Globe, Loader2 } from 'lucide-react';
+import Skeleton from '../../components/Skeleton';
 import { getMe, updateProfile as updateAuthProfile, uploadProfileImage as uploadAuthImage } from '../../services/authService';
+import { useAuth } from '../../context/AuthContext';
 
 const Profile = () => {
   const [avatarPreview, setAvatarPreview] = useState(null);
   const avatarInputRef = useRef(null);
+  const { refreshUser } = useAuth();
   
   const [profileData, setProfileData] = useState({
-    name: 'Loading...',
+    name: '',
     role: 'Super Administrator',
-    company: 'Loading...',
+    company: '',
     location: '',
     email: '',
     phone: '',
@@ -19,6 +22,7 @@ const Profile = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editForm, setEditForm] = useState(profileData);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -55,9 +59,12 @@ const Profile = () => {
         const response = await uploadAuthImage(formData);
         const imageUrl = response.profileImage;
         setAvatarPreview(imageUrl);
+        await refreshUser();
       } catch (error) {
         console.error('Failed to upload image:', error);
         alert(error.message || 'Failed to upload profile image');
+      } finally {
+        setIsSaving(false);
       }
     }
   };
@@ -68,37 +75,35 @@ const Profile = () => {
   };
 
   const handleSaveChanges = async () => {
+    setIsSaving(true);
     try {
       const payload = {
         ...editForm,
         designation: editForm.role,
         company: editForm.company,
       };
-      const response = await updateAuthProfile(payload);
+      await updateAuthProfile(payload);
+      const freshData = await refreshUser();
+      
       setProfileData({
         ...profileData,
-        name: response.name,
-        email: response.email,
-        phone: response.profile?.phone,
-        location: response.profile?.location,
-        department: response.profile?.department,
-        role: response.profile?.designation || editForm.role,
-        company: response.company || editForm.company,
+        name: freshData.name,
+        email: freshData.email,
+        phone: freshData.profile?.phone,
+        location: freshData.profile?.location,
+        department: freshData.profile?.department,
+        role: freshData.profile?.designation || editForm.role,
+        company: freshData.company || editForm.company,
       });
       setIsEditModalOpen(false);
     } catch (error) {
       console.error('Failed to update profile:', error);
       alert(error.message || 'Failed to update profile');
+    } finally {
+      setIsSaving(false);
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="min-h-[60vh] flex items-center justify-center">
-        <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    );
-  }
 
   return (
     <>
@@ -109,46 +114,76 @@ const Profile = () => {
         <div className="relative mt-8 flex flex-col md:flex-row items-center md:items-start gap-8">
           <div className="relative group">
             <div className="w-32 h-32 rounded-[2.5rem] bg-white dark:bg-gray-800 p-2 shadow-xl border border-gray-50 dark:border-gray-700 flex items-center justify-center relative overflow-hidden">
-              <div className="w-full h-full rounded-[2rem] bg-gray-50 dark:bg-gray-800/50 flex items-center justify-center text-gray-400 overflow-hidden">
-                {avatarPreview ? (
-                  <img src={avatarPreview.startsWith('data:') ? avatarPreview : `http://localhost:5001${avatarPreview}`} alt="Profile Avatar" className="w-full h-full object-cover" />
-                ) : (
-                  <User size={64} strokeWidth={1.5} />
-                )}
-              </div>
+              {isLoading ? (
+                <Skeleton variant="rounded" className="w-full h-full rounded-[2rem]" />
+              ) : (
+                <div className="w-full h-full rounded-[2rem] bg-gray-50 dark:bg-gray-800/50 flex items-center justify-center text-gray-400 overflow-hidden">
+                  {avatarPreview ? (
+                    <img src={avatarPreview.startsWith('data:') ? avatarPreview : `http://localhost:5001${avatarPreview}`} alt="Profile Avatar" className="w-full h-full object-cover" />
+                  ) : (
+                    <User size={64} strokeWidth={1.5} />
+                  )}
+                </div>
+              )}
             </div>
-            <input 
-              type="file" 
-              ref={avatarInputRef}
-              className="hidden"
-              accept="image/*"
-              onChange={handleAvatarUpload}
-            />
-            <button 
-              onClick={() => avatarInputRef.current?.click()}
-              className="absolute -bottom-2 -right-2 w-12 h-12 bg-white dark:bg-gray-800 rounded-full shadow-lg border border-gray-100 dark:border-gray-700 flex items-center justify-center text-gray-500 hover:text-indigo-600 transition-all z-10 hover:scale-110 active:scale-95"
-            >
-              <Camera size={20} />
-            </button>
+            {!isLoading && (
+              <>
+                <input
+                  type="file"
+                  ref={avatarInputRef}
+                  className="hidden"
+                  accept="image/*"
+                  onChange={handleAvatarUpload}
+                />
+                <button
+                  onClick={() => avatarInputRef.current?.click()}
+                  disabled={isSaving}
+                  className="absolute -bottom-2 -right-2 w-12 h-12 bg-white dark:bg-gray-800 rounded-full shadow-lg border border-gray-100 dark:border-gray-700 flex items-center justify-center text-gray-500 hover:text-indigo-600 transition-all z-10 hover:scale-110 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isSaving ? <Loader2 size={20} className="animate-spin text-indigo-600" /> : <Camera size={20} />}
+                </button>
+              </>
+            )}
           </div>
-          
+
           <div className="flex-1 text-center md:text-left mt-4 md:mt-0 space-y-3">
             <div className="flex flex-col md:flex-row items-center gap-4 justify-between">
-              <div>
-                <h1 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">{profileData.name}</h1>
-                <p className="text-sm font-bold text-indigo-600 uppercase tracking-widest mt-1">{profileData.role}</p>
-              </div>
-              <button 
-                onClick={handleEditClick}
-                className="flex items-center gap-2 px-5 py-2.5 bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400 font-bold rounded-2xl hover:bg-indigo-100 transition-colors"
-              >
-                <Edit3 size={16} /> Edit Profile
-              </button>
+              {isLoading ? (
+                <div className="space-y-3 flex-1">
+                  <Skeleton className="h-9 w-64" />
+                  <Skeleton className="h-4 w-32" />
+                </div>
+              ) : (
+                <div>
+                  <h1 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">{profileData.name}</h1>
+                  <p className="text-sm font-bold text-indigo-600 uppercase tracking-widest mt-1">{profileData.role}</p>
+                </div>
+              )}
+              {isLoading ? (
+                <Skeleton className="h-10 w-32 rounded-2xl" />
+              ) : (
+                <button
+                  onClick={handleEditClick}
+                  className="flex items-center gap-2 px-5 py-2.5 bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400 font-bold rounded-2xl hover:bg-indigo-100 transition-colors"
+                >
+                  <Edit3 size={16} /> Edit Profile
+                </button>
+              )}
             </div>
             <div className="flex flex-wrap items-center justify-center md:justify-start gap-6 pt-4 text-sm font-medium text-gray-500 dark:text-gray-400">
-              <span className="flex items-center gap-2"><Briefcase size={16} className="text-gray-400" /> {profileData.company}</span>
-              <span className="flex items-center gap-2"><MapPin size={16} className="text-gray-400" /> {profileData.location}</span>
-              <span className="flex items-center gap-2 text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 px-3 py-1 rounded-full text-xs font-bold leading-none"><ShieldCheck size={14} /> Active Account</span>
+              {isLoading ? (
+                <>
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-6 w-28 rounded-full" />
+                </>
+              ) : (
+                <>
+                  <span className="flex items-center gap-2"><Briefcase size={16} className="text-gray-400" /> {profileData.company}</span>
+                  <span className="flex items-center gap-2"><MapPin size={16} className="text-gray-400" /> {profileData.location}</span>
+                  <span className="flex items-center gap-2 text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 px-3 py-1 rounded-full text-xs font-bold leading-none"><ShieldCheck size={14} /> Active Account</span>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -156,102 +191,99 @@ const Profile = () => {
 
       <div className="space-y-8">
         <div className="bg-white dark:bg-gray-900 rounded-[2.5rem] p-8 border border-gray-100 dark:border-gray-800 shadow-sm space-y-6">
-          <h2 className="text-lg font-black text-gray-900 dark:text-white border-b border-gray-50 dark:border-gray-800 pb-4">Personal Information</h2>
+          {isLoading ? (
+            <Skeleton className="h-7 w-48 mb-4" />
+          ) : (
+            <h2 className="text-lg font-black text-gray-900 dark:text-white border-b border-gray-50 dark:border-gray-800 pb-4">Personal Information</h2>
+          )}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">Full Name</label>
-                <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl font-bold text-gray-800 dark:text-gray-200 border border-transparent truncate" title={profileData.name}>{profileData.name}</div>
+            {[
+              { label: 'Full Name', value: profileData.name, icon: null },
+              { label: 'Email Address', value: profileData.email, icon: Mail },
+              { label: 'Phone Number', value: profileData.phone, icon: Phone },
+              { label: 'Department', value: profileData.department, icon: Building },
+            ].map((field, i) => (
+              <div key={i} className="space-y-1">
+                {isLoading ? (
+                  <Skeleton className="h-3 w-20 ml-1 mb-1" />
+                ) : (
+                  <label className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">{field.label}</label>
+                )}
+                {isLoading ? (
+                  <Skeleton className="h-[52px] w-full rounded-2xl" />
+                ) : (
+                  <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl font-bold text-gray-800 dark:text-gray-200 truncate" title={field.value}>
+                    {field.icon && <field.icon size={16} className="text-gray-400 shrink-0" />} <span className="truncate">{field.value}</span>
+                  </div>
+                )}
               </div>
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">Email Address</label>
-                <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl font-bold text-gray-800 dark:text-gray-200 truncate" title={profileData.email}>
-                  <Mail size={16} className="text-gray-400 shrink-0" /> <span className="truncate">{profileData.email}</span>
-                </div>
-              </div>
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">Phone Number</label>
-                <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl font-bold text-gray-800 dark:text-gray-200 truncate" title={profileData.phone}>
-                  <Phone size={16} className="text-gray-400 shrink-0" /> <span className="truncate">{profileData.phone}</span>
-                </div>
-              </div>
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">Department</label>
-                <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl font-bold text-gray-800 dark:text-gray-200 truncate" title={profileData.department}>
-                  <Building size={16} className="text-gray-400 shrink-0" /> <span className="truncate">{profileData.department}</span>
-                </div>
-              </div>
-            </div>
+            ))}
+          </div>
           </div>
         </div>
 
       <div className="space-y-8">
         <div className="bg-white dark:bg-gray-900 rounded-[2.5rem] p-8 border border-gray-100 dark:border-gray-800 shadow-sm space-y-6">
-          <h2 className="text-lg font-black text-gray-900 dark:text-white border-b border-gray-50 dark:border-gray-800 pb-4">Platform Privileges & Details</h2>
+          {isLoading ? (
+            <Skeleton className="h-7 w-64 mb-4" />
+          ) : (
+            <h2 className="text-lg font-black text-gray-900 dark:text-white border-b border-gray-50 dark:border-gray-800 pb-4">Platform Privileges & Details</h2>
+          )}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">Superadmin UID</label>
-              <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl font-bold text-gray-800 dark:text-gray-200 border border-transparent truncate">SYS-ROOT-001</div>
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">Join Date</label>
-              <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl font-bold text-gray-800 dark:text-gray-200 truncate">
-                <Calendar size={16} className="text-gray-400 shrink-0" /> <span className="truncate">Jan 15, 2026</span>
+            {[
+              { label: 'Superadmin UID', value: 'SYS-ROOT-001', icon: null },
+              { label: 'Join Date', value: 'Jan 15, 2026', icon: Calendar },
+              { label: 'Deployment Hub', value: 'US East (N. Virginia)', icon: MapPin },
+              { label: 'Global Control Node', value: 'Manhattan HQ Node', icon: Building },
+              { label: 'Master Access Key', value: '****-****-X9Y2', icon: Key },
+              { label: 'Compliance Standard', value: 'SOC 2 Type II & ISO 27001', icon: ShieldCheck, color: 'emerald' },
+            ].map((field, i) => (
+              <div key={i} className="space-y-1">
+                {isLoading ? (
+                  <Skeleton className="h-3 w-24 ml-1 mb-1" />
+                ) : (
+                  <label className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">{field.label}</label>
+                )}
+                {isLoading ? (
+                  <Skeleton className="h-[52px] w-full rounded-2xl" />
+                ) : (
+                  <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl font-bold text-gray-800 dark:text-gray-200 truncate">
+                    {field.icon && <field.icon size={16} className={`${field.color === 'emerald' ? 'text-emerald-500' : 'text-gray-400'} shrink-0`} />} <span className="truncate">{field.value}</span>
+                  </div>
+                )}
               </div>
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">Deployment Hub</label>
-              <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl font-bold text-gray-800 dark:text-gray-200 truncate">
-                <MapPin size={16} className="text-gray-400 shrink-0" /> <span className="truncate">US East (N. Virginia)</span>
-              </div>
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">Global Control Node</label>
-              <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl font-bold text-gray-800 dark:text-gray-200 truncate">
-                <Building size={16} className="text-gray-400 shrink-0" /> <span className="truncate">Manhattan HQ Node</span>
-              </div>
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">Master Access Key</label>
-              <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl font-bold text-gray-800 dark:text-gray-200 truncate">
-                <Key size={16} className="text-gray-400 shrink-0" /> <span className="truncate">****-****-X9Y2</span>
-              </div>
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">Compliance Standard</label>
-              <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl font-bold text-gray-800 dark:text-gray-200 truncate">
-                <ShieldCheck size={16} className="text-emerald-500 shrink-0" /> <span className="truncate">SOC 2 Type II & ISO 27001</span>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
 
         <div className="bg-white dark:bg-gray-900 rounded-[2.5rem] p-8 border border-gray-100 dark:border-gray-800 shadow-sm space-y-6">
-          <h2 className="text-lg font-black text-gray-900 dark:text-white border-b border-gray-50 dark:border-gray-800 pb-4">Platform Management Configuration</h2>
+          {isLoading ? (
+            <Skeleton className="h-7 w-80 mb-4" />
+          ) : (
+            <h2 className="text-lg font-black text-gray-900 dark:text-white border-b border-gray-50 dark:border-gray-800 pb-4">Platform Management Configuration</h2>
+          )}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">Deployment Domain</label>
-              <div className="flex items-center gap-3 p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-2xl font-bold text-indigo-700 dark:text-indigo-400 border border-transparent truncate">
-                <Globe size={16} className="shrink-0" /> <span className="truncate">admin.trackforce.io</span>
+            {[
+              { label: 'Deployment Domain', value: 'admin.trackforce.io', icon: Globe, highlight: true },
+              { label: 'Access Level', value: 'System Administrator (Tier 0)', icon: ShieldCheck, emerald: true },
+              { label: 'System Nodes', value: 'Global Infrastructure', icon: Users },
+              { label: 'Next Audit', value: 'Dec 31, 2026', icon: Calendar },
+            ].map((field, i) => (
+              <div key={i} className="space-y-1">
+                {isLoading ? (
+                  <Skeleton className="h-3 w-28 ml-1 mb-1" />
+                ) : (
+                  <label className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">{field.label}</label>
+                )}
+                {isLoading ? (
+                  <Skeleton className="h-[52px] w-full rounded-2xl" />
+                ) : (
+                  <div className={`flex items-center gap-3 p-4 ${field.highlight ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400' : 'bg-gray-50 dark:bg-gray-800/50 text-gray-800 dark:text-gray-200'} rounded-2xl font-bold truncate`}>
+                    {field.icon && <field.icon size={16} className={`${field.emerald ? 'text-emerald-500' : (field.highlight ? 'text-indigo-500' : 'text-gray-400')} shrink-0`} />} <span className="truncate">{field.value}</span>
+                  </div>
+                )}
               </div>
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">Access Level</label>
-              <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl font-bold text-gray-800 dark:text-gray-200 truncate">
-                <ShieldCheck size={16} className="text-emerald-500 shrink-0" /> <span className="truncate">System Administrator (Tier 0)</span>
-              </div>
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">System Nodes</label>
-              <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl font-bold text-gray-800 dark:text-gray-200 truncate">
-                <Users size={16} className="text-gray-400 shrink-0" /> <span className="truncate">Global Infrastructure</span>
-              </div>
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">Next Audit</label>
-              <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl font-bold text-gray-800 dark:text-gray-200 truncate">
-                <Calendar size={16} className="text-gray-400 shrink-0" /> <span className="truncate">Dec 31, 2026</span>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
         </div>
@@ -362,10 +394,20 @@ const Profile = () => {
                 </button>
                 <button 
                   onClick={handleSaveChanges}
-                  className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white font-black rounded-2xl hover:bg-indigo-700 shadow-xl shadow-indigo-200 dark:shadow-none transition-all"
+                  disabled={isSaving}
+                  className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white font-black rounded-2xl hover:bg-indigo-700 shadow-xl shadow-indigo-200 dark:shadow-none transition-all disabled:opacity-70 disabled:cursor-not-allowed"
                 >
-                  <Save size={18} />
-                  Save Changes
+                  {isSaving ? (
+                    <>
+                      <Loader2 size={18} className="animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Save size={18} />
+                      Save Changes
+                    </>
+                  )}
                 </button>
               </div>
             </div>

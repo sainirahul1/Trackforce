@@ -1,24 +1,29 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { User, Mail, Phone, MapPin, Building, ShieldCheck, Camera, Edit3, Key, Briefcase, X, Save, Calendar, Clock, Users, Globe } from 'lucide-react';
 import { getMe, updateProfile as updateAuthProfile, uploadProfileImage as uploadAuthImage } from '../../services/authService';
+import { useAuth } from '../../context/AuthContext';
+import { Loader2 } from 'lucide-react';
 
 const Profile = () => {
   const [avatarPreview, setAvatarPreview] = useState(null);
   const avatarInputRef = useRef(null);
+  const { refreshUser } = useAuth();
   
   const [profileData, setProfileData] = useState({
-    name: 'Loading...',
+    name: '',
     role: 'Tenant Administrator',
-    company: 'Loading...',
+    company: '',
     location: '',
     email: '',
     phone: '',
     department: '',
+    _id: ''
   });
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editForm, setEditForm] = useState(profileData);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSavingAvatar, setIsSavingAvatar] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -52,12 +57,18 @@ const Profile = () => {
       const formData = new FormData();
       formData.append('image', file);
       try {
+        setIsSavingAvatar(true);
         const response = await uploadAuthImage(formData);
         const imageUrl = response.profileImage;
         setAvatarPreview(imageUrl);
+        
+        // SYNC WITH GLOBAL STATE (Sidebar, Navbar)
+        await refreshUser();
       } catch (error) {
         console.error('Failed to upload image:', error);
         alert(error.message || 'Failed to upload profile image');
+      } finally {
+        setIsSavingAvatar(false);
       }
     }
   };
@@ -85,6 +96,10 @@ const Profile = () => {
         role: response.profile?.designation || editForm.role,
         company: response.company || editForm.company,
       });
+      
+      // SYNC WITH GLOBAL STATE
+      await refreshUser();
+      
       setIsEditModalOpen(false);
     } catch (error) {
       console.error('Failed to update profile:', error);
@@ -92,13 +107,6 @@ const Profile = () => {
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="min-h-[60vh] flex items-center justify-center">
-        <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    );
-  }
 
   return (
     <>
@@ -109,11 +117,27 @@ const Profile = () => {
         <div className="relative mt-8 flex flex-col md:flex-row items-center md:items-start gap-8">
           <div className="relative group">
             <div className="w-32 h-32 rounded-[2.5rem] bg-white dark:bg-gray-800 p-2 shadow-xl border border-gray-50 dark:border-gray-700 flex items-center justify-center relative overflow-hidden">
-              <div className="w-full h-full rounded-[2rem] bg-gray-50 dark:bg-gray-800/50 flex items-center justify-center text-gray-400 overflow-hidden">
-                {avatarPreview ? (
-                  <img src={avatarPreview.startsWith('data:') ? avatarPreview : `http://localhost:5001${avatarPreview}`} alt="Profile Avatar" className="w-full h-full object-cover" />
+              <div className="w-full h-full rounded-[2rem] bg-gray-50 dark:bg-gray-800/50 flex items-center justify-center text-gray-400 overflow-hidden relative">
+                {isLoading ? (
+                  <div className="absolute inset-0 bg-gray-200 dark:bg-gray-800 animate-pulse" />
                 ) : (
-                  <User size={64} strokeWidth={1.5} />
+                  <>
+                    {avatarPreview ? (
+                      <img src={avatarPreview.startsWith('data:') ? avatarPreview : (() => {
+                        let url = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+                        url = url.replace(/\/$/, '');
+                        if (!url.endsWith('/api')) url += '/api';
+                        return `${url.replace('/api', '')}${avatarPreview}`;
+                      })()} alt="Profile Avatar" className="w-full h-full object-cover" />
+                    ) : (
+                      <User size={64} strokeWidth={1.5} />
+                    )}
+                    {isSavingAvatar && (
+                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center text-white">
+                        <Loader2 className="animate-spin" />
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             </div>
@@ -124,31 +148,52 @@ const Profile = () => {
               accept="image/*"
               onChange={handleAvatarUpload}
             />
-            <button 
-              onClick={() => avatarInputRef.current?.click()}
-              className="absolute -bottom-2 -right-2 w-12 h-12 bg-white dark:bg-gray-800 rounded-full shadow-lg border border-gray-100 dark:border-gray-700 flex items-center justify-center text-gray-500 hover:text-indigo-600 transition-all z-10 hover:scale-110 active:scale-95"
-            >
-              <Camera size={20} />
-            </button>
+            {!isLoading && (
+              <button 
+                onClick={() => avatarInputRef.current?.click()}
+                disabled={isSavingAvatar}
+                className="absolute -bottom-2 -right-2 w-12 h-12 bg-white dark:bg-gray-800 rounded-full shadow-lg border border-gray-100 dark:border-gray-700 flex items-center justify-center text-gray-500 hover:text-indigo-600 transition-all z-10 hover:scale-110 active:scale-95"
+              >
+                <Camera size={20} />
+              </button>
+            )}
           </div>
           
           <div className="flex-1 text-center md:text-left mt-4 md:mt-0 space-y-3">
             <div className="flex flex-col md:flex-row items-center gap-4 justify-between">
-              <div>
-                <h1 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">{profileData.name}</h1>
-                <p className="text-sm font-bold text-indigo-600 uppercase tracking-widest mt-1">{profileData.role}</p>
-              </div>
-              <button 
-                onClick={handleEditClick}
-                className="flex items-center gap-2 px-5 py-2.5 bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400 font-bold rounded-2xl hover:bg-indigo-100 transition-colors"
-              >
-                <Edit3 size={16} /> Edit Profile
-              </button>
+              {isLoading ? (
+                <div className="space-y-3">
+                  <div className="h-10 w-64 bg-gray-200 dark:bg-gray-800 animate-pulse rounded-2xl" />
+                  <div className="h-5 w-48 bg-gray-100 dark:bg-gray-800 animate-pulse rounded-xl" />
+                </div>
+              ) : (
+                <div>
+                  <h1 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">{profileData.name}</h1>
+                  <p className="text-sm font-bold text-indigo-600 uppercase tracking-widest mt-1">{profileData.role}</p>
+                </div>
+              )}
+              {!isLoading && (
+                <button 
+                  onClick={handleEditClick}
+                  className="flex items-center gap-2 px-5 py-2.5 bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400 font-bold rounded-2xl hover:bg-indigo-100 transition-colors"
+                >
+                  <Edit3 size={16} /> Edit Profile
+                </button>
+              )}
             </div>
             <div className="flex flex-wrap items-center justify-center md:justify-start gap-6 pt-4 text-sm font-medium text-gray-500 dark:text-gray-400">
-              <span className="flex items-center gap-2"><Briefcase size={16} className="text-gray-400" /> {profileData.company}</span>
-              <span className="flex items-center gap-2"><MapPin size={16} className="text-gray-400" /> {profileData.location}</span>
-              <span className="flex items-center gap-2 text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 px-3 py-1 rounded-full text-xs font-bold leading-none"><ShieldCheck size={14} /> Active Account</span>
+              {isLoading ? (
+                <>
+                  <div className="h-5 w-32 bg-gray-100 dark:bg-gray-800 animate-pulse rounded-lg" />
+                  <div className="h-5 w-32 bg-gray-100 dark:bg-gray-800 animate-pulse rounded-lg" />
+                </>
+              ) : (
+                <>
+                  <span className="flex items-center gap-2"><Briefcase size={16} className="text-gray-400" /> {profileData.company}</span>
+                  <span className="flex items-center gap-2"><MapPin size={16} className="text-gray-400" /> {profileData.location || 'Not Specified'}</span>
+                  <span className="flex items-center gap-2 text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 px-3 py-1 rounded-full text-xs font-bold leading-none"><ShieldCheck size={14} /> Active Account</span>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -160,25 +205,41 @@ const Profile = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <div className="space-y-1">
                 <label className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">Full Name</label>
-                <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl font-bold text-gray-800 dark:text-gray-200 border border-transparent truncate" title={profileData.name}>{profileData.name}</div>
+                {isLoading ? (
+                  <div className="h-12 w-full bg-gray-50 dark:bg-gray-800 animate-pulse rounded-2xl" />
+                ) : (
+                  <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl font-bold text-gray-800 dark:text-gray-200 border border-transparent truncate" title={profileData.name}>{profileData.name || '---'}</div>
+                )}
               </div>
               <div className="space-y-1">
                 <label className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">Email Address</label>
-                <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl font-bold text-gray-800 dark:text-gray-200 truncate" title={profileData.email}>
-                  <Mail size={16} className="text-gray-400 shrink-0" /> <span className="truncate">{profileData.email}</span>
-                </div>
+                {isLoading ? (
+                  <div className="h-12 w-full bg-gray-50 dark:bg-gray-800 animate-pulse rounded-2xl" />
+                ) : (
+                  <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl font-bold text-gray-800 dark:text-gray-200 truncate" title={profileData.email}>
+                    <Mail size={16} className="text-gray-400 shrink-0" /> <span className="truncate">{profileData.email || '---'}</span>
+                  </div>
+                )}
               </div>
               <div className="space-y-1">
                 <label className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">Phone Number</label>
-                <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl font-bold text-gray-800 dark:text-gray-200 truncate" title={profileData.phone}>
-                  <Phone size={16} className="text-gray-400 shrink-0" /> <span className="truncate">{profileData.phone}</span>
-                </div>
+                {isLoading ? (
+                  <div className="h-12 w-full bg-gray-50 dark:bg-gray-800 animate-pulse rounded-2xl" />
+                ) : (
+                  <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl font-bold text-gray-800 dark:text-gray-200 truncate" title={profileData.phone}>
+                    <Phone size={16} className="text-gray-400 shrink-0" /> <span className="truncate">{profileData.phone || '---'}</span>
+                  </div>
+                )}
               </div>
               <div className="space-y-1">
                 <label className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">Department</label>
-                <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl font-bold text-gray-800 dark:text-gray-200 truncate" title={profileData.department}>
-                  <Building size={16} className="text-gray-400 shrink-0" /> <span className="truncate">{profileData.department}</span>
-                </div>
+                {isLoading ? (
+                  <div className="h-12 w-full bg-gray-50 dark:bg-gray-800 animate-pulse rounded-2xl" />
+                ) : (
+                  <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl font-bold text-gray-800 dark:text-gray-200 truncate" title={profileData.department}>
+                    <Building size={16} className="text-gray-400 shrink-0" /> <span className="truncate">{profileData.department || '---'}</span>
+                  </div>
+                )}
               </div>
             </div>
           </div>

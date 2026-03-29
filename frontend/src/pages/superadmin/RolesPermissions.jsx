@@ -16,6 +16,7 @@ import {
   Key
 } from 'lucide-react';
 import Button from '../../components/Button';
+import Skeleton from '../../components/Skeleton';
 
 // Base API URL - point to the backend server
 const getBaseUrl = () => {
@@ -42,11 +43,13 @@ const RolesPermissions = () => {
   const [permissions, setPermissions] = useState([]);
   const [rolePeople, setRolePeople] = useState([]);
   const [isLoadingPeople, setIsLoadingPeople] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   // Fetch all initial data
   useEffect(() => {
     const fetchData = async () => {
       try {
+        setLoading(true);
         const [countsRes, permsRes, logsRes] = await Promise.all([
           axios.get(`${API_BASE_URL}/counts`),
           axios.get(`${API_BASE_URL}/permissions`),
@@ -65,6 +68,8 @@ const RolesPermissions = () => {
         setAuditLog(formattedLogs);
       } catch (err) {
         console.error('Error fetching dashboard data:', err);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -213,61 +218,87 @@ const RolesPermissions = () => {
 
   const renderRoles = () => (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-      {roles.map((role) => (
-        <div key={role.id} className="group relative bg-white dark:bg-gray-900 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 shadow-xl overflow-hidden hover:shadow-2xl hover:-translate-y-2 transition-all duration-500">
-          {/* Top Visual Accent */}
-          <div className={`absolute top-0 left-0 w-full h-2 bg-${role.color}-500 opacity-20 group-hover:opacity-100 transition-opacity`} />
-
-          <div className="p-10 flex flex-col h-full">
-            {/* Header: Status & Badge */}
-            <div className="flex justify-between items-start mb-10">
-              <div className="flex flex-col">
-                <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1">Total Active</span>
-                <span className={`text-4xl font-black text-gray-900 dark:text-white tracking-tighter`}>{role.active}</span>
+      {loading ? (
+        [1, 2, 3].map(i => (
+          <div key={i} className="bg-white dark:bg-gray-900 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 p-10 space-y-8">
+            <div className="flex justify-between items-start">
+              <div className="space-y-3">
+                <Skeleton className="h-3 w-16" />
+                <Skeleton className="h-10 w-24" />
               </div>
-              <div className={`p-4 rounded-2xl bg-${role.color}-50 dark:bg-${role.color}-900/30 text-${role.color}-600 shadow-inner group-hover:scale-110 transition-transform`}>
-                {role.icon}
-              </div>
+              <Skeleton variant="rounded" className="w-14 h-14" />
             </div>
-
-            {/* Role Title & Level */}
-            <div className="mb-6">
-              <h3 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight mb-1">{role.name}</h3>
-              <p className={`text-[10px] font-black text-${role.color}-600 uppercase tracking-[0.3em]`}>{role.level}</p>
+            <div className="space-y-3">
+              <Skeleton className="h-6 w-3/4" />
+              <Skeleton className="h-3 w-32" />
             </div>
-
-            {/* Description */}
-            <p className="text-xs font-bold text-gray-500 dark:text-gray-400 leading-relaxed mb-8 flex-grow">
-              {role.desc}
-            </p>
-
-            {/* Avatar Stack: A, B, C, D, + */}
-            <div className="flex items-center gap-4 mb-10">
+            <Skeleton className="h-4 w-full" />
+            <div className="flex items-center gap-4">
               <div className="flex -space-x-3">
-                {['A', 'B', 'C', 'D'].map((initial, i) => (
-                  <div key={i} className={`w-10 h-10 rounded-xl border-4 border-white dark:border-gray-900 bg-${role.color}-50 dark:bg-${role.color}-800 flex items-center justify-center text-[10px] font-black text-${role.color}-600 shadow-sm`}>
-                    {initial}
-                  </div>
-                ))}
-                <div className="w-10 h-10 rounded-xl border-4 border-white dark:border-gray-900 bg-gray-50 dark:bg-gray-800 flex items-center justify-center text-[10px] font-black text-gray-400 shadow-sm">
-                  +
+                {[1, 2, 3, 4].map(j => <Skeleton key={j} className="w-10 h-10 rounded-xl border-4 border-white dark:border-gray-900" />)}
+              </div>
+              <Skeleton className="h-3 w-24" />
+            </div>
+            <Skeleton className="h-14 w-full rounded-2xl" />
+          </div>
+        ))
+      ) : (
+        roles.map((role) => (
+          <div key={role.id} className="group relative bg-white dark:bg-gray-900 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 shadow-xl overflow-hidden hover:shadow-2xl hover:-translate-y-2 transition-all duration-500">
+            {/* Top Visual Accent */}
+            <div className={`absolute top-0 left-0 w-full h-2 bg-${role.color}-500 opacity-20 group-hover:opacity-100 transition-opacity`} />
+
+            <div className="p-10 flex flex-col h-full">
+              {/* Header: Status & Badge */}
+              <div className="flex justify-between items-start mb-10">
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1">Total Active</span>
+                  <span className={`text-4xl font-black text-gray-900 dark:text-white tracking-tighter`}>{role.active}</span>
+                </div>
+                <div className={`p-4 rounded-2xl bg-${role.color}-50 dark:bg-${role.color}-900/30 text-${role.color}-600 shadow-inner group-hover:scale-110 transition-transform`}>
+                  {role.icon}
                 </div>
               </div>
-              <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Personnel Preview</span>
-            </div>
 
-            {/* Footer Action */}
-            <Button
-              variant="primary"
-              onClick={() => setCurrentRole(role)}
-              className={`w-full py-4 rounded-2xl bg-${role.color}-600 hover:bg-${role.color}-700 shadow-lg shadow-${role.color}-100 dark:shadow-none flex items-center justify-center gap-3 group/btn`}
-            >
-              <span className="font-black uppercase tracking-[0.2em] text-[10px] text-white">View Details</span>
-              <ChevronRight size={14} className="text-white group-hover/btn:translate-x-1 transition-transform" />
-            </Button>
+              {/* Role Title & Level */}
+              <div className="mb-6">
+                <h3 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight mb-1">{role.name}</h3>
+                <p className={`text-[10px] font-black text-${role.color}-600 uppercase tracking-[0.3em]`}>{role.level}</p>
+              </div>
+
+              {/* Description */}
+              <p className="text-xs font-bold text-gray-500 dark:text-gray-400 leading-relaxed mb-8 flex-grow">
+                {role.desc}
+              </p>
+
+              {/* Avatar Stack: A, B, C, D, + */}
+              <div className="flex items-center gap-4 mb-10">
+                <div className="flex -space-x-3">
+                  {['A', 'B', 'C', 'D'].map((initial, i) => (
+                    <div key={i} className={`w-10 h-10 rounded-xl border-4 border-white dark:border-gray-900 bg-${role.color}-50 dark:bg-${role.color}-800 flex items-center justify-center text-[10px] font-black text-${role.color}-600 shadow-sm`}>
+                      {initial}
+                    </div>
+                  ))}
+                  <div className="w-10 h-10 rounded-xl border-4 border-white dark:border-gray-900 bg-gray-50 dark:bg-gray-800 flex items-center justify-center text-[10px] font-black text-gray-400 shadow-sm">
+                    +
+                  </div>
+                </div>
+                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Personnel Preview</span>
+              </div>
+
+              {/* Footer Action */}
+              <Button
+                variant="primary"
+                onClick={() => setCurrentRole(role)}
+                className={`w-full py-4 rounded-2xl bg-${role.color}-600 hover:bg-${role.color}-700 shadow-lg shadow-${role.color}-100 dark:shadow-none flex items-center justify-center gap-3 group/btn`}
+              >
+                <span className="font-black uppercase tracking-[0.2em] text-[10px] text-white">View Details</span>
+                <ChevronRight size={14} className="text-white group-hover/btn:translate-x-1 transition-transform" />
+              </Button>
+            </div>
           </div>
-        </div>
-      ))}
+        ))
+      )}
     </div>
   );
 
@@ -275,39 +306,54 @@ const RolesPermissions = () => {
     <div className="space-y-6 animate-in fade-in zoom-in-95 duration-500">
       {/* Detail Header */}
       <div className="bg-white dark:bg-gray-900 p-8 rounded-[3rem] border border-gray-100 dark:border-gray-800 shadow-xl flex flex-col md:flex-row justify-between items-center gap-6 relative overflow-hidden">
-        <div className={`absolute top-0 left-0 w-1 h-full bg-${currentRole.color}-500`} />
-        <div className="flex items-center gap-6 w-full md:w-auto">
-          <button
-            onClick={() => setCurrentRole(null)}
-            className="group flex items-center gap-2 p-3 pr-5 rounded-2xl bg-gray-50 dark:bg-gray-800 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all border border-transparent hover:border-indigo-100 shadow-sm"
-          >
-            <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
-            <span className="text-xs font-black uppercase tracking-widest text-nowrap">Back</span>
-          </button>
-          <div className="truncate">
-            <div className="flex items-center gap-3 mb-1">
-              <h2 className="text-2xl md:text-3xl font-black text-gray-900 dark:text-white tracking-tight truncate">{currentRole.name} Directory</h2>
-              <span className={`px-2 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-widest bg-${currentRole.color}-50 text-${currentRole.color}-600 border border-${currentRole.color}-100 hidden sm:inline-block`}>
-                {currentRole.level} Access
-              </span>
+        {loading ? (
+          <>
+            <div className="flex items-center gap-6 w-full md:w-auto flex-1">
+              <Skeleton className="h-12 w-24 rounded-2xl" />
+              <div className="space-y-3 flex-1">
+                <Skeleton className="h-8 w-64" />
+                <Skeleton className="h-4 w-96" />
+              </div>
             </div>
-            <p className="text-sm text-gray-500 dark:text-gray-400 font-medium italic truncate">Associated records for {currentRole.name} profile.</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-3 w-full md:w-auto justify-end">
-          <Button
-            variant="primary"
-            onClick={() => {
-              setActiveTab('Permissions');
-              setCurrentRole(null);
-              setPermSearchQuery('');
-            }}
-            className="rounded-2xl py-4 px-8 shadow-xl shadow-indigo-100 dark:shadow-none flex items-center gap-2 bg-indigo-600 text-white w-full md:w-auto justify-center"
-          >
-            <Shield size={18} />
-            <span className="font-black uppercase tracking-widest text-xs">Manage Role Permissions</span>
-          </Button>
-        </div>
+            <Skeleton className="h-12 w-48 rounded-2xl" />
+          </>
+        ) : (
+          <>
+            <div className={`absolute top-0 left-0 w-1 h-full bg-${currentRole.color}-500`} />
+            <div className="flex items-center gap-6 w-full md:w-auto">
+              <button
+                onClick={() => setCurrentRole(null)}
+                className="group flex items-center gap-2 p-3 pr-5 rounded-2xl bg-gray-50 dark:bg-gray-800 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all border border-transparent hover:border-indigo-100 shadow-sm"
+              >
+                <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
+                <span className="text-xs font-black uppercase tracking-widest text-nowrap">Back</span>
+              </button>
+              <div className="truncate">
+                <div className="flex items-center gap-3 mb-1">
+                  <h2 className="text-2xl md:text-3xl font-black text-gray-900 dark:text-white tracking-tight truncate">{currentRole.name} Directory</h2>
+                  <span className={`px-2 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-widest bg-${currentRole.color}-50 text-${currentRole.color}-600 border border-${currentRole.color}-100 hidden sm:inline-block`}>
+                    {currentRole.level} Access
+                  </span>
+                </div>
+                <p className="text-sm text-gray-500 dark:text-gray-400 font-medium italic truncate">Associated records for {currentRole.name} profile.</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 w-full md:w-auto justify-end">
+              <Button
+                variant="primary"
+                onClick={() => {
+                  setActiveTab('Permissions');
+                  setCurrentRole(null);
+                  setPermSearchQuery('');
+                }}
+                className="rounded-2xl py-4 px-8 shadow-xl shadow-indigo-100 dark:shadow-none flex items-center gap-2 bg-indigo-600 text-white w-full md:w-auto justify-center"
+              >
+                <Shield size={18} />
+                <span className="font-black uppercase tracking-widest text-xs">Manage Role Permissions</span>
+              </Button>
+            </div>
+          </>
+        )}
       </div>
 
       {/* People Table */}
@@ -338,15 +384,38 @@ const RolesPermissions = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
-              {isLoadingPeople ? (
-                <tr>
-                  <td colSpan="4" className="px-8 py-20 text-center">
-                    <div className="flex flex-col items-center gap-4">
-                      <div className="w-10 h-10 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin" />
-                      <p className="text-xs font-black text-gray-400 uppercase tracking-widest">Retrieving Directory...</p>
-                    </div>
-                  </td>
-                </tr>
+              {isLoadingPeople || loading ? (
+                [1, 2, 3, 4, 5].map(i => (
+                  <tr key={i} className="animate-pulse">
+                    <td className="px-8 py-6">
+                      <div className="flex items-center gap-4">
+                        <Skeleton variant="rounded" className="w-12 h-12" />
+                        <div className="space-y-2">
+                          <Skeleton className="h-4 w-32" />
+                          <Skeleton className="h-3 w-48" />
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-8 py-6 border-x border-gray-50 dark:border-gray-800">
+                      <div className="space-y-2">
+                        <Skeleton className="h-4 w-24" />
+                        <Skeleton className="h-3 w-16" />
+                      </div>
+                    </td>
+                    <td className="px-8 py-6">
+                      <div className="space-y-2">
+                        <Skeleton className="h-4 w-24" />
+                        <Skeleton className="h-3 w-16" />
+                      </div>
+                    </td>
+                    <td className="px-8 py-6 border-l border-gray-50 dark:border-gray-800">
+                      <div className="space-y-2">
+                        <Skeleton className="h-4 w-32" />
+                        <Skeleton className="h-3 w-24" />
+                      </div>
+                    </td>
+                  </tr>
+                ))
               ) : filteredPeople.map((person, i) => (
                 <tr key={person._id || i} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors group">
                   <td className="px-8 py-6">
@@ -385,7 +454,7 @@ const RolesPermissions = () => {
                   </td>
                 </tr>
               ))}
-              {!isLoadingPeople && filteredPeople.length === 0 && (
+              {!isLoadingPeople && !loading && filteredPeople.length === 0 && (
                 <tr>
                   <td colSpan="4" className="px-8 py-20 text-center">
                     <div className="flex flex-col items-center gap-3">
@@ -436,7 +505,20 @@ const RolesPermissions = () => {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
-            {filteredPermissions.map((row) => (
+            {loading ? (
+              [1, 2, 3, 4, 5, 6].map(i => (
+                <tr key={i} className="animate-pulse">
+                  <td className="px-10 py-6">
+                    <Skeleton className="h-5 w-48" />
+                  </td>
+                  {[1, 2, 3].map(j => (
+                    <td key={j} className="px-10 py-6 border-l border-gray-50 dark:border-gray-800">
+                      <Skeleton className="mx-auto w-10 h-10 rounded-2xl" />
+                    </td>
+                  ))}
+                </tr>
+              ))
+            ) : filteredPermissions.map((row) => (
               <tr key={row.module} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-all group">
                 <td className="px-10 py-6">
                   <div className="flex items-center gap-3">
@@ -459,7 +541,7 @@ const RolesPermissions = () => {
                 })}
               </tr>
             ))}
-            {filteredPermissions.length === 0 && (
+            {!loading && filteredPermissions.length === 0 && (
               <tr>
                 <td colSpan="4" className="px-8 py-20 text-center">
                   <div className="flex flex-col items-center gap-3">
@@ -513,23 +595,38 @@ const RolesPermissions = () => {
     <div className="bg-white dark:bg-gray-900 rounded-[3rem] border border-gray-100 dark:border-gray-800 shadow-xl overflow-hidden animate-in slide-in-from-bottom-4 duration-500">
       {/* Activity Log Header */}
       <div className="p-10 border-b border-gray-50 dark:border-gray-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-8 bg-gray-50/20">
-        <div>
-          <h3 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight leading-none mb-2">AUDIT LOG</h3>
-          <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Your chronological field performance history</p>
-        </div>
-        <div className="flex items-center gap-4 w-full md:w-auto">
-          <div className="p-3.5 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm flex items-center gap-2 flex-grow">
-            <Search size={16} className="text-gray-400" />
-            <input type="text" placeholder="Search activities..." className="bg-transparent border-none text-xs font-black outline-none w-40" />
-          </div>
-          <button
-            onClick={handleExportLog}
-            className="whitespace-nowrap px-8 py-3.5 rounded-2xl border-2 border-indigo-100 dark:border-indigo-900 text-[10px] font-black uppercase tracking-[0.2em] text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all shadow-sm flex items-center gap-2"
-          >
-            <ChevronRight size={14} className="rotate-90" />
-            Export Log
-          </button>
-        </div>
+        {loading ? (
+          <>
+            <div className="space-y-3">
+              <Skeleton className="h-9 w-52 uppercase tracking-tight" />
+              <Skeleton className="h-4 w-72 font-medium" />
+            </div>
+            <div className="flex items-center gap-4 w-full md:w-auto">
+              <Skeleton className="h-12 w-56 rounded-2xl" />
+              <Skeleton className="h-12 w-36 rounded-2xl" />
+            </div>
+          </>
+        ) : (
+          <>
+            <div>
+              <h3 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight leading-none mb-2">AUDIT LOG</h3>
+              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Your chronological field performance history</p>
+            </div>
+            <div className="flex items-center gap-4 w-full md:w-auto">
+              <div className="p-3.5 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm flex items-center gap-2 flex-grow">
+                <Search size={16} className="text-gray-400" />
+                <input type="text" placeholder="Search activities..." className="bg-transparent border-none text-xs font-black outline-none w-40" />
+              </div>
+              <button
+                onClick={handleExportLog}
+                className="whitespace-nowrap px-8 py-3.5 rounded-2xl border-2 border-indigo-100 dark:border-indigo-900 text-[10px] font-black uppercase tracking-[0.2em] text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all shadow-sm flex items-center gap-2"
+              >
+                <ChevronRight size={14} className="rotate-90" />
+                Export Log
+              </button>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Timeline Section */}
@@ -540,7 +637,26 @@ const RolesPermissions = () => {
         </div>
 
         <div className="space-y-6 relative before:absolute before:left-[11rem] before:top-2 before:bottom-0 before:w-0.5 before:bg-gray-100 dark:before:bg-gray-800">
-          {auditLog.map((log) => (
+          {loading ? (
+            [1, 2, 3, 4].map(i => (
+              <div key={i} className="flex gap-12 animate-pulse">
+                <div className="w-[8rem] flex flex-col items-end shrink-0 pt-1 space-y-2">
+                  <Skeleton className="h-4 w-20" />
+                  <Skeleton className="h-3 w-12" />
+                </div>
+                <div className="relative z-10 shrink-0 mt-1.5 pt-1 bg-white dark:bg-gray-900">
+                  <div className="w-4 h-4 rounded-full border-4 border-white dark:border-gray-900 bg-gray-200 shadow-lg" />
+                </div>
+                <div className="flex-grow pb-6 space-y-3">
+                  <div className="flex gap-2">
+                    <Skeleton className="h-5 w-24 rounded-lg" />
+                    <Skeleton className="h-5 w-16 rounded-lg" />
+                  </div>
+                  <Skeleton className="h-5 w-3/4" />
+                </div>
+              </div>
+            ))
+          ) : auditLog.map((log) => (
             <div key={log.id} className="flex gap-12 group animate-in fade-in slide-in-from-right-4 duration-500">
               {/* Date/Time Column */}
               <div className="w-[8rem] flex flex-col items-end shrink-0 pt-1">
@@ -579,24 +695,39 @@ const RolesPermissions = () => {
       {/* Page Header (Only show if not in detail view) */}
       {!currentRole && (
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 border-b border-gray-100 dark:border-gray-800 pb-8">
-          <div>
-            <h1 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">Roles & Permissions</h1>
-            <p className="text-xs text-gray-400 mt-1 font-bold uppercase tracking-widest">Manage platform access & security levels</p>
-          </div>
+          {loading ? (
+            <div className="space-y-3">
+              <Skeleton className="h-9 w-72 uppercase tracking-tight" />
+              <Skeleton className="h-4 w-[28rem] font-medium" />
+            </div>
+          ) : (
+            <div>
+              <h1 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">Roles & Permissions</h1>
+              <p className="text-xs text-gray-400 mt-1 font-bold uppercase tracking-widest">Manage platform access & security levels</p>
+            </div>
+          )}
 
           <div className="flex items-center bg-gray-50 dark:bg-gray-800/50 p-2 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-inner">
-            {['Roles', 'Permissions', 'Audit Log'].map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`px-8 py-3.5 text-xs font-black uppercase tracking-widest transition-all rounded-xl ${activeTab === tab
-                  ? 'bg-white dark:bg-gray-700 text-indigo-600 shadow-md border border-gray-100 dark:border-gray-600 scale-105'
-                  : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'
-                  }`}
-              >
-                {tab}
-              </button>
-            ))}
+            {loading ? (
+              <div className="flex space-x-1">
+                <Skeleton className="h-11 w-32 rounded-xl" />
+                <Skeleton className="h-11 w-36 rounded-xl" />
+                <Skeleton className="h-11 w-32 rounded-xl" />
+              </div>
+            ) : (
+              ['Roles', 'Permissions', 'Audit Log'].map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`px-8 py-3.5 text-xs font-black uppercase tracking-widest transition-all rounded-xl ${activeTab === tab
+                    ? 'bg-white dark:bg-gray-700 text-indigo-600 shadow-md border border-gray-100 dark:border-gray-600 scale-105'
+                    : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'
+                    }`}
+                >
+                  {tab}
+                </button>
+              ))
+            )}
           </div>
         </div>
       )}

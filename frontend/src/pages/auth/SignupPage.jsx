@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { register } from '../../services/authService';
-import { ShieldCheck, Lock, Mail, User, Building2, ChevronRight, Loader2, CheckCircle2 } from 'lucide-react';
+import { ShieldCheck, Lock, Mail, User, Building2, ChevronRight, Loader2, CheckCircle2, ArrowLeft } from 'lucide-react';
 import Button from '../../components/Button';
 import ThemeToggle from '../../components/ThemeToggle';
 
@@ -42,7 +42,16 @@ const SignupPage = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950 p-4 transition-colors duration-300">
-      <div className="absolute top-4 right-4">
+      <div className="absolute top-6 left-6">
+        <Link 
+          to="/" 
+          className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-900 text-gray-500 hover:text-primary-main rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-md transition-all font-black text-[10px] uppercase tracking-widest active:scale-95"
+        >
+          <ArrowLeft size={14} />
+          <span>Home Page</span>
+        </Link>
+      </div>
+      <div className="absolute top-6 right-6">
         <ThemeToggle />
       </div>
 

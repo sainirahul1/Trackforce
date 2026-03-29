@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { login } from '../../services/authService';
-import { ShieldCheck, Lock, Mail, ChevronRight, Loader2 } from 'lucide-react';
+import { login as authServiceLogin } from '../../services/authService';
+import { ShieldCheck, Lock, Mail, ChevronRight, Loader2, ArrowLeft } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 import Button from '../../components/Button';
 import ThemeToggle from '../../components/ThemeToggle';
 
@@ -11,13 +12,17 @@ const LoginPage = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { login: globalLogin } = useAuth();
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
     try {
-      const u = await login(email, password);
+      const u = await authServiceLogin(email, password);
+      // Synchronize with global AuthContext before navigation
+      globalLogin(u);
+      
       // u.role will determine where we go
       navigate(`/${u.role}/dashboard`);
     } catch (err) {
@@ -30,31 +35,9 @@ const LoginPage = () => {
   const quickLogins = [
     { label: 'Select Test Account', email: '', password: '' },
     { label: 'Super Admin', email: 'superadmin@trackforce.com', password: 'admin123' },
-
-    { label: '--- ReatchAll (Org) ---', email: '', password: '' },
-    { label: 'RA Tenant', email: 'admin@reatchall.com', password: 'password123' },
-    { label: 'RA Mgr 1', email: 'manager1@reatchall.com', password: 'password123' },
-    { label: 'RA Mgr 4', email: 'manager4@reatchall.com', password: 'password123' },
-    { label: 'RA Mgr 5', email: 'manager5@reatchall.com', password: 'password123' },
-    { label: 'RA Emp 1', email: 'employee1@reatchall.com', password: 'password123' },
-    { label: 'RA Emp 4', email: 'employee4@reatchall.com', password: 'password123' },
-    { label: 'RA Emp 5', email: 'employee5@reatchall.com', password: 'password123' },
-
-    { label: '--- TechFlow ---', email: '', password: '' },
-    { label: 'TF Manager', email: 'manager@techflow.com', password: 'password123' },
-    { label: 'TF Employee', email: 'field@techflow.com', password: 'password123' },
-
-    { label: '--- Global Logistics ---', email: '', password: '' },
-    { label: 'GL Manager', email: 'manager@glg.com', password: 'password123' },
-    { label: 'GL Employee', email: 'field@glg.com', password: 'password123' },
-
-    { label: '--- Retail Pulse ---', email: '', password: '' },
-    { label: 'RP Manager', email: 'manager@retailpulse.com', password: 'password123' },
-    { label: 'RP Employee', email: 'field@retailpulse.com', password: 'password123' },
-
-    { label: '--- EcoEnergy ---', email: '', password: '' },
-    { label: 'EE Manager', email: 'manager@ecoenergy.com', password: 'password123' },
-    { label: 'EE Employee', email: 'field@ecoenergy.com', password: 'password123' },
+    { label: 'RA Tenant', email: 'tenant@reatchall.com', password: 'password123' },
+    { label: 'RA Manager', email: 'manager1@reatchall.com', password: 'password123' },
+    { label: 'RA Employee', email: 'employee1@reatchall.com', password: 'password123' },
   ];
 
   const handleQuickLogin = (e) => {
@@ -67,6 +50,15 @@ const LoginPage = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950 p-6 transition-colors duration-300">
+      <div className="absolute top-6 left-6">
+        <Link 
+          to="/" 
+          className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-900 text-gray-500 hover:text-primary-main rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-md transition-all font-black text-[10px] uppercase tracking-widest active:scale-95"
+        >
+          <ArrowLeft size={14} />
+          <span>Home Page</span>
+        </Link>
+      </div>
       <div className="absolute top-6 right-6">
         <ThemeToggle />
       </div>
