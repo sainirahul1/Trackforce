@@ -197,10 +197,16 @@ const ProfileUnifiedOverlay = ({ isOpen, onClose, employee, documents, activeTab
           <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-800 flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center text-indigo-600 font-bold shrink-0 overflow-hidden">
               {employee.avatar ? (
-                <img 
-                  src={employee.avatar.startsWith('data:') ? employee.avatar : (employee.avatar || "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix")} 
-                  alt="DP" 
-                  className="w-full h-full object-cover" 
+                <img
+                  src={employee.avatar?.startsWith('data:') ? employee.avatar : (() => {
+                    if (!employee.avatar) return "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix";
+                    let url = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+                    url = url.replace(/\/$/, '');
+                    if (!url.endsWith('/api')) url += '/api';
+                    return `${url.replace('/api', '')}${employee.avatar}`;
+                  })()}
+                  alt="DP"
+                  className="w-full h-full object-cover"
                 />
               ) : (
                 employee.name.charAt(0)
@@ -771,21 +777,27 @@ const ProfileHeader = ({ employee, onEditProfile, onOpenSettings, onShareProfile
               ) : (
                 <>
                   <img
-                    src={employee.avatar?.startsWith('data:') ? employee.avatar : (employee.avatar || "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix")}
+                    src={employee.avatar?.startsWith('data:') ? employee.avatar : (() => {
+                      if (!employee.avatar) return "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix";
+                      let url = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+                      url = url.replace(/\/$/, '');
+                      if (!url.endsWith('/api')) url += '/api';
+                      return `${url.replace('/api', '')}${employee.avatar}`;
+                    })()}
                     alt={employee.name}
                     className="h-24 w-24 sm:h-32 sm:w-32 rounded-2xl sm:rounded-3xl border-2 border-slate-200 dark:border-white/10 object-cover shadow-xl"
                   />
-                  <button 
+                  <button
                     onClick={() => fileInputRef.current?.click()}
                     disabled={isSavingAvatar}
                     className="absolute inset-0 bg-black/40 rounded-2xl sm:rounded-3xl opacity-0 group-hover/avatar:opacity-100 transition-all flex items-center justify-center text-white"
                   >
                     {isSavingAvatar ? <Loader2 className="animate-spin" /> : <Camera size={24} />}
                   </button>
-                  <input 
-                    type="file" 
-                    ref={fileInputRef} 
-                    className="hidden" 
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    className="hidden"
                     accept="image/*"
                     onChange={(e) => {
                       const file = e.target.files?.[0];
@@ -1760,25 +1772,23 @@ const EditProfileModal = ({ isOpen, onClose, employee, onSaveProfile }) => {
           {/* Scrollable body */}
           <div className="tf-modal-scroll flex-1 overflow-y-auto p-6 sm:p-8">
             <form onSubmit={handleSaveProfile} className="space-y-6">
-              {/* Avatar */}
               <div className="flex items-center gap-5 mb-2">
                 <img
-                  src={avatarUrl || "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix"}
+                  src={avatarUrl?.startsWith('data:') ? avatarUrl : (() => {
+                    if (!avatarUrl) return "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix";
+                    let url = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+                    url = url.replace(/\/$/, '');
+                    if (!url.endsWith('/api')) url += '/api';
+                    return `${url.replace('/api', '')}${avatarUrl}`;
+                  })()}
                   alt="Profile"
                   className="h-16 w-16 rounded-2xl object-cover border border-gray-200 dark:border-gray-800"
                 />
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-col gap-1">
                   <label className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Profile picture</label>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => setAvatarFile(e.target.files?.[0] || null)}
-                    className="block text-sm font-bold text-gray-700 dark:text-gray-200 file:mr-4 file:py-2 file:px-4 file:rounded-2xl file:border-0 file:text-sm file:font-black file:bg-white dark:file:bg-gray-900 file:text-indigo-600 file:shadow-sm hover:file:bg-indigo-50 dark:hover:file:bg-gray-800"
-                  />
-                  <p className="text-xs text-gray-500">PNG/JPG recommended. Preview updates immediately.</p>
+                  <p className="text-xs text-gray-500">Update your DP using the camera icon on the main profile screen.</p>
                 </div>
               </div>
-
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Name</label>
@@ -2460,18 +2470,18 @@ const EmployeeProfile = () => {
       setIsSavingAvatar(true);
       const formData = new FormData();
       formData.append('image', file);
-      
+
       const response = await uploadProfileImage(formData);
-      
+
       // Update local state
       setEmployee(prev => ({
         ...prev,
         avatar: response.profileImage || response.url
       }));
-      
+
       // Sync with global state (Sidebar, Navbar)
       await refreshUser();
-      
+
     } catch (err) {
       console.error('Failed to upload avatar:', err.message);
     } finally {

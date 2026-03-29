@@ -95,15 +95,22 @@ const Sidebar = ({ role, user, isCollapsed, onToggle }) => {
       <div className="p-4 border-t border-gray-100 dark:border-gray-800">
         <div className={`flex items-center ${isCollapsed ? 'flex-col gap-4' : 'justify-between'} p-2 rounded-2xl bg-gray-50 dark:bg-gray-800/50`}>
           <div className={`flex items-center ${isCollapsed ? 'flex-col text-center' : 'space-x-3'} overflow-hidden`}>
-            <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center text-indigo-600 font-bold shrink-0 overflow-hidden">
+            <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center text-indigo-600 font-bold shrink-0 overflow-hidden relative">
               {user?.profile?.profileImage ? (
                 <img 
-                  src={user.profile.profileImage.startsWith('data:') ? user.profile.profileImage : `http://localhost:5001${user.profile.profileImage}`} 
+                  src={user.profile.profileImage.startsWith('data:') ? user.profile.profileImage : (() => {
+                    let url = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+                    url = url.replace(/\/$/, '');
+                    if (!url.endsWith('/api')) url += '/api';
+                    return `${url.replace('/api', '')}${user.profile.profileImage}`;
+                  })()} 
                   alt="DP" 
                   className="w-full h-full object-cover" 
                 />
               ) : (
-                user?.name?.charAt(0) || 'U'
+                <div className="w-full h-full flex items-center justify-center bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 font-bold">
+                  {user?.name?.charAt(0) || <User size={20} />}
+                </div>
               )}
             </div>
             {!isCollapsed && (

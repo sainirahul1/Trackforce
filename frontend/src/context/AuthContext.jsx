@@ -19,13 +19,23 @@ export const AuthProvider = ({ children }) => {
   const refreshUser = useCallback(async () => {
     try {
       const freshUser = await authService.getMe();
-      setUser(freshUser);
+      if (freshUser) {
+        setUser(freshUser);
+        localStorage.setItem('user', JSON.stringify(freshUser));
+      }
       return freshUser;
     } catch (error) {
       console.error('Failed to refresh user data:', error);
       return null;
     }
   }, []);
+
+  // Sync localStorage when state changes
+  useEffect(() => {
+    if (user) {
+      localStorage.setItem('user', JSON.stringify(user));
+    }
+  }, [user]);
 
   useEffect(() => {
     const initAuth = async () => {

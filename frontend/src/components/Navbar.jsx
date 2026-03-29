@@ -143,10 +143,15 @@ const Navbar = ({ user }) => {
               <p className="text-sm font-black text-gray-900 dark:text-white leading-none group-hover:text-indigo-600 transition-colors">{user?.name || 'Guest'}</p>
               <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mt-1">{user?.role || 'user'}</p>
             </div>
-            <div className={`w-10 h-10 rounded-2xl flex items-center justify-center text-gray-400 dark:text-gray-500 border transition-all duration-300 overflow-hidden ${showProfileDropdown ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 group-hover:border-indigo-500/30'}`}>
+            <div className={`w-10 h-10 rounded-2xl flex items-center justify-center text-gray-400 dark:text-gray-500 border transition-all duration-300 overflow-hidden relative ${showProfileDropdown ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 group-hover:border-indigo-500/30'}`}>
               {user?.profile?.profileImage ? (
                 <img 
-                  src={user.profile.profileImage.startsWith('data:') ? user.profile.profileImage : `http://localhost:5001${user.profile.profileImage}`} 
+                  src={user.profile.profileImage.startsWith('data:') ? user.profile.profileImage : (() => {
+                    let url = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+                    url = url.replace(/\/$/, '');
+                    if (!url.endsWith('/api')) url += '/api';
+                    return `${url.replace('/api', '')}${user.profile.profileImage}`;
+                  })()} 
                   alt="Avatar" 
                   className="w-full h-full object-cover" 
                 />
@@ -159,10 +164,15 @@ const Navbar = ({ user }) => {
           {showProfileDropdown && (
             <div className="absolute right-0 mt-4 w-64 bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 z-50">
               <div className="p-5 border-b border-gray-50 dark:border-gray-800 flex flex-col items-center justify-center text-center">
-                <div className="w-16 h-16 bg-indigo-50 dark:bg-indigo-900/30 rounded-2xl flex items-center justify-center text-indigo-600 mb-3 border border-indigo-100 dark:border-indigo-800/50 shadow-inner overflow-hidden">
+                <div className="w-16 h-16 bg-indigo-50 dark:bg-indigo-900/30 rounded-2xl flex items-center justify-center text-indigo-600 mb-3 border border-indigo-100 dark:border-indigo-800/50 shadow-inner overflow-hidden relative">
                   {user?.profile?.profileImage ? (
                     <img 
-                      src={user.profile.profileImage.startsWith('data:') ? user.profile.profileImage : `http://localhost:5001${user.profile.profileImage}`} 
+                      src={user.profile.profileImage.startsWith('data:') ? user.profile.profileImage : (() => {
+                        let url = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+                        url = url.replace(/\/$/, '');
+                        if (!url.endsWith('/api')) url += '/api';
+                        return `${url.replace('/api', '')}${user.profile.profileImage}`;
+                      })()} 
                       alt="Profile Avatar" 
                       className="w-full h-full object-cover" 
                     />
