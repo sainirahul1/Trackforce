@@ -44,6 +44,30 @@ const superadminService = {
     return response.data;
   },
 
+  // Tenant Users Management
+  getTenantUsers: async (tenantId) => {
+    const response = await axios.get(`${API_URL}/companies/${tenantId}/users`, { headers: getAuthHeader() });
+    return response.data;
+  },
+  createTenantUser: async (tenantId, userData) => {
+    const response = await axios.post(`${API_URL}/companies/${tenantId}/users`, userData, { headers: getAuthHeader() });
+    return response.data;
+  },
+  updateTenantUser: async (tenantId, userId, userData) => {
+    const response = await axios.put(`${API_URL}/companies/${tenantId}/users/${userId}`, userData, { headers: getAuthHeader() });
+    return response.data;
+  },
+  deleteTenantUser: async (tenantId, userId) => {
+    const response = await axios.delete(`${API_URL}/companies/${tenantId}/users/${userId}`, { headers: getAuthHeader() });
+    return response.data;
+  },
+  
+  // Global User Management
+  getGlobalUsersByRole: async (role) => {
+    const response = await axios.get(`${API_URL}/manage/users/${role}`, { headers: getAuthHeader() });
+    return response.data;
+  },
+
   // Subscriptions
   getSubscriptions: async () => {
     const response = await axios.get(`${API_URL}/subscriptions`, { headers: getAuthHeader() });

@@ -97,7 +97,6 @@ exports.provisionTenant = async (req, res) => {
     });
 
     // 2. Create Tenant Admin User (password is auto-hashed by User model's pre-save hook)
-    // Synchronize the subscription object for the tenant admin user
     const adminUser = await User.create({
       name: `${name} Admin`,
       email: adminEmail,
@@ -115,10 +114,38 @@ exports.provisionTenant = async (req, res) => {
       }
     });
 
+    // 3. Create Initial Managers (Optional)
+    const { initialManagers = [], initialEmployees = [] } = req.body;
+    
+    if (initialManagers.length > 0) {
+      const managersToCreate = initialManagers.map(m => ({
+        ...m,
+        role: 'manager',
+        tenant: tenant._id,
+        company: tenant.name,
+        status: 'Active'
+      }));
+      await User.create(managersToCreate);
+    }
+
+    // 4. Create Initial Employees (Optional)
+    if (initialEmployees.length > 0) {
+      const employeesToCreate = initialEmployees.map(e => ({
+        ...e,
+        role: 'employee',
+        tenant: tenant._id,
+        company: tenant.name,
+        status: 'Active'
+      }));
+      await User.create(employeesToCreate);
+    }
+
     res.status(201).json({
-      message: 'Tenant provisioned successfully',
+      message: 'Tenant and initial staff provisioned successfully',
       tenant,
-      adminUser
+      adminUser,
+      managerCount: initialManagers.length,
+      employeeCount: initialEmployees.length
     });
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -258,5 +285,113 @@ exports.deleteTenant = async (req, res) => {
     res.json({ message: 'Tenant and all associated data records deleted successfully' });
   } catch (error) {
     res.status(400).json({ message: error.message });
+  }
+};
+
+// @desc    Get all users for a specific tenant
+// @route   GET /api/superadmin/companies/:id/users
+// @access  Private/SuperAdmin
+exports.getTenantUsers = async (req, res) => {
+  try {
+    const users = await User.find({ tenant: req.params.id }).select('-password').sort({ createdAt: -1 });
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Create a user for a specific tenant
+// @route   POST /api/superadmin/companies/:id/users
+// @access  Private/SuperAdmin
+exports.createTenantUser = async (req, res) => {
+  try {
+    const { name, email, password, role } = req.body;
+    const tenantId = req.params.id;
+
+    // Check if user exists globally
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: 'User with this email already exists' });
+    }
+
+    const tenant = await Tenant.findById(tenantId);
+    if (!tenant) return res.status(404).json({ message: 'Tenant not found' });
+
+    // Check limits if adding employee/manager
+    if (role === 'employee' || role === 'manager') {
+      const activeEmployeeCount = await User.countDocuments({ 
+        tenant: tenantId, 
+        role: { $in: ['employee', 'manager'] },
+        isDeactivated: { $ne: true } 
+      });
+
+      const limit = tenant.subscription?.employeeLimit || 50;
+      if (activeEmployeeCount >= limit) {
+        return res.status(400).json({ message: `Cannot exceed subscription limit of ${limit} users` });
+      }
+    }
+
+    const newUser = await User.create({
+      name,
+      email,
+      password,
+      role: role || 'employee',
+      tenant: tenantId,
+      company: tenant.name,
+      status: 'Active'
+    });
+
+    const userObj = newUser.toObject();
+    delete userObj.password;
+    
+    res.status(201).json(userObj);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Update a specific user of a tenant
+// @route   PUT /api/superadmin/companies/:id/users/:userId
+// @access  Private/SuperAdmin
+exports.updateTenantUser = async (req, res) => {
+  try {
+    const { name, email, role, password, status } = req.body;
+    const user = await User.findOne({ _id: req.params.userId, tenant: req.params.id });
+
+    if (!user) return res.status(404).json({ message: 'User not found in this organization' });
+
+    if (name) user.name = name;
+    if (email) user.email = email;
+    if (role) user.role = role;
+    if (status) user.status = status;
+    
+    if (password && password.trim() !== '') {
+      user.password = password;
+    }
+
+    await user.save();
+    
+    const userObj = user.toObject();
+    delete userObj.password;
+    res.json(userObj);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Delete a specific user of a tenant
+// @route   DELETE /api/superadmin/companies/:id/users/:userId
+// @access  Private/SuperAdmin
+exports.deleteTenantUser = async (req, res) => {
+  try {
+    const user = await User.findOneAndDelete({ _id: req.params.userId, tenant: req.params.id });
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    
+    // Also cleanup notifications for this user
+    await Notification.deleteMany({ recipient: req.params.userId });
+    
+    res.json({ message: 'User deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };

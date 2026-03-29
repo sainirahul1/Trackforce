@@ -89,7 +89,11 @@ exports.getUsersByRole = async (req, res) => {
     };
     const dbRole = roleMap[role.toLowerCase()] || role.toLowerCase();
     
-    const users = await User.find({ role: dbRole }).select('-password').limit(100);
+    const users = await User.find({ role: dbRole })
+      .select('-password')
+      .populate('tenant', 'name domain')
+      .sort({ createdAt: -1 });
+      
     res.json(users);
   } catch (err) {
     res.status(500).json({ message: err.message });

@@ -6,7 +6,11 @@ const {
   updateTenantStatus,
   updateTenant,
   toggleTenantSuspension,
-  deleteTenant
+  deleteTenant,
+  getTenantUsers,
+  createTenantUser,
+  updateTenantUser,
+  deleteTenantUser
 } = require('../../controllers/superadmin/companyController');
 const { protect, admin } = require('../../middleware/authMiddleware');
 
@@ -20,5 +24,11 @@ router.patch('/:id/status', updateTenantStatus);
 router.put('/:id', updateTenant);
 router.patch('/:id/suspend', toggleTenantSuspension);
 router.delete('/:id', deleteTenant);
+
+// Tenant User Management
+router.get('/:id/users', getTenantUsers);
+router.post('/:id/users', createTenantUser);
+router.put('/:id/users/:userId', updateTenantUser);
+router.delete('/:id/users/:userId', deleteTenantUser);
 
 module.exports = router;

@@ -25,15 +25,11 @@ const SuperAdminDashboard = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchDashboardData();
-    // Poll every 5 seconds for real-time data visualization
-    const interval = setInterval(() => {
-      fetchDashboardData();
-    }, 5000);
-    return () => clearInterval(interval);
+    fetchDashboardData(true);
   }, []);
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = async (showLoading = false) => {
+    if (showLoading) setLoading(true);
     try {
       const [stats, growth, comps] = await Promise.all([
         superadminService.getAnalyticsStats(),
@@ -46,7 +42,7 @@ const SuperAdminDashboard = () => {
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
   };
 
