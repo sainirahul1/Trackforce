@@ -46,6 +46,7 @@ import EmployeeVisits from '../pages/employee/Visits';
 import EmployeeOrders from '../pages/employee/Orders';
 import EmployeeActivity from '../pages/employee/Activity';
 import EmployeeTasks from '../pages/employee/Tasks';
+import EmployeeIssues from '../pages/employee/Issues';
 
 // Shared Notifications Page
 import NotificationsPage from '../pages/shared/NotificationsPage';
@@ -115,6 +116,7 @@ const AppRouter = () => (
       <Route path="orders" element={<EmployeeOrders />} />
       <Route path="activity" element={<EmployeeActivity />} />
       <Route path="tasks" element={<EmployeeTasks />} />
+      <Route path="issues" element={<EmployeeIssues />} />
       <Route path="notifications" element={<NotificationsPage />} />
       <Route index element={<Navigate to="dashboard" replace />} />
     </Route>
