@@ -1,6 +1,6 @@
 const User = require('../../models/tenant/User');
 const TrackingSession = require('../../models/employee/TrackingSession');
-const ActivityLog = require('../../models/employee/ActivityLog');
+const { logActivity } = require('../../utils/activityLogger');
 
 // Start tracking (On Duty)
 exports.startTracking = async (req, res) => {
@@ -22,11 +22,13 @@ exports.startTracking = async (req, res) => {
     await session.save();
 
     // Log activity
-    await ActivityLog.create({
-      user: user._id,
-      tenant: req.tenantId,
+    await logActivity({
+      userId: user._id,
+      tenantId: req.tenantId,
       type: 'shift_start',
-      details: 'Started shift / On Duty'
+      title: 'Shift Started',
+      details: 'Employee started shift / On Duty',
+      status: 'success'
     });
 
     res.json({ message: 'Tracking started', session });
@@ -57,12 +59,16 @@ exports.stopTracking = async (req, res) => {
       await session.save();
     }
 
+    await session.save();
+
     // Log activity
-    await ActivityLog.create({
-      user: user._id,
-      tenant: req.tenantId,
+    await logActivity({
+      userId: user._id,
+      tenantId: req.tenantId,
       type: 'shift_end',
-      details: 'Ended shift / Off Duty'
+      title: 'Shift Ended',
+      details: 'Employee ended shift / Off Duty',
+      status: 'warning'
     });
 
     res.json({ message: 'Tracking stopped', session });

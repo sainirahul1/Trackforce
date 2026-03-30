@@ -54,15 +54,30 @@ const Sidebar = ({ role, user, isCollapsed, onToggle }) => {
 
   const currentMenu = menuItems[role] || [];
 
+  const getPortalInfo = () => {
+    switch(role) {
+      case 'superadmin': return { label: 'Admin', color: 'bg-rose-600', text: 'text-rose-600' };
+      case 'tenant': return { label: 'Org', color: 'bg-indigo-600', text: 'text-indigo-600' };
+      case 'manager': return { label: 'Manager', color: 'bg-indigo-600', text: 'text-indigo-600' };
+      case 'employee': return { label: 'Field', color: 'bg-emerald-600', text: 'text-emerald-600' };
+      default: return { label: '', color: 'bg-gray-600', text: 'text-gray-600' };
+    }
+  };
+
+  const portal = getPortalInfo();
+
   return (
     <aside className={`${isCollapsed ? 'w-20' : 'w-64'} h-screen bg-white dark:bg-gray-900 border-r border-gray-100 dark:border-gray-800 flex flex-col fixed left-0 top-0 z-[110] transition-all duration-300 ease-in-out`}>
       <div className={`p-6 flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} border-b border-gray-50 dark:border-gray-800`}>
         {!isCollapsed && (
           <div className="flex items-center gap-2.5 animate-in fade-in duration-300">
-            <div className="w-10 h-10 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-xl rotate-3 shrink-0">
-              <ShieldCheck size={24} />
+            <div className={`w-10 h-10 ${portal.color} rounded-2xl flex items-center justify-center text-white shadow-xl rotate-3 shrink-0`}>
+              {role === 'employee' ? <Map size={24} /> : <ShieldCheck size={24} />}
             </div>
-            <span className="text-[22px] font-black italic tracking-tighter text-gray-900 dark:text-white pt-0.5">TrackForce</span>
+            <div className="flex flex-col">
+              <span className="text-xl font-black italic tracking-tighter text-gray-900 dark:text-white leading-none">TrackForce</span>
+              <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${portal.text} mt-0.5 ml-0.5 opacity-80`}>{portal.label}</span>
+            </div>
           </div>
         )}
         <button
@@ -78,7 +93,7 @@ const Sidebar = ({ role, user, isCollapsed, onToggle }) => {
             key={item.path}
             to={item.path}
             className={({ isActive }) => `flex items-center ${isCollapsed ? 'justify-center' : 'space-x-3 px-4'} py-3 rounded-2xl font-bold text-sm transition-all relative group ${isActive
-              ? 'bg-indigo-50 text-indigo-600 shadow-inner dark:bg-indigo-900/20'
+              ? `${portal.color.replace('bg-', 'bg-').replace('600', '100').replace('rose', 'rose').replace('indigo', 'indigo').replace('emerald', 'emerald')} ${portal.text} shadow-inner dark:bg-opacity-20`
               : 'text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
               }`}
           >

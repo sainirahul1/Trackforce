@@ -1,5 +1,6 @@
 const Order = require('../../models/employee/Order');
 const StoreVisit = require('../../models/employee/StoreVisit');
+const { logActivity } = require('../../utils/activityLogger');
 
 // @desc    Get all orders for the tenant
 // @route   GET /api/orders
@@ -34,6 +35,17 @@ exports.createOrder = async (req, res) => {
     });
 
     res.status(201).json(order);
+
+    // NEW: Log Activity
+    await logActivity({
+      userId: req.user._id,
+      tenantId: req.tenantId,
+      type: 'order_placed',
+      title: 'New Order Placed',
+      details: `Employee placed an order at ${storeName} for ₹${totalAmount}.`,
+      status: 'success',
+      metadata: { orderId: order._id, store: storeName, totalAmount }
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -64,6 +76,19 @@ exports.updateOrder = async (req, res) => {
     await order.save();
 
     res.json(order);
+
+    // NEW: Log Activity for status update
+    if (status) {
+      await logActivity({
+        userId: req.user._id,
+        tenantId: req.tenantId,
+        type: status === 'delivered' ? 'order_delivered' : 'order_updated',
+        title: status === 'delivered' ? 'Order Delivered' : 'Order Status Updated',
+        details: `Order at ${order.storeName} updated to status: ${status}.`,
+        status: status === 'delivered' ? 'success' : 'info',
+        metadata: { orderId: order._id, status }
+      });
+    }
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

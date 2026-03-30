@@ -99,9 +99,8 @@ const CompaniesList = () => {
   const fetchGlobalUsers = async (role) => {
     setLoadingGlobalUsers(true);
     try {
-      // Map globalActiveTab to backend role
-      const dbRole = role === 'tenant admin' ? 'tenant' : role;
-      const data = await superadminService.getGlobalUsersByRole(dbRole);
+      // Direct mapping for backend roles
+      const data = await superadminService.getGlobalUsersByRole(role);
       setGlobalUsers(data);
     } catch (err) {
       console.error('Error fetching global users:', err);
@@ -567,9 +566,8 @@ const CompaniesList = () => {
                 setShowModal(true);
               } else {
                 setEditingUser(null);
-                const entityType = globalActiveTab === 'tenant admin' ? 'tenant' : globalActiveTab;
-                setProvisionEntity(entityType);
-                setUserFormData({ name: '', email: '', password: '', role: entityType, tenantId: '' });
+                setProvisionEntity(globalActiveTab);
+                setUserFormData({ name: '', email: '', password: '', role: globalActiveTab, tenantId: '' });
                 setShowModal(true);
               }
             }}
@@ -577,7 +575,7 @@ const CompaniesList = () => {
             className="flex items-center space-x-2 shadow-xl shadow-indigo-100 dark:shadow-none rounded-2xl py-3 px-6"
           >
             <Plus size={18} />
-            <span className="font-bold capitalize max-w-[150px] truncate">Add</span>
+            <span className="font-bold capitalize max-w-[150px] truncate">Add {globalActiveTab === 'organizations' ? '' : globalActiveTab}</span>
           </Button>
         )}
       </div>
@@ -1074,7 +1072,7 @@ const CompaniesList = () => {
             <div className="flex bg-gray-50 dark:bg-gray-800 p-1 rounded-2xl border border-gray-100 dark:border-gray-700/50 shadow-inner">
               {[
                 { id: 'organizations', label: 'Organizations', icon: Building2 },
-                { id: 'tenant admin', label: 'Managers', icon: ShieldCheck },
+                { id: 'manager', label: 'Managers', icon: ShieldCheck },
                 { id: 'employee', label: 'Employees', icon: Users }
               ].map((tab) => (
                 <button

@@ -1,38 +1,43 @@
 import React, { useState, useEffect } from 'react';
 import { MapPin, ShoppingBag, LogIn, Navigation, Store, Download, Clock, XCircle, Activity, Loader2 } from 'lucide-react';
 import { getActivities } from '../../services/employee/activityService';
+import { useSocket } from '../../context/SocketContext';
+
+const mapActivity = (log) => {
+  const logDate = new Date(log.timestamp || log.createdAt);
+  const isValidDate = !isNaN(logDate.getTime());
+  
+  let icon = Activity;
+  let bg = 'bg-gray-100 text-gray-600';
+  
+  if (log.type.includes('visit')) { icon = Store; bg = 'bg-blue-100 text-blue-600'; }
+  else if (log.type.includes('order')) { icon = ShoppingBag; bg = 'bg-purple-100 text-purple-600'; }
+  else if (log.type.includes('tracking') || log.type.includes('shift')) { icon = Navigation; bg = 'bg-emerald-100 text-emerald-600'; }
+  else if (log.type.includes('login') || log.type.includes('auth')) { icon = LogIn; bg = 'bg-indigo-100 text-indigo-600'; }
+  else if (log.type.includes('task')) { icon = Activity; bg = 'bg-amber-100 text-amber-600'; }
+
+  return {
+    ...log,
+    title: log.title || log.type.replace('_', ' ').toUpperCase(),
+    time: isValidDate ? logDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '---',
+    date: isValidDate ? logDate.toLocaleDateString() : '---',
+    desc: log.details,
+    icon,
+    bg
+  };
+};
 
 const EmployeeActivity = () => {
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showMore, setShowMore] = useState(false);
+  const socket = useSocket();
 
   useEffect(() => {
     const fetchActivities = async () => {
       try {
         const data = await getActivities();
-        const mapped = data.map(log => {
-          const logDate = new Date(log.timestamp || log.createdAt);
-          const isValidDate = !isNaN(logDate.getTime());
-          
-          let icon = Activity;
-          let bg = 'bg-gray-100 text-gray-600';
-          
-          if (log.type.includes('visit')) { icon = Store; bg = 'bg-blue-100 text-blue-600'; }
-          else if (log.type.includes('order')) { icon = ShoppingBag; bg = 'bg-purple-100 text-purple-600'; }
-          else if (log.type.includes('tracking')) { icon = Navigation; bg = 'bg-emerald-100 text-emerald-600'; }
-          else if (log.type.includes('login')) { icon = LogIn; bg = 'bg-indigo-100 text-indigo-600'; }
-
-          return {
-            ...log,
-            title: log.type.replace('_', ' ').toUpperCase(),
-            time: isValidDate ? logDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '---',
-            date: isValidDate ? logDate.toLocaleDateString() : '---',
-            desc: log.details,
-            icon,
-            bg
-          };
-        });
+        const mapped = data.map(mapActivity);
         setActivities(mapped);
       } catch (err) {
         console.error('Error fetching activities:', err);
@@ -42,6 +47,20 @@ const EmployeeActivity = () => {
     };
     fetchActivities();
   }, []);
+
+  // Socket Listener
+  useEffect(() => {
+    if (socket) {
+      const handleNewActivity = (newLog) => {
+        console.log('[SOCKET] New activity received:', newLog);
+        const mapped = mapActivity(newLog);
+        setActivities(prev => [mapped, ...prev]);
+      };
+
+      socket.on('activity:new', handleNewActivity);
+      return () => socket.off('activity:new', handleNewActivity);
+    }
+  }, [socket]);
 
   const displayActivities = showMore ? activities : activities.slice(0, 10);
 

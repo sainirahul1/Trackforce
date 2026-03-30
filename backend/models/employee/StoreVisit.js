@@ -67,5 +67,6 @@ const storeVisitSchema = new mongoose.Schema({
 }, { timestamps: true, collection: 'employee.store_visits' });
 
 storeVisitSchema.index({ tenant: 1, timestamp: -1 });
+storeVisitSchema.index({ employee: 1, createdAt: -1 });
 
 module.exports = mongoose.model('StoreVisit', storeVisitSchema);

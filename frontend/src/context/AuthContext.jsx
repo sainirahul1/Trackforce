@@ -20,8 +20,13 @@ export const AuthProvider = ({ children }) => {
     try {
       const freshUser = await authService.getMe();
       if (freshUser) {
-        setUser(freshUser);
-        localStorage.setItem('user', JSON.stringify(freshUser));
+        // PERF: Maintain the existing token when updating user metadata
+        const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+        const token = currentUser.token || localStorage.getItem('token');
+        
+        const updatedUser = { ...freshUser, token };
+        setUser(updatedUser);
+        localStorage.setItem('user', JSON.stringify(updatedUser));
       }
       return freshUser;
     } catch (error) {
@@ -40,10 +45,21 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const initAuth = async () => {
       const token = localStorage.getItem('token');
-      if (token) {
+      const storedUser = localStorage.getItem('user');
+      
+      if (token && storedUser) {
+        // PERF: Optimistic UI – allow the shell to render with local data
+        setIsLoading(false);
+        // Sync in background silently
+        refreshUser();
+      } else if (token) {
+        // Fallback if user object missing – must wait for refresh
         await refreshUser();
+        setIsLoading(false);
+      } else {
+        // No auth context
+        setIsLoading(false);
       }
-      setIsLoading(false);
     };
     initAuth();
   }, [refreshUser]);

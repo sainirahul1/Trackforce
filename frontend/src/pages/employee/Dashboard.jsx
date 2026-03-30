@@ -52,8 +52,17 @@ const UI_TOKENS = {
  * ProgressRing Component
  * A compact circular progress indicator for key performance metrics.
  */
-const ProgressRing = ({ label, current, target, color }) => {
-  const percentage = Math.min(Math.round((current / target) * 100), 100);
+const ProgressRing = ({ label, current, target, color, loading }) => {
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center text-center animate-pulse p-2">
+        <div className="w-16 h-16 rounded-full bg-gray-200 dark:bg-gray-800 mb-3" />
+        <div className="h-2 w-10 bg-gray-200 dark:bg-gray-800 rounded mb-2" />
+        <div className="h-4 w-12 bg-gray-100 dark:bg-gray-800 rounded-lg" />
+      </div>
+    );
+  }
+  const percentage = Math.min(Math.round((current / (target || 1)) * 100), 100);
   const radius = 22;
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - (percentage / 100) * circumference;
@@ -97,7 +106,19 @@ const ProgressRing = ({ label, current, target, color }) => {
  * RevenueCard Component
  * Displays a weekly revenue visualization inspired by the Orders page.
  */
-const RevenueCard = ({ revenueData }) => {
+const RevenueCard = ({ revenueData, loading }) => {
+  if (loading) {
+    return (
+      <div className="w-full max-w-[320px] aspect-square bg-white dark:bg-slate-900 p-7 rounded-[3rem] shadow-xl border border-gray-100 dark:border-slate-800 animate-pulse">
+        <div className="flex flex-col h-full justify-between items-center">
+            <div className="w-12 h-12 bg-gray-200 dark:bg-gray-800 rounded-2xl mb-4" />
+            <div className="w-24 h-4 bg-gray-200 dark:bg-gray-800 rounded mb-2" />
+            <div className="w-full h-24 bg-gray-100 dark:bg-gray-800/50 rounded-2xl" />
+            <div className="w-20 h-6 bg-gray-200 dark:bg-gray-800 rounded mt-4" />
+        </div>
+      </div>
+    );
+  }
   const weeklyData = revenueData?.weeklyData || [0, 0, 0, 0, 0, 0, 0];
   const totalWeekly = revenueData?.totalWeekly || 0;
 
@@ -180,7 +201,7 @@ const RevenueCard = ({ revenueData }) => {
           <p className="text-xs text-gray-400 font-bold uppercase tracking-[0.25em]">Weekly Growth</p>
         </div>
 
-        <div className="w-full h-28 my-2 group-hover:scale-105 transition-transform duration-700">
+        <div className="w-full h-28 min-h-[112px] my-2 group-hover:scale-105 transition-transform duration-700">
           <Line data={data} options={options} />
         </div>
 
@@ -197,7 +218,19 @@ const RevenueCard = ({ revenueData }) => {
  * CapabilitiesCard Component
  * Displays a radar chart of the employee's "Capabilities and Power".
  */
-const CapabilitiesCard = ({ capabilities }) => {
+const CapabilitiesCard = ({ capabilities, loading }) => {
+  if (loading) {
+    return (
+      <div className="w-full max-w-[320px] aspect-square bg-white dark:bg-slate-900 p-7 rounded-[3rem] shadow-xl border border-gray-100 dark:border-slate-800 animate-pulse">
+        <div className="flex flex-col h-full justify-between items-center">
+            <div className="w-12 h-12 bg-gray-200 dark:bg-gray-800 rounded-2xl mb-4" />
+            <div className="w-24 h-4 bg-gray-200 dark:bg-gray-800 rounded mb-2" />
+            <div className="w-32 h-32 bg-gray-100 dark:bg-gray-800/50 rounded-full" />
+            <div className="w-12 h-1 bg-gray-200 dark:bg-gray-800 rounded mt-4" />
+        </div>
+      </div>
+    );
+  }
   const radarData = (capabilities && capabilities.length === 5) ? capabilities : [0, 0, 0, 0, 0];
 
   const data = {
@@ -264,7 +297,7 @@ const CapabilitiesCard = ({ capabilities }) => {
           <p className="text-xs text-gray-400 font-bold uppercase tracking-[0.25em]">Capabilities</p>
         </div>
 
-        <div className="w-full h-36 my-1 group-hover:scale-105 transition-transform duration-700 relative">
+        <div className="w-full h-36 min-h-[144px] my-1 group-hover:scale-105 transition-transform duration-700 relative">
           <Radar data={data} options={options} />
           {isDataEmpty && (
             <div className="absolute inset-0 flex items-center justify-center bg-white/50 dark:bg-slate-900/50 backdrop-blur-[2px] rounded-full">
@@ -332,10 +365,14 @@ const ActivityItem = ({ activity, isLast }) => (
 // MAIN COMPONENT: EmployeeDashboard
 // =============================================================================
 
+import { useAuth } from '../../context/AuthContext';
 import { getDashboardStats, startTracking, stopTracking } from '../../services/employee/trackingService';
 import { getActivities } from '../../services/employee/activityService';
 
 const EmployeeDashboard = () => {
+  // --- Auth Context ---
+  const { user } = useAuth();
+
   // --- State Hooks ---
   const [isOnDuty, setIsOnDuty] = useState(false);
   const [statsData, setStatsData] = useState({
@@ -346,8 +383,6 @@ const EmployeeDashboard = () => {
   });
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  const user = JSON.parse(localStorage.getItem('user')) || {};
 
   // --- Effects ---
   useEffect(() => {
@@ -398,12 +433,10 @@ const EmployeeDashboard = () => {
 
   // --- Mock Data ---
   const stats = [
-    { label: "Visits", value: statsData?.visitsToday?.toString() || "0", color: 'from-blue-500 to-cyan-400', link: '/employee/visits' },
+    { label: "Visits", value: loading ? '...' : statsData?.visitsToday?.toString() || "0", color: 'from-blue-500 to-cyan-400', link: '/employee/visits' },
     { label: "Duty", value: isOnDuty ? 'ON' : 'OFF', color: 'from-emerald-500 to-teal-400' },
-    { label: "Orders", value: statsData?.ordersToday?.toString() || "0", color: 'from-purple-500 to-indigo-400', link: '/employee/orders' }
+    { label: "Orders", value: loading ? '...' : statsData?.ordersToday?.toString() || "0", color: 'from-purple-500 to-indigo-400', link: '/employee/orders' }
   ];
-
-  if (loading) return <div className="flex items-center justify-center min-h-screen"><Loader2 className="animate-spin text-primary-main" size={48} /></div>;
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-10 px-4 md:px-0">
@@ -440,12 +473,12 @@ const EmployeeDashboard = () => {
                   <CardWrapper
                     key={idx}
                     {...wrapperProps}
-                    className="flex flex-col items-center justify-center p-4 md:p-6 bg-white/10 backdrop-blur-xl rounded-[2rem] border border-white/10 hover:bg-white/20 transition-all duration-300 min-w-[120px] md:min-w-[160px] shadow-lg group relative overflow-hidden cursor-pointer"
+                    className={`flex flex-col items-center justify-center p-4 md:p-6 bg-white/10 backdrop-blur-xl rounded-[2rem] border border-white/10 hover:bg-white/20 transition-all duration-300 min-w-[120px] md:min-w-[160px] shadow-lg group relative overflow-hidden cursor-pointer ${loading ? 'animate-pulse' : ''}`}
                   >
                     <span className="text-[11px] font-black text-white/40 uppercase tracking-[0.2em] mb-2 group-hover:text-white/60 transition-colors">{stat.label}</span>
                     <div className="flex flex-col items-center">
-                      <span className="text-3xl md:text-4xl font-black text-white mb-1">{stat.value}</span>
-                      {stat.trend && (
+                      <span className={`text-3xl md:text-4xl font-black text-white mb-1 ${loading ? 'opacity-20' : ''}`}>{stat.value}</span>
+                      {stat.trend && !loading && (
                         <span className="text-[9px] font-black text-indigo-300 uppercase tracking-wider opacity-80">{stat.trend}</span>
                       )}
                     </div>
@@ -485,15 +518,15 @@ const EmployeeDashboard = () => {
 
       {/* 2. Metrics Row: Revenue, Performance, and Capabilities Cards */}
       <section className="flex flex-col lg:flex-row justify-end items-center gap-6 md:gap-8">
-        <RevenueCard revenueData={statsData.revenueData} />
-        <CapabilitiesCard capabilities={statsData.capabilities} />
+        <RevenueCard revenueData={statsData?.revenueData} loading={loading} />
+        <CapabilitiesCard capabilities={statsData?.capabilities} loading={loading} />
         <Link
           to="/employee/tasks"
-          className="w-full max-w-[320px] aspect-square bg-white dark:bg-slate-900 text-gray-900 dark:text-white p-7 rounded-[3rem] shadow-xl relative overflow-hidden group transition-all duration-700 border border-gray-100 dark:border-slate-800 hover:border-indigo-500/30 block hover:-translate-y-1 active:scale-[0.98]"
+          className={`w-full max-w-[320px] aspect-square bg-white dark:bg-slate-900 text-gray-900 dark:text-white p-7 rounded-[3rem] shadow-xl relative overflow-hidden group transition-all duration-700 border border-gray-100 dark:border-slate-800 hover:border-indigo-500/30 block hover:-translate-y-1 active:scale-[0.98] ${loading ? 'animate-pulse' : ''}`}
         >
           {/* Background Pattern */}
           <div className="absolute inset-0 opacity-[0.05] pointer-events-none" style={{ backgroundImage: 'radial-gradient(#000 1px, transparent 1px)', backgroundSize: '16px 16px' }} />
-          <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/5 rounded-full blur-[60px] -mr-20 -mt-20 pointer-events-none group-hover:scale-125 transition-transform duration-1000" />
+          {!loading && <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/5 rounded-full blur-[60px] -mr-20 -mt-20 pointer-events-none group-hover:scale-125 transition-transform duration-1000" />}
 
           <div className="flex flex-col h-full justify-between items-center relative z-10 text-center">
             <div className="space-y-1.5">
@@ -507,15 +540,17 @@ const EmployeeDashboard = () => {
             <div className="grid grid-cols-2 gap-6 w-full px-2">
               <ProgressRing
                 label="Visits"
-                current={statsData.visitsToday - statsData.tasksToday}
-                target={statsData.visitsToday || 1}
+                current={statsData?.visitsCompleted || 0}
+                target={statsData?.visitsToday || 1}
                 color="text-blue-500"
+                loading={loading}
               />
               <ProgressRing
                 label="Tasks"
-                current={statsData.visitsToday - statsData.tasksToday}
-                target={statsData.visitsToday || 1}
+                current={statsData?.tasksCompleted || 0}
+                target={statsData?.tasksToday || 1}
                 color="text-emerald-500"
+                loading={loading}
               />
             </div>
 
@@ -543,9 +578,13 @@ const EmployeeDashboard = () => {
                 </div>
                 <span className="text-2xl tracking-tighter">Next Target</span>
               </h2>
-              <div className="inline-flex items-center px-4 py-1.5 bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 text-[10px] font-black uppercase tracking-[0.2em] rounded-full border border-rose-100 dark:border-rose-500/20 shadow-sm">
-                {(statsData.nextTarget?.priority || 'Standard').toUpperCase()}
-              </div>
+              {loading ? (
+                 <div className="w-20 h-6 bg-gray-200 dark:bg-gray-800 rounded-full animate-pulse" />
+              ) : (
+                <div className="inline-flex items-center px-4 py-1.5 bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 text-[10px] font-black uppercase tracking-[0.2em] rounded-full border border-rose-100 dark:border-rose-500/20 shadow-sm">
+                  {(statsData?.nextTarget?.priority || 'Standard').toUpperCase()}
+                </div>
+              )}
             </div>
 
             <div className="relative z-10 space-y-8">
@@ -553,26 +592,33 @@ const EmployeeDashboard = () => {
               <div className="flex flex-col md:flex-row gap-8 items-stretch">
                 {/* Address Details */}
                 <div className="flex-1 space-y-6">
-                  <div className="space-y-2">
-                    <h3 className="text-3xl font-black text-gray-900 dark:text-white leading-none tracking-tight group-hover:text-indigo-600 transition-colors">
-                      {statsData.nextTarget?.store || 'No Tasks'}
-                    </h3>
-                    <div className="flex items-center text-gray-500 dark:text-gray-400">
-                      <MapIcon size={16} className="mr-2 text-indigo-500 opacity-70" />
-                      <span className="text-sm font-bold uppercase tracking-widest opacity-80">{statsData.nextTarget?.address || 'N/A'}</span>
+                  {loading ? (
+                    <div className="space-y-4 animate-pulse">
+                      <div className="h-8 w-48 bg-gray-200 dark:bg-gray-800 rounded" />
+                      <div className="h-4 w-32 bg-gray-100 dark:bg-gray-800 rounded" />
                     </div>
-                  </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <h3 className="text-3xl font-black text-gray-900 dark:text-white leading-none tracking-tight group-hover:text-indigo-600 transition-colors">
+                        {statsData?.nextTarget?.store || 'No Tasks'}
+                      </h3>
+                      <div className="flex items-center text-gray-500 dark:text-gray-400">
+                        <MapIcon size={16} className="mr-2 text-indigo-500 opacity-70" />
+                        <span className="text-sm font-bold uppercase tracking-widest opacity-80">{statsData?.nextTarget?.address || 'N/A'}</span>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Dispatch Context */}
                   <div className="flex items-center gap-6 py-4 border-y border-gray-100 dark:border-gray-800/50">
                     <div className="flex flex-col">
                       <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Travel</span>
-                      <span className="text-lg font-black text-slate-800 dark:text-white">{statsData.nextTarget?.travelTime || 'N/A'}</span>
+                      {loading ? <div className="h-6 w-12 bg-gray-100 dark:bg-gray-800 rounded animate-pulse" /> : <span className="text-lg font-black text-slate-800 dark:text-white">{statsData?.nextTarget?.travelTime || 'N/A'}</span>}
                     </div>
                     <div className="w-px h-8 bg-gray-100 dark:bg-gray-800" />
                     <div className="flex flex-col">
                       <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Distance</span>
-                      <span className="text-lg font-black text-slate-800 dark:text-white">{statsData.nextTarget?.distance || 'N/A'}</span>
+                      {loading ? <div className="h-6 w-12 bg-gray-100 dark:bg-gray-800 rounded animate-pulse" /> : <span className="text-lg font-black text-slate-800 dark:text-white">{statsData?.nextTarget?.distance || 'N/A'}</span>}
                     </div>
                   </div>
                 </div>
@@ -614,11 +660,21 @@ const EmployeeDashboard = () => {
 
           {/* Timeline List */}
           <div className="space-y-8 relative z-10 px-1">
-            {activities.length > 0 ? activities.map((activity, i) => (
+            {loading ? (
+              [1, 2, 3].map(i => (
+                <div key={i} className="flex gap-6 animate-pulse">
+                  <div className="w-12 h-12 bg-gray-200 dark:bg-gray-800 rounded-2xl" />
+                  <div className="flex-1 space-y-3 py-1">
+                    <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded w-3/4" />
+                    <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded w-1/2" />
+                  </div>
+                </div>
+              ))
+            ) : activities.length > 0 ? activities.slice(0, 6).map((activity, i, arr) => (
               <ActivityItem
                 key={i}
                 activity={activity}
-                isLast={i === activities.length - 1}
+                isLast={i === arr.length - 1}
               />
             )) : (
               <div className="text-center py-10">

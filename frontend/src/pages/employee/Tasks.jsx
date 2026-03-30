@@ -1533,7 +1533,14 @@ const EmployeeTasks = () => {
                 <div className="absolute inset-0 opacity-20 pointer-events-none" style={{ backgroundImage: 'radial-gradient(#6366F1 1.5px, transparent 1.5px)', backgroundSize: '40px 40px' }} />
 
                 {taskList.map((task) => (
-                  <div key={task._id || task.id} className="absolute transition-all hover:scale-110 cursor-pointer z-10 hover:z-[60] group/marker" style={{ left: `${task.coords.x}%`, top: `${task.coords.y}%` }}>
+                  <div 
+                    key={task._id || task.id} 
+                    className="absolute transition-all hover:scale-110 cursor-pointer z-10 hover:z-[60] group/marker" 
+                    style={{ 
+                      left: `${task.coords?.x || 0}%`, 
+                      top: `${task.coords?.y || 0}%` 
+                    }}
+                  >
                     <div className="relative">
                       {/* Ripple Effect */}
                       <div className={`absolute inset-0 scale-[2.5] opacity-20 animate-ping rounded-full ${task.priority === 'high' ? 'bg-red-500' : 'bg-indigo-500'

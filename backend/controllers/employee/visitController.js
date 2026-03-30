@@ -1,4 +1,5 @@
 const StoreVisit = require('../../models/employee/StoreVisit');
+const { logActivity } = require('../../utils/activityLogger');
 
 // @desc    Get all store visits for the tenant
 // @route   GET /api/visits
@@ -51,11 +52,22 @@ exports.createVisit = async (req, res) => {
   try {
     const visit = await StoreVisit.create({
       employee: req.user._id,
-      tenant: req.tenantId, // Automatically use the tenant ID from middleware
+      tenant: req.tenantId,
       storeName,
       status,
       gps,
       notes,
+    });
+
+    // NEW: Log Activity
+    await logActivity({
+      userId: req.user._id,
+      tenantId: req.tenantId,
+      type: 'visit_end',
+      title: 'Visit Logged',
+      details: `Employee logged a visit at ${storeName} with status: ${status}.`,
+      status: status === 'completed' ? 'success' : 'info',
+      metadata: { visitId: visit._id, store: storeName }
     });
 
     res.status(201).json(visit);
@@ -87,11 +99,20 @@ exports.updateVisit = async (req, res) => {
 
     await visit.save();
 
-    const updatedVisit = await StoreVisit.findById(visit._id)
-      .populate('employee', 'name email')
-      .populate('reviewedBy', 'name');
-
     res.json(updatedVisit);
+
+    // NEW: Log Activity for manager review
+    if (req.body.reviewStatus) {
+      await logActivity({
+        userId: req.user._id,
+        tenantId: req.tenantId,
+        type: 'alert',
+        title: `Visit ${req.body.reviewStatus.toUpperCase()}`,
+        details: `Manager ${req.user.name} ${req.body.reviewStatus} the visit at ${updatedVisit.storeName}.`,
+        status: req.body.reviewStatus === 'accepted' ? 'success' : 'warning',
+        metadata: { visitId: updatedVisit._id, reviewStatus: req.body.reviewStatus }
+      });
+    }
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

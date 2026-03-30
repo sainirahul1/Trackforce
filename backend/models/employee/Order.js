@@ -43,4 +43,7 @@ const orderSchema = new mongoose.Schema({
   },
 }, { timestamps: true, collection: 'employee.orders' });
 
+// Index for dashboard performance
+orderSchema.index({ employee: 1, createdAt: -1 });
+
 module.exports = mongoose.model('Order', orderSchema);

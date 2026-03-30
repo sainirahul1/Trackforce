@@ -36,7 +36,7 @@ exports.getActivities = async (req, res) => {
     const activities = await ActivityLog.find({ tenant: req.tenantId })
       .populate('user', 'name role')
       .sort({ timestamp: -1 })
-      .limit(100);
+      .limit(15);
     res.json(activities);
   } catch (error) {
     res.status(500).json({ message: error.message });

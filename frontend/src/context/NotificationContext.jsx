@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 import notificationService from '../services/core/notificationService';
+import { useSocket } from './SocketContext';
 
 const NotificationContext = createContext();
 
@@ -26,10 +27,17 @@ const getRelativeTime = (date) => {
     return past.toLocaleDateString();
 };
 
+const mapNotification = (n) => ({
+    ...n,
+    id: n._id,
+    time: getRelativeTime(n.createdAt),
+});
+
 export const NotificationProvider = ({ children }) => {
     const [notifications, setNotifications] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
     const pollingRef = useRef(null);
+    const socket = useSocket();
 
     const fetchNotifications = useCallback(async () => {
         const token = localStorage.getItem('token');
@@ -38,11 +46,7 @@ export const NotificationProvider = ({ children }) => {
         try {
             setIsLoading(true);
             const data = await notificationService.getAll();
-            const mapped = data.map(n => ({
-                ...n,
-                id: n._id,
-                time: getRelativeTime(n.createdAt),
-            }));
+            const mapped = data.map(mapNotification);
             setNotifications(mapped);
         } catch (error) {
             console.error('Failed to fetch notifications:', error);
@@ -51,11 +55,33 @@ export const NotificationProvider = ({ children }) => {
         }
     }, []);
 
-    // Fetch on mount, then poll every 60 seconds for new notifications
+    // Socket Listener for Real-time Updates
+    useEffect(() => {
+        if (socket) {
+            const handleNewNotification = (newNotif) => {
+                console.log('[SOCKET] New notification received:', newNotif);
+                const mapped = mapNotification(newNotif);
+                setNotifications(prev => [mapped, ...prev]);
+                
+                // Play notification sound if available
+                try {
+                    const audio = new Audio('/notification-sound.mp3');
+                    audio.play();
+                } catch (e) {
+                    // Silently ignore audio play errors (e.g. browser policy)
+                }
+            };
+
+            socket.on('notification:new', handleNewNotification);
+            return () => socket.off('notification:new', handleNewNotification);
+        }
+    }, [socket]);
+
+    // Fetch on mount, then poll every 5 minutes (reduced frequency due to socket)
     useEffect(() => {
         fetchNotifications();
 
-        pollingRef.current = setInterval(fetchNotifications, 60000);
+        pollingRef.current = setInterval(fetchNotifications, 300000);
 
         return () => {
             if (pollingRef.current) clearInterval(pollingRef.current);

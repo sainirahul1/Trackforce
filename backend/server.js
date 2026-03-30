@@ -1,8 +1,11 @@
 const express = require('express');
+const http = require('http');
+const { Server } = require('socket.io');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const path = require('path');
+const { initLogger } = require('./utils/activityLogger');
 
 dotenv.config({ path: path.join(__dirname, '.env') });
 
@@ -43,6 +46,36 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// Create HTTP server
+const server = http.createServer(app);
+
+// Initialize Socket.io
+const io = new Server(server, {
+  cors: corsOptions
+});
+
+// Socket.io connection logic
+io.on('connection', (socket) => {
+  console.log('[SOCKET] User connected:', socket.id);
+
+  socket.on('join_tenant', (tenantId) => {
+    socket.join(`tenant:${tenantId}`);
+    console.log(`[SOCKET] User ${socket.id} joined tenant room: ${tenantId}`);
+  });
+
+  socket.on('join_user', (userId) => {
+    socket.join(`user:${userId}`);
+    console.log(`[SOCKET] User ${socket.id} joined user room: ${userId}`);
+  });
+
+  socket.on('disconnect', () => {
+    console.log('[SOCKET] User disconnected:', socket.id);
+  });
+});
+
+// Initialize Activity Logger
+initLogger(io);
+
 // Basic Route
 app.get('/', (req, res) => {
   res.send('TrackForce API is running...');
@@ -55,6 +88,7 @@ app.use('/api/visits', require('./routes/employee/visitRoutes'));
 app.use('/api/orders', require('./routes/employee/orderRoutes'));
 app.use('/api/activity', require('./routes/employee/activityRoutes'));
 app.use('/api/tracking', require('./routes/employee/trackingRoutes'));
+app.use('/api/stats', require('./routes/employee/statsRoutes'));
 app.use('/api/notifications', require('./routes/tenant/notificationRoutes'));
 
 app.use('/api/employee', require('./routes/employee/employeeRoutes'));
@@ -79,7 +113,7 @@ mongoose
   .connect(process.env.MONGO_URI)
   .then(() => {
     console.log('MongoDB Connected');
-    app.listen(PORT, () => {
+    server.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
     });
   })

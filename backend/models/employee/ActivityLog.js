@@ -15,8 +15,11 @@ const activityLogSchema = new mongoose.Schema({
     type: String,
     enum: [
       'start_tracking', 'stop_tracking', 
-      'visit_start', 'visit_end', 
-      'order_placed', 'alert', 'route_deviation', 'task_assigned'
+      'shift_start', 'shift_end',
+      'visit_start', 'visit_end', 'visit_missed', 'visit_delayed',
+      'order_placed', 'order_updated', 'order_delivered',
+      'alert', 'route_deviation', 
+      'task_assigned', 'task_started', 'task_completed', 'task_delayed', 'task_followup', 'task_rejected'
     ],
     required: true,
   },
@@ -36,5 +39,10 @@ const activityLogSchema = new mongoose.Schema({
     default: Date.now,
   },
 }, { timestamps: true, collection: 'employee.activity_logs' });
+
+// Indexes for performance
+activityLogSchema.index({ tenant: 1, createdAt: -1 });
+activityLogSchema.index({ user: 1, createdAt: -1 });
+activityLogSchema.index({ type: 1 });
 
 module.exports = mongoose.model('ActivityLog', activityLogSchema);

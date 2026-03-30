@@ -1,9 +1,9 @@
 const User = require('../../models/tenant/User');
 const jwt = require('jsonwebtoken');
 
-// Generate JWT
-const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
+// Generate JWT with metadata to reduce middleware DB hits
+const generateToken = (id, role, tenant) => {
+  return jwt.sign({ id, role, tenant }, process.env.JWT_SECRET, {
     expiresIn: '30d',
   });
 };
@@ -52,7 +52,7 @@ exports.register = async (req, res) => {
         tenantStatus: populatedUser.tenant?.onboardingStatus || 'active',
         isDeactivated: user.isDeactivated,
         profile: user.profile || {},
-        token: generateToken(user._id),
+        token: generateToken(user._id, user.role, user.tenant),
       });
     } else {
       res.status(400).json({ message: 'Invalid user data' });
@@ -92,10 +92,12 @@ exports.login = async (req, res) => {
   const normalizedEmail = email.toLowerCase();
 
   try {
-    const user = await User.findOne({ email: normalizedEmail });
+    // EXCLUDE large profile image from initial login fetch to speed up auth
+    const user = await User.findOne({ email: normalizedEmail })
+      .select('-profile.profileImage')
+      .populate('tenant');
 
     if (user && (await user.matchPassword(password))) {
-      const populatedUser = await User.findById(user._id).populate('tenant');
       res.json({
         _id: user._id,
         name: user.name,
@@ -103,10 +105,10 @@ exports.login = async (req, res) => {
         company: user.company,
         role: user.role,
         tenant: user.tenant,
-        tenantStatus: populatedUser.tenant?.onboardingStatus || 'active',
+        tenantStatus: user.tenant?.onboardingStatus || 'active',
         isDeactivated: user.isDeactivated,
         profile: user.profile || {},
-        token: generateToken(user._id),
+        token: generateToken(user._id, user.role, user.tenant?._id || user.tenant),
       });
     } else {
       res.status(401).json({ message: 'Invalid email or password' });

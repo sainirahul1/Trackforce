@@ -1,5 +1,6 @@
 const Task = require('../../models/employee/Task');
 const StoreVisit = require('../../models/employee/StoreVisit');
+const { logActivity } = require('../../utils/activityLogger');
 
 exports.getTasks = async (req, res) => {
   try {
@@ -74,6 +75,20 @@ exports.createTask = async (req, res) => {
 
     const task = await Task.create(taskData);
     const populatedTask = await Task.findById(task._id).populate('employee', 'name email');
+
+    // NEW: Log Activity & Notify Employee
+    await logActivity({
+      userId: taskData.employee,
+      tenantId: taskData.tenant,
+      type: 'task_assigned',
+      title: 'New Mission Assigned',
+      details: `Project "${taskData.title}" assigned to you at ${taskData.store}.`,
+      status: taskData.priority === 'high' ? 'urgent' : 'info',
+      metadata: { taskId: task._id, store: taskData.store },
+      notify: true,
+      priority: taskData.priority === 'high' ? 'high' : 'medium'
+    });
+
     res.status(201).json(populatedTask);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -136,9 +151,56 @@ exports.updateTask = async (req, res) => {
 
       console.log(`[WORKFLOW] Created StoreVisit (${visitStatus}) for task: ${updatedTask.title}`);
 
-      // Mark the original task as completed because the visit attempt was finalized
-      await Task.findByIdAndUpdate(updatedTask._id, { status: 'completed' });
+    // Mark the original task as completed because the visit attempt was finalized
+    await Task.findByIdAndUpdate(updatedTask._id, { status: 'completed' });
+
+    // NEW: Log Activity for completion/terminal states
+    let activityType = 'task_completed';
+    let activityStatus = 'success';
+    let activityTitle = 'Mission Finalized';
+    
+    if (req.body.missionStatus === 'Follow Up') {
+      activityType = 'task_followup';
+      activityStatus = 'info';
+      activityTitle = 'Follow-up Scheduled';
+    } else if (req.body.missionStatus === 'Rejected') {
+      activityType = 'task_rejected';
+      activityStatus = 'warning';
+      activityTitle = 'Mission Rejected';
     }
+
+    await logActivity({
+      userId: req.user._id,
+      tenantId: req.tenantId,
+      type: activityType,
+      title: activityTitle,
+      details: `Employee finalized mission "${updatedTask.title}" at ${updatedTask.store} with status: ${req.body.missionStatus}.`,
+      status: activityStatus,
+      metadata: { taskId: updatedTask._id, missionStatus: req.body.missionStatus }
+    });
+  } else if (req.body.isTaskStarted && !task.isTaskStarted) {
+    // NEW: Log task start
+    await logActivity({
+      userId: req.user._id,
+      tenantId: req.tenantId,
+      type: 'task_started',
+      title: 'Mission Started',
+      details: `Employee started mission "${updatedTask.title}" at ${updatedTask.store}.`,
+      status: 'success',
+      metadata: { taskId: updatedTask._id }
+    });
+  } else if (req.body.status === 'delayed' && task.status !== 'delayed') {
+    // NEW: Log delay
+    await logActivity({
+      userId: req.user._id,
+      tenantId: req.tenantId,
+      type: 'task_delayed',
+      title: 'Mission Delayed',
+      details: `Mission "${updatedTask.title}" at ${updatedTask.store} has been marked as delayed.`,
+      status: 'warning',
+      metadata: { taskId: updatedTask._id }
+    });
+  }
 
     // Return the updated task with populated employee name
     const populatedTask = await Task.findById(updatedTask._id).populate('employee', 'name email');

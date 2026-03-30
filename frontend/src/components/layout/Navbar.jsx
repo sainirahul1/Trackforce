@@ -1,4 +1,4 @@
-import { Bell, Search, User, CheckCircle2, Info, ChevronRight, AlertCircle, AlertTriangle, CheckCheck, X, Settings, LogOut, Trash2 } from 'lucide-react';
+import { Bell, Search, User, CheckCircle2, Info, ChevronRight, AlertCircle, AlertTriangle, CheckCheck, X, Settings, LogOut, Trash2, Map } from 'lucide-react';
 import ThemeToggle from '../ui/ThemeToggle';
 import { useNotifications } from '../../context/NotificationContext';
 import { useState } from 'react';
@@ -27,6 +27,18 @@ const Navbar = ({ user }) => {
 
   const role = user?.role || localStorage.getItem('role') || 'employee';
 
+  const getPortalConfig = () => {
+    switch (role) {
+      case 'superadmin': return { label: 'Platform Admin', accent: 'text-rose-600', bg: 'bg-rose-50' };
+      case 'tenant': return { label: 'Organization Control', accent: 'text-indigo-600', bg: 'bg-indigo-50' };
+      case 'manager': return { label: 'Management Portal', accent: 'text-indigo-600', bg: 'bg-indigo-50' };
+      case 'employee': return { label: 'Field Executive Portal', accent: 'text-emerald-600', bg: 'bg-emerald-50' };
+      default: return { label: 'Portal', accent: 'text-gray-600', bg: 'bg-gray-50' };
+    }
+  };
+
+  const portal = getPortalConfig();
+
   const handleViewAll = () => {
     setShowNotifications(false);
     navigate(`/${role}/notifications`);
@@ -34,12 +46,50 @@ const Navbar = ({ user }) => {
 
   return (
     <nav className="h-20 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-100 dark:border-gray-800 flex items-center justify-between px-8 sticky top-0 z-[100] transition-colors duration-300">
-      <div className="w-96 relative">
-        {/* <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500" size={18} /> */}
-        {/* <input type="text" placeholder="Quick search..." className="w-full pl-10 pr-4 py-2.5 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-main/10 outline-none" /> */}
+      <div className="flex items-center gap-4">
+        <div className={`px-4 py-1.5 rounded-full ${portal.bg} dark:bg-opacity-10 border border-gray-100 dark:border-gray-800`}>
+          <span className={`text-[10px] font-black uppercase tracking-widest ${portal.accent}`}>
+            {portal.label}
+          </span>
+        </div>
+        <div className="h-4 w-[1px] bg-gray-200 dark:bg-gray-800 hidden md:block" />
+        <div className="hidden lg:flex items-center gap-2 text-gray-400">
+          <span className="text-xs font-bold tracking-tight">TrackForce</span>
+          <ChevronRight size={14} />
+          <span className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-tighter italic">
+            {role === 'employee' ? 'Mission Control' : 'Operations'}
+          </span>
+        </div>
       </div>
 
       <div className="flex items-center space-x-6 relative">
+        {/* Context Stats / Individual Data */}
+        <div className="hidden xl:flex items-center gap-6 px-6 border-x border-gray-100 dark:border-gray-800">
+          {role === 'manager' && (
+            <div className="flex items-center gap-4 animate-in fade-in slide-in-from-right-4 duration-500">
+              <div className="flex flex-col items-end">
+                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Team Health</span>
+                <span className="text-xs font-bold text-gray-900 dark:text-white">4 Executive Active</span>
+              </div>
+              <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600">
+                <CheckCircle2 size={16} />
+              </div>
+            </div>
+          )}
+
+          {role === 'employee' && (
+            <div className="flex items-center gap-4 animate-in fade-in slide-in-from-right-4 duration-500">
+              <div className="flex flex-col items-end">
+                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Daily Goal</span>
+                <span className="text-xs font-bold text-gray-900 dark:text-white truncate max-w-[120px]">Visit 4/6 Stores</span>
+              </div>
+              <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600">
+                <Map size={16} />
+              </div>
+            </div>
+          )}
+        </div>
+
         <ThemeToggle />
 
         {/* Bell / Notifications */}
