@@ -395,3 +395,42 @@ exports.deleteTenantUser = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+// @desc    Impersonate tenant admin (login as tenant without credentials)
+// @route   POST /api/superadmin/companies/:id/impersonate
+// @access  Private/SuperAdmin
+exports.impersonateTenant = async (req, res) => {
+  const jwt = require('jsonwebtoken');
+
+  try {
+    const tenantId = req.params.id;
+
+    // Find the tenant
+    const tenant = await Tenant.findById(tenantId);
+    if (!tenant) return res.status(404).json({ message: 'Tenant not found' });
+
+    // Find the tenant admin user
+    const tenantAdmin = await User.findOne({ tenant: tenantId, role: 'tenant' }).populate('tenant');
+    if (!tenantAdmin) {
+      return res.status(404).json({ message: 'No tenant admin found for this organization' });
+    }
+
+    // Generate a token for the tenant admin
+    const token = jwt.sign({ id: tenantAdmin._id }, process.env.JWT_SECRET, { expiresIn: '30d' });
+
+    res.json({
+      _id: tenantAdmin._id,
+      name: tenantAdmin.name,
+      email: tenantAdmin.email,
+      company: tenantAdmin.company,
+      role: tenantAdmin.role,
+      tenant: tenantAdmin.tenant?._id || tenantAdmin.tenant,
+      tenantStatus: tenant.onboardingStatus || 'active',
+      isDeactivated: tenantAdmin.isDeactivated,
+      profile: tenantAdmin.profile || {},
+      token,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};

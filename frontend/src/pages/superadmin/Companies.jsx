@@ -4,6 +4,7 @@ import DataTable from '../../components/ui/DataTable';
 import Skeleton from '../../components/ui/Skeleton';
 import Button from '../../components/ui/Button';
 import superadminService from '../../services/superadmin/superadminService';
+import { useAuth } from '../../context/AuthContext';
 import {
   Plus,
   Search,
@@ -23,11 +24,14 @@ import {
   Edit,
   Trash2,
   UserPlus,
-  ChevronRight
+  ChevronRight,
+  ExternalLink
 } from 'lucide-react';
 
 const CompaniesList = () => {
   const navigate = useNavigate();
+  const { login: globalLogin } = useAuth();
+  const [impersonating, setImpersonating] = useState(null); // tenantId being impersonated
   const [companies, setCompanies] = useState([]);
   const [subscriptions, setSubscriptions] = useState([]);
   const [backendStats, setBackendStats] = useState(null);
@@ -142,6 +146,30 @@ const CompaniesList = () => {
       } catch (error) {
         console.error('Error deleting tenant:', error);
       }
+    }
+  };
+
+  const handleImpersonate = async (tenantId, tenantName) => {
+    setImpersonating(tenantId);
+    
+    try {
+      const data = await superadminService.impersonateTenant(tenantId);
+
+      // Write tenant credentials, then redirect in the current tab
+      const tenantUrl = new URL(window.location.href);
+      tenantUrl.pathname = '/tenant/dashboard';
+      tenantUrl.search   = '';
+
+      // Encode the impersonation payload in the URL so the tab can bootstrap itself
+      const payload = encodeURIComponent(JSON.stringify(data));
+      tenantUrl.searchParams.set('impersonate', payload);
+
+      // Navigation in current tab
+      window.location.href = tenantUrl.toString();
+    } catch (error) {
+      alert(error.response?.data?.message || 'Failed to impersonate tenant. Make sure the tenant has an admin user.');
+    } finally {
+      setImpersonating(null);
     }
   };
 
@@ -486,14 +514,27 @@ const CompaniesList = () => {
       header: 'Actions',
       accessor: 'id',
       render: (row) => {
+        const isLoading = impersonating === row._id;
         return (
           <div className="flex items-center space-x-1">
+            {/* Login As Tenant button */}
             <button
-              onClick={(e) => { e.stopPropagation(); navigate('/superadmin/analytics'); }}
-              className="p-2 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-xl text-gray-400 hover:text-indigo-600 transition-all flex items-center justify-center"
-              title="Analytics"
+              onClick={(e) => { e.stopPropagation(); handleImpersonate(row._id, row.name); }}
+              disabled={isLoading}
+              className="relative p-2 hover:bg-violet-50 dark:hover:bg-violet-900/20 rounded-xl text-gray-400 hover:text-violet-600 transition-all flex items-center justify-center disabled:opacity-50 disabled:cursor-wait group"
+              title={`Login as ${row.name} Admin`}
             >
-
+              {isLoading ? (
+                <svg className="animate-spin" width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
+                  <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                </svg>
+              ) : (
+                <ExternalLink size={16} />
+              )}
+              {/* Tooltip */}
+              <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-[9px] font-black uppercase tracking-wider px-2 py-1 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                Login As
+              </span>
             </button>
             <button
               onClick={(e) => {

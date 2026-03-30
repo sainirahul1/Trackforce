@@ -8,7 +8,7 @@ const getBaseUrl = () => {
 const BASE_URL = `${getBaseUrl()}/notifications`;
 
 const getHeaders = () => {
-  const token = localStorage.getItem('token');
+  const token = sessionStorage.getItem('token') || localStorage.getItem('token');
   return {
     'Content-Type': 'application/json',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
