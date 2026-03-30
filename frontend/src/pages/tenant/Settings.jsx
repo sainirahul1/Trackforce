@@ -177,11 +177,10 @@ const Settings = () => {
     <div className="max-w-4xl mx-auto space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-16 relative">
       {/* Custom Toast Notification */}
       {toast.show && (
-        <div className={`fixed top-10 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 px-6 py-4 rounded-2xl shadow-2xl animate-in slide-in-from-top-10 duration-300 ${
-          toast.type === 'success' 
-            ? 'bg-emerald-600 text-white' 
+        <div className={`fixed top-10 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 px-6 py-4 rounded-2xl shadow-2xl animate-in slide-in-from-top-10 duration-300 ${toast.type === 'success'
+            ? 'bg-emerald-600 text-white'
             : 'bg-red-600 text-white'
-        }`}>
+          }`}>
           <div className="w-6 h-6 bg-white/20 rounded-lg flex items-center justify-center">
             {toast.type === 'success' ? <Save size={14} /> : <Lock size={14} />}
           </div>
@@ -206,17 +205,17 @@ const Settings = () => {
               <p className="text-sm text-gray-500 dark:text-gray-400">Configure your company profile and basic information.</p>
             </div>
           </div>
-          
+
           <div className="space-y-6">
             <div className="flex items-center gap-6">
-              <input 
-                type="file" 
-                ref={fileInputRef} 
-                className="hidden" 
+              <input
+                type="file"
+                ref={fileInputRef}
+                className="hidden"
                 accept="image/*"
-                onChange={handleLogoUpload} 
+                onChange={handleLogoUpload}
               />
-              <div 
+              <div
                 onClick={() => fileInputRef.current?.click()}
                 className="w-24 h-24 rounded-3xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center relative group cursor-pointer border-2 border-dashed border-gray-300 dark:border-gray-700 hover:border-indigo-500 transition-colors overflow-hidden"
               >
@@ -236,35 +235,35 @@ const Settings = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-gray-50 dark:border-gray-800">
               <div className="space-y-2">
                 <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Company Name</label>
-                <input 
-                  type="text" 
-                  value={generalInfo.companyName} 
+                <input
+                  type="text"
+                  value={generalInfo.companyName}
                   onChange={(e) => setGeneralInfo({ ...generalInfo, companyName: e.target.value })}
                   className="w-full p-4 bg-gray-50 dark:bg-gray-800/50 border-none rounded-2xl font-bold text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-600 transition-all"
                 />
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Official Email</label>
-                <input 
-                  type="email" 
-                  value={generalInfo.officialEmail} 
+                <input
+                  type="email"
+                  value={generalInfo.officialEmail}
                   onChange={(e) => setGeneralInfo({ ...generalInfo, officialEmail: e.target.value })}
                   className="w-full p-4 bg-gray-50 dark:bg-gray-800/50 border-none rounded-2xl font-bold text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-600 transition-all"
                 />
               </div>
               <div className="md:col-span-2 space-y-2">
                 <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">HQ Address</label>
-                <textarea 
+                <textarea
                   rows="3"
-                  value={generalInfo.hqAddress} 
+                  value={generalInfo.hqAddress}
                   onChange={(e) => setGeneralInfo({ ...generalInfo, hqAddress: e.target.value })}
                   className="w-full p-4 bg-gray-50 dark:bg-gray-800/50 border-none rounded-2xl font-bold text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-600 transition-all resize-none"
                 />
               </div>
             </div>
-            
+
             <div className="flex justify-end pt-4">
-              <button 
+              <button
                 onClick={handleSaveGeneralInfo}
                 disabled={loading}
                 className="flex items-center gap-2 px-6 py-3 bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-black rounded-2xl hover:bg-gray-800 dark:hover:bg-gray-100 transition-all text-sm shadow-xl dark:shadow-none disabled:opacity-50"
@@ -288,74 +287,74 @@ const Settings = () => {
           </div>
 
           <div className="space-y-6">
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-6 border-b border-gray-50 dark:border-gray-800">
-               <div className="space-y-2">
-                  <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Current Password</label>
-                  <div className="relative">
-                    <input 
-                      type={showPasswords.current ? 'text' : 'password'} 
-                      value={passwordData.currentPassword}
-                      onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
-                      placeholder="Enter current password"
-                      autoComplete="off"
-                      className="w-full p-4 bg-gray-50 dark:bg-gray-800/50 border-none rounded-2xl font-bold text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 transition-all pr-12"
-                    />
-                    <button 
-                      type="button"
-                      onClick={() => setShowPasswords({ ...showPasswords, current: !showPasswords.current })}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500 transition-colors"
-                    >
-                      {showPasswords.current ? <EyeOff size={20} /> : <Eye size={20} />}
-                    </button>
-                  </div>
-               </div>
-             </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-6 border-b border-gray-50 dark:border-gray-800">
+              <div className="space-y-2">
+                <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Current Password</label>
+                <div className="relative">
+                  <input
+                    type={showPasswords.current ? 'text' : 'password'}
+                    value={passwordData.currentPassword}
+                    onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
+                    placeholder="Enter current password"
+                    autoComplete="off"
+                    className="w-full p-4 bg-gray-50 dark:bg-gray-800/50 border-none rounded-2xl font-bold text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 transition-all pr-12"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPasswords({ ...showPasswords, current: !showPasswords.current })}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500 transition-colors"
+                  >
+                    {showPasswords.current ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </button>
+                </div>
+              </div>
+            </div>
 
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
-                <div className="space-y-2">
-                  <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">New Password</label>
-                  <div className="relative">
-                    <input 
-                      type={showPasswords.new ? 'text' : 'password'} 
-                      value={passwordData.newPassword}
-                      onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
-                      placeholder="Create new password"
-                      autoComplete="new-password"
-                      className="w-full p-4 bg-gray-50 dark:bg-gray-800/50 border-none rounded-2xl font-bold text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 transition-all pr-12"
-                    />
-                    <button 
-                      type="button"
-                      onClick={() => setShowPasswords({ ...showPasswords, new: !showPasswords.new })}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500 transition-colors"
-                    >
-                      {showPasswords.new ? <EyeOff size={20} /> : <Eye size={20} />}
-                    </button>
-                  </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+              <div className="space-y-2">
+                <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">New Password</label>
+                <div className="relative">
+                  <input
+                    type={showPasswords.new ? 'text' : 'password'}
+                    value={passwordData.newPassword}
+                    onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                    placeholder="Create new password"
+                    autoComplete="new-password"
+                    className="w-full p-4 bg-gray-50 dark:bg-gray-800/50 border-none rounded-2xl font-bold text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 transition-all pr-12"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPasswords({ ...showPasswords, new: !showPasswords.new })}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500 transition-colors"
+                  >
+                    {showPasswords.new ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </button>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Confirm Password</label>
-                  <div className="relative">
-                    <input 
-                      type={showPasswords.confirm ? 'text' : 'password'} 
-                      value={passwordData.confirmPassword}
-                      onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
-                      placeholder="Confirm new password"
-                      autoComplete="new-password"
-                      className="w-full p-4 bg-gray-50 dark:bg-gray-800/50 border-none rounded-2xl font-bold text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 transition-all pr-12"
-                    />
-                    <button 
-                      type="button"
-                      onClick={() => setShowPasswords({ ...showPasswords, confirm: !showPasswords.confirm })}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500 transition-colors"
-                    >
-                      {showPasswords.confirm ? <EyeOff size={20} /> : <Eye size={20} />}
-                    </button>
-                  </div>
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Confirm Password</label>
+                <div className="relative">
+                  <input
+                    type={showPasswords.confirm ? 'text' : 'password'}
+                    value={passwordData.confirmPassword}
+                    onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                    placeholder="Confirm new password"
+                    autoComplete="new-password"
+                    className="w-full p-4 bg-gray-50 dark:bg-gray-800/50 border-none rounded-2xl font-bold text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 transition-all pr-12"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPasswords({ ...showPasswords, confirm: !showPasswords.confirm })}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500 transition-colors"
+                  >
+                    {showPasswords.confirm ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </button>
                 </div>
-             </div>
-             
-             <div className="flex justify-end pt-4">
-              <button 
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-4">
+              <button
                 onClick={handleUpdatePassword}
                 disabled={loading}
                 className="flex items-center gap-2 px-6 py-3 bg-red-600 text-white font-black rounded-2xl hover:bg-red-700 transition-all text-sm shadow-xl shadow-red-200 dark:shadow-none disabled:opacity-50"
@@ -381,7 +380,7 @@ const Settings = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Timezone</label>
-              <select 
+              <select
                 value={localization.timezone}
                 onChange={(e) => setLocalization({ ...localization, timezone: e.target.value })}
                 className="w-full p-4 bg-gray-50 dark:bg-gray-800/50 border-none rounded-2xl font-bold text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 transition-all appearance-none cursor-pointer"
@@ -395,7 +394,7 @@ const Settings = () => {
             </div>
             <div className="space-y-2">
               <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Language</label>
-              <select 
+              <select
                 value={localization.language}
                 onChange={(e) => setLocalization({ ...localization, language: e.target.value })}
                 className="w-full p-4 bg-gray-50 dark:bg-gray-800/50 border-none rounded-2xl font-bold text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 transition-all appearance-none cursor-pointer"
@@ -406,13 +405,13 @@ const Settings = () => {
               </select>
             </div>
           </div>
-          
+
           <div className="flex justify-end pt-8">
-             <button 
+            <button
               onClick={handleSaveLocalization}
               disabled={loading}
               className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-black rounded-2xl hover:bg-blue-700 transition-all text-sm shadow-xl shadow-blue-200 dark:shadow-none disabled:opacity-50"
-             >
+            >
               <Save size={16} /> {loading ? 'Saving...' : 'Save Localization'}
             </button>
           </div>
@@ -429,50 +428,50 @@ const Settings = () => {
               <p className="text-sm text-gray-500 dark:text-gray-400">Manage account status, feature flags, and data exports.</p>
             </div>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-6 border-b border-gray-50 dark:border-gray-800">
-             <div className="space-y-4 p-6 bg-gray-50 dark:bg-gray-800/50 rounded-3xl border border-transparent hover:border-indigo-200 transition-colors">
-               <div className="flex items-center gap-4">
-                 <div className="p-3 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 rounded-xl">
-                    <Activity size={20} />
-                 </div>
-                 <div>
-                   <h3 className="font-bold text-gray-900 dark:text-white">Active Sessions</h3>
-                   <p className="text-xs text-gray-500">Manage devices logged into your account.</p>
-                 </div>
-               </div>
-                <button 
-                  onClick={handleSignOutManagers}
-                  disabled={loading}
-                  className="w-full py-3 bg-white dark:bg-gray-800 text-indigo-600 font-bold rounded-2xl border border-indigo-100 dark:border-indigo-800 shadow-sm hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all disabled:opacity-50"
-                >
-                  {loading ? 'Processing...' : 'Sign Out All Managers'}
-                </button>
-             </div>
-             
-             <div className="space-y-4 p-6 bg-gray-50 dark:bg-gray-800/50 rounded-3xl border border-transparent hover:border-emerald-200 transition-colors">
-               <div className="flex items-center gap-4">
-                 <div className="p-3 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 rounded-xl">
-                    <Download size={20} />
-                 </div>
-                 <div>
-                   <h3 className="font-bold text-gray-900 dark:text-white">Data Export</h3>
-                   <p className="text-xs text-gray-500">Download a complete backup of workspace data.</p>
-                 </div>
-               </div>
-               <button 
+            <div className="space-y-4 p-6 bg-gray-50 dark:bg-gray-800/50 rounded-3xl border border-transparent hover:border-indigo-200 transition-colors">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 rounded-xl">
+                  <Activity size={20} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-gray-900 dark:text-white">Active Sessions</h3>
+                  <p className="text-xs text-gray-500">Manage devices logged into your account.</p>
+                </div>
+              </div>
+              <button
+                onClick={handleSignOutManagers}
+                disabled={loading}
+                className="w-full py-3 bg-white dark:bg-gray-800 text-indigo-600 font-bold rounded-2xl border border-indigo-100 dark:border-indigo-800 shadow-sm hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all disabled:opacity-50"
+              >
+                {loading ? 'Processing...' : 'Sign Out All Managers'}
+              </button>
+            </div>
+
+            <div className="space-y-4 p-6 bg-gray-50 dark:bg-gray-800/50 rounded-3xl border border-transparent hover:border-emerald-200 transition-colors">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 rounded-xl">
+                  <Download size={20} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-gray-900 dark:text-white">Data Export</h3>
+                  <p className="text-xs text-gray-500">Download a complete backup of workspace data.</p>
+                </div>
+              </div>
+              <button
                 onClick={handleDataExport}
                 className="w-full py-3 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 font-bold rounded-2xl border border-transparent shadow-sm hover:bg-emerald-600 hover:text-white transition-all"
-               >
+              >
                 Request Data Export
-               </button>
-             </div>
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-6 border-b border-gray-50 dark:border-gray-800">
             <div className="space-y-2">
               <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Account Status</label>
-              <select 
+              <select
                 value={accountPrefs.status}
                 onChange={(e) => setAccountPrefs({ ...accountPrefs, status: e.target.value })}
                 className="w-full p-4 bg-gray-50 dark:bg-gray-800/50 border-none rounded-2xl font-bold text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 transition-all appearance-none cursor-pointer"
@@ -486,7 +485,7 @@ const Settings = () => {
               <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Available Feature Flags</label>
               <div className="flex flex-wrap gap-2 pt-1">
                 {['API Access', 'Beta Features', 'Premium Support', 'Multi-region'].map(flag => (
-                  <button 
+                  <button
                     key={flag}
                     onClick={() => {
                       const flags = accountPrefs.featureFlags.includes(flag)
@@ -494,11 +493,10 @@ const Settings = () => {
                         : [...accountPrefs.featureFlags, flag];
                       setAccountPrefs({ ...accountPrefs, featureFlags: flags });
                     }}
-                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-                      accountPrefs.featureFlags.includes(flag)
+                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${accountPrefs.featureFlags.includes(flag)
                         ? 'bg-emerald-600 text-white'
                         : 'bg-gray-100 dark:bg-gray-800 text-gray-400'
-                    }`}
+                      }`}
                   >
                     {flag}
                   </button>
@@ -508,13 +506,13 @@ const Settings = () => {
           </div>
 
           <div className="flex justify-end pt-6">
-             <button 
+            <button
               onClick={handleSaveAccountPrefs}
               disabled={loading}
               className="flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white font-black rounded-2xl hover:bg-emerald-700 transition-all text-sm shadow-xl shadow-emerald-200 dark:shadow-none disabled:opacity-50"
-             >
+            >
               <Save size={16} /> {loading ? 'Saving...' : 'Save Account Preferences'}
-             </button>
+            </button>
           </div>
         </section>
 

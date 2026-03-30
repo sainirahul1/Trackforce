@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import { MapPin, Navigation, Clock, CheckCircle2, ChevronRight, Calendar, AlertCircle, Phone, Image as ImageIcon, Camera, Map, X, Users, Store, FileText, MessageSquare } from 'lucide-react';
 import Button from '../../components/ui/Button';
 
 import { getVisits, getVisitById } from '../../services/employee/visitService';
 
 const EmployeeVisits = () => {
+  const { setPageLoading } = useOutletContext();
   const [selectedVisit, setSelectedVisit] = useState(null);
   const [selectedVisitLoading, setSelectedVisitLoading] = useState(false);
   const [filterStatus, setFilterStatus] = useState('All');
@@ -47,6 +49,7 @@ const EmployeeVisits = () => {
         console.error('Error fetching visits:', err);
       } finally {
         setLoading(false);
+        if (setPageLoading) setPageLoading(false);
       }
     };
     fetchVisits();

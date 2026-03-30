@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useOutletContext } from 'react-router-dom';
 import DataTable from '../../components/ui/DataTable';
 import tenantService from '../../services/core/tenantService';
 import { getVisits } from '../../services/employee/visitService';
@@ -232,6 +232,7 @@ const TeamPrintLayout = ({ stats, members }) => (
 );
 
 const ManagerTeam = () => {
+  const { setPageLoading } = useOutletContext();
   const [teamMembers, setTeamMembers] = useState([]);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [activeTab, setActiveTab] = useState('overview');
@@ -426,7 +427,10 @@ const ManagerTeam = () => {
       } catch (err) {
         console.error('Failed to load team data:', err);
       } finally {
-        if (active) setLoading(false);
+        if (active) {
+          setLoading(false);
+          if (setPageLoading) setPageLoading(false);
+        }
       }
     };
     fetchData();

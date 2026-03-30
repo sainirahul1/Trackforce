@@ -1,10 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import { User, Mail, Phone, MapPin, Building, ShieldCheck, Camera, Edit3, Key, Briefcase, X, Save, Calendar, Clock, Users, Globe } from 'lucide-react';
 import { getMe, updateProfile as updateAuthProfile, uploadProfileImage as uploadAuthImage } from '../../services/core/authService';
 import { useAuth } from '../../context/AuthContext';
 import { Loader2 } from 'lucide-react';
 
 const Profile = () => {
+  const { setPageLoading } = useOutletContext();
   const [avatarPreview, setAvatarPreview] = useState(null);
   const avatarInputRef = useRef(null);
   const { refreshUser } = useAuth();
@@ -46,6 +48,7 @@ const Profile = () => {
         console.error('Failed to fetch profile:', error);
       } finally {
         setIsLoading(false);
+        if (setPageLoading) setPageLoading(false);
       }
     };
     fetchProfile();

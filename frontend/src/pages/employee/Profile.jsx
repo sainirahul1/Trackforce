@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useOutletContext } from 'react-router-dom';
 import axios from 'axios';
 // import { User, Briefcase, FileText, Activity, LayoutDashboard, Settings, Mail, Phone, MapPin, MoreVertical, ShieldCheck, TrendingUp, ShoppingBag, Map as MapIcon, Clock, HeartPulse, Building, Shield, UserCheck, Calendar, CheckCircle, Download, ExternalLink, Bell, Globe, LogOut, Share2, Eye, EyeOff, Lock, AlertTriangle, Smartphone, Wifi, X, MessageSquare, Copy, Pencil, UploadCloud, ChevronDown, CheckCircle2, Filter, Search, GripVertical, MoreHorizontal, Info, Users, Menu } from 'lucide-react';
 import { User, Briefcase, FileText, Activity, LayoutDashboard, Settings, Mail, Phone, MapPin, MoreVertical, ShieldCheck, TrendingUp, ShoppingBag, Map as MapIcon, Clock, HeartPulse, Building, Shield, UserCheck, Calendar, CheckCircle, Download, ExternalLink, Bell, Globe, LogOut, Share2, Eye, EyeOff, Lock, AlertTriangle, Smartphone, Wifi, X, MessageSquare, Copy, Pencil, UploadCloud, ChevronDown, CheckCircle2, Filter, Search, GripVertical, MoreHorizontal, Info, Users, Menu, Plus, Trash2, Camera, Loader2 } from 'lucide-react';
@@ -2327,6 +2327,7 @@ const DeleteConfirmationModal = ({ isOpen, onClose, onConfirm, documentName }) =
 // --- Main Page Component ---
 
 const EmployeeProfile = () => {
+  const { setPageLoading } = useOutletContext();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const { refreshUser } = useAuth();
   const [isSavingAvatar, setIsSavingAvatar] = useState(false);
@@ -2392,6 +2393,7 @@ const EmployeeProfile = () => {
         console.error('Failed to load profile:', err.message);
       } finally {
         setProfileLoading(false);
+        if (setPageLoading) setPageLoading(false);
       }
     };
     fetchProfile();
@@ -2443,6 +2445,7 @@ const EmployeeProfile = () => {
       }
     };
     fetchProfile();
+    if (setPageLoading) setPageLoading(false);
   }, []);
 
   const handleSaveProfile = async (updates) => {

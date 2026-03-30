@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useOutletContext } from 'react-router-dom';
 import {
   AlertCircle, ArrowLeft, Activity, Eye, MapPin, Briefcase, Store,
   ClipboardList, CheckCircle2, ShoppingBag, ArrowRight, Shield, Clock, Zap, Ban, TrendingUp,
@@ -18,6 +18,7 @@ ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarEleme
 
 const IntelligenceSuite = () => {
   const navigate = useNavigate();
+  const { setPageLoading } = useOutletContext();
   const [view, setView] = useState('list');
   const [statusFilter, setStatusFilter] = useState('All');
   const [timeFilter, setTimeFilter] = useState('Daily');
@@ -291,6 +292,7 @@ const IntelligenceSuite = () => {
         console.error('Failed to fetch realtime data', err);
       } finally {
         setLoading(false);
+        if (setPageLoading) setPageLoading(false);
       }
     };
 

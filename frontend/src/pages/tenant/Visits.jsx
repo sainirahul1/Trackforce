@@ -1,7 +1,14 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import { Camera, MapPin, Calendar, CheckCircle, Clock, ChevronRight, User } from 'lucide-react';
 
 const Visits = () => {
+  const { setPageLoading } = useOutletContext();
+
+  useEffect(() => {
+    // Simulate data loading completion
+    if (setPageLoading) setPageLoading(false);
+  }, [setPageLoading]);
   const visits = [
     { id: 1, type: 'Store', name: 'Reliance Digital', executive: 'John Doe', time: '10:30 AM', status: 'Completed', location: 'Brooklyn, NY' },
     { id: 2, type: 'Supplier', name: 'Global Tech Ltd', executive: 'Jane Smith', time: '12:45 PM', status: 'In Progress', location: 'Queens, NY' },

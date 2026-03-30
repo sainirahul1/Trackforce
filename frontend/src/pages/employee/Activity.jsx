@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import { MapPin, ShoppingBag, LogIn, Navigation, Store, Download, Clock, XCircle, Activity, Loader2 } from 'lucide-react';
 import { getActivities } from '../../services/employee/activityService';
 import { useSocket } from '../../context/SocketContext';
@@ -28,6 +29,7 @@ const mapActivity = (log) => {
 };
 
 const EmployeeActivity = () => {
+  const { setPageLoading } = useOutletContext();
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showMore, setShowMore] = useState(false);
@@ -43,6 +45,7 @@ const EmployeeActivity = () => {
         console.error('Error fetching activities:', err);
       } finally {
         setLoading(false);
+        if (setPageLoading) setPageLoading(false);
       }
     };
     fetchActivities();
@@ -63,8 +66,6 @@ const EmployeeActivity = () => {
   }, [socket]);
 
   const displayActivities = showMore ? activities : activities.slice(0, 10);
-
-  if (loading) return <div className="flex items-center justify-center min-h-screen"><Loader2 className="animate-spin text-primary-main" size={48} /></div>;
 
   return (
     <div className="max-w-4xl mx-auto space-y-10 animate-in">

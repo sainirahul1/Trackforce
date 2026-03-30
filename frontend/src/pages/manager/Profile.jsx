@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import {
   User, Mail, Phone, Building2, MapPin, Shield,
   Settings, Bell, Moon, Sun, Camera, Save,
@@ -15,6 +16,7 @@ import { Loader2 } from 'lucide-react';
  * Professional profile and settings management for the Manager portal.
  */
 const ManagerProfile = () => {
+  const { setPageLoading } = useOutletContext();
   const [activeTab, setActiveTab] = useState('notifications');
   const [isSaved, setIsSaved] = useState(false);
   const [profileImage, setProfileImage] = useState(null);
@@ -88,6 +90,7 @@ const ManagerProfile = () => {
         console.error('Failed to fetch profile:', error);
       } finally {
         setProfileLoading(false);
+        if (setPageLoading) setPageLoading(false);
       }
     };
     fetchProfile();

@@ -6,6 +6,8 @@
  */
 
 import React, { useState, useMemo, useEffect } from 'react';
+// import React, { useState, useEffect } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from '@react-google-maps/api';
 import {
@@ -134,6 +136,16 @@ const ManagerVisits = () => {
   const [observationCategory, setObservationCategory] = React.useState('General Overview'); // Active category for observation notes
   const [liveEmployees, setLiveEmployees] = React.useState({});         // Map of employeeId -> latest location data
   const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const { setPageLoading } = useOutletContext();
+  // const [filterStatus, setFilterStatus] = useState('Total');
+  // const [selectedVisit, setSelectedVisit] = useState(null);
+  // const [selectedVisitLoading, setSelectedVisitLoading] = useState(false);
+  // const [isPendingExpanded, setIsPendingExpanded] = useState(true);
+  // const [isHistoryExpanded, setIsHistoryExpanded] = useState(true);
+  // const [isRejecting, setIsRejecting] = useState(false);
+  // const [rejectionReasonInput, setRejectionReasonInput] = useState('');
+  // const [activePhoto, setActivePhoto] = useState(null);
+  // const [observationCategory, setObservationCategory] = useState('General Overview');
 
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
@@ -329,6 +341,7 @@ const ManagerVisits = () => {
         setError('Failed to load visits from the server.');
       } finally {
         setLoading(false);
+        if (setPageLoading) setPageLoading(false);
       }
     };
     fetchVisits();

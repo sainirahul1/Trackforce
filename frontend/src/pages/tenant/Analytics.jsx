@@ -1,16 +1,17 @@
 import React, { useState } from 'react';
-import { 
-  BarChart3, 
-  PieChart, 
-  LineChart, 
-  TrendingUp, 
-  Calendar, 
-  Download, 
-  Users, 
-  DollarSign, 
-  Map, 
-  AlertTriangle, 
-  Trophy, 
+import { useNavigate, useOutletContext } from 'react-router-dom';
+import {
+  BarChart3,
+  PieChart,
+  LineChart,
+  TrendingUp,
+  Calendar,
+  Download,
+  Users,
+  DollarSign,
+  Map,
+  AlertTriangle,
+  Trophy,
   Activity,
   ArrowUpRight,
   ArrowDownRight,
@@ -55,11 +56,12 @@ ChartJS.register(
 );
 
 const Analytics = () => {
+  const { setPageLoading } = useOutletContext();
   const [selectedMetric, setSelectedMetric] = useState(null);
   const [showTrendData, setShowTrendData] = useState(false);
   const [activeMetric, setActiveMetric] = useState('Revenue');
   const [selectedManager, setSelectedManager] = useState(null);
-  
+
   const [timeRange, setTimeRange] = useState('Last Quarter');
   const [showTimeRangeDropdown, setShowTimeRangeDropdown] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
@@ -80,6 +82,7 @@ const Analytics = () => {
         console.error('Error fetching managers:', error);
       } finally {
         setIsLoadingManagers(false);
+        if (setPageLoading) setPageLoading(false);
       }
     };
     fetchManagers();
@@ -165,36 +168,41 @@ const Analytics = () => {
   // Manager columns definition moved below state
 
   const managerColumns = [
-    { header: 'Manager', accessor: 'name', render: (row) => (
-      <div className="flex items-center gap-3">
-        <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 font-bold text-xs">
-          {row.name.charAt(0)}
+    {
+      header: 'Manager', accessor: 'name', render: (row) => (
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 font-bold text-xs">
+            {row.name.charAt(0)}
+          </div>
+          <span className="font-bold">{row.name}</span>
         </div>
-        <span className="font-bold">{row.name}</span>
-      </div>
-    )},
-    { header: 'Organization', accessor: 'company', render: (row) => (
-      <span className="font-bold text-indigo-600 dark:text-indigo-400">{row.company}</span>
-    )},
+      )
+    },
+    {
+      header: 'Organization', accessor: 'company', render: (row) => (
+        <span className="font-bold text-indigo-600 dark:text-indigo-400">{row.company}</span>
+      )
+    },
     { header: 'Team', accessor: 'profile', render: (row) => row.profile?.team || 'N/A' },
     { header: 'Designation', accessor: 'profile', render: (row) => row.profile?.designation || 'N/A' },
-    { header: 'Status', accessor: 'status', render: (row) => (
-      <span className={`px-2 py-1 rounded-lg text-[10px] font-black uppercase ${
-        row.status === 'Active' ? 'bg-emerald-100 text-emerald-600' : 
-        row.status === 'Inactive' ? 'bg-rose-100 text-rose-600' : 'bg-blue-100 text-blue-600'
-      }`}>
-        {row.status}
-      </span>
-    )},
+    {
+      header: 'Status', accessor: 'status', render: (row) => (
+        <span className={`px-2 py-1 rounded-lg text-[10px] font-black uppercase ${row.status === 'Active' ? 'bg-emerald-100 text-emerald-600' :
+            row.status === 'Inactive' ? 'bg-rose-100 text-rose-600' : 'bg-blue-100 text-blue-600'
+          }`}>
+          {row.status}
+        </span>
+      )
+    },
   ];
 
 
   const overviewMetrics = [
-    { 
-      id: 'biz', 
-      title: 'Business Performance', 
-      value: '94.2%', 
-      icon: Briefcase, 
+    {
+      id: 'biz',
+      title: 'Business Performance',
+      value: '94.2%',
+      icon: Briefcase,
       color: 'text-indigo-600',
       trend: 'up',
       trendValue: '4.2',
@@ -204,11 +212,11 @@ const Analytics = () => {
         { label: 'Profit Growth', value: '+8.2%' }
       ]
     },
-    { 
-      id: 'mgr', 
-      title: 'Manager Performance', 
-      value: '4.8/5.0', 
-      icon: Trophy, 
+    {
+      id: 'mgr',
+      title: 'Manager Performance',
+      value: '4.8/5.0',
+      icon: Trophy,
       color: 'text-emerald-600',
       trend: 'up',
       trendValue: '0.3',
@@ -218,11 +226,11 @@ const Analytics = () => {
         { label: 'Retention Rate', value: '96%' }
       ]
     },
-    { 
-      id: 'workforce', 
-      title: 'Workforce Efficiency', 
-      value: '88.5%', 
-      icon: Users, 
+    {
+      id: 'workforce',
+      title: 'Workforce Efficiency',
+      value: '88.5%',
+      icon: Users,
       color: 'text-blue-600',
       trend: 'up',
       trendValue: '5.1',
@@ -232,11 +240,11 @@ const Analytics = () => {
         { label: 'Avg Journey', value: '32km' }
       ]
     },
-    { 
-      id: 'territory', 
-      title: 'Territory Profitability', 
-      value: '+$420k', 
-      icon: Map, 
+    {
+      id: 'territory',
+      title: 'Territory Profitability',
+      value: '+$420k',
+      icon: Map,
       color: 'text-amber-600',
       trend: 'up',
       trendValue: '12.4',
@@ -246,11 +254,11 @@ const Analytics = () => {
         { label: 'ROI', value: '3.4x' }
       ]
     },
-    { 
-      id: 'store', 
-      title: 'Store Profitability', 
-      value: '$12.4k', 
-      icon: Store, 
+    {
+      id: 'store',
+      title: 'Store Profitability',
+      value: '$12.4k',
+      icon: Store,
       color: 'text-rose-600',
       trend: 'down',
       trendValue: '2.1',
@@ -260,11 +268,11 @@ const Analytics = () => {
         { label: 'Overheads', value: '14%' }
       ]
     },
-    { 
-      id: 'growth', 
-      title: 'Growth Analysis', 
-      value: '+12.5%', 
-      icon: TrendingUp, 
+    {
+      id: 'growth',
+      title: 'Growth Analysis',
+      value: '+12.5%',
+      icon: TrendingUp,
       color: 'text-indigo-600',
       trend: 'up',
       trendValue: '8.4',
@@ -282,7 +290,7 @@ const Analytics = () => {
     if (!metric) return null;
     return (
       <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6 md:p-8 animate-in fade-in duration-300">
-        <div 
+        <div
           className="absolute inset-0 bg-gray-900/60 backdrop-blur-md"
           onClick={onClose}
         ></div>
@@ -304,7 +312,7 @@ const Analytics = () => {
                   </div>
                 </div>
               </div>
-              <button 
+              <button
                 onClick={onClose}
                 className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors text-gray-400 hover:text-gray-600"
               >
@@ -337,12 +345,12 @@ const Analytics = () => {
     if (!manager) return null;
     return (
       <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6 md:p-8 animate-in fade-in duration-300">
-        <div 
+        <div
           className="absolute inset-0 bg-gray-900/60 backdrop-blur-md"
           onClick={onClose}
         ></div>
         <div className="relative bg-white dark:bg-gray-900 w-full max-w-2xl rounded-[2.5rem] border border-gray-100 dark:border-gray-800 shadow-2xl overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-4 duration-500 flex flex-col max-h-[90vh]">
-          
+
           <div className="p-8 pb-6 border-b border-gray-50 dark:border-gray-800 flex flex-shrink-0 items-start justify-between bg-white dark:bg-gray-900 z-10">
             <div className="flex items-center gap-5">
               <div className="w-16 h-16 rounded-[2rem] bg-indigo-50 dark:bg-indigo-900/40 flex items-center justify-center text-indigo-600 font-black text-2xl shadow-inner border border-indigo-100 dark:border-indigo-800/50">
@@ -352,16 +360,15 @@ const Analytics = () => {
                 <h2 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">{manager.name}</h2>
                 <div className="flex items-center gap-3 mt-1.5">
                   <span className="text-sm font-bold text-indigo-600 uppercase tracking-widest">{manager.company}</span>
-                  <span className={`px-2 py-0.5 rounded-lg text-[10px] font-black uppercase ${
-                    manager.status === 'Active' ? 'bg-emerald-100 text-emerald-600' : 
-                    manager.status === 'Inactive' ? 'bg-rose-100 text-rose-600' : 'bg-blue-100 text-blue-600'
-                  }`}>
+                  <span className={`px-2 py-0.5 rounded-lg text-[10px] font-black uppercase ${manager.status === 'Active' ? 'bg-emerald-100 text-emerald-600' :
+                      manager.status === 'Inactive' ? 'bg-rose-100 text-rose-600' : 'bg-blue-100 text-blue-600'
+                    }`}>
                     {manager.status}
                   </span>
                 </div>
               </div>
             </div>
-            <button 
+            <button
               onClick={onClose}
               className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors text-gray-400 hover:text-gray-600"
             >
@@ -418,9 +425,9 @@ const Analytics = () => {
               </div>
             </div>
           </div>
-          
+
           <div className="p-6 border-t border-gray-100 dark:border-gray-800 flex justify-end gap-3 bg-white dark:bg-gray-900">
-            <button 
+            <button
               onClick={onClose}
               className="px-6 py-3 font-bold text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors"
             >
@@ -440,285 +447,282 @@ const Analytics = () => {
     <>
       <div className="space-y-8 animate-in fade-in duration-500 pb-12">
 
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-50">
-        <div>
-          <h1 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">Enterprise Analytics</h1>
-          <p className="text-gray-500 dark:text-gray-400 font-medium">Comprehensive performance metrics and operational insights.</p>
-        </div>
-        <div className="flex items-center gap-3 relative">
-          <div className="relative">
-            <button 
-              onClick={() => setShowTimeRangeDropdown(!showTimeRangeDropdown)}
-              className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl px-4 py-2 flex items-center gap-2 cursor-pointer hover:border-indigo-500 transition-all"
-            >
-              <Calendar size={18} className="text-gray-400" />
-              <span className="text-sm font-bold text-gray-900 dark:text-white min-w-[90px] text-left">{timeRange}</span>
-              <ChevronDown size={14} className="text-gray-400 opacity-50" />
-            </button>
-
-            {showTimeRangeDropdown && (
-              <>
-                <div 
-                  className="fixed inset-0 z-40"
-                  onClick={() => setShowTimeRangeDropdown(false)}
-                ></div>
-                <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
-                  {['Last 7 Days', 'Last Month', 'Last Quarter', 'Year to Date'].map((range) => (
-                    <button
-                      key={range}
-                      onClick={() => {
-                        setTimeRange(range);
-                        setShowTimeRangeDropdown(false);
-                      }}
-                      className={`w-full text-left px-4 py-3 text-sm font-bold transition-colors ${
-                        timeRange === range 
-                          ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400' 
-                          : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/50'
-                      }`}
-                    >
-                      {range}
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-50">
+          <div>
+            <h1 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">Enterprise Analytics</h1>
+            <p className="text-gray-500 dark:text-gray-400 font-medium">Comprehensive performance metrics and operational insights.</p>
           </div>
+          <div className="flex items-center gap-3 relative">
+            <div className="relative">
+              <button
+                onClick={() => setShowTimeRangeDropdown(!showTimeRangeDropdown)}
+                className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl px-4 py-2 flex items-center gap-2 cursor-pointer hover:border-indigo-500 transition-all"
+              >
+                <Calendar size={18} className="text-gray-400" />
+                <span className="text-sm font-bold text-gray-900 dark:text-white min-w-[90px] text-left">{timeRange}</span>
+                <ChevronDown size={14} className="text-gray-400 opacity-50" />
+              </button>
 
-          <button 
-            onClick={handleDownloadReport}
-            disabled={isDownloading}
-            className="p-2 bg-indigo-600 text-white rounded-xl shadow-lg shadow-indigo-200 dark:shadow-none hover:bg-indigo-700 transition-all group overflow-hidden relative w-10 h-10 flex items-center justify-center disabled:opacity-70"
-            title="Download CSV Report"
-          >
-            {isDownloading ? (
-              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-            ) : (
-              <Download size={20} className="group-hover:-translate-y-0.5 transition-transform" />
-            )}
-          </button>
-        </div>
-      </div>
-
-      {/* REFINED OVERVIEW CARDS */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {overviewMetrics.map((metric) => (
-          <DashboardCard 
-            key={metric.id}
-            title={metric.title} 
-            value={metric.value} 
-            icon={metric.icon} 
-            trend={metric.trend} 
-            trendValue={metric.trendValue} 
-            colorClass={metric.color}
-            onClick={() => setSelectedMetric(metric.id)}
-          />
-        ))}
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Performance Trends - Real Graph */}
-        <div className="lg:col-span-2 bg-white dark:bg-gray-900 p-8 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm flex flex-col min-h-[450px]">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
-            <div className="space-y-1">
-              <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                <TrendingUp size={18} className="text-indigo-600" />
-                Performance Trends
-              </h3>
-              <p className="text-xs text-gray-400 font-medium">Interactive data visualization of key metrics</p>
-            </div>
-            
-            <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-800 p-1.5 rounded-xl border border-gray-100 dark:border-gray-700">
-              {['Revenue', 'Visits', 'Orders'].map(m => (
-                <button
-                  key={m}
-                  onClick={() => setActiveMetric(m)}
-                  className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all ${
-                    activeMetric === m 
-                      ? 'bg-white dark:bg-gray-700 text-indigo-600 shadow-sm' 
-                      : 'text-gray-400 hover:text-gray-600'
-                  }`}
-                >
-                  {m === 'Revenue' && <DollarSign size={12} className="inline mr-1 mb-0.5" />}
-                  {m === 'Visits' && <MousePointer2 size={12} className="inline mr-1 mb-0.5" />}
-                  {m === 'Orders' && <Layers size={12} className="inline mr-1 mb-0.5" />}
-                  {m}
-                </button>
-              ))}
-            </div>
-          </div>
-          
-          <div className="flex-1 min-h-[300px] relative">
-            <Line data={data} options={options} />
-          </div>
-
-          <div className="mt-6 flex items-center justify-between pt-6 border-t border-gray-50 dark:border-gray-800">
-            <div className="flex gap-8">
-              <div className="text-center">
-                <p className="text-2xl font-black text-gray-900 dark:text-white">+24%</p>
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Growth</p>
-              </div>
-              <div className="text-center">
-                <p className="text-2xl font-black text-gray-900 dark:text-white">98.2%</p>
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Efficiency</p>
-              </div>
-            </div>
-            <button 
-              onClick={() => setShowTrendData(!showTrendData)}
-              className="flex items-center gap-2 text-[10px] font-black uppercase text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 px-4 py-2 rounded-xl transition-all border border-indigo-100 dark:border-indigo-900/30"
-            >
-              <BarChart3 size={14} />
-              {showTrendData ? 'Hide Summary' : 'Raw Data'}
-            </button>
-          </div>
-
-          {showTrendData && (
-            <div className="mt-6 p-4 bg-indigo-50/30 dark:bg-indigo-900/10 rounded-2xl animate-in fade-in zoom-in duration-300">
-               <table className="w-full text-left">
-                <thead>
-                  <tr className="text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-indigo-100/50 dark:border-indigo-900/30">
-                    <th className="pb-3">Month</th>
-                    <th className="pb-3 text-right">{activeMetric}</th>
-                    <th className="pb-3 text-right">Trend</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-indigo-50/50 dark:divide-indigo-900/20 font-bold text-sm">
-                  {chartData[activeMetric].slice(-3).map((val, i) => (
-                    <tr key={i} className="text-gray-700 dark:text-gray-300">
-                      <td className="py-3">{labels[9+i]}</td>
-                      <td className="py-3 text-right text-gray-900 dark:text-white">
-                        {activeMetric === 'Revenue' ? `$${val/10}M` : val}
-                      </td>
-                      <td className="py-3 text-right text-emerald-500">
-                        <ArrowUpRight size={14} className="inline mr-1" />
-                        {Math.floor(Math.random() * 15) + 5}%
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-
-        {/* Zone Analytics / Revenue Analysis */}
-        <div className="bg-white dark:bg-gray-900 p-8 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm space-y-8">
-          <div className="space-y-1">
-            <h3 className="font-bold text-gray-900 dark:text-white">Zone & Revenue Analysis</h3>
-            <p className="text-xs text-gray-400 font-medium">Geographic revenue distribution</p>
-          </div>
-          
-          <div className="space-y-6">
-            {[
-              { label: 'North Region', value: 42, color: 'bg-indigo-500', revenue: '$1.7M' },
-              { label: 'South Region', value: 28, color: 'bg-emerald-500', revenue: '$1.2M' },
-              { label: 'West Coast', value: 18, color: 'bg-blue-500', revenue: '$0.8M' },
-              { label: 'East Coast', value: 12, color: 'bg-gray-200', revenue: '$0.5M' },
-            ].map((item, i) => (
-              <div key={i} className="space-y-2">
-                <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest">
-                  <div className="flex items-center gap-2">
-                    <span className="text-gray-400">{item.label}</span>
-                    <span className="text-gray-900 dark:text-white">{item.value}%</span>
+              {showTimeRangeDropdown && (
+                <>
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={() => setShowTimeRangeDropdown(false)}
+                  ></div>
+                  <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                    {['Last 7 Days', 'Last Month', 'Last Quarter', 'Year to Date'].map((range) => (
+                      <button
+                        key={range}
+                        onClick={() => {
+                          setTimeRange(range);
+                          setShowTimeRangeDropdown(false);
+                        }}
+                        className={`w-full text-left px-4 py-3 text-sm font-bold transition-colors ${timeRange === range
+                            ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400'
+                            : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/50'
+                          }`}
+                      >
+                        {range}
+                      </button>
+                    ))}
                   </div>
-                  <span className="text-indigo-600 dark:text-indigo-400">{item.revenue}</span>
-                </div>
-                <div className="w-full h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-                  <div className={`h-full ${item.color} transition-all duration-1000`} style={{ width: `${item.value}%` }}></div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="pt-8 border-t border-gray-50 dark:border-gray-800">
-            <div className="p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-2xl space-y-3">
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-bold text-indigo-600 uppercase tracking-wider">Top Zone</p>
-                <ArrowUpRight size={14} className="text-indigo-600" />
-              </div>
-              <div>
-                <p className="text-lg font-black text-gray-900 dark:text-white">North Region</p>
-                <p className="text-xs text-gray-500 font-medium">Outperforming targets by 15%</p>
-              </div>
+                </>
+              )}
             </div>
+
+            <button
+              onClick={handleDownloadReport}
+              disabled={isDownloading}
+              className="p-2 bg-indigo-600 text-white rounded-xl shadow-lg shadow-indigo-200 dark:shadow-none hover:bg-indigo-700 transition-all group overflow-hidden relative w-10 h-10 flex items-center justify-center disabled:opacity-70"
+              title="Download CSV Report"
+            >
+              {isDownloading ? (
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+              ) : (
+                <Download size={20} className="group-hover:-translate-y-0.5 transition-transform" />
+              )}
+            </button>
           </div>
         </div>
-      </div>
 
-      {/* Manager Performance Analysis - Expanded */}
-      <div className="grid grid-cols-1 gap-6">
-        <div className="bg-white dark:bg-gray-900 p-8 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm flex flex-col">
-          <div className="flex items-center justify-between mb-6">
+        {/* REFINED OVERVIEW CARDS */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {overviewMetrics.map((metric) => (
+            <DashboardCard
+              key={metric.id}
+              title={metric.title}
+              value={metric.value}
+              icon={metric.icon}
+              trend={metric.trend}
+              trendValue={metric.trendValue}
+              colorClass={metric.color}
+              onClick={() => setSelectedMetric(metric.id)}
+            />
+          ))}
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Performance Trends - Real Graph */}
+          <div className="lg:col-span-2 bg-white dark:bg-gray-900 p-8 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm flex flex-col min-h-[450px]">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
+              <div className="space-y-1">
+                <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                  <TrendingUp size={18} className="text-indigo-600" />
+                  Performance Trends
+                </h3>
+                <p className="text-xs text-gray-400 font-medium">Interactive data visualization of key metrics</p>
+              </div>
+
+              <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-800 p-1.5 rounded-xl border border-gray-100 dark:border-gray-700">
+                {['Revenue', 'Visits', 'Orders'].map(m => (
+                  <button
+                    key={m}
+                    onClick={() => setActiveMetric(m)}
+                    className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all ${activeMetric === m
+                        ? 'bg-white dark:bg-gray-700 text-indigo-600 shadow-sm'
+                        : 'text-gray-400 hover:text-gray-600'
+                      }`}
+                  >
+                    {m === 'Revenue' && <DollarSign size={12} className="inline mr-1 mb-0.5" />}
+                    {m === 'Visits' && <MousePointer2 size={12} className="inline mr-1 mb-0.5" />}
+                    {m === 'Orders' && <Layers size={12} className="inline mr-1 mb-0.5" />}
+                    {m}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex-1 min-h-[300px] relative">
+              <Line data={data} options={options} />
+            </div>
+
+            <div className="mt-6 flex items-center justify-between pt-6 border-t border-gray-50 dark:border-gray-800">
+              <div className="flex gap-8">
+                <div className="text-center">
+                  <p className="text-2xl font-black text-gray-900 dark:text-white">+24%</p>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Growth</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-black text-gray-900 dark:text-white">98.2%</p>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Efficiency</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowTrendData(!showTrendData)}
+                className="flex items-center gap-2 text-[10px] font-black uppercase text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 px-4 py-2 rounded-xl transition-all border border-indigo-100 dark:border-indigo-900/30"
+              >
+                <BarChart3 size={14} />
+                {showTrendData ? 'Hide Summary' : 'Raw Data'}
+              </button>
+            </div>
+
+            {showTrendData && (
+              <div className="mt-6 p-4 bg-indigo-50/30 dark:bg-indigo-900/10 rounded-2xl animate-in fade-in zoom-in duration-300">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-indigo-100/50 dark:border-indigo-900/30">
+                      <th className="pb-3">Month</th>
+                      <th className="pb-3 text-right">{activeMetric}</th>
+                      <th className="pb-3 text-right">Trend</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-indigo-50/50 dark:divide-indigo-900/20 font-bold text-sm">
+                    {chartData[activeMetric].slice(-3).map((val, i) => (
+                      <tr key={i} className="text-gray-700 dark:text-gray-300">
+                        <td className="py-3">{labels[9 + i]}</td>
+                        <td className="py-3 text-right text-gray-900 dark:text-white">
+                          {activeMetric === 'Revenue' ? `$${val / 10}M` : val}
+                        </td>
+                        <td className="py-3 text-right text-emerald-500">
+                          <ArrowUpRight size={14} className="inline mr-1" />
+                          {Math.floor(Math.random() * 15) + 5}%
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          {/* Zone Analytics / Revenue Analysis */}
+          <div className="bg-white dark:bg-gray-900 p-8 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm space-y-8">
             <div className="space-y-1">
-              <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                Manager Performance Analysis
-              </h3>
-              <p className="text-xs text-gray-400 font-medium">Individual leadership efficiency metrics and organization details</p>
+              <h3 className="font-bold text-gray-900 dark:text-white">Zone & Revenue Analysis</h3>
+              <p className="text-xs text-gray-400 font-medium">Geographic revenue distribution</p>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="px-3 py-1 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 rounded-lg text-[10px] font-black uppercase">
-                {managers.length} Total Managers
-              </span>
+
+            <div className="space-y-6">
+              {[
+                { label: 'North Region', value: 42, color: 'bg-indigo-500', revenue: '$1.7M' },
+                { label: 'South Region', value: 28, color: 'bg-emerald-500', revenue: '$1.2M' },
+                { label: 'West Coast', value: 18, color: 'bg-blue-500', revenue: '$0.8M' },
+                { label: 'East Coast', value: 12, color: 'bg-gray-200', revenue: '$0.5M' },
+              ].map((item, i) => (
+                <div key={i} className="space-y-2">
+                  <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest">
+                    <div className="flex items-center gap-2">
+                      <span className="text-gray-400">{item.label}</span>
+                      <span className="text-gray-900 dark:text-white">{item.value}%</span>
+                    </div>
+                    <span className="text-indigo-600 dark:text-indigo-400">{item.revenue}</span>
+                  </div>
+                  <div className="w-full h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                    <div className={`h-full ${item.color} transition-all duration-1000`} style={{ width: `${item.value}%` }}></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="pt-8 border-t border-gray-50 dark:border-gray-800">
+              <div className="p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-2xl space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-bold text-indigo-600 uppercase tracking-wider">Top Zone</p>
+                  <ArrowUpRight size={14} className="text-indigo-600" />
+                </div>
+                <div>
+                  <p className="text-lg font-black text-gray-900 dark:text-white">North Region</p>
+                  <p className="text-xs text-gray-500 font-medium">Outperforming targets by 15%</p>
+                </div>
+              </div>
             </div>
           </div>
-          
-          <DataTable 
-            columns={managerColumns} 
-            data={paginatedManagers} 
-            isLoading={isLoadingManagers}
-            onRowClick={(row) => setSelectedManager(row)} 
-          />
+        </div>
 
-          {/* Pagination Controls */}
-          <div className="mt-8 flex items-center justify-between pt-6 border-t border-gray-50 dark:border-gray-800">
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">
-              Showing {Math.min(managers.length, (currentPage - 1) * itemsPerPage + 1)} to {Math.min(managers.length, currentPage * itemsPerPage)} of {managers.length}
-            </p>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                disabled={currentPage === 1}
-                className="p-2 border border-gray-100 dark:border-gray-800 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-30 transition-all"
-              >
-                <ChevronLeft size={18} />
-              </button>
-              {[...Array(totalPages)].map((_, i) => (
+        {/* Manager Performance Analysis - Expanded */}
+        <div className="grid grid-cols-1 gap-6">
+          <div className="bg-white dark:bg-gray-900 p-8 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm flex flex-col">
+            <div className="flex items-center justify-between mb-6">
+              <div className="space-y-1">
+                <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                  Manager Performance Analysis
+                </h3>
+                <p className="text-xs text-gray-400 font-medium">Individual leadership efficiency metrics and organization details</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="px-3 py-1 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 rounded-lg text-[10px] font-black uppercase">
+                  {managers.length} Total Managers
+                </span>
+              </div>
+            </div>
+
+            <DataTable
+              columns={managerColumns}
+              data={paginatedManagers}
+              isLoading={isLoadingManagers}
+              onRowClick={(row) => setSelectedManager(row)}
+            />
+
+            {/* Pagination Controls */}
+            <div className="mt-8 flex items-center justify-between pt-6 border-t border-gray-50 dark:border-gray-800">
+              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+                Showing {Math.min(managers.length, (currentPage - 1) * itemsPerPage + 1)} to {Math.min(managers.length, currentPage * itemsPerPage)} of {managers.length}
+              </p>
+              <div className="flex items-center gap-2">
                 <button
-                  key={i}
-                  onClick={() => setCurrentPage(i + 1)}
-                  className={`w-8 h-8 rounded-xl text-xs font-black transition-all ${
-                    currentPage === i + 1 
-                      ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200' 
-                      : 'text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'
-                  }`}
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                  className="p-2 border border-gray-100 dark:border-gray-800 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-30 transition-all"
                 >
-                  {i + 1}
+                  <ChevronLeft size={18} />
                 </button>
-              ))}
-              <button
-                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                disabled={currentPage === totalPages || totalPages === 0}
-                className="p-2 border border-gray-100 dark:border-gray-800 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-30 transition-all"
-              >
-                <ChevronRight size={18} />
-              </button>
+                {[...Array(totalPages)].map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setCurrentPage(i + 1)}
+                    className={`w-8 h-8 rounded-xl text-xs font-black transition-all ${currentPage === i + 1
+                        ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200'
+                        : 'text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'
+                      }`}
+                  >
+                    {i + 1}
+                  </button>
+                ))}
+                <button
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages || totalPages === 0}
+                  className="p-2 border border-gray-100 dark:border-gray-800 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-30 transition-all"
+                >
+                  <ChevronRight size={18} />
+                </button>
+              </div>
             </div>
           </div>
         </div>
       </div>
-      </div>
-      
+
       {/* Overlays */}
       {selectedMetric && (
-        <DetailOverlay 
-          metric={getMetricById(selectedMetric)} 
-          onClose={() => setSelectedMetric(null)} 
+        <DetailOverlay
+          metric={getMetricById(selectedMetric)}
+          onClose={() => setSelectedMetric(null)}
         />
       )}
       {selectedManager && (
-        <ManagerDetailOverlay 
-           manager={selectedManager}
-           onClose={() => setSelectedManager(null)}
+        <ManagerDetailOverlay
+          manager={selectedManager}
+          onClose={() => setSelectedManager(null)}
         />
       )}
     </>
