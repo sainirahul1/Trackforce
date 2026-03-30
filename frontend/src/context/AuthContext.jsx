@@ -5,11 +5,30 @@ const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
-    const storedUser = localStorage.getItem('user');
+    // 1. Try to bootstrap impersonation FIRST
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const raw = params.get('impersonate');
+      if (raw) {
+        const data = JSON.parse(decodeURIComponent(raw));
+        if (data?.token) {
+          sessionStorage.setItem('token', data.token);
+          sessionStorage.setItem('role', data.role);
+          sessionStorage.setItem('user', JSON.stringify(data));
+          
+          return data;
+        }
+      }
+    } catch (e) {
+      console.error('Impersonation bootstrap failed:', e);
+    }
+
+    // 2. Default fallback
+    const storedUser = sessionStorage.getItem('user') || localStorage.getItem('user');
     try {
       return storedUser ? JSON.parse(storedUser) : null;
     } catch (e) {
-      console.error('Failed to parse user from localStorage', e);
+      console.error('Failed to parse user from storage', e);
       return null;
     }
   });
@@ -30,16 +49,30 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
-  // Sync localStorage when state changes
+  // Sync storage when state changes
   useEffect(() => {
     if (user) {
-      localStorage.setItem('user', JSON.stringify(user));
+      const isImpersonating = !!sessionStorage.getItem('token');
+      const storage = isImpersonating ? sessionStorage : localStorage;
+      storage.setItem('user', JSON.stringify(user));
     }
   }, [user]);
 
   useEffect(() => {
     const initAuth = async () => {
-      const token = localStorage.getItem('token');
+      // Clean up impersonation URL if present
+      try {
+        const params = new URLSearchParams(window.location.search);
+        if (params.has('impersonate')) {
+          params.delete('impersonate');
+          const cleanUrl = `${window.location.pathname}${params.toString() ? '?' + params.toString() : ''}`;
+          window.history.replaceState({}, '', cleanUrl);
+        }
+      } catch (e) {
+        console.error('URL cleanup failed:', e);
+      }
+
+      const token = sessionStorage.getItem('token') || localStorage.getItem('token');
       if (token) {
         await refreshUser();
       }

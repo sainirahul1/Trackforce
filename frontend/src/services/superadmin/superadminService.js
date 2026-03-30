@@ -10,7 +10,7 @@ const BASE_URL = getBaseUrl();
 const API_URL = `${BASE_URL}/superadmin`;
 
 const getAuthHeader = () => {
-  const token = localStorage.getItem('token');
+  const token = sessionStorage.getItem('token') || localStorage.getItem('token');
   if (token) {
     return { Authorization: `Bearer ${token}` };
   }
@@ -59,6 +59,10 @@ const superadminService = {
   },
   deleteTenantUser: async (tenantId, userId) => {
     const response = await axios.delete(`${API_URL}/companies/${tenantId}/users/${userId}`, { headers: getAuthHeader() });
+    return response.data;
+  },
+  impersonateTenant: async (tenantId) => {
+    const response = await axios.post(`${API_URL}/companies/${tenantId}/impersonate`, {}, { headers: getAuthHeader() });
     return response.data;
   },
   

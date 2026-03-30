@@ -10,7 +10,8 @@ const {
   getTenantUsers,
   createTenantUser,
   updateTenantUser,
-  deleteTenantUser
+  deleteTenantUser,
+  impersonateTenant
 } = require('../../controllers/superadmin/companyController');
 const { protect, admin } = require('../../middleware/authMiddleware');
 
@@ -31,4 +32,8 @@ router.post('/:id/users', createTenantUser);
 router.put('/:id/users/:userId', updateTenantUser);
 router.delete('/:id/users/:userId', deleteTenantUser);
 
+// Impersonation
+router.post('/:id/impersonate', impersonateTenant);
+
 module.exports = router;
+
