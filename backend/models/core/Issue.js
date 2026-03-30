@@ -49,4 +49,10 @@ const issueSchema = new mongoose.Schema({
   },
 }, { timestamps: true, collection: 'core.issues' });
 
+// Indexed for multi-tenant and personal query performance
+issueSchema.index({ from: 1 });
+issueSchema.index({ tenant: 1 });
+issueSchema.index({ to: 1 });
+issueSchema.index({ status: 1 });
+
 module.exports = mongoose.model('Issue', issueSchema);

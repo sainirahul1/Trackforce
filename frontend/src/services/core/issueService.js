@@ -38,6 +38,18 @@ export const getIssues = async () => {
   return data;
 };
 
+export const getIssueById = async (id) => {
+  const response = await fetch(`${API_URL}/${id}`, {
+    headers: {
+      ...getAuthHeader(),
+    },
+  });
+
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.message || 'Failed to fetch issue details');
+  return data;
+};
+
 export const updateIssue = async (id, updateData) => {
   const response = await fetch(`${API_URL}/${id}`, {
     method: 'PUT',

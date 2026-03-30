@@ -8,23 +8,36 @@ exports.createIssue = async (req, res) => {
   try {
     const { subject, description, priority, to } = req.body;
     
-    const user = await User.findById(req.user.id);
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+    // Ensure we have the user's name (might be missing from auth fast-path)
+    let fromName = req.user.name;
+    if (!fromName) {
+      const user = await User.findById(req.user._id).select('name');
+      fromName = user?.name || 'Anonymous';
     }
 
     const issue = await Issue.create({
-      from: req.user.id,
-      fromName: user.name,
-      fromRole: user.role,
+      from: req.user._id,
+      fromName,
+      fromRole: req.user.role,
       to: to || 'manager', // Default to manager if not specified
-      tenant: user.tenant,
+      tenant: req.user.tenant,
       subject,
       description,
       priority: priority || 'Medium',
     });
 
-    res.status(201).json(issue);
+    const populatedIssue = await Issue.findById(issue._id)
+      .populate('from', 'name profile.profileImage')
+      .lean();
+
+    // REAL-TIME SYNC: Notify the target role (e.g. Manager) about the new issue
+    const io = req.app.get('io');
+    if (io && populatedIssue) {
+      const room = `tenant:${req.user.tenant}:role:${populatedIssue.to}`;
+      io.to(room).emit('issue:new', populatedIssue);
+    }
+
+    res.status(201).json(populatedIssue);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -35,32 +48,51 @@ exports.createIssue = async (req, res) => {
 // @access  Private
 exports.getIssues = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id);
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
+    const { _id: userId, role, tenant } = req.user;
     let query = {};
 
     // Filter by role and tenant
-    if (user.role === 'manager' || user.role === 'tenant') {
+    if (role === 'manager' || role === 'tenant') {
       // Manager/Tenant sees issues addressed to them within their organization
       query = { 
-        tenant: user.tenant,
-        to: user.role === 'manager' ? 'manager' : 'tenant'
+        tenant: tenant,
+        to: role === 'manager' ? 'manager' : 'tenant'
       };
-    } else if (user.role === 'superadmin') {
+    } else if (role === 'superadmin') {
       // Superadmin sees issues addressed to them or all issues
       query = { to: 'superadmin' };
     } else {
       // Employee sees issues they created
-      query = { from: req.user.id };
+      query = { from: userId };
     }
 
     const issues = await Issue.find(query)
       .populate('from', 'name profile.profileImage')
-      .sort({ createdAt: -1 });
+      .select('-description') // THIN PAYLOAD: exclude large text for list view
+      .sort({ createdAt: -1 })
+      .limit(50)
+      .lean(); // Faster serialization, plain JS objects
+
     res.json(issues);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// @desc    Get a single issue by ID
+// @route   GET /api/issues/:id
+// @access  Private
+exports.getIssueById = async (req, res) => {
+  try {
+    const issue = await Issue.findById(req.params.id)
+      .populate('from', 'name profile.profileImage')
+      .lean();
+
+    if (!issue) {
+      return res.status(404).json({ message: 'Issue not found' });
+    }
+
+    res.json(issue);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -83,6 +115,13 @@ exports.updateIssue = async (req, res) => {
     if (priority) issue.priority = priority;
 
     const updatedIssue = await issue.save();
+    
+    // REAL-TIME SYNC: Notify the creator about the status change
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`user:${issue.from}`).emit('issue:status_update', updatedIssue);
+    }
+
     res.json(updatedIssue);
   } catch (err) {
     res.status(500).json({ message: err.message });

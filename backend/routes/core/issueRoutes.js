@@ -7,6 +7,7 @@ router.use(protect);
 
 router.post('/', issueController.createIssue);
 router.get('/', issueController.getIssues);
+router.get('/:id', issueController.getIssueById);
 router.put('/:id', issueController.updateIssue);
 router.delete('/:id', issueController.deleteIssue);
 

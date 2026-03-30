@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, memo } from 'react';
 import IssueStats from '../../components/issues/IssueStats';
 import IssueFilters from '../../components/issues/IssueFilters';
-import { mockIssues as initialIssues } from '../../utils/mockData';
 import {
   CheckCircle2,
   Clock,
@@ -24,9 +23,11 @@ import {
   Plus
 } from 'lucide-react';
 import CreateIssueModal from '../../components/issues/CreateIssueModal';
-import { getIssues, createIssue, updateIssue, deleteIssue } from '../../services/core/issueService';
+import { getIssues, createIssue, updateIssue, deleteIssue, getIssueById } from '../../services/core/issueService';
+import { useSocket } from '../../context/SocketContext';
+import { useAuth } from '../../context/AuthContext';
 
-const ImageModal = ({ src, onClose }) => {
+const ImageModal = memo(({ src, onClose }) => {
   if (!src) return null;
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/95 animate-in fade-in duration-300 backdrop-blur-sm">
@@ -43,9 +44,9 @@ const ImageModal = ({ src, onClose }) => {
       />
     </div>
   );
-};
+});
 
-const IssueCard = ({ issue, onClick }) => {
+const IssueCard = memo(({ issue, onClick }) => {
   const getPriorityStyles = (priority) => {
     switch (priority) {
       case 'Critical': return 'bg-rose-500/10 text-rose-600 border-rose-200 dark:border-rose-500/30 shadow-[0_4px_12px_-4px_rgba(244,63,94,0.3)]';
@@ -120,16 +121,18 @@ const IssueCard = ({ issue, onClick }) => {
           </p>
         </div>
         <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest opacity-60 bg-gray-50/50 dark:bg-gray-800/40 px-3 py-2 rounded-xl">
-          Ref: #TF-{String(issue.id).slice(-6).toUpperCase()}
+          Ref: #TF-{String(issue._id || issue.id).slice(-6).toUpperCase()}
         </div>
       </div>
 
-      {/* Description */}
+      {/* Description Summary (Deferred) */}
       <div className="relative z-10 p-4 bg-indigo-50/30 dark:bg-indigo-950/10 rounded-2xl border border-indigo-100/50 dark:border-indigo-500/10 mb-6 group-hover:bg-indigo-50/50 transition-colors duration-500">
         <p className="text-xs text-gray-600 dark:text-gray-400 font-medium leading-relaxed italic pr-2">
-          "{issue.subject === 'Device Malfunction'
-            ? "Critical core failure detected on node 7. System latency has spiked beyond acceptable thresholds."
-            : "Update 4.2.0 caused an authentication loop. User is unable to bypass initial handshake."}"
+          {issue.description ? (
+            `"${issue.description.substring(0, 120)}${issue.description.length > 120 ? '...' : ''}"`
+          ) : (
+            `"Click to view full ticket details and problem description."`
+          )}
         </p>
       </div>
 
@@ -163,7 +166,7 @@ const IssueCard = ({ issue, onClick }) => {
       </div>
     </div>
   );
-};
+});
 
 
 
@@ -530,7 +533,10 @@ const IssueDetails = ({ issue, onBack, onStatusUpdate, onUpdatePriority, onDelet
 
 
 const Issues = () => {
+  const { socket } = useSocket();
+  const { user } = useAuth();
   const role = 'manager';
+  
   const [filterStatus, setFilterStatus] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
   const [issuesList, setIssuesList] = useState([]);
@@ -539,20 +545,37 @@ const Issues = () => {
   const [showToast, setShowToast] = useState({ show: false, message: '', type: 'success' });
   const [selectedIssue, setSelectedIssue] = useState(null);
 
-  const fetchIssues = async () => {
+  const fetchIssues = async (showLoading = true) => {
+    if (showLoading) setLoading(true);
     try {
       const data = await getIssues();
       setIssuesList(data);
     } catch (err) {
       console.error('Error fetching issues:', err);
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
   };
 
   useEffect(() => {
     fetchIssues();
   }, []);
+
+  // Manage Real-time Subscriptions
+  useEffect(() => {
+    if (socket && user?.tenant) {
+      // Join organizational role room
+      socket.emit('join_tenant_role', { tenantId: user.tenant, role: 'manager' });
+      
+      const handleNewIssue = (newIssue) => {
+        setIssuesList(prev => [newIssue, ...prev]);
+        triggerToast(`New ticket: ${newIssue.subject}`, 'success');
+      };
+
+      socket.on('issue:new', handleNewIssue);
+      return () => socket.off('issue:new', handleNewIssue);
+    }
+  }, [socket, user]);
 
   const triggerToast = (message, type = 'success') => {
     setShowToast({ show: true, message, type });
@@ -561,36 +584,42 @@ const Issues = () => {
     }
   };
 
-  // Persistence Logic
-  const handleStatusUpdate = async (id, newStatus, escalatedTo = null) => {
+  const handleStatusUpdate = useCallback(async (id, newStatus, escalatedTo = null) => {
+    // OPTIMISTIC UPDATE: Update UI immediately
+    setIssuesList(prev => prev.map(issue =>
+      issue._id === id ? { ...issue, status: newStatus, escalatedTo } : issue
+    ));
+
+    if (selectedIssue && (selectedIssue._id === id || selectedIssue.id === id)) {
+      setSelectedIssue(prev => ({ ...prev, status: newStatus, escalatedTo }));
+    }
+
     try {
-      const updated = await updateIssue(id, { status: newStatus });
-      setIssuesList(prev => prev.map(issue =>
-        issue._id === id ? { ...issue, status: newStatus, escalatedTo } : issue
-      ));
-      // Sync current detail view if open
-      if (selectedIssue && (selectedIssue._id === id || selectedIssue.id === id)) {
-        setSelectedIssue(prev => ({ ...prev, status: newStatus, escalatedTo }));
-      }
+      await updateIssue(id, { status: newStatus });
       triggerToast('Status updated successfully');
     } catch (err) {
+      // Background sync on failure to recover state
+      fetchIssues(false);
       triggerToast(err.message, 'error');
     }
-  };
+  }, [issuesList, selectedIssue]);
 
-  const handlePriorityUpdate = async (id, newPriority) => {
+  const handlePriorityUpdate = useCallback(async (id, newPriority) => {
+    // OPTIMISTIC UPDATE
+    setIssuesList(prev => prev.map(issue =>
+      issue._id === id ? { ...issue, priority: newPriority } : issue
+    ));
+
     try {
       await updateIssue(id, { priority: newPriority });
-      setIssuesList(prev => prev.map(issue =>
-        issue._id === id ? { ...issue, priority: newPriority } : issue
-      ));
       triggerToast('Priority updated successfully');
     } catch (err) {
+      fetchIssues(false);
       triggerToast(err.message, 'error');
     }
-  };
+  }, [issuesList]);
 
-  const handleDelete = async (id) => {
+  const handleDelete = useCallback(async (id) => {
     try {
       await deleteIssue(id);
       setIssuesList(prev => prev.filter(issue => issue._id !== id && issue.id !== id));
@@ -601,29 +630,53 @@ const Issues = () => {
     } catch (err) {
       triggerToast(err.message, 'error');
     }
-  };
+  }, [selectedIssue]);
 
-  const handleCreateIssue = async (newData) => {
+  const handleCreateIssue = useCallback(async (newData) => {
     try {
-      await createIssue({
+      const created = await createIssue({
         ...newData,
         to: 'superadmin' // Manager reports to superadmin
       });
+      
+      // OPTIMISTIC UPDATE
+      setIssuesList(prev => [created, ...prev]);
+      
       setShowCreateModal(false);
       triggerToast('Issue reported successfully to Super Admin');
-      fetchIssues();
+      
+      // Silent sync
+      fetchIssues(false);
     } catch (err) {
       triggerToast(err.message, 'error');
     }
+  }, []);
+
+  const handleIssueSelect = async (issue) => {
+    // If description is missing (due to data thinning), fetch full details
+    if (!issue.description) {
+      try {
+        const fullIssue = await getIssueById(issue._id || issue.id);
+        setSelectedIssue(fullIssue);
+      } catch (err) {
+        console.error('Failed to fetch issue details:', err);
+        setSelectedIssue(issue); // Fallback to partial data
+      }
+    } else {
+      setSelectedIssue(issue);
+    }
   };
 
-  const filteredIssues = issuesList.filter(issue => {
-    const isForMe = issue.to === role;
-    const matchesStatus = filterStatus === 'All' || issue.status === filterStatus;
-    const matchesSearch = issue.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (issue.fromName || issue.from).toLowerCase().includes(searchTerm.toLowerCase());
-    return isForMe && matchesStatus && matchesSearch;
-  });
+  const filteredIssues = useMemo(() => {
+    return issuesList.filter(issue => {
+      const isForMe = issue.to === role;
+      const matchesStatus = filterStatus === 'All' || issue.status === filterStatus;
+      const matchesSearch = 
+        issue.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (issue.fromName || (typeof issue.from === 'object' ? issue.from.name : issue.from)).toLowerCase().includes(searchTerm.toLowerCase());
+      return isForMe && matchesStatus && matchesSearch;
+    });
+  }, [issuesList, filterStatus, searchTerm, role]);
 
   return (
     <div className="max-w-7xl mx-auto space-y-12 animate-in fade-in duration-1000 pb-24 px-4 sm:px-6">
@@ -682,7 +735,7 @@ const Issues = () => {
                   key={issue._id || issue.id}
                   issue={issue}
                   onStatusUpdate={handleStatusUpdate}
-                  onClick={() => setSelectedIssue(issue)}
+                  onClick={() => handleIssueSelect(issue)}
                 />
               ))
             ) : (

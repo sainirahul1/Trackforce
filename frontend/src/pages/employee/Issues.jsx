@@ -3,27 +3,47 @@ import { Plus, CheckCircle2, CheckCircle, Clock, AlertCircle } from 'lucide-reac
 import CreateIssueModal from '../../components/issues/CreateIssueModal';
 import { createIssue, getIssues } from '../../services/core/issueService';
 import IssueCard from '../../components/issues/IssueCard';
+import { useSocket } from '../../context/SocketContext';
 
 const EmployeeIssues = () => {
+  const { socket } = useSocket();
   const [issues, setIssues] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showToast, setShowToast] = useState({ show: false, message: '', type: 'success' });
 
-  const fetchIssues = async () => {
+  const fetchIssues = async (showLoading = true) => {
+    if (showLoading) setLoading(true);
     try {
       const data = await getIssues();
       setIssues(data);
     } catch (err) {
       console.error('Error fetching issues:', err);
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
   };
 
   useEffect(() => {
     fetchIssues();
-  }, []);
+
+    if (socket) {
+      const handleStatusUpdate = (updatedIssue) => {
+        setIssues(prev => prev.map(issue => 
+          issue._id === updatedIssue._id ? updatedIssue : issue
+        ));
+        
+        // Show notification if status changed to Resolved
+        if (updatedIssue.status === 'Resolved') {
+          triggerToast(`Issue "${updatedIssue.subject}" has been resolved!`);
+        }
+      };
+
+      socket.on('issue:status_update', handleStatusUpdate);
+      return () => socket.off('issue:status_update', handleStatusUpdate);
+    }
+  }, [socket]);
 
   const triggerToast = (message, type = 'success') => {
     setShowToast({ show: true, message, type });
@@ -31,16 +51,25 @@ const EmployeeIssues = () => {
   };
 
   const handleCreateIssue = async (newData) => {
+    setSubmitting(true);
     try {
-      await createIssue({
+      const createdIssue = await createIssue({
         ...newData,
         to: 'manager' // Employee reports to manager
       });
+      
+      // OPTIMISTIC UPDATE: Prepend the new issue immediately
+      setIssues(prev => [createdIssue, ...prev]);
+      
       setShowCreateModal(false);
       triggerToast('Issue reported successfully to your Manager');
-      fetchIssues(); // Refresh list
+      
+      // Background refresh to sync with server (no loading spinner)
+      fetchIssues(false);
     } catch (err) {
       triggerToast(err.message, 'error');
+    } finally {
+      setSubmitting(false);
     }
   };
 
