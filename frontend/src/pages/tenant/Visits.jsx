@@ -6,8 +6,11 @@ const Visits = () => {
   const { setPageLoading } = useOutletContext();
 
   useEffect(() => {
-    // Simulate data loading completion
-    if (setPageLoading) setPageLoading(false);
+    // Simulate data loading completion to show the high-fidelity skeleton
+    const timer = setTimeout(() => {
+      if (setPageLoading) setPageLoading(false);
+    }, 1000);
+    return () => clearTimeout(timer);
   }, [setPageLoading]);
   const visits = [
     { id: 1, type: 'Store', name: 'Reliance Digital', executive: 'John Doe', time: '10:30 AM', status: 'Completed', location: 'Brooklyn, NY' },

@@ -3,6 +3,7 @@ import ManagerAnalyticsSkeleton from './ManagerAnalyticsSkeleton';
 import ManagerTeamSkeleton from './ManagerTeamSkeleton';
 import ManagerTasksSkeleton from './ManagerTasksSkeleton';
 import ManagerVisitsSkeleton from './ManagerVisitsSkeleton';
+import ManagerActivitySkeleton from './ManagerActivitySkeleton';
 import Skeleton from '../../ui/Skeleton';
 
 /**
@@ -16,6 +17,7 @@ const ManagerSkeletonRegistry = ({ pathname }) => {
   if (path.includes('/manager/analytics')) return <ManagerAnalyticsSkeleton />;
   if (path.includes('/manager/team')) return <ManagerTeamSkeleton />;
   if (path.includes('/manager/tasks')) return <ManagerTasksSkeleton />;
+  if (path.includes('/manager/activity')) return <ManagerActivitySkeleton />;
   if (path.includes('/manager/visits')) return <ManagerVisitsSkeleton />;
   
   // Fallback for unknown manager pages

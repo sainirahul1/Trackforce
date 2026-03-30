@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { CreditCard, Check, Zap, Shield, Crown, RefreshCw, AlertCircle, Sparkles } from 'lucide-react';
+import { useOutletContext } from 'react-router-dom';
 import { getSubscription, updateSubscription, getAvailablePlans } from '../../services/core/tenantService';
 
 // Icon mapping for dynamic plans
@@ -23,6 +24,7 @@ const formatDate = (dateStr) => {
 };
 
 const Subscription = () => {
+  const { setPageLoading } = useOutletContext();
   const [data, setData] = useState(null);
   const [availablePlans, setAvailablePlans] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -44,6 +46,7 @@ const Subscription = () => {
       setError(err?.response?.data?.message || 'Failed to load subscription details.');
     } finally {
       setLoading(false);
+      if (setPageLoading) setPageLoading(false);
     }
   };
 
@@ -109,14 +112,6 @@ const Subscription = () => {
 
   const statusStyle = STATUS_STYLES[subStatus] || STATUS_STYLES.trial;
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64 gap-3">
-        <RefreshCw className="animate-spin text-indigo-500" size={28} />
-        <span className="text-gray-500 font-semibold">Loading subscription...</span>
-      </div>
-    );
-  }
 
   if (error && !data) {
     return (

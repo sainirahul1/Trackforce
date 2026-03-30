@@ -3,6 +3,8 @@ import TenantDashboardSkeleton from './TenantDashboardSkeleton';
 import TenantVisitsSkeleton from './TenantVisitsSkeleton';
 import TenantAnalyticsSkeleton from './TenantAnalyticsSkeleton';
 import TenantEmployeesSkeleton from './TenantEmployeesSkeleton';
+import TenantSubscriptionSkeleton from './TenantSubscriptionSkeleton';
+import TenantNotificationsSkeleton from './TenantNotificationsSkeleton';
 
 /**
  * TenantSkeletonRegistry
@@ -17,6 +19,8 @@ const TenantSkeletonRegistry = ({ pathname }) => {
   if (path.includes('/tenant/visits')) return <TenantVisitsSkeleton />;
   if (path.includes('/tenant/analytics')) return <TenantAnalyticsSkeleton />;
   if (path.includes('/tenant/employees') || path.includes('/tenant/directory')) return <TenantEmployeesSkeleton />;
+  if (path.includes('/tenant/subscription')) return <TenantSubscriptionSkeleton />;
+  if (path.includes('/tenant/notifications')) return <TenantNotificationsSkeleton />;
   
   // Default to Dashboard for unknown tenant pages
   return <TenantDashboardSkeleton />;
