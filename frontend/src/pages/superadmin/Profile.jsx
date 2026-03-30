@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { User, Mail, Phone, MapPin, Building, ShieldCheck, Camera, Edit3, Key, Briefcase, X, Save, Calendar, Clock, Users, Globe, Loader2 } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Building, ShieldCheck, Camera, Edit3, Key, Briefcase, X, Save, Calendar, Clock, Users, Globe, Loader2, Eye, EyeOff } from 'lucide-react';
 import Skeleton from '../../components/ui/Skeleton';
-import { getMe, updateProfile as updateAuthProfile, uploadProfileImage as uploadAuthImage } from '../../services/core/authService';
+import { getMe, updateProfile as updateAuthProfile, uploadProfileImage as uploadAuthImage, updateSuperadminCredentials } from '../../services/core/authService';
 import { useAuth } from '../../context/AuthContext';
 
 const Profile = () => {
@@ -23,6 +23,75 @@ const Profile = () => {
   const [editForm, setEditForm] = useState(profileData);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+
+  // New states for Account Credentials Management
+  const [credentialsForm, setCredentialsForm] = useState({
+    email: '',
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isUpdatingCredentials, setIsUpdatingCredentials] = useState(false);
+  const [credentialsMessage, setCredentialsMessage] = useState({ type: '', text: '' });
+
+  const showCredentialsMessage = (text, type = 'success') => {
+    setCredentialsMessage({ text, type });
+    setTimeout(() => setCredentialsMessage({ text: '', type: '' }), 3000);
+  };
+
+  const handleUpdateCredentials = async () => {
+    if (credentialsForm.email) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(credentialsForm.email)) {
+        showCredentialsMessage('Invalid email format', 'error');
+        return;
+      }
+    }
+
+    if (!credentialsForm.currentPassword) {
+      showCredentialsMessage('Current password is required', 'error');
+      return;
+    }
+
+    if (credentialsForm.newPassword) {
+      if (credentialsForm.newPassword.length < 8) {
+        showCredentialsMessage('New password must be minimum 8 characters', 'error');
+        return;
+      }
+      if (credentialsForm.newPassword !== credentialsForm.confirmPassword) {
+        showCredentialsMessage('Confirm password must match new password', 'error');
+        return;
+      }
+    }
+
+    if (!credentialsForm.email && !credentialsForm.newPassword) {
+        showCredentialsMessage('Please provide an email or new password to update', 'error');
+        return;
+    }
+
+    setIsUpdatingCredentials(true);
+    try {
+      await updateSuperadminCredentials({ 
+        uid: 'SYS-ROOT-001', 
+        email: credentialsForm.email,
+        currentPassword: credentialsForm.currentPassword,
+        newPassword: credentialsForm.newPassword
+      });
+      showCredentialsMessage('Credentials updated successfully');
+      setCredentialsForm({ email: '', currentPassword: '', newPassword: '', confirmPassword: '' });
+      if (credentialsForm.email) {
+        const freshData = await refreshUser();
+        setProfileData(prev => ({ ...prev, email: freshData.email }));
+      }
+    } catch (error) {
+      showCredentialsMessage(error.message || 'Failed to update credentials', 'error');
+    } finally {
+      setIsUpdatingCredentials(false);
+    }
+  };
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -286,6 +355,117 @@ const Profile = () => {
             ))}
           </div>
         </div>
+
+        {/* Account Credentials Management */}
+        <div className="bg-white dark:bg-gray-900 rounded-[2.5rem] p-8 border border-gray-100 dark:border-gray-800 shadow-sm space-y-6">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 border-b border-gray-50 dark:border-gray-800 pb-4">
+            <h2 className="text-lg font-black text-gray-900 dark:text-white">Secure Credentials Management</h2>
+            {credentialsMessage.text && (
+              <span className={`text-sm font-bold px-4 py-1.5 rounded-2xl ${credentialsMessage.type === 'error' ? 'bg-red-50 text-red-600 dark:bg-red-900/20' : 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20'} animate-in fade-in duration-300`}>
+                {credentialsMessage.text}
+              </span>
+            )}
+          </div>
+          <div className="bg-gray-50 dark:bg-gray-800/40 p-6 md:p-8 rounded-3xl border border-gray-100 dark:border-gray-800">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              
+              {/* Update Email */}
+              <div className="space-y-3">
+                <label className="text-sm font-bold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                  <Mail size={16} className="text-indigo-500" /> Update Email
+                </label>
+                <input
+                  type="email"
+                  placeholder="Enter new email"
+                  value={credentialsForm.email}
+                  onChange={(e) => setCredentialsForm({ ...credentialsForm, email: e.target.value })}
+                  className="w-full p-3.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl font-medium text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-600 transition-all outline-none"
+                />
+              </div>
+
+              {/* Current Password */}
+              <div className="space-y-3">
+                <label className="text-sm font-bold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                  <Key size={16} className="text-amber-500" /> Current Password
+                </label>
+                <div className="relative">
+                  <input
+                    type={showCurrentPassword ? "text" : "password"}
+                    placeholder="Enter current password"
+                    value={credentialsForm.currentPassword}
+                    onChange={(e) => setCredentialsForm({ ...credentialsForm, currentPassword: e.target.value })}
+                    className="w-full p-3.5 pr-12 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl font-medium text-gray-900 dark:text-white focus:ring-2 focus:ring-amber-600 transition-all outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                  >
+                    {showCurrentPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+              </div>
+
+              {/* New Password */}
+              <div className="space-y-3">
+                <label className="text-sm font-bold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                  <ShieldCheck size={16} className="text-emerald-500" /> New Password
+                </label>
+                <div className="relative">
+                  <input
+                    type={showNewPassword ? "text" : "password"}
+                    placeholder="Enter new password"
+                    value={credentialsForm.newPassword}
+                    onChange={(e) => setCredentialsForm({ ...credentialsForm, newPassword: e.target.value })}
+                    className="w-full p-3.5 pr-12 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl font-medium text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-600 transition-all outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                  >
+                    {showNewPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Confirm New Password */}
+              <div className="space-y-3">
+                <label className="text-sm font-bold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                  <ShieldCheck size={16} className="text-emerald-500" /> Confirm New Password
+                </label>
+                <div className="relative">
+                  <input
+                    type={showConfirmPassword ? "text" : "password"}
+                    placeholder="Confirm new password"
+                    value={credentialsForm.confirmPassword}
+                    onChange={(e) => setCredentialsForm({ ...credentialsForm, confirmPassword: e.target.value })}
+                    className="w-full p-3.5 pr-12 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl font-medium text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-600 transition-all outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                  >
+                    {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            <div className="mt-8 flex justify-end">
+              <button
+                onClick={handleUpdateCredentials}
+                disabled={isUpdatingCredentials}
+                className="px-6 py-3.5 bg-indigo-600 text-white font-bold rounded-2xl hover:bg-indigo-700 shadow-xl shadow-indigo-200 dark:shadow-none transition-all disabled:opacity-70 flex items-center justify-center gap-2 w-full md:w-auto"
+              >
+                {isUpdatingCredentials ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
+                <span>Update Credentials</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
         </div>
       </div>
 

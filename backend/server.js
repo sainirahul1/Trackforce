@@ -112,6 +112,7 @@ app.use('/api/superadmin/analytics', require('./routes/superadmin/analyticsRoute
 app.use('/api/superadmin/notifications', require('./routes/superadmin/notificationRoutes'));
 app.use('/api/superadmin/settings', require('./routes/superadmin/settingsRoutes'));
 app.use('/api/superadmin/manage', require('./routes/superadmin/roleManagementRoutes'));
+app.use('/api/superadmin/update-credentials', require('./routes/superadmin/credentialsRoutes'));
 app.use('/api/tenant', require('./routes/tenant/tenantRoutes'));
 app.use('/api/manager/inventory-orders', require('./routes/manager/inventoryOrderRoutes'));
 
