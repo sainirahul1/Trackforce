@@ -1,11 +1,14 @@
 const Notification = require('../../models/tenant/Notification');
+const { emitToUser } = require('../../utils/notificationUtils');
 
 // @desc    Get all notifications for logged-in user
 // @route   GET /api/notifications
 // @access  Private
 const getNotifications = async (req, res) => {
   try {
-    const notifications = await Notification.find({ recipient: req.user._id })
+    const userId = req.user._id;
+
+    const notifications = await Notification.find({ recipient: userId })
       .sort({ createdAt: -1 })
       .limit(50);
 
@@ -31,6 +34,10 @@ const markAsRead = async (req, res) => {
       return res.status(404).json({ message: 'Notification not found' });
     }
 
+    // Real-time state synchronization
+    const io = req.app.get('io');
+    emitToUser(io, req.user._id, 'notification:read', req.params.id);
+
     res.json(notification);
   } catch (error) {
     console.error('markAsRead error:', error);
@@ -47,6 +54,10 @@ const markAllAsRead = async (req, res) => {
       { recipient: req.user._id, isRead: false },
       { isRead: true }
     );
+
+    // Real-time state synchronization
+    const io = req.app.get('io');
+    emitToUser(io, req.user._id, 'notification:read_all', true);
 
     res.json({ message: 'All notifications marked as read' });
   } catch (error) {
@@ -68,6 +79,10 @@ const deleteNotification = async (req, res) => {
     if (!notification) {
       return res.status(404).json({ message: 'Notification not found' });
     }
+
+    // Real-time state synchronization
+    const io = req.app.get('io');
+    emitToUser(io, req.user._id, 'notification:deleted', req.params.id);
 
     res.json({ message: 'Notification deleted' });
   } catch (error) {

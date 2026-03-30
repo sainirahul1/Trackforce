@@ -32,11 +32,19 @@ export const SocketProvider = ({ children }) => {
       newSocket.on('connect', () => {
         console.log('[SOCKET] Connected to server');
         
-        // Join rooms
-        if (user.tenant) {
-          newSocket.emit('join_tenant', typeof user.tenant === 'object' ? user.tenant._id : user.tenant);
-        }
+        const tenantId = typeof user.tenant === 'object' ? user.tenant._id : user.tenant;
+        
+        // Join rooms for fine-grained isolation
         newSocket.emit('join_user', user._id);
+        
+        if (tenantId) {
+          newSocket.emit('join_tenant', tenantId);
+          newSocket.emit('join_tenant_role', { tenantId, role: user.role });
+        }
+        
+        if (user.role) {
+          newSocket.emit('join_role', user.role);
+        }
       });
 
       newSocket.on('connect_error', (err) => {

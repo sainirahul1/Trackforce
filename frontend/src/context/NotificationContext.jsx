@@ -73,7 +73,25 @@ export const NotificationProvider = ({ children }) => {
             };
 
             socket.on('notification:new', handleNewNotification);
-            return () => socket.off('notification:new', handleNewNotification);
+
+            socket.on('notification:read', (id) => {
+                setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
+            });
+
+            socket.on('notification:read_all', () => {
+                setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+            });
+
+            socket.on('notification:deleted', (id) => {
+                setNotifications(prev => prev.filter(n => n.id !== id));
+            });
+
+            return () => {
+                socket.off('notification:new', handleNewNotification);
+                socket.off('notification:read');
+                socket.off('notification:read_all');
+                socket.off('notification:deleted');
+            };
         }
     }, [socket]);
 

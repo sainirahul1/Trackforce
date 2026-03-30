@@ -1,27 +1,51 @@
 const Notification = require('../../models/tenant/Notification');
+const User = require('../../models/tenant/User');
+const { sendNotification } = require('../../utils/notificationUtils');
 
-// @desc    Broadcast a global notification to all tenants
+// @desc    Broadcast a notification by creating individual records for each target user
 // @route   POST /api/superadmin/notifications/broadcast
 // @access  Private/SuperAdmin
 exports.broadcastNotification = async (req, res) => {
-  const { title, message, type } = req.body;
+  const { title, message, type, tenantId, role, priority } = req.body;
 
   try {
-    // In a multi-tenant system, a "global" notification might be 
-    // a separate collection or we broadcast to all tenants.
-    // For now, we'll label it as 'global' which the frontend can filter.
-    const notification = await Notification.create({
+    // 1. Build the query to find target users
+    const query = {};
+    if (tenantId) query.tenant = tenantId;
+    if (role && role !== 'all') query.role = role;
+
+    const targetUsers = await User.find(query).select('_id');
+
+    if (targetUsers.length === 0) {
+      return res.status(404).json({ message: 'No users found matching the criteria' });
+    }
+
+    // 2. Prepare individual notification records for every user
+    const notificationData = targetUsers.map(user => ({
+      recipient: user._id,
       title,
-      message,
-      type,
-      recipientRole: 'tenant', // Send to all tenant admins
-      isGlobal: true,
-      status: 'sent'
-    });
+      desc: message,
+      type: type || 'broadcasting',
+      tenant: tenantId || null,
+      role: role || 'all',
+      isGlobal: !tenantId,
+      priority: priority || 'medium'
+    }));
+
+    // 3. Batch create records to ensure isolation
+    const createdNotifications = await Notification.insertMany(notificationData);
+
+    // 4. Emit to each user directly via their private socket room
+    const io = req.app.get('io');
+    if (io) {
+      createdNotifications.forEach(notif => {
+        sendNotification(io, notif);
+      });
+    }
 
     res.status(201).json({
-      message: 'Global notification broadcasted',
-      notification
+      message: `Notification delivered individually to ${createdNotifications.length} users`,
+      count: createdNotifications.length
     });
   } catch (error) {
     res.status(400).json({ message: error.message });

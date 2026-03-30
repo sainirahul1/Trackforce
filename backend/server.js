@@ -54,6 +54,8 @@ const io = new Server(server, {
   cors: corsOptions
 });
 
+app.set('io', io);
+
 // Socket.io connection logic
 io.on('connection', (socket) => {
   console.log('[SOCKET] User connected:', socket.id);
@@ -66,6 +68,16 @@ io.on('connection', (socket) => {
   socket.on('join_user', (userId) => {
     socket.join(`user:${userId}`);
     console.log(`[SOCKET] User ${socket.id} joined user room: ${userId}`);
+  });
+
+  socket.on('join_role', (role) => {
+    socket.join(`role:${role}`);
+    console.log(`[SOCKET] User ${socket.id} joined role room: ${role}`);
+  });
+
+  socket.on('join_tenant_role', ({ tenantId, role }) => {
+    socket.join(`tenant:${tenantId}:role:${role}`);
+    console.log(`[SOCKET] User ${socket.id} joined tenant-role room: ${tenantId}:${role}`);
   });
 
   socket.on('disconnect', () => {
