@@ -20,8 +20,11 @@ import {
   Maximize2,
   Trash2,
   History,
-  X
+  X,
+  Plus
 } from 'lucide-react';
+import CreateIssueModal from '../../components/issues/CreateIssueModal';
+import { getIssues, createIssue, updateIssue, deleteIssue } from '../../services/core/issueService';
 
 const ImageModal = ({ src, onClose }) => {
   if (!src) return null;
@@ -61,6 +64,25 @@ const IssueCard = ({ issue, onClick }) => {
     }
   };
 
+  const getProfileImage = (issue) => {
+    if (issue.from && typeof issue.from === 'object' && issue.from.profile && issue.from.profile.profileImage) {
+      const dp = issue.from.profile.profileImage;
+      if (dp.startsWith('data:') || dp.startsWith('http')) return dp;
+      let url = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+      url = url.replace(/\/$/, '');
+      if (!url.endsWith('/api')) url += '/api';
+      return `${url.replace('/api', '')}${dp}`;
+    }
+    return `https://i.pravatar.cc/150?u=${issue.id || issue._id || 'default'}`;
+  };
+
+  const getFromName = (issue) => {
+    if (issue.from && typeof issue.from === 'object' && issue.from.name) {
+      return issue.from.name;
+    }
+    return issue.fromName || issue.from;
+  };
+
   return (
     <div
       onClick={() => onClick(issue)}
@@ -90,11 +112,11 @@ const IssueCard = ({ issue, onClick }) => {
       <div className="relative z-10 flex items-center gap-3 mb-4">
         <div className="flex items-center gap-2.5 bg-gray-50 dark:bg-gray-800/50 px-3 py-1.5 rounded-xl border border-gray-100 dark:border-gray-700">
           <div className="relative">
-            <img src={`https://i.pravatar.cc/150?u=${issue.id}`} className="w-5 h-5 rounded-lg border border-white dark:border-gray-800 shadow-sm" alt="user" />
+            <img src={getProfileImage(issue)} className="w-5 h-5 rounded-lg border border-white dark:border-gray-800 shadow-sm object-cover" alt="user" />
             <div className="absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-emerald-500 border border-white dark:border-gray-900 rounded-full"></div>
           </div>
           <p className="text-[10px] font-bold text-gray-400">
-            Raised by: <span className="text-gray-900 dark:text-gray-100 font-black uppercase tracking-widest">{issue.from}</span>
+            Raised by: <span className="text-gray-900 dark:text-gray-100 font-black uppercase tracking-widest">{getFromName(issue)}</span>
           </p>
         </div>
         <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest opacity-60 bg-gray-50/50 dark:bg-gray-800/40 px-3 py-2 rounded-xl">
@@ -357,7 +379,7 @@ const IssueDetails = ({ issue, onBack, onStatusUpdate, onUpdatePriority, onDelet
                 <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-800/50 px-4 py-2.5 rounded-2xl border border-gray-100 dark:border-gray-700">
                   <User size={16} className="text-indigo-500" />
                   <span className="text-gray-400">Raised by:</span>
-                  <span className="text-gray-900 dark:text-white uppercase tracking-widest ml-1">{issue.from}</span>
+                  <span className="text-gray-900 dark:text-white uppercase tracking-widest ml-1">{issue.from && typeof issue.from === 'object' ? issue.from.name : (issue.fromName || issue.from)}</span>
                 </div>
                 <div className="flex items-center gap-2 px-4 py-2.5 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-700 font-black text-[10px] uppercase">
                   <Clock size={16} className="text-indigo-500" /> March 12, 2024 • 10:30 AM
@@ -506,13 +528,31 @@ const IssueDetails = ({ issue, onBack, onStatusUpdate, onUpdatePriority, onDelet
   );
 };
 
+
 const Issues = () => {
   const role = 'manager';
   const [filterStatus, setFilterStatus] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedIssue, setSelectedIssue] = useState(null);
-  const [issuesList, setIssuesList] = useState(initialIssues);
+  const [issuesList, setIssuesList] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const [showToast, setShowToast] = useState({ show: false, message: '', type: 'success' });
+  const [selectedIssue, setSelectedIssue] = useState(null);
+
+  const fetchIssues = async () => {
+    try {
+      const data = await getIssues();
+      setIssuesList(data);
+    } catch (err) {
+      console.error('Error fetching issues:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchIssues();
+  }, []);
 
   const triggerToast = (message, type = 'success') => {
     setShowToast({ show: true, message, type });
@@ -522,26 +562,58 @@ const Issues = () => {
   };
 
   // Persistence Logic
-  const handleStatusUpdate = (id, newStatus, escalatedTo = null) => {
-    setIssuesList(prev => prev.map(issue =>
-      issue.id === id ? { ...issue, status: newStatus, escalatedTo } : issue
-    ));
-    // Sync current detail view if open
-    if (selectedIssue && selectedIssue.id === id) {
-      setSelectedIssue(prev => ({ ...prev, status: newStatus, escalatedTo }));
+  const handleStatusUpdate = async (id, newStatus, escalatedTo = null) => {
+    try {
+      const updated = await updateIssue(id, { status: newStatus });
+      setIssuesList(prev => prev.map(issue =>
+        issue._id === id ? { ...issue, status: newStatus, escalatedTo } : issue
+      ));
+      // Sync current detail view if open
+      if (selectedIssue && (selectedIssue._id === id || selectedIssue.id === id)) {
+        setSelectedIssue(prev => ({ ...prev, status: newStatus, escalatedTo }));
+      }
+      triggerToast('Status updated successfully');
+    } catch (err) {
+      triggerToast(err.message, 'error');
     }
   };
 
-  const handlePriorityUpdate = (id, newPriority) => {
-    setIssuesList(prev => prev.map(issue =>
-      issue.id === id ? { ...issue, priority: newPriority } : issue
-    ));
+  const handlePriorityUpdate = async (id, newPriority) => {
+    try {
+      await updateIssue(id, { priority: newPriority });
+      setIssuesList(prev => prev.map(issue =>
+        issue._id === id ? { ...issue, priority: newPriority } : issue
+      ));
+      triggerToast('Priority updated successfully');
+    } catch (err) {
+      triggerToast(err.message, 'error');
+    }
   };
 
-  const handleDelete = (id) => {
-    setIssuesList(prev => prev.filter(issue => issue.id !== id));
-    if (selectedIssue && selectedIssue.id === id) {
-      setSelectedIssue(null);
+  const handleDelete = async (id) => {
+    try {
+      await deleteIssue(id);
+      setIssuesList(prev => prev.filter(issue => issue._id !== id && issue.id !== id));
+      if (selectedIssue && (selectedIssue._id === id || selectedIssue.id === id)) {
+        setSelectedIssue(null);
+      }
+      triggerToast('Issue deleted');
+    } catch (err) {
+      triggerToast(err.message, 'error');
+    }
+  };
+
+  const handleCreateIssue = async (newData) => {
+    try {
+      await createIssue({
+        ...newData,
+        to: 'superadmin' // Manager reports to superadmin
+      });
+      setShowCreateModal(false);
+      triggerToast('Issue reported successfully to Super Admin');
+      fetchIssues();
+    } catch (err) {
+      triggerToast(err.message, 'error');
     }
   };
 
@@ -549,7 +621,7 @@ const Issues = () => {
     const isForMe = issue.to === role;
     const matchesStatus = filterStatus === 'All' || issue.status === filterStatus;
     const matchesSearch = issue.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      issue.from.toLowerCase().includes(searchTerm.toLowerCase());
+      (issue.fromName || issue.from).toLowerCase().includes(searchTerm.toLowerCase());
     return isForMe && matchesStatus && matchesSearch;
   });
 
@@ -567,7 +639,23 @@ const Issues = () => {
                 Issues <br className="hidden sm:block" /> Management
               </h1>
             </div>
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="flex items-center gap-3 px-8 py-4 bg-indigo-600 text-white rounded-[2rem] font-black uppercase tracking-widest text-[10px] shadow-2xl shadow-indigo-500/40 hover:bg-indigo-700 hover:-translate-y-1 transition-all active:scale-95 group"
+            >
+              <div className="p-1.5 bg-white/20 rounded-xl group-hover:rotate-90 transition-transform duration-500">
+                <Plus size={16} />
+              </div>
+              Report New Issue
+            </button>
           </div>
+
+          {showCreateModal && (
+            <CreateIssueModal
+              onClose={() => setShowCreateModal(false)}
+              onCreate={handleCreateIssue}
+            />
+          )}
 
           <IssueStats issues={issuesList.filter(i => i.to === role)} />
 
@@ -584,10 +672,14 @@ const Issues = () => {
           </div>
 
           <div className="grid grid-cols-1 gap-12">
-            {filteredIssues.length > 0 ? (
+            {loading ? (
+              <div className="p-32 text-center animate-pulse">
+                <p className="text-gray-400 font-bold uppercase tracking-widest text-xs">Synchronizing issue logs...</p>
+              </div>
+            ) : filteredIssues.length > 0 ? (
               filteredIssues.map((issue) => (
                 <IssueCard
-                  key={issue.id}
+                  key={issue._id || issue.id}
                   issue={issue}
                   onStatusUpdate={handleStatusUpdate}
                   onClick={() => setSelectedIssue(issue)}

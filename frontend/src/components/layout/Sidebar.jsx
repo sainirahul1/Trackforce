@@ -39,6 +39,7 @@ const Sidebar = ({ role, user, isCollapsed, onToggle }) => {
       { name: 'Inventory/Orders', icon: ShoppingBag, path: '/manager/inventory' },
       // { name: 'Analytics', icon: Activity, path: '/manager/analytics' },
       { name: 'Team', icon: Users, path: '/manager/team' },
+      { name: 'Support Issues', icon: AlertCircle, path: '/manager/issues' },
       { name: 'Activity Log', icon: Clock, path: '/manager/activity' },
       { name: 'Profile', icon: User, path: '/manager/profile' },
     ],
@@ -49,6 +50,7 @@ const Sidebar = ({ role, user, isCollapsed, onToggle }) => {
       { name: 'My Orders', icon: ShoppingBag, path: '/employee/orders' },
       { name: 'Activity', icon: Clock, path: '/employee/activity' },
       { name: 'My Profile', icon: Users, path: '/employee/profile' },
+      { name: 'Support Issues', icon: AlertCircle, path: '/employee/issues' },
     ],
   };
 

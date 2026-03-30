@@ -39,11 +39,11 @@ const IssueCard = ({ issue }) => {
             <div className="flex flex-wrap items-center gap-4 text-xs font-medium text-gray-500">
               <span className="flex items-center gap-1.5">
                 <User size={12} className="text-gray-400" />
-                From: <span className="text-indigo-600 font-bold">{issue.from}</span>
+                From: <span className="text-indigo-600 font-bold">{issue.fromName || issue.from}</span>
               </span>
               <span className="flex items-center gap-1.5 sm:border-l border-gray-200 dark:border-gray-700 sm:pl-4">
                 <Clock size={12} className="text-gray-400" />
-                {issue.date}
+                {issue.date ? new Date(issue.date).toLocaleDateString() : 'Just now'}
               </span>
             </div>
           </div>
@@ -55,7 +55,7 @@ const IssueCard = ({ issue }) => {
               {getStatusIcon(issue.status)}
               <span className="text-sm font-black text-gray-900 dark:text-white">{issue.status}</span>
             </div>
-            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">ID: #{issue.id.toString().padStart(4, '0')}</p>
+            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">ID: #{(issue._id || issue.id || 'new').toString().slice(-6)}</p>
           </div>
           <button 
             onClick={() => setIsExpanded(!isExpanded)}

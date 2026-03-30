@@ -58,6 +58,7 @@ app.use('/api/tracking', require('./routes/employee/trackingRoutes'));
 app.use('/api/notifications', require('./routes/tenant/notificationRoutes'));
 
 app.use('/api/employee', require('./routes/employee/employeeRoutes'));
+app.use('/api/issues', require('./routes/core/issueRoutes'));
 
 // Super Admin Routes
 app.use('/api/superadmin/companies', require('./routes/superadmin/companyRoutes'));

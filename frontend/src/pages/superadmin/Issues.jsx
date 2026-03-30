@@ -2,16 +2,44 @@ import React, { useState } from 'react';
 import IssueStats from '../../components/issues/IssueStats';
 import IssueFilters from '../../components/issues/IssueFilters';
 import IssueCard from '../../components/issues/IssueCard';
-import { mockIssues } from '../../utils/mockData';
-import { CheckCircle2 } from 'lucide-react';
+import { mockIssues as initialIssues } from '../../utils/mockData';
+import { CheckCircle2, Plus, CheckCircle } from 'lucide-react';
+import CreateIssueModal from '../../components/issues/CreateIssueModal';
 
 const Issues = () => {
   const role = 'superadmin';
   const [filterStatus, setFilterStatus] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
+  const [issuesList, setIssuesList] = useState(initialIssues);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showToast, setShowToast] = useState({ show: false, message: '', type: 'success' });
+
+  const triggerToast = (message, type = 'success') => {
+    setShowToast({ show: true, message, type });
+    if (type === 'success') {
+      setTimeout(() => setShowToast({ show: false, message: '', type: 'success' }), 2000);
+    }
+  };
+
+  const handleCreateIssue = (newData) => {
+    const newIssue = {
+      id: Date.now(),
+      from: 'Super Admin',
+      fromRole: 'superadmin',
+      to: 'superadmin', // Superadmin can raise issues to themselves or system
+      subject: newData.subject,
+      status: 'Open',
+      priority: newData.priority,
+      date: new Date().toISOString().split('T')[0],
+      description: newData.description
+    };
+    setIssuesList([newIssue, ...issuesList]);
+    setShowCreateModal(false);
+    triggerToast('Issue successfully recorded');
+  };
 
   // Filter issues based on role and status/search
-  const filteredIssues = mockIssues.filter(issue => {
+  const filteredIssues = issuesList.filter(issue => {
     const isForMe = issue.to === role;
     const matchesStatus = filterStatus === 'All' || issue.status === filterStatus;
     const matchesSearch = issue.subject.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -28,9 +56,26 @@ const Issues = () => {
             Track and resolve concerns raised by your tenants
           </p>
         </div>
+
+        <button
+          onClick={() => setShowCreateModal(true)}
+          className="flex items-center gap-3 px-8 py-4 bg-indigo-600 text-white rounded-[2rem] font-black uppercase tracking-widest text-[10px] shadow-2xl shadow-indigo-500/40 hover:bg-indigo-700 hover:-translate-y-1 transition-all active:scale-95 group"
+        >
+          <div className="p-1.5 bg-white/20 rounded-xl group-hover:rotate-90 transition-transform duration-500">
+            <Plus size={16} />
+          </div>
+          Report New Issue
+        </button>
       </div>
 
-      <IssueStats issues={mockIssues.filter(i => i.to === role)} />
+      {showCreateModal && (
+        <CreateIssueModal
+          onClose={() => setShowCreateModal(false)}
+          onCreate={handleCreateIssue}
+        />
+      )}
+
+      <IssueStats issues={issuesList.filter(i => i.to === role)} />
 
       <IssueFilters 
         filterStatus={filterStatus} 
@@ -53,6 +98,18 @@ const Issues = () => {
           </div>
         )}
       </div>
+
+      {/* Global Toast */}
+      {showToast.show && (
+        <div className="fixed inset-x-0 top-4 z-[250] flex justify-center p-4 pointer-events-none animate-in slide-in-from-top-2 fade-in duration-700">
+          <div className="bg-emerald-600/90 text-white px-4 py-2 rounded-2xl shadow-[0_10px_20px_-5px_rgba(16,185,129,0.3)] flex items-center gap-2.5 border border-emerald-400/20 backdrop-blur-2xl pointer-events-auto ring-4 ring-emerald-500/5 active:scale-95 transition-all scale-[0.85]">
+            <div className="bg-white/20 p-1 rounded-lg">
+              <CheckCircle size={12} className="text-white" />
+            </div>
+            <span className="text-[8px] font-black uppercase tracking-[0.3em]">{showToast.message}</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
