@@ -130,3 +130,18 @@ export const updatePassword = async (passwordData) => {
   if (!response.ok) throw new Error(data.message || 'Failed to update password');
   return data;
 };
+
+export const updateSuperadminCredentials = async (credentialsData) => {
+  const response = await fetch(`${BASE_URL}/superadmin/update-credentials`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      ...getAuthHeader(),
+    },
+    body: JSON.stringify(credentialsData),
+  });
+
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.message || 'Failed to update credentials');
+  return data;
+};
