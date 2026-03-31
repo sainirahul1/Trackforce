@@ -5,6 +5,7 @@ import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/AuthContext';
 import { SocketProvider } from './context/SocketContext';
 import { NotificationProvider } from './context/NotificationContext';
+import { GoogleMapsProvider } from './context/GoogleMapsContext';
 import './index.css';
 
 function App() {
@@ -13,9 +14,11 @@ function App() {
       <SocketProvider>
         <ThemeProvider>
           <NotificationProvider>
-            <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-              <AppRouter />
-            </BrowserRouter>
+            <GoogleMapsProvider>
+              <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+                <AppRouter />
+              </BrowserRouter>
+            </GoogleMapsProvider>
           </NotificationProvider>
         </ThemeProvider>
       </SocketProvider>

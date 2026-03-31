@@ -42,7 +42,20 @@ const DashboardLayout = ({ allowedRole }) => {
   const [isCheckingMaintenance, setIsCheckingMaintenance] = useState(true);
 
   const storedRole = localStorage.getItem('role');
-  const { user: localUser, refreshUser } = useAuth();
+  const { user: localUser, isLoading: authLoading, refreshUser } = useAuth();
+
+  // Route Change Skeleton Trigger (Real-Time Synchronization Rollout)
+  useEffect(() => {
+    const isTargetRoute =
+      location.pathname.startsWith('/tenant') ||
+      location.pathname.startsWith('/manager') ||
+      location.pathname.startsWith('/employee');
+
+    if (isTargetRoute) {
+      // Force loading state on route start
+      setIsPageLoading(true);
+    }
+  }, [location.pathname]);
 
   useEffect(() => {
     const fetchMaintenanceStatus = async () => {
@@ -74,28 +87,10 @@ const DashboardLayout = ({ allowedRole }) => {
       </div>
     );
   }
-  // Route Change Skeleton Trigger (Real-Time Synchronization Rollout)
-  useEffect(() => {
-    const isTargetRoute =
-      location.pathname.startsWith('/tenant') ||
-      location.pathname.startsWith('/manager') ||
-      location.pathname.startsWith('/employee');
-
-    if (isTargetRoute) {
-      // Force loading state on route start
-      setIsPageLoading(true);
-    }
-  }, [location.pathname]);
-
-  // Provide this to children via Outlet Context
   const setPageLoading = (isLoading) => {
     setIsPageLoading(isLoading);
   };
 
-
-  if (!storedRole || (allowedRole && storedRole !== allowedRole)) {
-    return <Navigate to="/login" replace />;
-  }
 
   if (!storedRole || (allowedRole && storedRole !== allowedRole)) {
     return <Navigate to="/login" replace />;
