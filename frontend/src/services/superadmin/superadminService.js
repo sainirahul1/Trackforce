@@ -71,6 +71,10 @@ const superadminService = {
     const response = await axios.get(`${API_URL}/manage/users/${role}`, { headers: getAuthHeader() });
     return response.data;
   },
+  impersonateGlobalUser: async (userId) => {
+    const response = await axios.post(`${API_URL}/manage/users/${userId}/impersonate`, {}, { headers: getAuthHeader() });
+    return response.data;
+  },
 
   // Subscriptions
   getSubscriptions: async () => {

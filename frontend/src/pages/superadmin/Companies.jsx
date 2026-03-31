@@ -52,14 +52,28 @@ const CompaniesList = () => {
 
   // Global Scope State
   const [globalActiveTab, setGlobalActiveTab] = useState('organizations');
-  const [globalUsers, setGlobalUsers] = useState([]);
+  const [globalUsers, setGlobalUsers] = useState(() => {
+    try {
+      const cached = sessionStorage.getItem('tf_globalUsersCache');
+      return cached ? JSON.parse(cached) : {};
+    } catch {
+      return {};
+    }
+  });
   const [loadingGlobalUsers, setLoadingGlobalUsers] = useState(false);
   const [globalCurrentPage, setGlobalCurrentPage] = useState(1);
   const globalPageSize = 10;
 
-  // Tenant Users Management State (Modal & Global)
   const [activeModalTab, setActiveModalTab] = useState('overview');
-  const [tenantUsers, setTenantUsers] = useState([]);
+
+  const getPrecachedTenantUsers = (tenantId) => {
+    const managers = (globalUsers.manager || []).filter(u => (u.tenant?._id || u.tenant) === tenantId);
+    const employees = (globalUsers.employee || []).filter(u => (u.tenant?._id || u.tenant) === tenantId);
+    return [...managers, ...employees];
+  };
+  
+  const [tenantUsersCache, setTenantUsersCache] = useState({});
+  const tenantUsers = selectedTenant ? (tenantUsersCache[selectedTenant._id] || getPrecachedTenantUsers(selectedTenant._id)) : [];
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [provisionEntity, setProvisionEntity] = useState('organization'); // 'organization', 'manager', 'employee'
@@ -83,6 +97,21 @@ const CompaniesList = () => {
 
   useEffect(() => {
     fetchCompanies();
+    // Silently prefetch users for zero-latency tab switches
+    superadminService.getGlobalUsersByRole('manager').then(data => {
+      setGlobalUsers(prev => { 
+        const next = { ...prev, manager: data };
+        sessionStorage.setItem('tf_globalUsersCache', JSON.stringify(next));
+        return next;
+      });
+    }).catch(e => console.error(e));
+    superadminService.getGlobalUsersByRole('employee').then(data => {
+      setGlobalUsers(prev => { 
+        const next = { ...prev, employee: data };
+        sessionStorage.setItem('tf_globalUsersCache', JSON.stringify(next));
+        return next;
+      });
+    }).catch(e => console.error(e));
   }, []);
 
   useEffect(() => {
@@ -101,11 +130,17 @@ const CompaniesList = () => {
   }, [activeModalTab, selectedTenant]);
 
   const fetchGlobalUsers = async (role) => {
-    setLoadingGlobalUsers(true);
+    if (!globalUsers[role]) {
+      setLoadingGlobalUsers(true);
+    }
     try {
       // Direct mapping for backend roles
       const data = await superadminService.getGlobalUsersByRole(role);
-      setGlobalUsers(data);
+      setGlobalUsers(prev => {
+        const next = { ...prev, [role]: data };
+        sessionStorage.setItem('tf_globalUsersCache', JSON.stringify(next));
+        return next;
+      });
     } catch (err) {
       console.error('Error fetching global users:', err);
     } finally {
@@ -173,6 +208,32 @@ const CompaniesList = () => {
     }
   };
 
+  const handleImpersonateUser = async (userId, role, name) => {
+    setImpersonating(userId);
+    try {
+      const data = await superadminService.impersonateGlobalUser(userId);
+
+      const tenantUrl = new URL(window.location.href);
+      if (role === 'manager') {
+        tenantUrl.pathname = '/manager/dashboard';
+      } else if (role === 'employee') {
+        tenantUrl.pathname = '/employee/dashboard';
+      } else {
+        tenantUrl.pathname = '/tenant/dashboard';
+      }
+      tenantUrl.search   = '';
+
+      const payload = encodeURIComponent(JSON.stringify(data));
+      tenantUrl.searchParams.set('impersonate', payload);
+
+      window.location.href = tenantUrl.toString();
+    } catch (error) {
+      alert(error.response?.data?.message || `Failed to impersonate ${name}.`);
+    } finally {
+      setImpersonating(null);
+    }
+  };
+
   const handlePlanChange = async (e) => {
     const newPlan = e.target.value.toLowerCase();
 
@@ -199,10 +260,13 @@ const CompaniesList = () => {
   };
 
   const fetchTenantUsers = async (tenantId) => {
-    setLoadingUsers(true);
+    const prefetched = getPrecachedTenantUsers(tenantId);
+    if (!tenantUsersCache[tenantId] && prefetched.length === 0) {
+      setLoadingUsers(true);
+    }
     try {
       const users = await superadminService.getTenantUsers(tenantId);
-      setTenantUsers(users);
+      setTenantUsersCache(prev => ({ ...prev, [tenantId]: users }));
     } catch (err) {
       console.error('Error fetching tenant users:', err);
     } finally {
@@ -299,7 +363,8 @@ const CompaniesList = () => {
   const activeFilterCount = [industryFilter, statusFilter, planFilter].filter(Boolean).length;
 
   const filteredGlobalUsers = useMemo(() => {
-    return globalUsers.filter(user => {
+    const currentUsers = globalUsers[globalActiveTab] || [];
+    return currentUsers.filter(user => {
       // Search: name, email, or tenant name
       if (searchQuery) {
         const q = searchQuery.toLowerCase();
@@ -335,7 +400,7 @@ const CompaniesList = () => {
 
       return true;
     });
-  }, [globalUsers, searchQuery, industryFilter, statusFilter, planFilter]);
+  }, [globalUsers, globalActiveTab, searchQuery, industryFilter, statusFilter, planFilter]);
 
   const paginatedCompanies = useMemo(() => {
     const start = (globalCurrentPage - 1) * globalPageSize;
@@ -388,12 +453,32 @@ const CompaniesList = () => {
     {
       header: 'Actions',
       accessor: 'actions',
-      render: (row) => (
-        <div className="flex items-center justify-end space-x-1">
-          <button onClick={(e) => { e.stopPropagation(); setEditingUser(row); setUserFormData({ name: row.name, email: row.email, password: '', role: row.role, tenantId: row.tenant?._id }); setProvisionEntity(row.role); setShowModal(true); }} className="p-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-gray-400 hover:text-blue-500 rounded-xl transition-colors"><Edit size={16} /></button>
-          <button onClick={(e) => { e.stopPropagation(); handleDeleteUser(row._id, row.tenant?._id); }} className="p-2 hover:bg-rose-50 dark:hover:bg-rose-900/20 text-gray-400 hover:text-rose-500 rounded-xl transition-colors"><Trash2 size={16} /></button>
-        </div>
-      )
+      render: (row) => {
+        const isLoading = impersonating === row._id;
+        return (
+          <div className="flex items-center justify-end space-x-1">
+            <button
+              onClick={(e) => { e.stopPropagation(); handleImpersonateUser(row._id, row.role, row.name); }}
+              disabled={isLoading}
+              className="relative p-2 hover:bg-violet-50 dark:hover:bg-violet-900/20 rounded-xl text-gray-400 hover:text-violet-600 transition-all flex items-center justify-center disabled:opacity-50 disabled:cursor-wait group"
+              title={`Login as ${row.name}`}
+            >
+              {isLoading ? (
+                <svg className="animate-spin" width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
+                  <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                </svg>
+              ) : (
+                <ExternalLink size={16} />
+              )}
+              <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-[9px] font-black uppercase tracking-wider px-2 py-1 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
+                Login As
+              </span>
+            </button>
+            <button onClick={(e) => { e.stopPropagation(); setEditingUser(row); setUserFormData({ name: row.name, email: row.email, password: '', role: row.role, tenantId: row.tenant?._id }); setProvisionEntity(row.role); setShowModal(true); }} className="p-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-gray-400 hover:text-blue-500 rounded-xl transition-colors"><Edit size={16} /></button>
+            <button onClick={(e) => { e.stopPropagation(); handleDeleteUser(row._id, row.tenant?._id); }} className="p-2 hover:bg-rose-50 dark:hover:bg-rose-900/20 text-gray-400 hover:text-rose-500 rounded-xl transition-colors"><Trash2 size={16} /></button>
+          </div>
+        );
+      }
     }
   ];
 

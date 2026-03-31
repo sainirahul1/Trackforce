@@ -93,7 +93,7 @@ const AppRouter = () => (
 
     {/* Manager Routes */}
     <Route path="/manager" element={<DashboardLayout allowedRole="manager" />}>
-      <Route path="dashboard" element={<Navigate to="/manager/team" replace />} />
+      <Route path="dashboard" element={<Navigate to="/manager/analytics" replace />} />
       <Route path="team" element={<ManagerTeam />} />
       <Route path="team/:id" element={<EmployeeDetails />} />
       <Route path="live" element={<LiveTracking />} />
@@ -105,7 +105,7 @@ const AppRouter = () => (
       <Route path="profile" element={<ManagerProfile />} />
       <Route path="issues" element={<ManagerIssues />} />
       <Route path="notifications" element={<NotificationsPage />} />
-      <Route index element={<Navigate to="team" replace />} />
+      <Route index element={<Navigate to="analytics" replace />} />
     </Route>
 
     {/* Employee Routes */}
