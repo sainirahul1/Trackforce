@@ -1,30 +1,48 @@
-import React, { useState, useEffect } from 'react';
+/**
+ * @file Visits.jsx
+ * @description High-fidelity Manager Dashboard for reviewing Field Visits and Proofs.
+ * Features include high-density row layouts, dynamic status-based UI, 
+ * and a React Portal-based Lightbox for 100% viewport coverage.
+ */
+
+import React, { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
+import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from '@react-google-maps/api';
 import {
   Camera, MapPin, CheckCircle2, Clock, AlertCircle,
   ExternalLink, Maximize2, ShieldCheck, User, Store,
   Search, Filter, Calendar, ArrowRight, XCircle, RotateCcw,
   Check, X, MessageSquare, MoreHorizontal, Mail, Phone, ArrowLeft,
-  ChevronDown, History
+  ChevronDown, History, Radio, Activity, Navigation, Users, ArrowUpRight
 } from 'lucide-react';
 import { getVisits, getVisitById, updateVisit } from '../../services/employee/visitService';
+import io from 'socket.io-client';
+import { getActiveTrackingSessions } from '../../services/employee/trackingService';
 
 /**
  * VisitRow Component
  * Renders a high-density, horizontal entry for the visits feed.
  */
-const VisitRow = ({ visit, onReview }) => (
+const VisitRow = ({ visit, onReview, isLive }) => (
   <div
     onClick={onReview}
-    className="group bg-white dark:bg-gray-900 px-4 py-2.5 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-xl transition-all cursor-pointer flex flex-col lg:flex-row items-center gap-4 border-l-[4px] border-l-transparent hover:border-l-indigo-600"
+    className={`group bg-white dark:bg-gray-900 px-4 py-2.5 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-xl transition-all cursor-pointer flex flex-col lg:flex-row items-center gap-4 border-l-[4px] transition-all ${isLive ? 'border-l-emerald-500' : 'hover:border-l-indigo-600 border-l-transparent'}`}
   >
     {/* Identification */}
     <div className="flex items-center gap-3 w-full lg:w-[20%] shrink-0">
-      <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-black text-xs shadow-md shrink-0 group-hover:scale-105 transition-transform">
-        {visit.avatar}
+      <div className="relative">
+        <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-black text-xs shadow-md shrink-0 group-hover:scale-105 transition-transform">
+          {visit.avatar}
+        </div>
+        {isLive && (
+          <div className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-500 rounded-full border-2 border-white dark:border-gray-950 animate-pulse" />
+        )}
       </div>
       <div className="min-w-0">
-        <h4 className="text-[13px] font-black text-gray-900 dark:text-white truncate tracking-tight">{visit.executive}</h4>
+        <div className="flex items-center gap-2">
+          <h4 className="text-[13px] font-black text-gray-900 dark:text-white truncate tracking-tight">{visit.executive}</h4>
+          {isLive && <span className="text-[7px] font-black text-emerald-500 uppercase tracking-widest bg-emerald-50 dark:bg-emerald-500/10 px-1.5 py-0.5 rounded">Live</span>}
+        </div>
         <p className="text-[8px] font-black text-gray-400 uppercase tracking-[0.1em] truncate">{visit.designation}</p>
       </div>
     </div>
@@ -33,13 +51,19 @@ const VisitRow = ({ visit, onReview }) => (
     <div className="flex items-center gap-5 w-full lg:w-[40%]">
       <div className="flex items-center gap-2 min-w-[110px]">
         <Store size={12} className="text-indigo-400" />
-        <span className="text-[11px] font-bold text-gray-600 dark:text-gray-300 truncate">{visit.store}</span>
+        <span className="text-[11px] font-bold text-gray-600 dark:text-gray-300 truncate">
+          {isLive && visit.liveLocation ? (
+            <span className="text-emerald-500 font-black animate-pulse flex items-center gap-1">
+              <MapPin size={10} /> {visit.address || visit.liveLocation}
+            </span>
+          ) : visit.store}
+        </span>
       </div>
 
       <div className="hidden xl:flex items-center gap-5">
         <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md border ${visit.location.includes('Warning') ? 'bg-rose-50 border-rose-100 text-rose-500' : 'bg-emerald-50 border-emerald-100 text-emerald-500'} dark:bg-opacity-5 dark:border-opacity-10 text-[8px] font-black uppercase tracking-tight`}>
-          <MapPin size={9} className="shrink-0" fill="currentColor" fillOpacity={0.2} />
-          {visit.location.split(' ')[0]}
+          <Radio size={9} className={isLive ? 'animate-pulse text-emerald-500' : 'shrink-0'} fill="currentColor" fillOpacity={0.2} />
+          {isLive && visit.city ? visit.city : visit.location.split(' ')[0]}
         </div>
         <div className="flex items-center gap-1.5 text-gray-400 text-[9px] font-bold tabular-nums">
           <Clock size={11} />
@@ -50,6 +74,21 @@ const VisitRow = ({ visit, onReview }) => (
 
     {/* Assets & Status Control */}
     <div className="flex items-center justify-between lg:justify-end gap-5 w-full lg:flex-1">
+      <div className="flex items-center gap-4">
+        <button
+          onClick={() => fetchData(true)}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 font-bold transition-all active:scale-95 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 ${refreshing ? 'opacity-50' : ''}`}
+        >
+          <Activity size={16} className={refreshing ? 'animate-spin' : ''} />
+          <span className="text-[10px] uppercase tracking-widest">{refreshing ? 'Syncing...' : 'Refresh Live Sync'}</span>
+        </button>
+        <div className="p-2.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-800 text-gray-500">
+          <Filter size={18} />
+        </div>
+        <div className="p-2.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-800 text-gray-500">
+          <Users size={18} />
+        </div>
+      </div>
       <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-lg text-gray-400">
         <Camera size={11} />
         <span className="text-[8px] font-black uppercase tracking-widest">{visit.photos} Proofs</span>
@@ -84,19 +123,148 @@ const VisitRow = ({ visit, onReview }) => (
  * ManagerVisits Main Component
  */
 const ManagerVisits = () => {
-  const [filterStatus, setFilterStatus] = useState('Total');
-  const [selectedVisit, setSelectedVisit] = useState(null);
-  const [selectedVisitLoading, setSelectedVisitLoading] = useState(false);
-  const [isPendingExpanded, setIsPendingExpanded] = useState(true);
-  const [isHistoryExpanded, setIsHistoryExpanded] = useState(true);
-  const [isRejecting, setIsRejecting] = useState(false);
-  const [rejectionReasonInput, setRejectionReasonInput] = useState('');
-  const [activePhoto, setActivePhoto] = useState(null);
-  const [observationCategory, setObservationCategory] = useState('General Overview');
+  // --- State Initialization ---
+  const [filterStatus, setFilterStatus] = React.useState('Total');       // Active status filter (Total, Accepted, Rejected, etc.)
+  const [selectedVisit, setSelectedVisit] = React.useState(null);       // Tracks the visit currently being reviewed in Detail mode
+  const [isPendingExpanded, setIsPendingExpanded] = React.useState(true); // Toggles 'Awaiting Action' accordion
+  const [isHistoryExpanded, setIsHistoryExpanded] = React.useState(true); // Toggles 'Operational Intelligence' accordion
+  const [isRejecting, setIsRejecting] = React.useState(false);           // Controls the showing of the rejection remark textarea
+  const [rejectionReasonInput, setRejectionReasonInput] = React.useState(''); // Buffer for user-entered rejection text
+  const [activePhoto, setActivePhoto] = React.useState(null);           // Holds the photo object for the Portal-based Lightbox
+  const [observationCategory, setObservationCategory] = React.useState('General Overview'); // Active category for observation notes
+  const [liveEmployees, setLiveEmployees] = React.useState({});         // Map of employeeId -> latest location data
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
 
-  const [visits, setVisits] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const { isLoaded } = useJsApiLoader({
+    id: 'google-map-script',
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ''
+  });
+
+  const [map, setMap] = React.useState(null);
+  const onLoad = React.useCallback(map => setMap(map), []);
+
+  const [visits, setVisits] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
+  const hasFetched = React.useRef(false);
+  const [refreshing, setRefreshing] = React.useState(false);
+
+  const activeLocation = selectedVisit ? liveEmployees[selectedVisit.employee?._id] : null;
+  const isValidCenter = activeLocation &&
+    activeLocation.location &&
+    !isNaN(Number(activeLocation.location.lat)) &&
+    !isNaN(Number(activeLocation.location.lng));
+  const isLive = !!activeLocation;
+
+  // --- Socket Integration ---
+  React.useEffect(() => {
+    const socketUrl = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5001';
+    const socket = io(socketUrl);
+
+    socket.on('connect', () => {
+      console.log('Manager connected to socket server');
+      if (user.tenant) {
+        console.log('Joining tenant room:', user.tenant);
+        socket.emit('join', user.tenant);
+      } else if (user._id) {
+        socket.emit('join', user._id);
+      }
+    });
+
+    socket.on('tracking:live', (data) => {
+      console.log('Live update received for:', data.employeeName, data.location);
+      setLiveEmployees(prev => ({
+        ...prev,
+        [data.employeeId]: data
+      }));
+    });
+
+    return () => socket.disconnect();
+  }, [user._id]);
+
+  const fetchData = async (isManual = false) => {
+    if (hasFetched.current && !isManual) return;
+    if (isManual) setRefreshing(true);
+
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('token');
+      const headers = { 'Authorization': `Bearer ${token}` };
+
+      // Auto-heal manager profile if tenant is missing
+      const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+      if (!currentUser.tenant) {
+        console.log('Manager tenant missing in Visits, fetching profile...');
+        const profileRes = await fetch(`${import.meta.env.VITE_API_URL}/auth/me`, { headers });
+        const profileData = await profileRes.json();
+        if (profileData.tenant) {
+          const updatedUser = { ...currentUser, tenant: profileData.tenant };
+          localStorage.setItem('user', JSON.stringify(updatedUser));
+          console.log('Manager profile healed in Visits with tenant:', profileData.tenant);
+        }
+      }
+
+      // Fetch visits
+      const visitsResponse = await fetch(`${import.meta.env.VITE_API_URL}/visits/tenant/${user._id}`, { headers });
+      const visitsData = await visitsResponse.json();
+
+      const formattedVisits = visitsData.map(v => ({
+        id: v._id,
+        store: v.storeName,
+        executive: v.employee?.name || 'Unknown',
+        designation: v.employee?.role || 'Field Executive',
+        team: 'Field Operations',
+        type: v.taskType || 'Store Visit',
+        status: v.reviewStatus || 'Pending Review',
+        time: new Date(v.timestamp || v.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        raw: v,
+        employee: v.employee // Ensure employee object is passed for live data lookup
+      }));
+      setVisits(formattedVisits);
+
+      // Fetch active tracking sessions
+      try {
+        const activeRes = await fetch(`${import.meta.env.VITE_API_URL}/tracking/active`, { headers });
+        const activeSessions = await activeRes.json();
+
+        const liveMap = {};
+        activeSessions.forEach(session => {
+          if (session.user?._id) {
+            liveMap[session.user._id] = {
+              location: session.route?.[session.route.length - 1] || null,
+              address: session.currentAddress,
+              city: session.currentCity,
+              timestamp: session.updatedAt
+            };
+          }
+        });
+        setLiveEmployees(liveMap);
+      } catch (trackError) {
+        console.error('Error fetching active tracking sessions:', trackError);
+      }
+
+      hasFetched.current = true;
+    } catch (err) {
+      console.error('Error fetching visits:', err);
+    } finally {
+      setLoading(false);
+      if (isManual) setRefreshing(false);
+    }
+  };
+
+  React.useEffect(() => {
+    fetchData();
+  }, []);
+
+
+  const getMarkerColor = (id) => {
+    const colors = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#14b8a6', '#f97316', '#a855f7'];
+    if (!id) return colors[0];
+    let hash = 0;
+    for (let i = 0; i < id.length; i++) {
+      hash = id.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return colors[Math.abs(hash) % colors.length];
+  };
 
   const categoryContent = {
     'General Overview': "The store inventory was mostly organized, however, some discrepancies were noted in the inward goods section. Client was cooperative and provided all necessary documentation for the audit trail. No major issues faced during the field protocol execution.",
@@ -208,7 +376,9 @@ const ManagerVisits = () => {
     { label: 'Awaiting Review', value: visits.filter(v => v.reviewStatus === 'pending').length.toString(), icon: Clock, color: 'text-amber-600', bg: 'bg-amber-50', status: 'Pending' },
     { label: 'Accepted', value: visits.filter(v => v.reviewStatus === 'accepted').length.toString(), icon: CheckCircle2, color: 'text-emerald-600', bg: 'bg-emerald-50', status: 'Accepted' },
     { label: 'Rejected', value: visits.filter(v => v.reviewStatus === 'rejected').length.toString(), icon: XCircle, color: 'text-rose-600', bg: 'bg-rose-50', status: 'Rejected' },
-  ];
+  // --- Statistics & Filtering ---
+  ]
+
 
   const filteredVisits = filterStatus === 'Total'
     ? visits
@@ -330,6 +500,25 @@ const ManagerVisits = () => {
                         <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">No pending audits matching current filter</p>
                       </div>
                     )}
+                    {filteredVisits.filter(v => v.status === 'Pending Review').map((visit) => {
+                      const liveData = liveEmployees[visit.employee?._id];
+                      return (
+                        <VisitRow
+                          key={visit.id}
+                          visit={{
+                            ...visit,
+                            address: liveData?.address,
+                            city: liveData?.city,
+                            liveLocation: liveData ? `L: ${liveData.location.lat.toFixed(4)}, ${liveData.location.lng.toFixed(4)}` : null
+                          }}
+                          onReview={() => setSelectedVisit({
+                            ...visit,
+                            liveData: liveData
+                          })}
+                          isLive={!!liveData}
+                        />
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -462,9 +651,21 @@ const ManagerVisits = () => {
                     <h5 className="text-[11px] font-black text-gray-400 uppercase tracking-[0.3em] mb-8">Audit Intelligence Report</h5>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       {[
-                        { label: 'Target Location', value: selectedVisit.store, icon: Store, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+                        {
+                          label: 'Target Location',
+                          value: (isLive && activeLocation?.address) ? activeLocation.address : selectedVisit.store,
+                          icon: isLive ? Navigation : Store,
+                          color: isLive ? 'text-emerald-600' : 'text-indigo-600',
+                          bg: isLive ? 'bg-emerald-50' : 'bg-indigo-50'
+                        },
                         { label: 'Audit Timestamp', value: selectedVisit.time, icon: Clock, color: 'text-blue-600', bg: 'bg-blue-50' },
-                        { label: 'Geospatial Delta', value: selectedVisit.location, icon: MapPin, color: selectedVisit.location.includes('Warning') ? 'text-rose-600' : 'text-emerald-600', bg: selectedVisit.location.includes('Warning') ? 'bg-rose-50' : 'bg-emerald-50' },
+                        {
+                          label: isLive ? 'Current GPS' : 'Geospatial Delta',
+                          value: isLive ? `L: ${activeLocation.location.lat.toFixed(4)}, ${activeLocation.location.lng.toFixed(4)}` : selectedVisit.location,
+                          icon: isLive ? Radio : MapPin,
+                          color: (!isLive && selectedVisit.location.includes('Warning')) ? 'text-rose-600' : 'text-emerald-600',
+                          bg: (!isLive && selectedVisit.location.includes('Warning')) ? 'bg-rose-50' : 'bg-emerald-50'
+                        },
                         { label: 'Visual Evidence', value: `${selectedVisit.photos} HD Assets`, icon: Camera, color: 'text-indigo-600', bg: 'bg-indigo-50' }
                       ].map((item, id) => (
                         <div key={id} className="p-5 bg-white dark:bg-gray-900 rounded-[1.5rem] border border-gray-100 dark:border-gray-800 shadow-sm flex flex-col gap-4 group transition-all hover:shadow-lg hover:border-indigo-100 dark:hover:border-indigo-500/20">
@@ -482,7 +683,65 @@ const ManagerVisits = () => {
 
 
                   {/* Protocol Action Panel */}
-                  <div className="mt-12 pt-10 border-t border-gray-100 dark:border-gray-800">
+                  <div className="mt-8 pt-6 border-t border-gray-100 dark:border-gray-800">
+                    <h5 className="text-[11px] font-black text-gray-400 uppercase tracking-[0.3em] mb-4">Live Operational Map</h5>
+                    <div className="w-full h-[300px] rounded-[2rem] overflow-hidden border-2 border-white dark:border-gray-900 shadow-xl relative group/map">
+                      {isLoaded ? (
+                        <GoogleMap
+                          mapContainerStyle={{ width: '100%', height: '100%' }}
+                          center={isValidCenter ? { lat: Number(activeLocation.location.lat), lng: Number(activeLocation.location.lng) } : { lat: 12.9716, lng: 77.5946 }}
+                          zoom={13}
+                          onLoad={onLoad}
+                          options={{ disableDefaultUI: true, zoomControl: true, styles: [/* standard subtle styles */] }}
+                        >
+                          {Object.values(liveEmployees).map((emp) => (
+                            emp.location && (
+                              <Marker
+                                key={emp.employeeId}
+                                position={{ lat: Number(emp.location.lat), lng: Number(emp.location.lng) }}
+                                title={emp.employeeName}
+                                label={{
+                                  text: emp.employeeName?.charAt(0) || 'E',
+                                  color: 'white',
+                                  fontSize: '10px',
+                                  fontWeight: 'black'
+                                }}
+                                animation={emp.employeeId === selectedVisit.employee?._id ? window.google.maps.Animation.BOUNCE : null}
+                                icon={{
+                                  path: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z",
+                                  fillColor: getMarkerColor(emp.employeeId),
+                                  fillOpacity: 1,
+                                  strokeWeight: emp.employeeId === selectedVisit.employee?._id ? 4 : 2,
+                                  strokeColor: emp.employeeId === selectedVisit.employee?._id ? "#4f46e5" : "#ffffff",
+                                  scale: emp.employeeId === selectedVisit.employee?._id ? 1.4 : 1.1
+                                }}
+                              />
+                            )
+                          ))}
+                        </GoogleMap>
+                      ) : (
+                        <div className="w-full h-full bg-gray-50 flex items-center justify-center">
+                          <Activity className="animate-spin text-indigo-600" />
+                        </div>
+                      )}
+
+                      {/* Floating Legend */}
+                      <div className="absolute top-4 left-4 p-2.5 bg-white/90 dark:bg-gray-950/90 backdrop-blur-md rounded-xl shadow-lg border border-white/20 z-10">
+                        <div className="flex flex-col gap-1.5">
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full bg-indigo-600 animate-pulse" />
+                            <span className="text-[8px] font-black uppercase text-gray-950 dark:text-white">Active Executive</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full bg-gray-400" />
+                            <span className="text-[8px] font-black uppercase text-gray-500">Fleet Members</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-8 pt-8 border-t border-gray-100 dark:border-gray-800">
                     <h5 className="text-[11px] font-black text-gray-400 uppercase tracking-[0.3em] mb-6">Review Protocol</h5>
                     {selectedVisit.reviewStatus === 'pending' ? (
                       !isRejecting ? (

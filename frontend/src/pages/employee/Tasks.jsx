@@ -1092,9 +1092,8 @@ const EmployeeTasks = () => {
         setError(null);
       } catch (err) {
         console.error('Failed to fetch tasks:', err);
-        setError('Failed to load tasks. Using offline data.');
-        console.log('[DEBUG] Using fallback initialTasks:', initialTasks);
-        setTaskList(initialTasks);
+        setError('Failed to load tasks from server.');
+        setTaskList([]);
       } finally {
         setIsLoading(false);
       }

@@ -13,7 +13,7 @@ function App() {
       <SocketProvider>
         <ThemeProvider>
           <NotificationProvider>
-            <BrowserRouter>
+            <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
               <AppRouter />
             </BrowserRouter>
           </NotificationProvider>

@@ -30,6 +30,12 @@ const storeVisitSchema = new mongoose.Schema({
     enum: ['consistent', 'inconsistent'],
     default: 'consistent'
   },
+  reviewStatus: {
+    type: String,
+    enum: ['Pending Review', 'Approved', 'Rejected'],
+    default: 'Pending Review',
+  },
+  rejectionReason: String,
   address: String,
   distance: String,
   eta: String,

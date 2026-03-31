@@ -47,6 +47,6 @@ export const updateVisit = async (id, visitData) => {
     },
     body: JSON.stringify(visitData)
   });
-  if (!response.ok) throw new Error('Failed to update visit');
+  if (!response.ok) throw new Error('Failed to review visit');
   return response.json();
 };

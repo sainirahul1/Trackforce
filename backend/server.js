@@ -10,6 +10,12 @@ const { initLogger } = require('./utils/activityLogger');
 dotenv.config({ path: path.join(__dirname, '.env') });
 
 const app = express();
+const PORT = process.env.PORT || 5001;
+const server = http.createServer(app);
+
+// Socket.io Setup - Handled via socket.js module
+const initSocket = require('./socket');
+const io = initSocket(server);
 
 // Middleware
 const corsOptions = {
@@ -46,44 +52,7 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Create HTTP server
-const server = http.createServer(app);
-
-// Initialize Socket.io
-const io = new Server(server, {
-  cors: corsOptions
-});
-
 app.set('io', io);
-
-// Socket.io connection logic
-io.on('connection', (socket) => {
-  console.log('[SOCKET] User connected:', socket.id);
-
-  socket.on('join_tenant', (tenantId) => {
-    socket.join(`tenant:${tenantId}`);
-    console.log(`[SOCKET] User ${socket.id} joined tenant room: ${tenantId}`);
-  });
-
-  socket.on('join_user', (userId) => {
-    socket.join(`user:${userId}`);
-    console.log(`[SOCKET] User ${socket.id} joined user room: ${userId}`);
-  });
-
-  socket.on('join_role', (role) => {
-    socket.join(`role:${role}`);
-    console.log(`[SOCKET] User ${socket.id} joined role room: ${role}`);
-  });
-
-  socket.on('join_tenant_role', ({ tenantId, role }) => {
-    socket.join(`tenant:${tenantId}:role:${role}`);
-    console.log(`[SOCKET] User ${socket.id} joined tenant-role room: ${tenantId}:${role}`);
-  });
-
-  socket.on('disconnect', () => {
-    console.log('[SOCKET] User disconnected:', socket.id);
-  });
-});
 
 // Initialize Activity Logger
 initLogger(io);
@@ -120,16 +89,26 @@ app.use('/api/manager/inventory-orders', require('./routes/manager/inventoryOrde
 // Employee Routes
 app.use('/api/employee/tasks', require('./routes/employee/taskRoutes'));
 
-// Database Connection — start server only after DB is ready
-const PORT = process.env.PORT || 5001;
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error('Unhandled error:', err);
+  res.status(500).json({ message: err.message || 'Server Error' });
+});
 
+process.on('unhandledRejection', (err) => {
+  console.error('Unhandled Promise Rejection:', err);
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception:', err);
+});
+
+// Database Connection
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => {
     console.log('MongoDB Connected');
-    server.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-    });
+    server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
   })
   .catch((err) => {
     console.error('MongoDB Connection Error:', err);
