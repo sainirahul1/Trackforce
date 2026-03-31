@@ -3,10 +3,18 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const path = require('path');
+const http = require('http');
+const { Server } = require('socket.io');
 
 dotenv.config({ path: path.join(__dirname, '.env') });
 
 const app = express();
+const PORT = process.env.PORT || 5001;
+const server = http.createServer(app);
+
+// Socket.io Setup - Handled via socket.js module
+const initSocket = require('./socket');
+const io = initSocket(server);
 
 // Middleware
 app.use(cors());
@@ -38,16 +46,26 @@ app.use('/api/superadmin/manage', require('./routes/superadmin/roleManagementRou
 // Employee Routes
 app.use('/api/employee/tasks', require('./routes/employee/taskRoutes'));
 
-// Database Connection — start server only after DB is ready
-const PORT = process.env.PORT || 5001;
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error('Unhandled error:', err);
+  res.status(500).json({ message: err.message || 'Server Error' });
+});
 
+process.on('unhandledRejection', (err) => {
+  console.error('Unhandled Promise Rejection:', err);
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception:', err);
+});
+
+// Database Connection
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => {
     console.log('MongoDB Connected');
-    app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-    });
+    server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
   })
   .catch((err) => {
     console.error('MongoDB Connection Error:', err);

@@ -49,6 +49,8 @@ exports.register = async (req, res) => {
         role: user.role,
         tenant: user.tenant,
         tenantStatus: populatedUser.tenant?.onboardingStatus || 'active',
+        manager: user.manager,
+        isTracking: user.isTracking,
         token: generateToken(user._id),
       });
     } else {
@@ -75,6 +77,8 @@ exports.getMe = async (req, res) => {
       role: user.role,
       tenant: user.tenant?._id,
       tenantStatus: user.tenant?.onboardingStatus || 'active',
+      manager: user.manager,
+      isTracking: user.isTracking,
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -96,8 +100,10 @@ exports.login = async (req, res) => {
         email: user.email,
         company: user.company,
         role: user.role,
-        tenant: user.tenant,
+        tenant: populatedUser.tenant?._id || user.tenant,
         tenantStatus: populatedUser.tenant?.onboardingStatus || 'active',
+        manager: user.manager,
+        isTracking: user.isTracking,
         token: generateToken(user._id),
       });
     } else {

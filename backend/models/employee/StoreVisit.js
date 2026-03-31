@@ -20,6 +20,12 @@ const storeVisitSchema = new mongoose.Schema({
     enum: ['completed', 'partially_completed', 'not_interested', 'follow_up'],
     required: true,
   },
+  reviewStatus: {
+    type: String,
+    enum: ['Pending Review', 'Approved', 'Rejected'],
+    default: 'Pending Review',
+  },
+  rejectionReason: String,
   address: String,
   distance: String,
   eta: String,

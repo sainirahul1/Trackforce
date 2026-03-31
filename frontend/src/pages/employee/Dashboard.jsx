@@ -315,29 +315,140 @@ const ActivityItem = ({ activity, isLast }) => (
 
 import { getDashboardStats, startTracking, stopTracking } from '../../services/trackingService';
 import { getActivities } from '../../services/activityService';
+import { getTasks } from '../../services/taskService';
+
+import { io } from 'socket.io-client';
 
 const EmployeeDashboard = () => {
   // --- State Hooks ---
-  const [isOnDuty, setIsOnDuty] = useState(false);
   const [statsData, setStatsData] = useState({ visitsToday: 0, ordersToday: 0, tasksToday: 0 });
   const [activities, setActivities] = useState([]);
+  const [nextTask, setNextTask] = useState(null);
   const [loading, setLoading] = useState(true);
-  
+  const [isOnDuty, setIsOnDuty] = useState(false);
+  const [socket, setSocket] = useState(null);
+  const socketRef = React.useRef(null);
+  const watchIdRef = React.useRef(null);
+  const [watchId, setWatchId] = useState(null); // Keep for UI indicators if needed
+
   const user = JSON.parse(localStorage.getItem('user')) || {};
 
-  // --- Effects ---
+  // --- Socket Connection ---
+  useEffect(() => {
+    const socketUrl = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5001';
+    const newSocket = io(socketUrl);
+    setSocket(newSocket);
+    socketRef.current = newSocket;
+
+    newSocket.on('connect', () => {
+      console.log('Employee connected to socket server');
+      const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+      if (currentUser._id) {
+        newSocket.emit('join', currentUser._id);
+
+        // If already on duty on mount, send an immediate point once socket is ready
+        if (isOnDuty) {
+          navigator.geolocation.getCurrentPosition((pos) => {
+            const { latitude, longitude } = pos.coords;
+            const bootUpdate = {
+              employeeId: currentUser._id,
+              employeeName: currentUser.name,
+              managerId: currentUser.manager,
+              tenantId: currentUser.tenant,
+              role: currentUser.role,
+              location: { lat: latitude, lng: longitude },
+              timestamp: new Date().toISOString()
+            };
+            console.log('[BOOT] Emitting initial points for already active shift');
+            newSocket.emit('tracking:update', bootUpdate);
+          });
+        }
+      }
+    });
+
+    return () => {
+      newSocket.close();
+      socketRef.current = null;
+    };
+  }, []);
+
+  // --- Cleanup on Unmount ---
+  useEffect(() => {
+    return () => {
+      if (watchIdRef.current) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+      }
+    };
+  }, []);
+
+  // --- Start Geo Tracking ---
+  const startGeoTracking = React.useCallback(() => {
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by your browser");
+      return;
+    }
+
+    // Clear existing watch if any
+    if (watchIdRef.current) {
+      navigator.geolocation.clearWatch(watchIdRef.current);
+    }
+
+    const id = navigator.geolocation.watchPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        const currentSocket = socketRef.current;
+        const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+
+        if (currentSocket && currentSocket.connected) {
+          const updateData = {
+            employeeId: currentUser._id,
+            employeeName: currentUser.name,
+            managerId: currentUser.manager,
+            tenantId: currentUser.tenant,
+            role: currentUser.role,
+            location: { lat: latitude, lng: longitude },
+            timestamp: new Date().toISOString()
+          };
+          console.log('Emitting location update:', updateData);
+          currentSocket.emit('tracking:update', updateData);
+        } else {
+          console.warn('Socket not ready for emission');
+        }
+      },
+      (error) => console.error('Error getting location:', error),
+      { enableHighAccuracy: true }
+    );
+    setWatchId(id);
+    watchIdRef.current = id;
+  }, []);
+
+  // Handle starting/stopping tracking when duty status changes
+  useEffect(() => {
+    if (isOnDuty && socket && !watchIdRef.current) {
+      console.log('Starting geo tracking watcher');
+      startGeoTracking();
+    } else if (!isOnDuty && watchIdRef.current) {
+      console.log('Stopping geo tracking watcher');
+      navigator.geolocation.clearWatch(watchIdRef.current);
+      watchIdRef.current = null;
+      setWatchId(null);
+    }
+  }, [isOnDuty, socket, startGeoTracking]);
+
+  // --- Initial Data Fetch & Profile Sync ---
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [stats, logs] = await Promise.all([
+        const [stats, logs, allTasks] = await Promise.all([
           getDashboardStats(),
-          getActivities()
+          getActivities(),
+          getTasks()
         ]);
         setStatsData(stats);
         setActivities(logs.map(log => {
           const logDate = new Date(log.timestamp || log.createdAt);
           const isValidDate = !isNaN(logDate.getTime());
-          
+
           return {
             title: log.type.replace('_', ' ').toUpperCase(),
             desc: log.details,
@@ -345,30 +456,92 @@ const EmployeeDashboard = () => {
             type: log.type.includes('start') ? 'success' : 'default'
           };
         }));
-        setIsOnDuty(user.isTracking || false);
+
+        const pendingTask = allTasks.find(t => t.status === 'pending') || allTasks[0];
+        setNextTask(pendingTask);
+
+        // Sync user data and tracking status from server
+        console.log('Syncing tracking status...');
+        const statusResponse = await fetch(`${import.meta.env.VITE_API_URL}/tracking/status`, {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        const trackingStatus = await statusResponse.json();
+
+        const trackingActive = trackingStatus.isTracking || false;
+        setIsOnDuty(trackingActive);
+
+        // Auto-heal local user object with server-side metadata (tenant, role, etc.)
+        const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+        const updatedUser = {
+          ...currentUser,
+          ...trackingStatus.user, // Priority to server data (tenant, role, manager)
+          isTracking: trackingActive
+        };
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+        console.log('User state auto-healed from server:', updatedUser.tenant);
+
+        // If already tracking on mount, start the watcher
+        if (trackingActive) {
+          console.log('Auto-starting tracking from server status');
+          startGeoTracking();
+        }
       } catch (err) {
         console.error('Error fetching dashboard data:', err);
       } finally {
         setLoading(false);
       }
     };
+
     fetchData();
-  }, []);
+  }, [startGeoTracking]);
 
   const handleToggleShift = async () => {
+    // Re-read user from localStorage to get the auto-healed manager/tenant data
+    const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+
+    // Prevent managers from tracking themselves
+    if (currentUser.role === 'manager') {
+      alert("Tracking is only available for Field Executives.");
+      return;
+    }
+
     try {
       if (isOnDuty) {
-        await stopTracking();
+        try {
+          await stopTracking();
+        } catch (err) {
+          if (err.message.includes('not active')) {
+            console.log('Tracking not active on backend, syncing UI...');
+          } else {
+            throw err;
+          }
+        }
+        if (watchIdRef.current) {
+          navigator.geolocation.clearWatch(watchIdRef.current);
+          watchIdRef.current = null;
+          setWatchId(null);
+        }
       } else {
-        await startTracking();
+        try {
+          await startTracking();
+        } catch (err) {
+          // If already active on backend, just proceed (sync issue)
+          if (err.message.includes('already active')) {
+            console.log('Tracking already active on backend, syncing UI...');
+          } else {
+            throw err;
+          }
+        }
+        startGeoTracking();
       }
       setIsOnDuty(!isOnDuty);
-      
+
       // Update local user object tracking status
-      const updatedUser = { ...user, isTracking: !isOnDuty };
+      const updatedUser = { ...currentUser, isTracking: !isOnDuty };
       localStorage.setItem('user', JSON.stringify(updatedUser));
     } catch (err) {
-      alert(err.message);
+      console.error('Error toggling tracking:', err);
+      alert(`Failed to update tracking status: ${err.message}`);
     }
   };
 
@@ -423,12 +596,12 @@ const EmployeeDashboard = () => {
                     <div className="mt-4 flex flex-col items-center space-y-3 pt-4 border-t border-white/10 w-full animate-in fade-in slide-in-from-top-2 duration-500">
                       <div className="flex flex-col items-center">
                         <span className={`text-[10px] font-black uppercase tracking-widest leading-none mb-1 ${isOnDuty ? 'text-green-300 shadow-green-500/50' : 'text-slate-400'}`}>
-                          {isOnDuty ? 'Active Tracking' : 'Tracking Off'}
+                          {isOnDuty ? (watchId ? 'GPS Emitting' : 'GPS Scanning...') : 'Tracking Off'}
                         </span>
                         {isOnDuty && (
                           <div className="absolute top-2 right-2 flex h-2 w-2">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                            <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${watchId ? 'bg-green-400' : 'bg-yellow-400'} opacity-75`}></span>
+                            <span className={`relative inline-flex rounded-full h-2 w-2 ${watchId ? 'bg-green-500' : 'bg-yellow-500'}`}></span>
                           </div>
                         )}
                       </div>
@@ -512,11 +685,11 @@ const EmployeeDashboard = () => {
                 <div className="flex-1 space-y-6">
                   <div className="space-y-2">
                     <h3 className="text-3xl font-black text-gray-900 dark:text-white leading-none tracking-tight group-hover:text-indigo-600 transition-colors">
-                      Global Tech Solutions HQ
+                      {nextTask?.store || 'No Pending Targets'}
                     </h3>
                     <div className="flex items-center text-gray-500 dark:text-gray-400">
                       <MapIcon size={16} className="mr-2 text-indigo-500 opacity-70" />
-                      <span className="text-sm font-bold uppercase tracking-widest opacity-80">Sector 4, North Zone</span>
+                      <span className="text-sm font-bold uppercase tracking-widest opacity-80">{nextTask?.address || 'Operational queue clear'}</span>
                     </div>
                   </div>
 
@@ -524,12 +697,12 @@ const EmployeeDashboard = () => {
                   <div className="flex items-center gap-6 py-4 border-y border-gray-100 dark:border-gray-800/50">
                     <div className="flex flex-col">
                       <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Travel</span>
-                      <span className="text-lg font-black text-slate-800 dark:text-white">18 mins</span>
+                      <span className="text-lg font-black text-slate-800 dark:text-white">{nextTask?.eta || '---'}</span>
                     </div>
                     <div className="w-px h-8 bg-gray-100 dark:bg-gray-800" />
                     <div className="flex flex-col">
                       <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Distance</span>
-                      <span className="text-lg font-black text-slate-800 dark:text-white">4.2 km</span>
+                      <span className="text-lg font-black text-slate-800 dark:text-white">{nextTask?.distance || '---'}</span>
                     </div>
                   </div>
                 </div>
@@ -599,5 +772,6 @@ const EmployeeDashboard = () => {
 };
 
 export default EmployeeDashboard;
+
 
 

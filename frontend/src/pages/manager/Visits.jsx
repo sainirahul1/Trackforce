@@ -5,15 +5,20 @@
  * and a React Portal-based Lightbox for 100% viewport coverage.
  */
 
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
+import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from '@react-google-maps/api';
 import {
   Camera, MapPin, CheckCircle2, Clock, AlertCircle,
   ExternalLink, Maximize2, ShieldCheck, User, Store,
   Search, Filter, Calendar, ArrowRight, XCircle, RotateCcw,
   Check, X, MessageSquare, MoreHorizontal, Mail, Phone, ArrowLeft,
-  ChevronDown, History
+  ChevronDown, History, Radio, Activity, Navigation, Users, ArrowUpRight
 } from 'lucide-react';
+import io from 'socket.io-client';
+
+import { getVisits, reviewVisit } from '../../services/visitService';
+import { getActiveTrackingSessions } from '../../services/trackingService';
 
 /**
  * VisitRow Component
@@ -23,18 +28,26 @@ import {
  * @param {Object} props.visit - The visit data object.
  * @param {Function} props.onReview - Callback to trigger the detail view.
  */
-const VisitRow = ({ visit, onReview }) => (
+const VisitRow = ({ visit, onReview, isLive }) => (
   <div
     onClick={onReview}
-    className="group bg-white dark:bg-gray-900 px-4 py-2.5 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-xl transition-all cursor-pointer flex flex-col lg:flex-row items-center gap-4 border-l-[4px] border-l-transparent hover:border-l-indigo-600"
+    className={`group bg-white dark:bg-gray-900 px-4 py-2.5 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-xl transition-all cursor-pointer flex flex-col lg:flex-row items-center gap-4 border-l-[4px] transition-all ${isLive ? 'border-l-emerald-500' : 'hover:border-l-indigo-600 border-l-transparent'}`}
   >
     {/* Identification */}
     <div className="flex items-center gap-3 w-full lg:w-[20%] shrink-0">
-      <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-black text-xs shadow-md shrink-0 group-hover:scale-105 transition-transform">
-        {visit.avatar}
+      <div className="relative">
+        <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-black text-xs shadow-md shrink-0 group-hover:scale-105 transition-transform">
+          {visit.avatar}
+        </div>
+        {isLive && (
+          <div className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-500 rounded-full border-2 border-white dark:border-gray-950 animate-pulse" />
+        )}
       </div>
       <div className="min-w-0">
-        <h4 className="text-[13px] font-black text-gray-900 dark:text-white truncate tracking-tight">{visit.executive}</h4>
+        <div className="flex items-center gap-2">
+          <h4 className="text-[13px] font-black text-gray-900 dark:text-white truncate tracking-tight">{visit.executive}</h4>
+          {isLive && <span className="text-[7px] font-black text-emerald-500 uppercase tracking-widest bg-emerald-50 dark:bg-emerald-500/10 px-1.5 py-0.5 rounded">Live</span>}
+        </div>
         <p className="text-[8px] font-black text-gray-400 uppercase tracking-[0.1em] truncate">{visit.designation}</p>
       </div>
     </div>
@@ -43,13 +56,19 @@ const VisitRow = ({ visit, onReview }) => (
     <div className="flex items-center gap-5 w-full lg:w-[40%]">
       <div className="flex items-center gap-2 min-w-[110px]">
         <Store size={12} className="text-indigo-400" />
-        <span className="text-[11px] font-bold text-gray-600 dark:text-gray-300 truncate">{visit.store}</span>
+        <span className="text-[11px] font-bold text-gray-600 dark:text-gray-300 truncate">
+          {isLive && visit.liveLocation ? (
+            <span className="text-emerald-500 font-black animate-pulse flex items-center gap-1">
+              <MapPin size={10} /> {visit.address || visit.liveLocation}
+            </span>
+          ) : visit.store}
+        </span>
       </div>
 
       <div className="hidden xl:flex items-center gap-5">
         <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md border ${visit.location.includes('Warning') ? 'bg-rose-50 border-rose-100 text-rose-500' : 'bg-emerald-50 border-emerald-100 text-emerald-500'} dark:bg-opacity-5 dark:border-opacity-10 text-[8px] font-black uppercase tracking-tight`}>
-          <MapPin size={9} className="shrink-0" fill="currentColor" fillOpacity={0.2} />
-          {visit.location.split(' ')[0]}
+          <Radio size={9} className={isLive ? 'animate-pulse text-emerald-500' : 'shrink-0'} fill="currentColor" fillOpacity={0.2} />
+          {isLive && visit.city ? visit.city : visit.location.split(' ')[0]}
         </div>
         <div className="flex items-center gap-1.5 text-gray-400 text-[9px] font-bold tabular-nums">
           <Clock size={11} />
@@ -60,6 +79,21 @@ const VisitRow = ({ visit, onReview }) => (
 
     {/* Assets & Status Control */}
     <div className="flex items-center justify-between lg:justify-end gap-5 w-full lg:flex-1">
+      <div className="flex items-center gap-4">
+        <button
+          onClick={() => fetchData(true)}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 font-bold transition-all active:scale-95 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 ${refreshing ? 'opacity-50' : ''}`}
+        >
+          <Activity size={16} className={refreshing ? 'animate-spin' : ''} />
+          <span className="text-[10px] uppercase tracking-widest">{refreshing ? 'Syncing...' : 'Refresh Live Sync'}</span>
+        </button>
+        <div className="p-2.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-800 text-gray-500">
+          <Filter size={18} />
+        </div>
+        <div className="p-2.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-800 text-gray-500">
+          <Users size={18} />
+        </div>
+      </div>
       <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-lg text-gray-400">
         <Camera size={11} />
         <span className="text-[8px] font-black uppercase tracking-widest">{visit.photos} Proofs</span>
@@ -97,6 +131,154 @@ const ManagerVisits = () => {
   const [rejectionReasonInput, setRejectionReasonInput] = React.useState(''); // Buffer for user-entered rejection text
   const [activePhoto, setActivePhoto] = React.useState(null);           // Holds the photo object for the Portal-based Lightbox
   const [observationCategory, setObservationCategory] = React.useState('General Overview'); // Active category for observation notes
+  const [liveEmployees, setLiveEmployees] = React.useState({});         // Map of employeeId -> latest location data
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+  const { isLoaded } = useJsApiLoader({
+    id: 'google-map-script',
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ''
+  });
+
+  const [map, setMap] = React.useState(null);
+  const onLoad = React.useCallback(map => setMap(map), []);
+
+  const [visits, setVisits] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
+  const hasFetched = React.useRef(false);
+  const [refreshing, setRefreshing] = React.useState(false);
+
+  const activeLocation = selectedVisit ? liveEmployees[selectedVisit.employee?._id] : null;
+  const isValidCenter = activeLocation &&
+    activeLocation.location &&
+    !isNaN(Number(activeLocation.location.lat)) &&
+    !isNaN(Number(activeLocation.location.lng));
+  const isLive = !!activeLocation;
+
+  // --- Socket Integration ---
+  React.useEffect(() => {
+    const socketUrl = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5001';
+    const socket = io(socketUrl);
+
+    socket.on('connect', () => {
+      console.log('Manager connected to socket server');
+      if (user.tenant) {
+        console.log('Joining tenant room:', user.tenant);
+        socket.emit('join', user.tenant);
+      } else if (user._id) {
+        socket.emit('join', user._id);
+      }
+    });
+
+    socket.on('tracking:live', (data) => {
+      console.log('Live update received for:', data.employeeName, data.location);
+      setLiveEmployees(prev => ({
+        ...prev,
+        [data.employeeId]: data
+      }));
+    });
+
+    return () => socket.disconnect();
+  }, [user._id]);
+
+  const fetchData = async (isManual = false) => {
+    if (hasFetched.current && !isManual) return;
+    if (isManual) setRefreshing(true);
+
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('token');
+      const headers = { 'Authorization': `Bearer ${token}` };
+
+      // Auto-heal manager profile if tenant is missing
+      const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+      if (!currentUser.tenant) {
+        console.log('Manager tenant missing in Visits, fetching profile...');
+        const profileRes = await fetch(`${import.meta.env.VITE_API_URL}/auth/me`, { headers });
+        const profileData = await profileRes.json();
+        if (profileData.tenant) {
+          const updatedUser = { ...currentUser, tenant: profileData.tenant };
+          localStorage.setItem('user', JSON.stringify(updatedUser));
+          console.log('Manager profile healed in Visits with tenant:', profileData.tenant);
+        }
+      }
+
+      // Fetch visits
+      const visitsResponse = await fetch(`${import.meta.env.VITE_API_URL}/visits/tenant/${user._id}`, { headers });
+      const visitsData = await visitsResponse.json();
+
+      const formattedVisits = visitsData.map(v => ({
+        id: v._id,
+        store: v.storeName,
+        executive: v.employee?.name || 'Unknown',
+        designation: v.employee?.role || 'Field Executive',
+        team: 'Field Operations',
+        type: v.taskType || 'Store Visit',
+        status: v.reviewStatus || 'Pending Review',
+        time: new Date(v.timestamp || v.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        raw: v,
+        employee: v.employee // Ensure employee object is passed for live data lookup
+      }));
+      setVisits(formattedVisits);
+
+      // Fetch active tracking sessions
+      try {
+        const activeRes = await fetch(`${import.meta.env.VITE_API_URL}/tracking/active`, { headers });
+        const activeSessions = await activeRes.json();
+
+        const liveMap = {};
+        activeSessions.forEach(session => {
+          if (session.user?._id) {
+            liveMap[session.user._id] = {
+              location: session.route?.[session.route.length - 1] || null,
+              address: session.currentAddress,
+              city: session.currentCity,
+              timestamp: session.updatedAt
+            };
+          }
+        });
+        setLiveEmployees(liveMap);
+      } catch (trackError) {
+        console.error('Error fetching active tracking sessions:', trackError);
+      }
+
+      hasFetched.current = true;
+    } catch (err) {
+      console.error('Error fetching visits:', err);
+    } finally {
+      setLoading(false);
+      if (isManual) setRefreshing(false);
+    }
+  };
+
+  React.useEffect(() => {
+    fetchData();
+  }, []);
+
+  const handleAction = async (visitId, status, remark = '') => {
+    try {
+      await reviewVisit(visitId, status, remark);
+      // Fetch fresh data
+      fetchData(true);
+      if (selectedVisit && selectedVisit.id === visitId) {
+        setSelectedVisit({ ...selectedVisit, status, rejectionReason: remark });
+      }
+      setIsRejecting(false);
+      setRejectionReasonInput('');
+    } catch (err) {
+      console.error('Action failed:', err);
+      alert('Failed to update visit status: ' + err.message);
+    }
+  };
+
+  const getMarkerColor = (id) => {
+    const colors = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#14b8a6', '#f97316', '#a855f7'];
+    if (!id) return colors[0];
+    let hash = 0;
+    for (let i = 0; i < id.length; i++) {
+      hash = id.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return colors[Math.abs(hash) % colors.length];
+  };
 
   const categoryContent = {
     'General Overview': "The store inventory was mostly organized, however, some discrepancies were noted in the inward goods section. Client was cooperative and provided all necessary documentation for the audit trail. No major issues faced during the field protocol execution.",
@@ -106,155 +288,13 @@ const ManagerVisits = () => {
     'Protocol Variance': "Minor variance noted in the geo-tagging at the entrance (0.05km). Site-path protocols were strictly followed otherwise, with all checkpoints covered accurately."
   };
 
-  const [visits, setVisits] = React.useState([
-    {
-      id: 'VST-9021',
-      store: 'Global Tech Solutions HQ',
-      executive: 'John Doe',
-      designation: 'Sales Executive',
-      team: 'North Sales',
-      type: 'Store Visit',
-      status: 'Accepted',
-      time: '10:45 AM',
-      location: 'Verified (0.02km variance)',
-      photos: 4,
-      avatar: 'JD',
-      employeeId: 101,
-      proofs: [
-        { id: 1, title: 'Store Front', img: 'https://images.unsplash.com/photo-1534452203293-494d7ddbf7e0?w=500&auto=format&fit=crop&q=60' },
-        { id: 2, title: 'Shelf Check', img: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=500&auto=format&fit=crop&q=60' },
-        { id: 3, title: 'Compliance Poster', img: 'https://images.unsplash.com/photo-1506784983877-45594efa4cbe?w=500&auto=format&fit=crop&q=60' },
-        { id: 4, title: 'Visual Merchandising', img: 'https://images.unsplash.com/photo-1534452203293-494d7ddbf7e0?w=500&auto=format&fit=crop&q=60' }
-      ]
-    },
-    {
-      id: 'VST-9022',
-      store: 'North Star Retail',
-      executive: 'Sarah',
-      designation: 'Field Officer',
-      team: 'Retail Team',
-      type: 'Supplier Visit',
-      status: 'Pending Review',
-      time: '11:15 AM',
-      location: 'Verified (0.05km variance)',
-      photos: 4,
-      avatar: 'SW',
-      employeeId: 102,
-      proofs: [
-        { id: 1, title: 'Main Entrance', img: 'https://images.unsplash.com/photo-1472851294608-062f824d29cc?w=800&auto=format&fit=crop&q=80' },
-        { id: 2, title: 'Inventory Shelf', img: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&auto=format&fit=crop&q=80' },
-        { id: 3, title: 'Store Display', img: 'https://images.unsplash.com/photo-1534452203293-494d7ddbf7e0?w=800&auto=format&fit=crop&q=80' },
-        { id: 4, title: 'Product Check', img: 'https://images.unsplash.com/photo-1506784983877-45594efa4cbe?w=800&auto=format&fit=crop&q=80' }
-      ]
-    },
-    {
-      id: 'VST-9023',
-      store: 'Prime Logistics Hub',
-      executive: 'Mike Johnson',
-      designation: 'Logistics Supervisor',
-      team: 'Logistics A',
-      type: 'Routine Check',
-      status: 'Accepted',
-      time: '09:30 AM',
-      location: 'Verified (0.01km variance)',
-      photos: 4,
-      avatar: 'MJ',
-      employeeId: 103,
-      proofs: [
-        { id: 1, title: 'Logistics Bay', img: 'https://images.unsplash.com/photo-1586528116311-ad86d51b90f8?w=500&auto=format&fit=crop&q=60' },
-        { id: 2, title: 'Inward Goods', img: 'https://images.unsplash.com/photo-1553413077-190dd305871c?w=500&auto=format&fit=crop&q=60' },
-        { id: 3, title: 'Quality Check', img: 'https://images.unsplash.com/photo-1542744094-3a31f272c490?w=500&auto=format&fit=crop&q=60' },
-        { id: 4, title: 'Audit Label', img: 'https://images.unsplash.com/photo-1506784983877-45594efa4cbe?w=500&auto=format&fit=crop&q=60' }
-      ]
-    },
-    {
-      id: 'VST-9024',
-      store: 'City Mall Store',
-      executive: 'Emma Davis',
-      designation: 'Brand Ambassador',
-      team: 'Promotions',
-      type: 'Promotion Check',
-      status: 'Rejected',
-      rejectionReason: 'Promotional display did not meet the brand compliance guidelines. End-cap alignment is off by 15 degrees.',
-      time: '12:00 PM',
-      location: 'Warning (0.5km variance)',
-      photos: 4,
-      avatar: 'ED',
-      employeeId: 104,
-      proofs: [
-        { id: 1, title: 'Site Entrance', img: 'https://images.unsplash.com/photo-1472851294608-062f824d29cc?w=800&auto=format&fit=crop&q=80' },
-        { id: 2, title: 'Area Overview', img: 'https://images.unsplash.com/photo-1534452203293-494d7ddbf7e0?w=800&auto=format&fit=crop&q=80' },
-        { id: 3, title: 'Marker Point', img: 'https://images.unsplash.com/photo-1506784983877-45594efa4cbe?w=800&auto=format&fit=crop&q=80' },
-        { id: 4, title: 'Final Receipt', img: 'https://images.unsplash.com/photo-1553413077-190dd305871c?w=800&auto=format&fit=crop&q=80' }
-      ],
-    },
-    {
-      id: 'VST-9025',
-      store: 'Wellness Pharmacy',
-      executive: 'Alex Brown',
-      designation: 'Medical Rep',
-      team: 'Pharma West',
-      type: 'Visit',
-      status: 'Follow-up',
-      time: '01:30 PM',
-      location: 'Verified (0.05km variance)',
-      photos: 4,
-      avatar: 'AB',
-      employeeId: 105,
-      proofs: [
-        { id: 1, title: 'Main Display', img: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&auto=format&fit=crop&q=80' },
-        { id: 2, title: 'Shelf Alignment', img: 'https://images.unsplash.com/photo-1534452203293-494d7ddbf7e0?w=800&auto=format&fit=crop&q=80' },
-        { id: 3, title: 'Lighting Check', img: 'https://images.unsplash.com/photo-1506784983877-45594efa4cbe?w=800&auto=format&fit=crop&q=80' },
-        { id: 4, title: 'Floor Hygiene', img: 'https://images.unsplash.com/photo-1553413077-190dd305871c?w=800&auto=format&fit=crop&q=80' }
-      ]
-    },
-    {
-      id: 'VST-9026',
-      store: 'Big Bazaar Town',
-      executive: 'Rahul Sharma',
-      designation: 'Field Supervisor',
-      team: 'Operations',
-      type: 'Audit Visit',
-      status: 'Pending Review',
-      time: '02:15 PM',
-      location: 'Verified (0.02km variance)',
-      photos: 4,
-      avatar: 'RS',
-      employeeId: 106,
-      proofs: [
-        { id: 1, title: 'Entrance Guard', img: 'https://images.unsplash.com/photo-1541829070764-84a7d30dee62?w=800&auto=format&fit=crop&q=80' },
-        { id: 2, title: 'Main Aisle 1', img: 'https://images.unsplash.com/photo-1578916171728-46686eac8d58?w=800&auto=format&fit=crop&q=80' },
-        { id: 3, title: 'Back Storage', img: 'https://images.unsplash.com/photo-1586528116311-ad86d51b90f8?w=800&auto=format&fit=crop&q=80' },
-        { id: 4, title: 'Compliance Sign', img: 'https://images.unsplash.com/photo-1506784983877-45594efa4cbe?w=800&auto=format&fit=crop&q=80' }
-      ]
-    },
-    {
-      id: 'VST-9027',
-      store: 'Metro Mega Mart',
-      executive: 'Priya Singh',
-      designation: 'Audit Executive',
-      team: 'Quality Control',
-      type: 'Compliance Check',
-      status: 'Pending Review',
-      time: '03:30 PM',
-      location: 'Verified (0.01km variance)',
-      photos: 4,
-      avatar: 'PS',
-      employeeId: 107,
-      proofs: [
-        { id: 1, title: 'Billing Counter', img: 'https://images.unsplash.com/photo-1556742049-02e4d46cfb70?w=800&auto=format&fit=crop&q=80' },
-        { id: 2, title: 'Safety Exit', img: 'https://images.unsplash.com/photo-1506784983877-45594efa4cbe?w=800&auto=format&fit=crop&q=80' },
-        { id: 3, title: 'Stock Register', img: 'https://images.unsplash.com/photo-1553413077-190dd305871c?w=800&auto=format&fit=crop&q=80' },
-        { id: 4, title: 'Team Briefing', img: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800&auto=format&fit=crop&q=80' }
-      ]
-    },
-  ]);
+  // --- Statistics & Filtering ---
 
   const stats = [
     { label: 'Total Visits', value: visits.length.toString(), icon: Camera, color: 'text-indigo-600', bg: 'bg-indigo-50', status: 'Total' },
-    { label: 'Accepted Visits', value: visits.filter(v => v.status === 'Accepted').length.toString(), icon: CheckCircle2, color: 'text-emerald-600', bg: 'bg-emerald-50', status: 'Accepted' },
+    { label: 'Approved Visits', value: visits.filter(v => v.status === 'Approved').length.toString(), icon: CheckCircle2, color: 'text-emerald-600', bg: 'bg-emerald-50', status: 'Approved' },
     { label: 'Rejected Visits', value: visits.filter(v => v.status === 'Rejected').length.toString(), icon: XCircle, color: 'text-rose-600', bg: 'bg-rose-50', status: 'Rejected' },
-    { label: 'Follow-up Visits', value: visits.filter(v => v.status === 'Follow-up' || v.status === 'Pending Review').length.toString(), icon: RotateCcw, color: 'text-amber-600', bg: 'bg-amber-50', status: 'Follow-up' },
+    { label: 'Follow-up / Pending', value: visits.filter(v => v.status === 'Follow-up' || v.status === 'Pending Review').length.toString(), icon: RotateCcw, color: 'text-amber-600', bg: 'bg-amber-50', status: 'Follow-up' },
   ];
 
   const filteredVisits = filterStatus === 'Total'
@@ -264,16 +304,6 @@ const ManagerVisits = () => {
       return v.status === filterStatus;
     });
 
-  /**
-   * Finalizes an audit action (Approve/Reject)
-   * Updates local state and resets the UI buffers.
-   */
-  const handleAction = (id, newStatus, reason = null) => {
-    setVisits(prev => prev.map(v => v.id === id ? { ...v, status: newStatus, rejectionReason: reason } : v));
-    setSelectedVisit(null);
-    setIsRejecting(false);
-    setRejectionReasonInput('');
-  };
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
@@ -349,9 +379,25 @@ const ManagerVisits = () => {
 
                 {isPendingExpanded && (
                   <div className="flex flex-col gap-4 animate-in slide-in-from-top-4 duration-500">
-                    {filteredVisits.filter(v => v.status === 'Pending Review').map((visit) => (
-                      <VisitRow key={visit.id} visit={visit} onReview={() => setSelectedVisit(visit)} />
-                    ))}
+                    {filteredVisits.filter(v => v.status === 'Pending Review').map((visit) => {
+                      const liveData = liveEmployees[visit.employee?._id];
+                      return (
+                        <VisitRow
+                          key={visit.id}
+                          visit={{
+                            ...visit,
+                            address: liveData?.address,
+                            city: liveData?.city,
+                            liveLocation: liveData ? `L: ${liveData.location.lat.toFixed(4)}, ${liveData.location.lng.toFixed(4)}` : null
+                          }}
+                          onReview={() => setSelectedVisit({
+                            ...visit,
+                            liveData: liveData
+                          })}
+                          isLive={!!liveData}
+                        />
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -383,9 +429,25 @@ const ManagerVisits = () => {
               {isHistoryExpanded && (
                 <div className="flex flex-col gap-4 animate-in slide-in-from-top-4 duration-500">
                   {filteredVisits.filter(v => v.status !== 'Pending Review').length > 0 ? (
-                    filteredVisits.filter(v => v.status !== 'Pending Review').map((visit) => (
-                      <VisitRow key={visit.id} visit={visit} onReview={() => setSelectedVisit(visit)} />
-                    ))
+                    filteredVisits.filter(v => v.status !== 'Pending Review').map((visit) => {
+                      const liveData = liveEmployees[visit.employee?._id];
+                      return (
+                        <VisitRow
+                          key={visit.id}
+                          visit={{
+                            ...visit,
+                            address: liveData?.address,
+                            city: liveData?.city,
+                            liveLocation: liveData ? `L: ${liveData.location.lat.toFixed(4)}, ${liveData.location.lng.toFixed(4)}` : null
+                          }}
+                          onReview={() => setSelectedVisit({
+                            ...visit,
+                            liveData: liveData
+                          })}
+                          isLive={!!liveData}
+                        />
+                      );
+                    })
                   ) : (
                     <div className="col-span-full py-24 text-center bg-gray-50/50 dark:bg-gray-800/10 rounded-[3rem] border-2 border-dashed border-gray-100 dark:border-gray-800">
                       <div className="mx-auto w-16 h-16 rounded-full bg-gray-50 dark:bg-gray-800 flex items-center justify-center mb-6">
@@ -475,9 +537,21 @@ const ManagerVisits = () => {
                     <h5 className="text-[11px] font-black text-gray-400 uppercase tracking-[0.3em] mb-8">Audit Intelligence Report</h5>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       {[
-                        { label: 'Target Location', value: selectedVisit.store, icon: Store, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+                        {
+                          label: 'Target Location',
+                          value: (isLive && activeLocation?.address) ? activeLocation.address : selectedVisit.store,
+                          icon: isLive ? Navigation : Store,
+                          color: isLive ? 'text-emerald-600' : 'text-indigo-600',
+                          bg: isLive ? 'bg-emerald-50' : 'bg-indigo-50'
+                        },
                         { label: 'Audit Timestamp', value: selectedVisit.time, icon: Clock, color: 'text-blue-600', bg: 'bg-blue-50' },
-                        { label: 'Geospatial Delta', value: selectedVisit.location, icon: MapPin, color: selectedVisit.location.includes('Warning') ? 'text-rose-600' : 'text-emerald-600', bg: selectedVisit.location.includes('Warning') ? 'bg-rose-50' : 'bg-emerald-50' },
+                        {
+                          label: isLive ? 'Current GPS' : 'Geospatial Delta',
+                          value: isLive ? `L: ${activeLocation.location.lat.toFixed(4)}, ${activeLocation.location.lng.toFixed(4)}` : selectedVisit.location,
+                          icon: isLive ? Radio : MapPin,
+                          color: (!isLive && selectedVisit.location.includes('Warning')) ? 'text-rose-600' : 'text-emerald-600',
+                          bg: (!isLive && selectedVisit.location.includes('Warning')) ? 'bg-rose-50' : 'bg-emerald-50'
+                        },
                         { label: 'Visual Evidence', value: `${selectedVisit.photos} HD Assets`, icon: Camera, color: 'text-indigo-600', bg: 'bg-indigo-50' }
                       ].map((item, id) => (
                         <div key={id} className="p-5 bg-white dark:bg-gray-900 rounded-[1.5rem] border border-gray-100 dark:border-gray-800 shadow-sm flex flex-col gap-4 group transition-all hover:shadow-lg hover:border-indigo-100 dark:hover:border-indigo-500/20">
@@ -495,7 +569,65 @@ const ManagerVisits = () => {
 
 
                   {/* Protocol Action Panel */}
-                  <div className="mt-12 pt-10 border-t border-gray-100 dark:border-gray-800">
+                  <div className="mt-8 pt-6 border-t border-gray-100 dark:border-gray-800">
+                    <h5 className="text-[11px] font-black text-gray-400 uppercase tracking-[0.3em] mb-4">Live Operational Map</h5>
+                    <div className="w-full h-[300px] rounded-[2rem] overflow-hidden border-2 border-white dark:border-gray-900 shadow-xl relative group/map">
+                      {isLoaded ? (
+                        <GoogleMap
+                          mapContainerStyle={{ width: '100%', height: '100%' }}
+                          center={isValidCenter ? { lat: Number(activeLocation.location.lat), lng: Number(activeLocation.location.lng) } : { lat: 12.9716, lng: 77.5946 }}
+                          zoom={13}
+                          onLoad={onLoad}
+                          options={{ disableDefaultUI: true, zoomControl: true, styles: [/* standard subtle styles */] }}
+                        >
+                          {Object.values(liveEmployees).map((emp) => (
+                            emp.location && (
+                              <Marker
+                                key={emp.employeeId}
+                                position={{ lat: Number(emp.location.lat), lng: Number(emp.location.lng) }}
+                                title={emp.employeeName}
+                                label={{
+                                  text: emp.employeeName?.charAt(0) || 'E',
+                                  color: 'white',
+                                  fontSize: '10px',
+                                  fontWeight: 'black'
+                                }}
+                                animation={emp.employeeId === selectedVisit.employee?._id ? window.google.maps.Animation.BOUNCE : null}
+                                icon={{
+                                  path: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z",
+                                  fillColor: getMarkerColor(emp.employeeId),
+                                  fillOpacity: 1,
+                                  strokeWeight: emp.employeeId === selectedVisit.employee?._id ? 4 : 2,
+                                  strokeColor: emp.employeeId === selectedVisit.employee?._id ? "#4f46e5" : "#ffffff",
+                                  scale: emp.employeeId === selectedVisit.employee?._id ? 1.4 : 1.1
+                                }}
+                              />
+                            )
+                          ))}
+                        </GoogleMap>
+                      ) : (
+                        <div className="w-full h-full bg-gray-50 flex items-center justify-center">
+                          <Activity className="animate-spin text-indigo-600" />
+                        </div>
+                      )}
+
+                      {/* Floating Legend */}
+                      <div className="absolute top-4 left-4 p-2.5 bg-white/90 dark:bg-gray-950/90 backdrop-blur-md rounded-xl shadow-lg border border-white/20 z-10">
+                        <div className="flex flex-col gap-1.5">
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full bg-indigo-600 animate-pulse" />
+                            <span className="text-[8px] font-black uppercase text-gray-950 dark:text-white">Active Executive</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full bg-gray-400" />
+                            <span className="text-[8px] font-black uppercase text-gray-500">Fleet Members</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-8 pt-8 border-t border-gray-100 dark:border-gray-800">
                     <h5 className="text-[11px] font-black text-gray-400 uppercase tracking-[0.3em] mb-6">Review Protocol</h5>
                     {selectedVisit.status === 'Pending Review' || selectedVisit.status === 'Follow-up' ? (
                       !isRejecting ? (
@@ -520,8 +652,8 @@ const ManagerVisits = () => {
                       )
                     ) : (
                       <div className={`rounded-[2.5rem] border p-8 flex items-center justify-between group overflow-hidden relative ${selectedVisit.status === 'Rejected'
-                          ? 'bg-rose-50/50 dark:bg-rose-500/5 border-rose-100 dark:border-rose-500/10'
-                          : 'bg-emerald-50/50 dark:bg-emerald-500/5 border-emerald-100 dark:border-emerald-500/10'
+                        ? 'bg-rose-50/50 dark:bg-rose-500/5 border-rose-100 dark:border-rose-500/10'
+                        : 'bg-emerald-50/50 dark:bg-emerald-500/5 border-emerald-100 dark:border-emerald-500/10'
                         }`}>
                         <div className={`absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-48 h-48 rounded-full blur-3xl transition-colors ${selectedVisit.status === 'Rejected' ? 'bg-rose-500/5 group-hover:bg-rose-500/10' : 'bg-emerald-500/5 group-hover:bg-emerald-500/10'
                           }`} />

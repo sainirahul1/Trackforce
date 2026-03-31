@@ -30,3 +30,16 @@ export const createVisit = async (visitData) => {
   if (!response.ok) throw new Error('Failed to create visit');
   return response.json();
 };
+
+export const reviewVisit = async (id, status, reason) => {
+  const response = await fetch(`${API_URL}/${id}/review`, {
+    method: 'PATCH',
+    headers: {
+      ...getAuthHeader(),
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ status, reason })
+  });
+  if (!response.ok) throw new Error('Failed to review visit');
+  return response.json();
+};

@@ -65,3 +65,26 @@ exports.createVisit = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+// @desc    Review a store visit (Approve/Reject)
+// @route   PATCH /api/visits/:id/review
+// @access  Private (Manager/Tenant)
+exports.reviewVisit = async (req, res) => {
+  const { status, reason } = req.body;
+
+  try {
+    const visit = await StoreVisit.findOne({ _id: req.params.id, tenant: req.tenantId });
+
+    if (!visit) {
+      return res.status(404).json({ message: 'Visit not found' });
+    }
+
+    visit.reviewStatus = status;
+    if (reason) visit.rejectionReason = reason;
+    await visit.save();
+
+    res.json(visit);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};

@@ -7,8 +7,9 @@ export const startTracking = async () => {
     method: 'POST',
     headers: getAuthHeader()
   });
-  if (!response.ok) throw new Error('Failed to start tracking');
-  return response.json();
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.message || 'Failed to start tracking');
+  return data;
 };
 
 export const stopTracking = async () => {
@@ -16,8 +17,18 @@ export const stopTracking = async () => {
     method: 'POST',
     headers: getAuthHeader()
   });
-  if (!response.ok) throw new Error('Failed to stop tracking');
-  return response.json();
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.message || 'Failed to stop tracking');
+  return data;
+};
+
+export const getActiveTrackingSessions = async () => {
+  const response = await fetch(`${API_URL}/tracking/active`, {
+    headers: getAuthHeader()
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.message || 'Failed to fetch active sessions');
+  return data;
 };
 
 export const getDashboardStats = async () => {
