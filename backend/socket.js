@@ -21,9 +21,15 @@ const initSocket = (server) => {
       // data: { employeeId, employeeName, managerId, tenantId, location: { lat, lng }, timestamp }
       console.log(`[SOCKET] Tracking update: ${data.employeeName} (${data.employeeId}) -> Tenant: ${data.tenantId}, Manager: ${data.managerId}`);
 
-      const { employeeId, location, tenantId, managerId } = data;
+      const { employeeId, location, tenantId, managerId, role } = data;
       if (!employeeId || !location || isNaN(location.lat) || isNaN(location.lng)) {
         console.warn(`[SOCKET] Invalid tracking data from ${data.employeeName || 'Unknown'}`);
+        return;
+      }
+
+      // ENFORCE: Only Field Executives (employees) are tracked
+      if (role !== 'employee') {
+        console.log(`[SOCKET] Ignoring tracking update from ${role}: ${data.employeeName}`);
         return;
       }
 
@@ -73,16 +79,11 @@ const initSocket = (server) => {
         // Find the latest active session for this user
         let session = await TrackingSession.findOne({ user: userId, status: 'active' }).sort({ startTime: -1 });
 
-        // Fallback: If no active session found but GPS is arriving, something is out of sync
+        // Fallback: If no active session found, do not re-activate. 
+        // This prevents "ghost" sessions from appearing after an employee goes off-duty.
         if (!session) {
-          console.warn(`[DATABASE] Session Mismatch for ${data.employeeName} (${employeeId}). Searching for most recent session regardless of status...`);
-          session = await TrackingSession.findOne({ user: userId }).sort({ createdAt: -1 });
-
-          if (session && session.status !== 'active') {
-            console.log(`[DATABASE] Found recent ${session.status} session. Re-activating it to capture incoming GPS data.`);
-            session.status = 'active';
-            await session.save();
-          }
+          console.warn(`[DATABASE] Ignoring out-of-order tracking point from ${data.employeeName}. Employee is currently "Off Duty" or session is closed.`);
+          return;
         }
 
         let currentDistance = 0;

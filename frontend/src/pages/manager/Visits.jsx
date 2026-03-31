@@ -5,7 +5,7 @@
  * and a React Portal-based Lightbox for 100% viewport coverage.
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from '@react-google-maps/api';
 import {
@@ -146,7 +146,9 @@ const ManagerVisits = () => {
   const [visits, setVisits] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
   const hasFetched = React.useRef(false);
-  const [refreshing, setRefreshing] = React.useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState(null);
+  const [selectedVisitLoading, setSelectedVisitLoading] = useState(false);
 
   const activeLocation = selectedVisit ? liveEmployees[selectedVisit.employee?._id] : null;
   const isValidCenter = activeLocation &&
@@ -204,7 +206,7 @@ const ManagerVisits = () => {
       }
 
       // Fetch visits
-      const visitsResponse = await fetch(`${import.meta.env.VITE_API_URL}/visits/tenant/${user._id}`, { headers });
+      const visitsResponse = await fetch(`${import.meta.env.VITE_API_URL}/visits`, { headers });
       const visitsData = await visitsResponse.json();
 
       const formattedVisits = visitsData.map(v => ({

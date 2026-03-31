@@ -1,5 +1,6 @@
 const User = require('../../models/tenant/User');
 const TrackingSession = require('../../models/employee/TrackingSession');
+const ActivityLog = require('../../models/employee/ActivityLog');
 const { logActivity } = require('../../utils/activityLogger');
 
 // Start tracking (On Duty)
@@ -12,6 +13,14 @@ exports.startTracking = async (req, res) => {
 
     // Check for existing active session
     let existingSession = await TrackingSession.findOne({ user: user._id, status: 'active' });
+
+    // ENFORCE CONSISTENCY: Close any other "active" sessions besides the current one (if multiple exist)
+    if (existingSession) {
+      await TrackingSession.updateMany(
+        { user: user._id, status: 'active', _id: { $ne: existingSession._id } },
+        { $set: { status: 'completed', endTime: new Date() } }
+      );
+    }
 
     if (user.isTracking && existingSession) {
       return res.status(200).json({ message: 'Tracking already active', session: existingSession });
@@ -59,24 +68,19 @@ exports.startTracking = async (req, res) => {
 
 exports.getActiveSessions = async (req, res) => {
   try {
-    const sessions = await TrackingSession.find({
+    const employeeSessions = await TrackingSession.find({
       tenant: req.tenantId,
       status: 'active'
-    }).populate('user', 'name role');
-
-    // Log activity
-    await logActivity({
-      userId: user._id,
-      tenantId: req.tenantId,
-      type: 'shift_start',
-      title: 'Shift Started',
-      details: 'Employee started shift / On Duty',
-      status: 'success'
+    }).populate({
+      path: 'user',
+      match: { role: 'employee', isTracking: true },
+      select: 'name role isTracking'
     });
-    // Filter to only include employees
-    const employeeSessions = sessions.filter(s => s.user?.role === 'employee');
 
-    res.status(200).json(employeeSessions);
+    // Remove any that didn't match the inner populate filter (only really active employees)
+    const activeEmployees = employeeSessions.filter(s => s.user != null);
+
+    res.status(200).json(activeEmployees);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -93,18 +97,11 @@ exports.stopTracking = async (req, res) => {
     user.isTracking = false;
     await user.save();
 
-    const session = await TrackingSession.findOne({
-      user: user._id,
-      status: 'active'
-    }).sort({ startTime: -1 });
-
-    if (session) {
-      session.endTime = new Date();
-      session.status = 'completed';
-      await session.save();
-    }
-
-    await session.save();
+    // Close ALL active sessions for this user to ensure consistency
+    const result = await TrackingSession.updateMany(
+      { user: user._id, status: 'active' },
+      { $set: { status: 'completed', endTime: new Date() } }
+    );
 
     // Log activity
     await logActivity({
@@ -122,7 +119,18 @@ exports.stopTracking = async (req, res) => {
       details: 'Ended shift / Off Duty'
     });
 
-    res.json({ message: 'Tracking stopped', session });
+    // Notify managers globally that this employee is now Off Duty
+    const io = req.app.get('io');
+    if (io) {
+      io.to(req.tenantId.toString()).emit('tracking:stop', {
+        employeeId: user._id,
+        employeeName: user.name,
+        timestamp: new Date()
+      });
+      console.log(`[SOCKET] Emitted tracking:stop for ${user.name}`);
+    }
+
+    res.json({ message: 'Tracking stopped', result });
   } catch (error) {
     console.error('Error in stopTracking:', error);
     res.status(500).json({ message: error.message });

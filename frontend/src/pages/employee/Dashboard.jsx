@@ -447,6 +447,13 @@ const EmployeeDashboard = () => {
 
   // --- Start Geo Tracking ---
   const startGeoTracking = React.useCallback(() => {
+    // RESTRICTION: Only allow employees to emit GPS
+    const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+    if (currentUser.role !== 'employee') {
+      console.warn('[GEOLOCATION] Tracking is disabled for your role:', currentUser.role);
+      return;
+    }
+
     if (!navigator.geolocation) {
       alert("Geolocation is not supported by your browser");
       return;
@@ -488,7 +495,8 @@ const EmployeeDashboard = () => {
 
   // Handle starting/stopping tracking when duty status changes
   useEffect(() => {
-    if (isOnDuty && socket && !watchIdRef.current) {
+    const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+    if (isOnDuty && socket && !watchIdRef.current && currentUser.role === 'employee') {
       console.log('Starting geo tracking watcher');
       startGeoTracking();
     } else if (!isOnDuty && watchIdRef.current) {

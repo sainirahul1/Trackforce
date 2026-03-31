@@ -94,6 +94,15 @@ const LiveTracking = () => {
       });
     });
 
+    newSocket.on('tracking:stop', (data) => {
+      console.log('Employee stopped tracking, removing from map:', data.employeeName);
+      setEmployees(prev => {
+        const next = { ...prev };
+        delete next[data.employeeId];
+        return next;
+      });
+    });
+
     return () => newSocket.close();
   }, [user._id]);
 

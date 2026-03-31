@@ -99,7 +99,7 @@ exports.updateVisit = async (req, res) => {
 
     await visit.save();
 
-    res.json(updatedVisit);
+    res.json(visit);
 
     // NEW: Log Activity for manager review
     if (req.body.reviewStatus) {
@@ -108,9 +108,9 @@ exports.updateVisit = async (req, res) => {
         tenantId: req.tenantId,
         type: 'alert',
         title: `Visit ${req.body.reviewStatus.toUpperCase()}`,
-        details: `Manager ${req.user.name} ${req.body.reviewStatus} the visit at ${updatedVisit.storeName}.`,
+        details: `Manager ${req.user.name} ${req.body.reviewStatus} the visit at ${visit.storeName}.`,
         status: req.body.reviewStatus === 'accepted' ? 'success' : 'warning',
-        metadata: { visitId: updatedVisit._id, reviewStatus: req.body.reviewStatus }
+        metadata: { visitId: visit._id, reviewStatus: req.body.reviewStatus }
       });
     }
   } catch (error) {
