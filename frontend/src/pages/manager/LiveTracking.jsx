@@ -180,9 +180,11 @@ const LiveTracking = () => {
   const employeeList = Object.values(employees);
 
   const filteredEmployees = employeeList.filter(emp =>
-    emp.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (emp.location || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (emp.city || '').toLowerCase().includes(searchQuery.toLowerCase())
+    emp.status === 'On Duty' && (
+      emp.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (emp.location || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (emp.city || '').toLowerCase().includes(searchQuery.toLowerCase())
+    )
   );
 
   // Anti-overlap logic (Spider/Jitter)
@@ -792,7 +794,7 @@ const LiveTracking = () => {
                 <Polyline
                   path={activeRouteEmployee.route}
                   options={{
-                    strokeColor: getMarkerColor(selectedEmployee.id),
+                    strokeColor: getMarkerColor(activeRouteEmployee.id),
                     strokeOpacity: 0.8,
                     strokeWeight: 4,
                     geodesic: true,

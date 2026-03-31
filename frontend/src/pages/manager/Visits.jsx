@@ -180,6 +180,15 @@ const ManagerVisits = () => {
       }));
     });
 
+    socket.on('tracking:stop', (data) => {
+      console.log('Stopping tracking for:', data.employeeId);
+      setLiveEmployees(prev => {
+        const newMap = { ...prev };
+        delete newMap[data.employeeId];
+        return newMap;
+      });
+    });
+
     return () => socket.disconnect();
   }, [user._id]);
 
@@ -494,33 +503,30 @@ const ManagerVisits = () => {
                 {isPendingExpanded && (
                   <div className="flex flex-col gap-4 animate-in slide-in-from-top-4 duration-500">
                     {filteredVisits.filter(v => v.reviewStatus === 'pending').length > 0 ? (
-                      filteredVisits.filter(v => v.reviewStatus === 'pending').map((visit) => (
-                        <VisitRow key={visit.id} visit={visit} onReview={() => handleReviewVisit(visit)} />
-                      ))
+                      filteredVisits.filter(v => v.reviewStatus === 'pending').map((visit) => {
+                        const liveData = liveEmployees[visit.employee?._id];
+                        return (
+                          <VisitRow
+                            key={visit.id}
+                            visit={{
+                              ...visit,
+                              address: liveData?.address,
+                              city: liveData?.city,
+                              liveLocation: liveData ? `L: ${liveData.location.lat.toFixed(4)}, ${liveData.location.lng.toFixed(4)}` : null
+                            }}
+                            onReview={() => setSelectedVisit({
+                              ...visit,
+                              liveData: liveData
+                            })}
+                            isLive={!!liveData}
+                          />
+                        );
+                      })
                     ) : (
                       <div className="py-12 text-center bg-gray-50/50 dark:bg-gray-800/10 rounded-[2.5rem] border-2 border-dashed border-gray-100 dark:border-gray-800">
                         <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">No pending audits matching current filter</p>
                       </div>
                     )}
-                    {filteredVisits.filter(v => v.status === 'Pending Review').map((visit) => {
-                      const liveData = liveEmployees[visit.employee?._id];
-                      return (
-                        <VisitRow
-                          key={visit.id}
-                          visit={{
-                            ...visit,
-                            address: liveData?.address,
-                            city: liveData?.city,
-                            liveLocation: liveData ? `L: ${liveData.location.lat.toFixed(4)}, ${liveData.location.lng.toFixed(4)}` : null
-                          }}
-                          onReview={() => setSelectedVisit({
-                            ...visit,
-                            liveData: liveData
-                          })}
-                          isLive={!!liveData}
-                        />
-                      );
-                    })}
                   </div>
                 )}
               </div>
@@ -553,9 +559,25 @@ const ManagerVisits = () => {
                 {isHistoryExpanded && (
                   <div className="flex flex-col gap-4 animate-in slide-in-from-top-4 duration-500">
                     {filteredVisits.filter(v => v.reviewStatus !== 'pending').length > 0 ? (
-                      filteredVisits.filter(v => v.reviewStatus !== 'pending').map((visit) => (
-                        <VisitRow key={visit.id} visit={visit} onReview={() => handleReviewVisit(visit)} />
-                      ))
+                      filteredVisits.filter(v => v.reviewStatus !== 'pending').map((visit) => {
+                        const liveData = liveEmployees[visit.employee?._id];
+                        return (
+                          <VisitRow
+                            key={visit.id}
+                            isLive={!!liveData}
+                            visit={{
+                              ...visit,
+                              address: liveData?.address,
+                              city: liveData?.city,
+                              liveLocation: liveData ? `L: ${liveData.location.lat.toFixed(4)}, ${liveData.location.lng.toFixed(4)}` : null
+                            }}
+                            onReview={() => setSelectedVisit({
+                              ...visit,
+                              liveData: liveData
+                            })}
+                          />
+                        );
+                      })
                     ) : (
                       <div className="col-span-full py-24 text-center bg-gray-50/50 dark:bg-gray-800/10 rounded-[3rem] border-2 border-dashed border-gray-100 dark:border-gray-800">
                         <div className="mx-auto w-16 h-16 rounded-full bg-gray-50 dark:bg-gray-800 flex items-center justify-center mb-6">
@@ -608,6 +630,12 @@ const ManagerVisits = () => {
                         }`}>
                         {selectedVisit.reviewStatus === 'pending' ? 'Pending Review' : selectedVisit.reviewStatus === 'accepted' ? 'Accepted' : 'Rejected'}
                       </span>
+                      {isLive && (
+                        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 dark:bg-emerald-500/10 rounded-xl border border-emerald-100 dark:border-emerald-500/20 shadow-sm animate-in zoom-in-95 duration-500">
+                          <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                          <span className="text-[10px] font-black uppercase text-emerald-600 dark:text-emerald-400 tracking-[0.15em]">Live Intelligence Feed Active</span>
+                        </div>
+                      )}
                     </div>
                     <div className="flex flex-wrap items-center gap-6">
                       <div className="flex items-center gap-2 text-xs font-bold text-gray-400 uppercase tracking-widest">

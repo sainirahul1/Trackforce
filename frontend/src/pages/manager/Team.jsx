@@ -932,9 +932,11 @@ const ManagerTeam = () => {
           <div className="p-4">
             {(() => {
               const filteredData = teamMembers.filter(m =>
-                m.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                m.zone.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                m.designation.toLowerCase().includes(searchTerm.toLowerCase())
+                m.status === 'On Duty' && (
+                  m.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  m.zone.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  m.designation.toLowerCase().includes(searchTerm.toLowerCase())
+                )
               );
               const totalPages = Math.ceil(filteredData.length / itemsPerPage);
               const startIndex = (currentPage - 1) * itemsPerPage;
