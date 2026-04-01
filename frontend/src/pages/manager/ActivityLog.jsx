@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { useOutletContext } from 'react-router-dom';
 import { getExecutives, getLogsByUser } from '../../services/employee/activityService';
+import { useDialog } from '../../context/DialogContext';
 
 const ManagerActivityLog = () => {
   const { setPageLoading } = useOutletContext();
@@ -16,6 +17,7 @@ const ManagerActivityLog = () => {
   const [selectedExecutive, setSelectedExecutive] = useState(null);
   const [selectedDateFilter, setSelectedDateFilter] = useState('Today');
   const [isDateDropdownOpen, setIsDateDropdownOpen] = useState(false);
+  const { showAlert } = useDialog();
   
   // Dynamic data states
   const [executives, setExecutives] = useState([]);
@@ -256,7 +258,7 @@ const ManagerActivityLog = () => {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              alert(`Resolving: ${note.title}`);
+                              showAlert('Resolving Notification', `Resolving: ${note.title}`, 'info');
                             }}
                             className="px-3 py-1.5 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 rounded-lg text-[10px] font-black uppercase tracking-wider hover:bg-indigo-100 hover:scale-105 active:scale-95 transition-all shadow-sm"
                           >

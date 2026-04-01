@@ -37,8 +37,10 @@ import {
 import Button from '../../components/ui/Button';
 import Skeleton from '../../components/ui/Skeleton';
 import superadminService from '../../services/superadmin/superadminService';
+import { useDialog } from '../../context/DialogContext';
 
 const Settings = () => {
+  const { showAlert } = useDialog();
   const [activeSection, setActiveSection] = useState('General');
   const [settings, setSettings] = useState(null);
   const [analytics, setAnalytics] = useState(null);
@@ -74,10 +76,10 @@ const Settings = () => {
     setSaving(true);
     try {
       await superadminService.updateSettings(settings);
-      alert('Settings saved successfully!');
+      showAlert('Settings saved successfully!', 'Saved', 'success');
     } catch (error) {
       const serverMsg = error.response?.data?.message || '';
-      alert(`Error saving settings: ${error.message} \nServer said: ${serverMsg}`);
+      showAlert(`Error saving settings: ${error.message} \nServer said: ${serverMsg}`, 'Save Error', 'error');
     } finally {
       setSaving(false);
     }
@@ -102,9 +104,10 @@ const Settings = () => {
     setSaving(true);
     try {
       await superadminService.updateSettings(newSettings);
+      showAlert('Setting automatically saved.', 'Autosaved', 'info');
     } catch (error) {
       const serverMsg = error.response?.data?.message || '';
-      alert(`Error auto-saving settings: ${error.message} \nServer said: ${serverMsg}`);
+      showAlert(`Error auto-saving settings: ${error.message} \nServer said: ${serverMsg}`, 'Autosave Failed', 'error');
       setSettings(settings); // Revert on error
     } finally {
       setSaving(false);

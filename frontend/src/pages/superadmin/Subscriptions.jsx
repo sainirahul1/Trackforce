@@ -20,8 +20,10 @@ import {
 import Button from '../../components/ui/Button';
 import Skeleton from '../../components/ui/Skeleton';
 import superadminService from '../../services/superadmin/superadminService';
+import { useDialog } from '../../context/DialogContext';
 
 const Subscriptions = () => {
+  const { showAlert, showConfirm } = useDialog();
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
@@ -89,9 +91,10 @@ const Subscriptions = () => {
 
       handleCloseModal();
       fetchData();
+      showAlert('Subscription plan saved successfully.', 'Plan Saved', 'success');
     } catch (error) {
       console.error('Error saving plan:', error);
-      alert('Failed to save plan: ' + (error.response?.data?.message || error.message));
+      showAlert('Failed to save plan: ' + (error.response?.data?.message || error.message), 'Save Failed', 'error');
     } finally {
       setIsCreating(false);
     }
@@ -115,13 +118,15 @@ const Subscriptions = () => {
   };
 
   const handleDeletePlan = async (id) => {
-    if (window.confirm('Are you sure you want to delete this subscription plan? This action cannot be undone.')) {
+    const confirmed = await showConfirm('Are you sure you want to delete this subscription plan? This action cannot be undone.', 'Delete Plan', 'danger');
+    if (confirmed) {
       try {
         await superadminService.deleteSubscription(id);
         fetchData();
+        showAlert('Plan deleted successfully', 'Deleted', 'success');
       } catch (error) {
         console.error('Error deleting plan:', error);
-        alert('Failed to delete plan: ' + error.message);
+        showAlert('Failed to delete plan: ' + error.message, 'Delete Error', 'error');
       }
     }
   };

@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { updateProfile as updateAuthProfile, getMe, uploadProfileImage as uploadAuthImage, updatePassword } from '../../services/core/authService';
 import { useAuth } from '../../context/AuthContext';
+import { useDialog } from '../../context/DialogContext';
 import { Loader2 } from 'lucide-react';
 
 /**
@@ -24,6 +25,7 @@ const ManagerProfile = () => {
   const [profileLoading, setProfileLoading] = useState(true);
   const { refreshUser } = useAuth();
   const fileInputRef = useRef(null);
+  const { showAlert } = useDialog();
 
   // States for toggles
   const [emailNotif, setEmailNotif] = useState(true);
@@ -158,7 +160,7 @@ const ManagerProfile = () => {
         
       } catch (error) {
         console.error('Failed to upload image:', error);
-        alert(error.message || 'Failed to upload profile image');
+        showAlert('Error', error.message || 'Failed to upload profile image', 'error');
       } finally {
         setIsSavingAvatar(false);
       }
@@ -282,7 +284,7 @@ const ManagerProfile = () => {
         onClose();
       } catch (error) {
         console.error('Failed to update profile:', error);
-        alert(error.message || 'Failed to update profile');
+        showAlert('Error', error.message || 'Failed to update profile', 'error');
       }
     };
 

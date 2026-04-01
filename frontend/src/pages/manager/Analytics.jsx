@@ -12,11 +12,12 @@ import {
 } from 'chart.js';
 import { Line, Bar } from 'react-chartjs-2';
 import tenantService from '../../services/core/tenantService';
-import { getTasks, getTaskById } from '../../services/employee/taskService';
 import { getVisitById, updateVisit } from '../../services/employee/visitService';
+import { useDialog } from '../../context/DialogContext';
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Filler, Tooltip);
 
 const IntelligenceSuite = () => {
+  const { showAlert } = useDialog();
   const navigate = useNavigate();
   const { setPageLoading } = useOutletContext();
   const [view, setView] = useState('list');
@@ -139,9 +140,10 @@ const IntelligenceSuite = () => {
 
       setIsRejecting(false);
       setRejectionReasonInput('');
+      showAlert('Review status updated successfully.', 'Status Updated', 'success');
     } catch (err) {
       console.error('Error updating visit review status:', err);
-      alert('Failed to update review status.');
+      showAlert('Failed to update review status.', 'Update Error', 'error');
     }
   };
 

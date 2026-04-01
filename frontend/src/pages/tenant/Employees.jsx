@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom';
 import DataTable from '../../components/ui/DataTable';
 import tenantService from '../../services/core/tenantService';
 import Button from '../../components/ui/Button';
+import { useDialog } from '../../context/DialogContext';
 import { UserPlus, Search, Download, Shield, Users, Activity, CheckCircle2, X, ArrowLeft, Mail, Phone, MapPin, Briefcase, Calendar, User, Clock, Edit, Trash2, Ban } from 'lucide-react';
 
 const getRelativeTime = (timestamp) => {
@@ -24,6 +25,7 @@ const getRelativeTime = (timestamp) => {
 const EmployeeList = () => {
   const location = useLocation();
   const { setPageLoading } = useOutletContext();
+  const { showAlert, showConfirm } = useDialog();
   const [employees, setEmployees] = useState([]);
   const [teamMembers, setTeamMembers] = useState([]);
   const [selectedManager, setSelectedManager] = useState(null);
@@ -47,7 +49,7 @@ const EmployeeList = () => {
   }, [searchQuery, statusFilter, activeTab]);
 
   useEffect(() => {
-    if (isModalOpen) {
+    if (isModalOpen || isEditModalOpen) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'unset';
@@ -167,7 +169,7 @@ const EmployeeList = () => {
       setTimeout(() => setShowSuccess(false), 3000);
     } catch (error) {
       console.error('Failed to create member:', error);
-      alert(error.response?.data?.message || 'Failed to create member');
+      showAlert(error.response?.data?.message || 'Failed to create member', 'Creation Failed', 'error');
     }
   };
 
@@ -189,7 +191,7 @@ const EmployeeList = () => {
       setTimeout(() => setShowSuccess(false), 3000);
     } catch (err) {
       console.error('Failed to update member:', err);
-      alert('Failed to update member');
+      showAlert('Failed to update member', 'Update Failed', 'error');
     }
   };
 
@@ -206,13 +208,15 @@ const EmployeeList = () => {
       }
     } catch (err) {
       console.error(err);
-      alert('Failed to update status');
+      showAlert('Failed to update status', 'Update Failed', 'error');
     }
   };
 
   const handleDeleteMember = async (id, role) => {
     const isManager = role === 'manager';
-    if (window.confirm(`Are you sure you want to delete this ${isManager ? 'manager' : 'employee'}?`)) {
+    const confirmed = await showConfirm(`Are you sure you want to delete this ${isManager ? 'manager' : 'employee'}? This action cannot be undone.`, 'Confirm Deletion', 'danger');
+    
+    if (confirmed) {
       try {
         if (isManager) {
           await tenantService.deleteManager(id);
@@ -223,9 +227,10 @@ const EmployeeList = () => {
           setTeamMembers(teamMembers.filter(emp => emp.id !== id));
           setSelectedEmployee(null);
         }
+        showAlert(`${isManager ? 'Manager' : 'Employee'} deleted successfully.`, 'Success', 'success');
       } catch (error) {
         console.error('Failed to delete member:', error);
-        alert('Failed to delete member');
+        showAlert('Failed to delete member', 'Error', 'error');
       }
     }
   };

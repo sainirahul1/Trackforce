@@ -11,6 +11,7 @@ import {
   Layout, LayoutPanelLeft, Columns, Settings, Trello
 } from 'lucide-react';
 import { getTasks, createTask, updateTask, deleteTask } from '../../services/employee/taskService';
+import { useDialog } from '../../context/DialogContext';
 
 const ManagerTasks = () => {
   const { setPageLoading } = useOutletContext();
@@ -23,6 +24,7 @@ const ManagerTasks = () => {
   const [openColumnMenuId, setOpenColumnMenuId] = useState(null);
   const [showNewSectionModal, setShowNewSectionModal] = useState(false);
   const [newSectionName, setNewSectionName] = useState('');
+  const { showAlert, showConfirm } = useDialog();
 
   // Filter States
   const [searchQuery, setSearchQuery] = useState('');
@@ -164,13 +166,20 @@ const ManagerTasks = () => {
   };
 
   const handleDeleteTask = async (id) => {
-    if (window.confirm('Are you sure you want to delete this mission?')) {
+    const isConfirmed = await showConfirm(
+      "Delete Mission",
+      "Are you sure you want to delete this mission?",
+      "Delete",
+      "Cancel",
+      "danger"
+    );
+    if (isConfirmed) {
       try {
         await deleteTask(id);
         setTasks(prev => prev.filter(t => t.id !== id));
         setOpenDropdownId(null);
       } catch (err) {
-        alert(err.message);
+        showAlert('Error', err.message, 'error');
       }
     }
   };
@@ -191,7 +200,7 @@ const ManagerTasks = () => {
       }
       setIsReassigning(false);
     } catch (err) {
-      alert(err.message);
+      showAlert('Error', err.message, 'error');
     }
   };
 
@@ -201,7 +210,7 @@ const ManagerTasks = () => {
       setTasks(prev => prev.map(t => t.id === id ? { ...t, status: newStatus } : t));
       setOpenDropdownId(null);
     } catch (err) {
-      alert(err.message);
+      showAlert('Error', err.message, 'error');
     }
   };
 
@@ -257,7 +266,7 @@ const ManagerTasks = () => {
       }
       closeModal();
     } catch (err) {
-      alert(err.message);
+      showAlert('Error', err.message, 'error');
     }
   };
 

@@ -3,9 +3,11 @@ import { useOutletContext } from 'react-router-dom';
 import { User, Mail, Phone, MapPin, Building, ShieldCheck, Camera, Edit3, Key, Briefcase, X, Save, Calendar, Clock, Users, Globe } from 'lucide-react';
 import { getMe, updateProfile as updateAuthProfile, uploadProfileImage as uploadAuthImage } from '../../services/core/authService';
 import { useAuth } from '../../context/AuthContext';
+import { useDialog } from '../../context/DialogContext';
 import { Loader2 } from 'lucide-react';
 
 const Profile = () => {
+  const { showAlert } = useDialog();
   const { setPageLoading } = useOutletContext();
   const [avatarPreview, setAvatarPreview] = useState(null);
   const avatarInputRef = useRef(null);
@@ -67,9 +69,10 @@ const Profile = () => {
         
         // SYNC WITH GLOBAL STATE (Sidebar, Navbar)
         await refreshUser();
+        showAlert('Profile image updated successfully.', 'Image Uploaded', 'success');
       } catch (error) {
         console.error('Failed to upload image:', error);
-        alert(error.message || 'Failed to upload profile image');
+        showAlert(error.message || 'Failed to upload profile image', 'Upload Failed', 'error');
       } finally {
         setIsSavingAvatar(false);
       }
@@ -104,9 +107,10 @@ const Profile = () => {
       await refreshUser();
       
       setIsEditModalOpen(false);
+      showAlert('Profile information updated.', 'Profile Updated', 'success');
     } catch (error) {
       console.error('Failed to update profile:', error);
-      alert(error.message || 'Failed to update profile');
+      showAlert(error.message || 'Failed to update profile', 'Update Failed', 'error');
     }
   };
 

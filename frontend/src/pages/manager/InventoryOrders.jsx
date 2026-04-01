@@ -11,6 +11,7 @@ import { Chart as ChartJS, registerables } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
 import { useNavigate } from 'react-router-dom';
 import { getManagerStats, getRevenueChartData, getRecentOrders } from '../../services/manager/managerOrderService';
+import { useDialog } from '../../context/DialogContext';
 
 ChartJS.register(...registerables);
 
@@ -19,6 +20,7 @@ ChartJS.register(...registerables);
  * Team revenue tracking and order collection monitoring.
  */
 const InventoryOrders = () => {
+  const { showAlert } = useDialog();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -120,8 +122,9 @@ const InventoryOrders = () => {
       document.body.appendChild(a);
       a.click();
       a.remove();
+      showAlert('Ledger export started.', 'Export Success', 'success');
     } catch (err) {
-      alert('Export Error: ' + err.message);
+      showAlert('Export Error: ' + err.message, 'Export Failed', 'error');
     }
   };
 

@@ -366,6 +366,7 @@ const ActivityItem = ({ activity, isLast }) => (
 // =============================================================================
 
 import { useAuth } from '../../context/AuthContext';
+import { useDialog } from '../../context/DialogContext';
 import { getDashboardStats, startTracking, stopTracking } from '../../services/employee/trackingService';
 // import { getActivities } from '../../services/employee/activityService';
 // import { getDashboardStats, startTracking, stopTracking } from '../../services/trackingService';
@@ -379,6 +380,7 @@ const EmployeeDashboard = () => {
   const { user } = useAuth();
 
   const { setPageLoading } = useOutletContext();
+  const { showAlert } = useDialog();
   // --- State Hooks ---
   // const [isOnDuty, setIsOnDuty] = useState(false);
   const [statsData, setStatsData] = useState({
@@ -456,7 +458,7 @@ const EmployeeDashboard = () => {
     }
 
     if (!navigator.geolocation) {
-      alert("Geolocation is not supported by your browser");
+      showAlert('Error', 'Geolocation is not supported by your browser', 'error');
       return;
     }
 
@@ -575,7 +577,7 @@ const EmployeeDashboard = () => {
 
     // Prevent managers from tracking themselves
     if (currentUser.role === 'manager') {
-      alert("Tracking is only available for Field Executives.");
+      showAlert('Access Denied', 'Tracking is only available for Field Executives.', 'warning');
       return;
     }
 
@@ -615,7 +617,7 @@ const EmployeeDashboard = () => {
       localStorage.setItem('user', JSON.stringify(updatedUser));
     } catch (err) {
       console.error('Error toggling tracking:', err);
-      alert(`Failed to update tracking status: ${err.message}`);
+      showAlert('Error', `Failed to update tracking status: ${err.message}`, 'error');
     }
   };
 

@@ -47,6 +47,7 @@ import {
 } from 'lucide-react';
 import { useOutletContext } from 'react-router-dom';
 import Button from '../../components/ui/Button';
+import { useDialog } from '../../context/DialogContext';
 
 // --- Sub-components (Consolidated & Styled) ---
 
@@ -678,6 +679,7 @@ const CreateTaskOverlay = ({ onClose, onCreate }) => {
 // --- Main Component ---
 const EmployeeTasks = () => {
   const { setPageLoading } = useOutletContext();
+  const { showAlert } = useDialog();
   const [view, setView] = useState('grid');
   const [activeTab, setActiveTab] = useState('hub');
   const [searchQuery, setSearchQuery] = useState('');
@@ -1211,7 +1213,7 @@ const EmployeeTasks = () => {
     if (file) {
       // 10MB soft limit to ensure it fits in a 16MB MongoDB document after Base64 encoding
       if (file.size > 10 * 1024 * 1024) {
-        alert('File is too large! Please upload images smaller than 10MB to ensure mission synchronization.');
+        showAlert('Warning', 'File is too large! Please upload images smaller than 10MB to ensure mission synchronization.', 'warning');
         return;
       }
 
@@ -1228,13 +1230,13 @@ const EmployeeTasks = () => {
           await updateTaskOperationalData(taskId, { evidence: newEvidence });
         } catch (err) {
           console.error('Upload failed:', err);
-          alert('Failed to synchronize mission evidence. Please try a smaller file.');
+          showAlert('Error', 'Failed to synchronize mission evidence. Please try a smaller file.', 'error');
         } finally {
           setIsTaskLoading(false);
         }
       };
       reader.onerror = () => {
-        alert('Failed to read file. Please try a different image format.');
+        showAlert('Error', 'Failed to read file. Please try a different image format.', 'error');
         setIsTaskLoading(false);
       };
       reader.readAsDataURL(file);
