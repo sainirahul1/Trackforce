@@ -6,8 +6,13 @@
  */
 
 import React, { useState, useMemo, useEffect } from 'react';
+// import React, { useState, useEffect } from 'react';
+import { useOutletContext } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
+import { useSocket } from '../../context/SocketContext';
+import { useGoogleMaps } from '../../context/GoogleMapsContext';
 import { createPortal } from 'react-dom';
-import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from '@react-google-maps/api';
+import { GoogleMap, Marker, InfoWindow } from '@react-google-maps/api';
 import {
   Camera, MapPin, CheckCircle2, Clock, AlertCircle,
   ExternalLink, Maximize2, ShieldCheck, User, Store,
@@ -16,7 +21,6 @@ import {
   ChevronDown, History, Radio, Activity, Navigation, Users, ArrowUpRight
 } from 'lucide-react';
 import { getVisits, getVisitById, updateVisit } from '../../services/employee/visitService';
-import io from 'socket.io-client';
 import { getActiveTrackingSessions } from '../../services/employee/trackingService';
 
 /**
@@ -133,12 +137,10 @@ const ManagerVisits = () => {
   const [activePhoto, setActivePhoto] = React.useState(null);           // Holds the photo object for the Portal-based Lightbox
   const [observationCategory, setObservationCategory] = React.useState('General Overview'); // Active category for observation notes
   const [liveEmployees, setLiveEmployees] = React.useState({});         // Map of employeeId -> latest location data
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
-
-  const { isLoaded } = useJsApiLoader({
-    id: 'google-map-script',
-    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ''
-  });
+  const { user } = useAuth();
+  const { setPageLoading } = useOutletContext();
+  const socket = useSocket();
+  const { isLoaded } = useGoogleMaps();
 
   const [map, setMap] = React.useState(null);
   const onLoad = React.useCallback(map => setMap(map), []);
@@ -159,38 +161,22 @@ const ManagerVisits = () => {
 
   // --- Socket Integration ---
   React.useEffect(() => {
-    const socketUrl = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5001';
-    const socket = io(socketUrl);
+    if (!socket) return;
 
-    socket.on('connect', () => {
-      console.log('Manager connected to socket server');
-      if (user.tenant) {
-        console.log('Joining tenant room:', user.tenant);
-        socket.emit('join', user.tenant);
-      } else if (user._id) {
-        socket.emit('join', user._id);
-      }
-    });
-
-    socket.on('tracking:live', (data) => {
+    const handleTrackingLive = (data) => {
       console.log('Live update received for:', data.employeeName, data.location);
       setLiveEmployees(prev => ({
         ...prev,
         [data.employeeId]: data
       }));
-    });
+    };
 
-    socket.on('tracking:stop', (data) => {
-      console.log('Stopping tracking for:', data.employeeId);
-      setLiveEmployees(prev => {
-        const newMap = { ...prev };
-        delete newMap[data.employeeId];
-        return newMap;
-      });
-    });
+    socket.on('tracking:live', handleTrackingLive);
 
-    return () => socket.disconnect();
-  }, [user._id]);
+    return () => {
+      socket.off('tracking:live', handleTrackingLive);
+    };
+  }, [socket]);
 
   const fetchData = async (isManual = false) => {
     if (hasFetched.current && !isManual) return;
@@ -338,6 +324,7 @@ const ManagerVisits = () => {
         setError('Failed to load visits from the server.');
       } finally {
         setLoading(false);
+        if (setPageLoading) setPageLoading(false);
       }
     };
     fetchVisits();

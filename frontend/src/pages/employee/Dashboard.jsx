@@ -1,6 +1,6 @@
 // hjsdgfjhdsgfj
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useOutletContext } from 'react-router-dom';
 import {
   MapPin, Calendar, TrendingUp, Clock, ClipboardList,
   Map as MapIcon, ShoppingBag, ShoppingBasket, ChevronRight, Activity,
@@ -378,6 +378,7 @@ const EmployeeDashboard = () => {
   // --- Auth Context ---
   const { user } = useAuth();
 
+  const { setPageLoading } = useOutletContext();
   // --- State Hooks ---
   // const [isOnDuty, setIsOnDuty] = useState(false);
   const [statsData, setStatsData] = useState({
@@ -561,6 +562,7 @@ const EmployeeDashboard = () => {
         console.error('Error fetching dashboard data:', err);
       } finally {
         setLoading(false);
+        if (setPageLoading) setPageLoading(false);
       }
     };
 

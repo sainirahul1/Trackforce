@@ -1,5 +1,5 @@
-import React from 'react';
-import { Outlet, Navigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Outlet, Navigate, useLocation } from 'react-router-dom';
 import Sidebar from '../components/layout/Sidebar';
 import Navbar from '../components/layout/Navbar';
 import HelpCenter from '../components/layout/HelpCenter';
@@ -8,16 +8,19 @@ import MaintenanceOverlay from '../components/overlays/MaintenanceOverlay';
 import * as authService from '../services/core/authService';
 import { getPublicSettings } from '../services/core/publicService';
 import { useAuth } from '../context/AuthContext';
+import TenantSkeletonRegistry from '../components/skeletons/tenant/TenantSkeletonRegistry';
+import ManagerSkeletonRegistry from '../components/skeletons/manager/ManagerSkeletonRegistry';
+import EmployeeSkeletonRegistry from '../components/skeletons/employee/EmployeeSkeletonRegistry';
 
 // Impersonation bootstrap is now handled centrally in AuthContext.jsx
 
 const DashboardLayout = ({ allowedRole }) => {
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = React.useState(false);
-  const [workStatus, setWorkStatus] = React.useState('Offline');
-  const [maintenanceMode, setMaintenanceMode] = React.useState(false);
-  const [isCheckingMaintenance, setIsCheckingMaintenance] = React.useState(true);
+  // const [isSidebarCollapsed, setIsSidebarCollapsed] = React.useState(false);
+  // const [workStatus, setWorkStatus] = React.useState('Offline');
+  // const [maintenanceMode, setMaintenanceMode] = React.useState(false);
+  // const [isCheckingMaintenance, setIsCheckingMaintenance] = React.useState(true);
 
-  const { user: localUser, isLoading: authLoading } = useAuth();
+  // const { user: localUser, isLoading: authLoading } = useAuth();
 
   // Logic to automatically end impersonation if returning to a superadmin route via back button
   const impersonatedRole = sessionStorage.getItem('role');
@@ -30,9 +33,31 @@ const DashboardLayout = ({ allowedRole }) => {
   }
 
   // storedRole is read AFTER any potential cleanup, so it's always fresh
-  const storedRole = sessionStorage.getItem('role') || localStorage.getItem('role');
+  // const storedRole = sessionStorage.getItem('role') || localStorage.getItem('role');
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isPageLoading, setIsPageLoading] = useState(false);
+  const location = useLocation();
+  const [workStatus, setWorkStatus] = useState('Offline'); // Offline, Active, Paused
+  const [maintenanceMode, setMaintenanceMode] = useState(false);
+  const [isCheckingMaintenance, setIsCheckingMaintenance] = useState(true);
 
-  React.useEffect(() => {
+  const storedRole = localStorage.getItem('role');
+  const { user: localUser, isLoading: authLoading, refreshUser } = useAuth();
+
+  // Route Change Skeleton Trigger (Real-Time Synchronization Rollout)
+  useEffect(() => {
+    const isTargetRoute =
+      location.pathname.startsWith('/tenant') ||
+      location.pathname.startsWith('/manager') ||
+      location.pathname.startsWith('/employee');
+
+    if (isTargetRoute) {
+      // Force loading state on route start
+      setIsPageLoading(true);
+    }
+  }, [location.pathname]);
+
+  useEffect(() => {
     const fetchMaintenanceStatus = async () => {
       try {
         const settings = await getPublicSettings();
@@ -62,6 +87,10 @@ const DashboardLayout = ({ allowedRole }) => {
       </div>
     );
   }
+  const setPageLoading = (isLoading) => {
+    setIsPageLoading(isLoading);
+  };
+
 
   if (!storedRole || (allowedRole && storedRole !== allowedRole)) {
     return <Navigate to="/login" replace />;
@@ -90,7 +119,20 @@ const DashboardLayout = ({ allowedRole }) => {
         </div>
         <main className="flex-1 p-4 sm:p-6 overflow-y-auto text-gray-900 dark:text-gray-100 print:p-0">
           <div className="max-w-7xl mx-auto print:max-w-none print:m-0">
-            <Outlet context={{ workStatus, setWorkStatus }} />
+            <div className={isPageLoading ? 'hidden' : 'content-ready'}>
+              <Outlet context={{ workStatus, setWorkStatus, setPageLoading }} />
+            </div>
+            {isPageLoading && (
+              <div className="animate-in fade-in duration-300">
+                {location.pathname.startsWith('/tenant') ? (
+                  <TenantSkeletonRegistry pathname={location.pathname} />
+                ) : location.pathname.startsWith('/manager') ? (
+                  <ManagerSkeletonRegistry pathname={location.pathname} />
+                ) : location.pathname.startsWith('/employee') ? (
+                  <EmployeeSkeletonRegistry pathname={location.pathname} />
+                ) : null}
+              </div>
+            )}
           </div>
         </main>
       </div>
@@ -100,5 +142,6 @@ const DashboardLayout = ({ allowedRole }) => {
     </div>
   );
 };
+
 
 export default DashboardLayout;

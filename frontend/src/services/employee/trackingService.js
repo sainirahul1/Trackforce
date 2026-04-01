@@ -39,7 +39,7 @@ export const getActiveTrackingSessions = async () => {
 };
 
 export const getDashboardStats = async () => {
-  const response = await fetch(`${API_URL}/stats/dashboard`, {
+  const response = await fetch(`${API_URL}/tenant/dashboard-stats`, {
     headers: getAuthHeader()
   });
   if (!response.ok) throw new Error('Failed to fetch dashboard stats');

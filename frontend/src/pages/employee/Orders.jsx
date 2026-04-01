@@ -1,5 +1,6 @@
 // Import React hooks for state management
 import React, { useState, useEffect } from "react";
+import { useOutletContext } from "react-router-dom";
 // Import Lucide React icons for UI components
 import {
   ShoppingBag,    // Icon for orders stats
@@ -22,6 +23,7 @@ import { getOrders, createOrderAPI, updateOrderAPI } from "../../services/employ
 
 // Main Employee Orders Component
 const EmployeeOrders = () => {
+  const { setPageLoading } = useOutletContext();
   // Use global theme context
   const { isDarkMode, toggleTheme } = useTheme();
 
@@ -99,6 +101,7 @@ const EmployeeOrders = () => {
         console.error("Error fetching orders:", err);
       } finally {
         setLoading(false);
+        if (setPageLoading) setPageLoading(false);
       }
     };
     fetchOrders();

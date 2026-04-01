@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { GoogleMap, useJsApiLoader, InfoWindow, Polyline, OverlayView, OverlayViewF } from '@react-google-maps/api';
-import { io } from 'socket.io-client';
+import { GoogleMap, InfoWindow, Polyline, OverlayView, OverlayViewF } from '@react-google-maps/api';
+import { useGoogleMaps } from '../../context/GoogleMapsContext';
+import { useSocket } from '../../context/SocketContext';
 import { MapPin, Users, Activity, Navigation, Search, Filter, Shield, Info, Battery, Zap, Clock, X, ChevronLeft, ChevronRight, Loader2, ExternalLink, Home, Minimize2, Maximize2, Minus } from 'lucide-react';
 
 const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '';
@@ -17,7 +18,7 @@ const center = {
   lng: 78.476
 };
 
-const LIBRARIES = ['places', 'geometry', 'drawing'];
+// LIBRARIES moved to GoogleMapsContext.jsx
 
 const LiveTracking = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -32,38 +33,20 @@ const LiveTracking = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(5);
   const [employees, setEmployees] = useState({}); // Store as object { id: data }
-  const [socket, setSocket] = useState(null);
   const [map, setMap] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const hasFetched = React.useRef(false);
 
-  const { isLoaded } = useJsApiLoader({
-    id: 'google-map-script',
-    googleMapsApiKey: GOOGLE_MAPS_API_KEY,
-    libraries: LIBRARIES
-  });
+  const { isLoaded } = useGoogleMaps();
+  const socket = useSocket();
 
   const user = JSON.parse(localStorage.getItem('user')) || {};
 
-  // --- Socket Connection ---
+  // --- Socket Integration ---
   useEffect(() => {
-    const socketUrl = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5001';
-    const newSocket = io(socketUrl);
-    setSocket(newSocket);
+    if (!socket) return;
 
-    newSocket.on('connect', () => {
-      console.log('Manager connected to socket server');
-      const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
-      if (currentUser.tenant) {
-        console.log(`[SOCKET] Manager joining tenant room: ${currentUser.tenant}`);
-        newSocket.emit('join', currentUser.tenant);
-      } else if (currentUser._id) {
-        console.warn('No tenant ID found, falling back to manager room');
-        newSocket.emit('join', currentUser._id);
-      }
-    });
-
-    newSocket.on('tracking:live', (data) => {
+    const handleTrackingLive = (data) => {
       console.log('Live tracking update received in manager portal:', data);
       if (!data.location || typeof data.location.lat !== 'number' || typeof data.location.lng !== 'number') {
         return console.warn('[SOCKET] Invalid location data received:', data);
@@ -84,7 +67,7 @@ const LiveTracking = () => {
             speed: '12 km/h',
             location: data.address || `Lat: ${data.location.lat.toFixed(4)}, Lng: ${data.location.lng.toFixed(4)}`,
             address: data.address,
-            city: data.city || existing.city, // Use existing city if new one is missing
+            city: data.city || existing.city,
             lat: data.location.lat,
             lng: data.location.lng,
             distance: data.distanceTravelled || 0,
@@ -92,19 +75,25 @@ const LiveTracking = () => {
           }
         };
       });
-    });
+    };
 
-    newSocket.on('tracking:stop', (data) => {
+    const handleTrackingStop = (data) => {
       console.log('Employee stopped tracking, removing from map:', data.employeeName);
       setEmployees(prev => {
         const next = { ...prev };
         delete next[data.employeeId];
         return next;
       });
-    });
+    };
 
-    return () => newSocket.close();
-  }, [user._id]);
+    socket.on('tracking:live', handleTrackingLive);
+    socket.on('tracking:stop', handleTrackingStop);
+
+    return () => {
+      socket.off('tracking:live', handleTrackingLive);
+      socket.off('tracking:stop', handleTrackingStop);
+    };
+  }, [socket]);
 
   // --- Initial Data Fetch ---
   const fetchActiveSessions = React.useCallback(async (isManual = false) => {

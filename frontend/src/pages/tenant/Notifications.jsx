@@ -1,7 +1,17 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import { Bell, MessageSquare, ShieldAlert, Award, ChevronRight, Check } from 'lucide-react';
 
 const Notifications = () => {
+  const { setPageLoading } = useOutletContext();
+  
+  useEffect(() => {
+    // Simulate data loading completion
+    const timer = setTimeout(() => {
+      if (setPageLoading) setPageLoading(false);
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [setPageLoading]);
   const notifications = [
     { id: 1, title: 'New Store Visit Uploaded', desc: 'John Doe uploaded 3 photos for Apple Store Brooklyn.', time: '2 mins ago', type: 'info', icon: Bell },
     { id: 2, title: 'Subscription Renewal', desc: 'Your Enterprise plan will renew on April 18, 2026.', time: '1 hour ago', type: 'warning', icon: ShieldAlert },

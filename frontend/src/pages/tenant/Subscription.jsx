@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { CreditCard, Check, Zap, Shield, Crown, RefreshCw, AlertCircle, Sparkles } from 'lucide-react';
+import { useOutletContext } from 'react-router-dom';
 import { getSubscription, updateSubscription, getAvailablePlans } from '../../services/core/tenantService';
 
 // Icon mapping for dynamic plans
@@ -11,10 +12,10 @@ const ICON_MAP = {
 };
 
 const STATUS_STYLES = {
-  active:   { bg: 'bg-emerald-500/20', text: 'text-emerald-300', label: 'Active' },
-  trial:    { bg: 'bg-yellow-500/20',  text: 'text-yellow-300',  label: 'Trial'  },
-  expired:  { bg: 'bg-red-500/20',     text: 'text-red-300',     label: 'Expired' },
-  inactive: { bg: 'bg-gray-500/20',    text: 'text-gray-300',    label: 'Inactive' },
+  active: { bg: 'bg-emerald-500/20', text: 'text-emerald-300', label: 'Active' },
+  trial: { bg: 'bg-yellow-500/20', text: 'text-yellow-300', label: 'Trial' },
+  expired: { bg: 'bg-red-500/20', text: 'text-red-300', label: 'Expired' },
+  inactive: { bg: 'bg-gray-500/20', text: 'text-gray-300', label: 'Inactive' },
 };
 
 const formatDate = (dateStr) => {
@@ -23,10 +24,11 @@ const formatDate = (dateStr) => {
 };
 
 const Subscription = () => {
-  const [data, setData]           = useState(null);
+  const { setPageLoading } = useOutletContext();
+  const [data, setData] = useState(null);
   const [availablePlans, setAvailablePlans] = useState([]);
-  const [loading, setLoading]     = useState(true);
-  const [error, setError]         = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [upgrading, setUpgrading] = useState(null);
   const [successMsg, setSuccessMsg] = useState('');
 
@@ -44,6 +46,7 @@ const Subscription = () => {
       setError(err?.response?.data?.message || 'Failed to load subscription details.');
     } finally {
       setLoading(false);
+      if (setPageLoading) setPageLoading(false);
     }
   };
 
@@ -94,29 +97,21 @@ const Subscription = () => {
     }
   };
 
-  const subscription   = data?.subscription || {};
-  const currentPlan    = subscription.plan || 'Free';
-  const subStatus      = subscription.status || 'trial';
-  const employeeCount  = data?.employeeCount ?? 0;
-  const employeeLimit  = subscription.employeeLimit ?? 5;
-  const usagePercent   = Math.min((employeeCount / employeeLimit) * 100, 100);
-  
+  const subscription = data?.subscription || {};
+  const currentPlan = subscription.plan || 'Free';
+  const subStatus = subscription.status || 'trial';
+  const employeeCount = data?.employeeCount ?? 0;
+  const employeeLimit = subscription.employeeLimit ?? 5;
+  const usagePercent = Math.min((employeeCount / employeeLimit) * 100, 100);
+
   // Find current plan details from available plans if possible
   const currentPlanDetails = availablePlans.find(p => p.name === currentPlan);
   const activeFeatures = subscription.features?.length
     ? subscription.features
     : currentPlanDetails?.features || [];
-    
-  const statusStyle    = STATUS_STYLES[subStatus] || STATUS_STYLES.trial;
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64 gap-3">
-        <RefreshCw className="animate-spin text-indigo-500" size={28} />
-        <span className="text-gray-500 font-semibold">Loading subscription...</span>
-      </div>
-    );
-  }
+  const statusStyle = STATUS_STYLES[subStatus] || STATUS_STYLES.trial;
+
 
   if (error && !data) {
     return (
@@ -254,11 +249,10 @@ const Subscription = () => {
                     </div>
                     <div className="text-right">
                       <p className="font-black text-gray-900 dark:text-white">${entry.amount}</p>
-                      <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
-                        entry.status === 'paid'   ? 'bg-green-100 text-green-700' :
-                        entry.status === 'failed' ? 'bg-red-100 text-red-700'    :
-                                                    'bg-yellow-100 text-yellow-700'
-                      }`}>
+                      <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${entry.status === 'paid' ? 'bg-green-100 text-green-700' :
+                          entry.status === 'failed' ? 'bg-red-100 text-red-700' :
+                            'bg-yellow-100 text-yellow-700'
+                        }`}>
                         {entry.status}
                       </span>
                     </div>
@@ -273,9 +267,9 @@ const Subscription = () => {
         <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {availablePlans.map((plan, i) => {
             const isCurrentPlan = currentPlan === plan.name;
-            const isLoading     = upgrading === plan.name;
-            const Icon          = ICON_MAP[plan.icon] || Zap;
-            const planColor     = plan.color || 'blue';
+            const isLoading = upgrading === plan.name;
+            const Icon = ICON_MAP[plan.icon] || Zap;
+            const planColor = plan.color || 'blue';
 
             return (
               <div

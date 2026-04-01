@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useOutletContext } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import DataTable from '../../components/ui/DataTable';
 import tenantService from '../../services/core/tenantService';
@@ -23,6 +23,7 @@ const getRelativeTime = (timestamp) => {
 
 const EmployeeList = () => {
   const location = useLocation();
+  const { setPageLoading } = useOutletContext();
   const [employees, setEmployees] = useState([]);
   const [teamMembers, setTeamMembers] = useState([]);
   const [selectedManager, setSelectedManager] = useState(null);
@@ -61,6 +62,7 @@ const EmployeeList = () => {
       setIsLoading(true);
       await Promise.all([fetchManagers(), fetchTeamMembers()]);
       setIsLoading(false);
+      if (setPageLoading) setPageLoading(false);
     };
     loadData();
   }, []);

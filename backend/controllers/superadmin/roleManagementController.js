@@ -99,3 +99,38 @@ exports.getUsersByRole = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+// @desc    Impersonate any global user
+// @route   POST /api/superadmin/manage/users/:id/impersonate
+// @access  Private/SuperAdmin
+exports.impersonateUser = async (req, res) => {
+  const jwt = require('jsonwebtoken');
+
+  try {
+    const userId = req.params.id;
+
+    // Find the user
+    const user = await User.findById(userId).populate('tenant');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Generate a token for the user
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '30d' });
+
+    res.json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      company: user.company,
+      role: user.role,
+      tenant: user.tenant?._id || user.tenant,
+      tenantStatus: user.tenant?.onboardingStatus || 'active',
+      isDeactivated: user.isDeactivated,
+      profile: user.profile || {},
+      token,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};

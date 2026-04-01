@@ -677,6 +677,7 @@ const CreateTaskOverlay = ({ onClose, onCreate }) => {
 
 // --- Main Component ---
 const EmployeeTasks = () => {
+  const { setPageLoading } = useOutletContext();
   const [view, setView] = useState('grid');
   const [activeTab, setActiveTab] = useState('hub');
   const [searchQuery, setSearchQuery] = useState('');
@@ -1096,6 +1097,7 @@ const EmployeeTasks = () => {
         setTaskList([]);
       } finally {
         setIsLoading(false);
+        if (setPageLoading) setPageLoading(false);
       }
     };
     fetchTasks();

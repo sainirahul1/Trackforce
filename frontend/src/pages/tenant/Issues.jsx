@@ -14,8 +14,8 @@ const Issues = () => {
   const filteredIssues = mockIssues.filter(issue => {
     const isForMe = issue.to === role;
     const matchesStatus = filterStatus === 'All' || issue.status === filterStatus;
-    const matchesSearch = issue.subject.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          issue.from.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = issue.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      issue.from.toLowerCase().includes(searchTerm.toLowerCase());
     return isForMe && matchesStatus && matchesSearch;
   });
 
@@ -32,8 +32,8 @@ const Issues = () => {
 
       <IssueStats issues={mockIssues.filter(i => i.to === role)} />
 
-      <IssueFilters 
-        filterStatus={filterStatus} 
+      <IssueFilters
+        filterStatus={filterStatus}
         setFilterStatus={setFilterStatus}
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}

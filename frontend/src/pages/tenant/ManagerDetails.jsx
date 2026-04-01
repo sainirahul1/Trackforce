@@ -32,7 +32,7 @@ const ManagerDetails = () => {
       fetchManagerData();
     }
   }, [id]);
-  
+
 
 
   if (loading) {
@@ -104,8 +104,8 @@ const ManagerDetails = () => {
             <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-6 mt-2">{profileDetails.designation}</p>
 
             <span className={`inline-flex items-center px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm border-2 ${profileDetails.status === 'On Duty' || profileDetails.status === 'Active'
-                ? 'bg-emerald-50 text-emerald-700 border-emerald-500/20 dark:bg-emerald-900/40 dark:text-emerald-400'
-                : 'bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-800/40 dark:text-gray-400'
+              ? 'bg-emerald-50 text-emerald-700 border-emerald-500/20 dark:bg-emerald-900/40 dark:text-emerald-400'
+              : 'bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-800/40 dark:text-gray-400'
               }`}>
               {profileDetails.status}
             </span>
@@ -235,8 +235,8 @@ const ManagerDetails = () => {
                         </td>
                         <td className="px-4 py-4">
                           <span className={`inline-flex px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${sub.status === 'Active' || sub.status === 'On Duty'
-                              ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400'
-                              : 'bg-gray-100 text-gray-500 dark:bg-gray-800/50 dark:text-gray-400'
+                            ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400'
+                            : 'bg-gray-100 text-gray-500 dark:bg-gray-800/50 dark:text-gray-400'
                             }`}>
                             {sub.status}
                           </span>

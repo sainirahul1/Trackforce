@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import ReactDOM from 'react-dom';
 import {
   Plus, Search, Filter, MoreHorizontal, Clock, CheckCircle2,
@@ -12,6 +13,7 @@ import {
 import { getTasks, createTask, updateTask, deleteTask } from '../../services/employee/taskService';
 
 const ManagerTasks = () => {
+  const { setPageLoading } = useOutletContext();
   const [activeTab, setActiveTab] = useState('board'); // 'board' or 'list'
   const [showModal, setShowModal] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
@@ -76,6 +78,7 @@ const ManagerTasks = () => {
       setError('Failed to load dashboard data');
     } finally {
       setLoading(false);
+      if (setPageLoading) setPageLoading(false);
     }
   };
 

@@ -6,9 +6,11 @@ import {
   Map, CheckCircle, XCircle, TrendingUp, MoreVertical,
   Mail, MessageSquare, X, ArrowLeft
 } from 'lucide-react';
+import { useOutletContext } from 'react-router-dom';
 import { getExecutives, getLogsByUser } from '../../services/employee/activityService';
 
 const ManagerActivityLog = () => {
+  const { setPageLoading } = useOutletContext();
   const [activeTab, setActiveTab] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedExecutive, setSelectedExecutive] = useState(null);
@@ -39,8 +41,9 @@ const ManagerActivityLog = () => {
       } catch (err) {
         console.error('Error fetching executives:', err);
         setError('Failed to load executives');
-      } finally {
+    } finally {
         setIsLoading(false);
+        if (setPageLoading) setPageLoading(false);
       }
     };
     fetchExecutives();
