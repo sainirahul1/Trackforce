@@ -13,6 +13,7 @@ import {
 import { Line, Bar } from 'react-chartjs-2';
 import tenantService from '../../services/core/tenantService';
 import { getVisitById, updateVisit } from '../../services/employee/visitService';
+import { getTasks, getTaskById } from '../../services/employee/taskService';
 import { useDialog } from '../../context/DialogContext';
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Filler, Tooltip);
 

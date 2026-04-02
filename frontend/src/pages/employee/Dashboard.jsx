@@ -373,8 +373,7 @@ import { getDashboardStats, startTracking, stopTracking } from '../../services/e
 import { getActivities } from '../../services/employee/activityService';
 import { getTasks } from '../../services/employee/taskService';
 
-import { io } from 'socket.io-client';
-
+import { useSocket } from '../../context/SocketContext';
 const EmployeeDashboard = () => {
   // --- Auth Context ---
   const { user } = useAuth();
@@ -394,50 +393,14 @@ const EmployeeDashboard = () => {
   const [nextTask, setNextTask] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isOnDuty, setIsOnDuty] = useState(false);
-  const [socket, setSocket] = useState(null);
-  const socketRef = React.useRef(null);
+  const socket = useSocket();
+  const socketRef = React.useRef(socket);
   const watchIdRef = React.useRef(null);
   const [watchId, setWatchId] = useState(null); // Keep for UI indicators if needed
 
-
-  // --- Socket Connection ---
   useEffect(() => {
-    const socketUrl = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5001';
-    const newSocket = io(socketUrl);
-    setSocket(newSocket);
-    socketRef.current = newSocket;
-
-    newSocket.on('connect', () => {
-      console.log('Employee connected to socket server');
-      const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
-      if (currentUser._id) {
-        newSocket.emit('join', currentUser._id);
-
-        // If already on duty on mount, send an immediate point once socket is ready
-        if (isOnDuty) {
-          navigator.geolocation.getCurrentPosition((pos) => {
-            const { latitude, longitude } = pos.coords;
-            const bootUpdate = {
-              employeeId: currentUser._id,
-              employeeName: currentUser.name,
-              managerId: currentUser.manager,
-              tenantId: currentUser.tenant,
-              role: currentUser.role,
-              location: { lat: latitude, lng: longitude },
-              timestamp: new Date().toISOString()
-            };
-            console.log('[BOOT] Emitting initial points for already active shift');
-            newSocket.emit('tracking:update', bootUpdate);
-          });
-        }
-      }
-    });
-
-    return () => {
-      newSocket.close();
-      socketRef.current = null;
-    };
-  }, []);
+    socketRef.current = socket;
+  }, [socket]);
 
   // --- Cleanup on Unmount ---
   useEffect(() => {
