@@ -1,8 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import { Building, Lock, Globe, Save, User, Activity, Download, Eye, EyeOff } from 'lucide-react';
 import tenantService from '../../services/core/tenantService';
 
 const Settings = () => {
+  const { setPageLoading } = useOutletContext();
   const [logoPreview, setLogoPreview] = useState(null);
   const fileInputRef = useRef(null);
   const [loading, setLoading] = useState(false);
@@ -44,6 +46,9 @@ const Settings = () => {
     featureFlags: [],
   });
 
+  // PERSISTENT CACHE INITIALIZATION (0s Loading)
+  const cachedSettings = tenantService.getSyncCachedData ? tenantService.getSyncCachedData('tenant_settings') : null;
+
   useEffect(() => {
     const fetchSettings = async () => {
       try {
@@ -66,10 +71,32 @@ const Settings = () => {
         }
       } catch (error) {
         console.error('Error fetching settings:', error);
+      } finally {
+        if (setPageLoading) setPageLoading(false);
       }
     };
+    
+    // Immediate state hydration from cache
+    if (cachedSettings) {
+      setGeneralInfo({
+        companyName: cachedSettings.general?.companyName || '',
+        officialEmail: cachedSettings.general?.officialEmail || '',
+        hqAddress: cachedSettings.general?.hqAddress || '',
+      });
+      setLogoPreview(cachedSettings.general?.logoUrl);
+      setLocalization({
+        timezone: cachedSettings.localization?.timezone || 'EST',
+        language: cachedSettings.localization?.language || 'en',
+      });
+      setAccountPrefs({
+        status: cachedSettings.account?.status || 'Active',
+        featureFlags: cachedSettings.account?.featureFlags || [],
+      });
+      if (setPageLoading) setPageLoading(false);
+    }
+
     fetchSettings();
-  }, []);
+  }, [setPageLoading]);
 
   const handleLogoUpload = (e) => {
     const file = e.target.files[0];

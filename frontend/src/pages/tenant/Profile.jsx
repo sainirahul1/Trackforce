@@ -7,25 +7,54 @@ import { Loader2 } from 'lucide-react';
 
 const Profile = () => {
   const { setPageLoading } = useOutletContext();
-  const [avatarPreview, setAvatarPreview] = useState(null);
   const avatarInputRef = useRef(null);
   const { refreshUser } = useAuth();
   
-  const [profileData, setProfileData] = useState({
-    name: '',
-    role: 'Tenant Administrator',
-    company: '',
-    location: '',
-    email: '',
-    phone: '',
-    department: '',
-    _id: ''
+  // PERSISTENT CACHE INITIALIZATION (0s Loading)
+  const getInitialProfile = () => {
+    const stored = localStorage.getItem('user') || sessionStorage.getItem('user');
+    if (!stored) return {
+      name: '', role: 'Tenant Administrator', company: '', location: '', email: '', phone: '', department: '', _id: ''
+    };
+    try {
+      const data = JSON.parse(stored);
+      return {
+        name: data.name || '',
+        role: data.profile?.designation || (data.role === 'tenant' ? 'Tenant Administrator' : data.role),
+        company: data.company || '',
+        email: data.email || '',
+        phone: data.profile?.phone || '',
+        location: data.profile?.location || '',
+        department: data.profile?.department || '',
+        _id: data._id || ''
+      };
+    } catch (e) {
+      return { name: '', role: 'Tenant Administrator', company: '', location: '', email: '', phone: '', department: '', _id: '' };
+    }
+  };
+
+  const [profileData, setProfileData] = useState(getInitialProfile);
+  const [avatarPreview, setAvatarPreview] = useState(() => {
+    const stored = localStorage.getItem('user') || sessionStorage.getItem('user');
+    if (!stored) return null;
+    try {
+      return JSON.parse(stored).profile?.profileImage || null;
+    } catch (e) {
+      return null;
+    }
   });
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editForm, setEditForm] = useState(profileData);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(!localStorage.getItem('user') && !sessionStorage.getItem('user'));
   const [isSavingAvatar, setIsSavingAvatar] = useState(false);
+
+  useEffect(() => {
+    // Immediate loading clearing if cache exists
+    if (!isLoading && setPageLoading) {
+      setPageLoading(false);
+    }
+  }, [isLoading, setPageLoading]);
 
   useEffect(() => {
     const fetchProfile = async () => {

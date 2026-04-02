@@ -20,6 +20,7 @@ import {
 // Import theme context for global dark mode
 import { useTheme } from "../../context/ThemeContext";
 import { getOrders, createOrderAPI, updateOrderAPI } from "../../services/employee/orderService";
+import { getSyncCachedData } from "../../utils/cacheHelper";
 
 // Main Employee Orders Component
 const EmployeeOrders = () => {
@@ -74,37 +75,51 @@ const EmployeeOrders = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const transformOrders = (data) => {
+    return data.map(o => {
+      const orderDate = new Date(o.timestamp || o.createdAt);
+      const isValidDate = !isNaN(orderDate.getTime());
+      return {
+        ...o,
+        id: o._id,
+        store: o.storeName,
+        items: Array.isArray(o.items) ? o.items.reduce((acc, item) => acc + item.quantity, 0) : (o.items || 0),
+        value: o.totalAmount,
+        status: o.status ? o.status.charAt(0).toUpperCase() + o.status.slice(1) : 'Pending',
+        date: isValidDate ? orderDate.toISOString().split('T')[0] : '---',
+        paymentMethod: o.paymentMethod || "",
+        deliveryDate: o.deliveryDate || "",
+        orderStatus: o.status || "Pending",
+        notes: o.notes || ""
+      };
+    });
+  };
+
+  const fetchOrders = async (isBackground = false) => {
+    try {
+      if (!isBackground) setLoading(true);
+      const data = await getOrders();
+      setOrders(transformOrders(data));
+    } catch (err) {
+      console.error("Error fetching orders:", err);
+    } finally {
+      setLoading(false);
+      if (setPageLoading) setPageLoading(false);
+    }
+  };
+
   // Fetch orders from API
   useEffect(() => {
-    const fetchOrders = async () => {
-      try {
-        const data = await getOrders();
-        // Map backend orders to frontend format
-        setOrders(data.map(o => {
-          const orderDate = new Date(o.timestamp || o.createdAt);
-          const isValidDate = !isNaN(orderDate.getTime());
-          return {
-            ...o,
-            id: o._id,
-            store: o.storeName,
-            items: Array.isArray(o.items) ? o.items.reduce((acc, item) => acc + item.quantity, 0) : (o.items || 0),
-            value: o.totalAmount,
-            status: o.status ? o.status.charAt(0).toUpperCase() + o.status.slice(1) : 'Pending',
-            date: isValidDate ? orderDate.toISOString().split('T')[0] : '---',
-            paymentMethod: o.paymentMethod || "",
-            deliveryDate: o.deliveryDate || "",
-            orderStatus: o.status || "Pending",
-            notes: o.notes || ""
-          };
-        }));
-      } catch (err) {
-        console.error("Error fetching orders:", err);
-      } finally {
-        setLoading(false);
-        if (setPageLoading) setPageLoading(false);
-      }
-    };
-    fetchOrders();
+    // 1. Initial Hydration from Cache (0s Loading)
+    const cachedOrders = getSyncCachedData('employee_orders');
+    if (cachedOrders) {
+      setOrders(transformOrders(cachedOrders));
+      setLoading(false);
+      if (setPageLoading) setPageLoading(false);
+      fetchOrders(true); // Silent background update
+    } else {
+      fetchOrders();
+    }
   }, []);
 
   // Calculate total sales from all orders

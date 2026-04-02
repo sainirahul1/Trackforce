@@ -13,6 +13,7 @@ import { useSocket } from '../../context/SocketContext';
 import { useGoogleMaps } from '../../context/GoogleMapsContext';
 import { createPortal } from 'react-dom';
 import { GoogleMap, Marker, InfoWindow } from '@react-google-maps/api';
+import { getSyncCachedData } from '../../utils/cacheHelper';
 import {
   Camera, MapPin, CheckCircle2, Clock, AlertCircle,
   ExternalLink, Maximize2, ShieldCheck, User, Store,
@@ -65,9 +66,9 @@ const VisitRow = ({ visit, onReview, isLive }) => (
       </div>
 
       <div className="hidden xl:flex items-center gap-5">
-        <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md border ${visit.location.includes('Warning') ? 'bg-rose-50 border-rose-100 text-rose-500' : 'bg-emerald-50 border-emerald-100 text-emerald-500'} dark:bg-opacity-5 dark:border-opacity-10 text-[8px] font-black uppercase tracking-tight`}>
+        <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md border ${visit.location && visit.location.includes('Warning') ? 'bg-rose-50 border-rose-100 text-rose-500' : 'bg-emerald-50 border-emerald-100 text-emerald-500'} dark:bg-opacity-5 dark:border-opacity-10 text-[8px] font-black uppercase tracking-tight`}>
           <Radio size={9} className={isLive ? 'animate-pulse text-emerald-500' : 'shrink-0'} fill="currentColor" fillOpacity={0.2} />
-          {isLive && visit.city ? visit.city : visit.location.split(' ')[0]}
+          {isLive && visit.city ? visit.city : (visit.location ? visit.location.split(' ')[0] : 'N/A')}
         </div>
         <div className="flex items-center gap-1.5 text-gray-400 text-[9px] font-bold tabular-nums">
           <Clock size={11} />
@@ -78,21 +79,6 @@ const VisitRow = ({ visit, onReview, isLive }) => (
 
     {/* Assets & Status Control */}
     <div className="flex items-center justify-between lg:justify-end gap-5 w-full lg:flex-1">
-      <div className="flex items-center gap-4">
-        <button
-          onClick={() => fetchData(true)}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 font-bold transition-all active:scale-95 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 ${refreshing ? 'opacity-50' : ''}`}
-        >
-          <Activity size={16} className={refreshing ? 'animate-spin' : ''} />
-          <span className="text-[10px] uppercase tracking-widest">{refreshing ? 'Syncing...' : 'Refresh Live Sync'}</span>
-        </button>
-        <div className="p-2.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-800 text-gray-500">
-          <Filter size={18} />
-        </div>
-        <div className="p-2.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-800 text-gray-500">
-          <Users size={18} />
-        </div>
-      </div>
       <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-lg text-gray-400">
         <Camera size={11} />
         <span className="text-[8px] font-black uppercase tracking-widest">{visit.photos} Proofs</span>
@@ -122,6 +108,27 @@ const VisitRow = ({ visit, onReview, isLive }) => (
     </div>
   </div>
 );
+
+// Helper: assign a unique color per employee marker
+const getMarkerColor = (employeeId) => {
+  const colors = ['#4f46e5', '#059669', '#d97706', '#dc2626', '#7c3aed', '#0891b2'];
+  // Simple deterministic hash of the id string
+  let hash = 0;
+  for (let i = 0; i < (employeeId || '').length; i++) {
+    hash = (hash * 31 + employeeId.charCodeAt(i)) & 0xffffffff;
+  }
+  return colors[Math.abs(hash) % colors.length];
+};
+
+// Category-based default observation notes
+const categoryContent = {
+  'General Overview': 'Field executive completed a comprehensive walkthrough of the premises. Inventory levels appear stable with minor discrepancies noted for follow-up.',
+  'Inventory Compliance': 'Stock levels were cross-checked against the manifest. 3 SKUs flagged for reorder. Shelf placement follows brand guidelines.',
+  'Staff Performance': 'On-site team demonstrated adequate product knowledge. Adherence to uniform and protocol was noted to be satisfactory.',
+  'Client Feedback': 'Store manager expressed satisfaction with delivery timelines. Minor concerns about promotional material placement were noted.',
+  'Protocol Variance': 'Deviation from standard operating procedure observed in the loading bay area. Corrective action recommended.',
+};
+
 
 /**
  * ManagerVisits Main Component
@@ -178,100 +185,7 @@ const ManagerVisits = () => {
     };
   }, [socket]);
 
-  const fetchData = async (isManual = false) => {
-    if (hasFetched.current && !isManual) return;
-    if (isManual) setRefreshing(true);
-
-    try {
-      setLoading(true);
-      const token = localStorage.getItem('token');
-      const headers = { 'Authorization': `Bearer ${token}` };
-
-      // Auto-heal manager profile if tenant is missing
-      const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
-      if (!currentUser.tenant) {
-        console.log('Manager tenant missing in Visits, fetching profile...');
-        const profileRes = await fetch(`${import.meta.env.VITE_API_URL}/auth/me`, { headers });
-        const profileData = await profileRes.json();
-        if (profileData.tenant) {
-          const updatedUser = { ...currentUser, tenant: profileData.tenant };
-          localStorage.setItem('user', JSON.stringify(updatedUser));
-          console.log('Manager profile healed in Visits with tenant:', profileData.tenant);
-        }
-      }
-
-      // Fetch visits
-      const visitsResponse = await fetch(`${import.meta.env.VITE_API_URL}/visits`, { headers });
-      const visitsData = await visitsResponse.json();
-
-      const formattedVisits = visitsData.map(v => ({
-        id: v._id,
-        store: v.storeName,
-        executive: v.employee?.name || 'Unknown',
-        designation: v.employee?.role || 'Field Executive',
-        team: 'Field Operations',
-        type: v.taskType || 'Store Visit',
-        status: v.reviewStatus || 'Pending Review',
-        time: new Date(v.timestamp || v.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        raw: v,
-        employee: v.employee // Ensure employee object is passed for live data lookup
-      }));
-      setVisits(formattedVisits);
-
-      // Fetch active tracking sessions
-      try {
-        const activeRes = await fetch(`${import.meta.env.VITE_API_URL}/tracking/active`, { headers });
-        const activeSessions = await activeRes.json();
-
-        const liveMap = {};
-        activeSessions.forEach(session => {
-          if (session.user?._id) {
-            liveMap[session.user._id] = {
-              location: session.route?.[session.route.length - 1] || null,
-              address: session.currentAddress,
-              city: session.currentCity,
-              timestamp: session.updatedAt
-            };
-          }
-        });
-        setLiveEmployees(liveMap);
-      } catch (trackError) {
-        console.error('Error fetching active tracking sessions:', trackError);
-      }
-
-      hasFetched.current = true;
-    } catch (err) {
-      console.error('Error fetching visits:', err);
-    } finally {
-      setLoading(false);
-      if (isManual) setRefreshing(false);
-    }
-  };
-
-  React.useEffect(() => {
-    fetchData();
-  }, []);
-
-
-  const getMarkerColor = (id) => {
-    const colors = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#14b8a6', '#f97316', '#a855f7'];
-    if (!id) return colors[0];
-    let hash = 0;
-    for (let i = 0; i < id.length; i++) {
-      hash = id.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    return colors[Math.abs(hash) % colors.length];
-  };
-
-  const categoryContent = {
-    'General Overview': "The store inventory was mostly organized, however, some discrepancies were noted in the inward goods section. Client was cooperative and provided all necessary documentation for the audit trail. No major issues faced during the field protocol execution.",
-    'Inventory Compliance': "Stock levels for premium SKUs are maintained at 85%. End-cap displays are correctly positioned as per the planogram. Inward goods documentation is complete and verified.",
-    'Staff Performance': "Executive demonstrated excellent product knowledge and client engagement. Store manager noted the promptness and professionalism of the field officer during the audit.",
-    'Client Feedback': "Client expressed satisfaction with the real-time reporting capabilities. Requested a follow-up on the promotional display efficacy by next week's visit.",
-    'Protocol Variance': "Minor variance noted in the geo-tagging at the entrance. Site-path protocols were strictly followed otherwise, with all checkpoints covered accurately."
-  };
-
-  // Helper to map backend completion status to human-readable labels
+  // --- 0s Hydration & Background Sync ---
   const mapSubmissionStatus = (backendStatus) => {
     switch (backendStatus) {
       case 'completed': return 'Completed';
@@ -282,52 +196,87 @@ const ManagerVisits = () => {
     }
   };
 
-  // Fetch all visits from the backend
-  useEffect(() => {
-    const fetchVisits = async () => {
-      try {
-        setLoading(true);
-        const data = await getVisits();
-        const mapped = data.map(v => {
-          const visitDate = new Date(v.timestamp || v.createdAt);
-          const isValidDate = !isNaN(visitDate.getTime());
-          const empName = v.employee?.name || 'Unknown';
-          const initials = empName.split(' ').filter(Boolean).map(n => n[0]).join('').toUpperCase();
+  const processVisitsData = (data) => {
+    return data.map(v => {
+      const visitDate = new Date(v.timestamp || v.createdAt);
+      const isValidDate = !isNaN(visitDate.getTime());
+      const empName = v.employee?.name || 'Unknown';
+      const initials = empName.split(' ').filter(Boolean).map(n => n[0]).join('').toUpperCase();
 
-          return {
-            ...v,
-            id: v._id,
-            store: v.storeName,
-            executive: empName,
-            designation: 'Field Executive',
-            team: 'Operations',
-            type: v.taskType || 'Store Visit',
-            submissionStatus: mapSubmissionStatus(v.status),
-            time: isValidDate ? visitDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '---',
-            location: v.gps?.lat ? `Verified (GPS: ${v.gps.lat.toFixed(4)}, ${v.gps.lng.toFixed(4)})` : 'Location data not available',
-            photos: v.photos?.length || 0,
-            avatar: initials,
-            employeeId: v.employee?._id || '---',
-            proofs: (v.photos || []).map((url, idx) => ({
-              id: idx + 1,
-              title: `Photo ${idx + 1}`,
-              img: url,
-            })),
-            reviewStatus: v.reviewStatus || 'pending',
-            rejectionReason: v.rejectionReason || null,
+      return {
+        ...v,
+        id: v._id,
+        store: v.storeName,
+        executive: empName,
+        designation: v.employee?.role || 'Field Executive',
+        team: 'Operations',
+        type: v.taskType || 'Store Visit',
+        submissionStatus: mapSubmissionStatus(v.status),
+        time: isValidDate ? visitDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '---',
+        location: v.gps?.lat ? `Verified (GPS: ${v.gps.lat.toFixed(4)}, ${v.gps.lng.toFixed(4)})` : 'Location data not available',
+        photos: v.photos?.length || 0,
+        avatar: initials,
+        employeeId: v.employee?._id || '---',
+        proofs: (v.photos || []).map((url, idx) => ({
+          id: idx + 1,
+          title: `Photo ${idx + 1}`,
+          img: url,
+        })),
+        reviewStatus: v.reviewStatus || 'pending',
+        rejectionReason: v.rejectionReason || null,
+        employee: v.employee
+      };
+    });
+  };
+
+  const fetchVisitsSync = async (isManual = false) => {
+    if (isManual) setRefreshing(true);
+    
+    try {
+      const data = await getVisits();
+      const mapped = processVisitsData(data);
+      setVisits(mapped);
+      setError(null);
+      
+      // Also fetch active tracking sessions for live data
+      const activeSessions = await getActiveTrackingSessions();
+      const liveMap = {};
+      activeSessions.forEach(session => {
+        if (session.user?._id) {
+          liveMap[session.user._id] = {
+            location: session.route?.[session.route.length - 1] || null,
+            address: session.currentAddress,
+            city: session.currentCity,
+            timestamp: session.updatedAt
           };
-        });
-        setVisits(mapped);
-        setError(null);
-      } catch (err) {
-        console.error('Error fetching visits:', err);
-        setError('Failed to load visits from the server.');
-      } finally {
-        setLoading(false);
-        if (setPageLoading) setPageLoading(false);
-      }
-    };
-    fetchVisits();
+        }
+      });
+      setLiveEmployees(liveMap);
+    } catch (err) {
+      console.error('Error syncing visits:', err);
+      if (!visits.length) setError('Failed to load visits');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+      if (setPageLoading) setPageLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    // 1. Initial Hydration from Cache
+    const cachedVisits = getSyncCachedData('visits');
+    if (cachedVisits) {
+      setVisits(processVisitsData(cachedVisits));
+      setLoading(false);
+      if (setPageLoading) setPageLoading(false);
+    }
+
+    // 2. Background Sync
+    fetchVisitsSync();
+    
+    // 3. Periodic Refresh (every 2 mins)
+    const intervalId = setInterval(() => fetchVisitsSync(), 120000);
+    return () => clearInterval(intervalId);
   }, []);
 
   // Handle clicking a visit row to load full details
@@ -420,15 +369,24 @@ const ManagerVisits = () => {
           <p className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] mt-2">Monitor, review, and validate real-time visit requests and geospatial evidence.</p>
         </div>
 
-        {selectedVisit && (
+        <div className="flex items-center gap-4">
+          {selectedVisit && (
+            <button
+              onClick={() => setSelectedVisit(null)}
+              className="flex items-center gap-3 px-6 py-3 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl shadow-sm hover:scale-105 transition-all text-gray-500 hover:text-indigo-600 font-bold text-sm uppercase tracking-widest"
+            >
+              <ArrowLeft size={18} />
+              Back to Overview
+            </button>
+          )}
           <button
-            onClick={() => setSelectedVisit(null)}
-            className="flex items-center gap-3 px-6 py-3 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl shadow-sm hover:scale-105 transition-all text-gray-500 hover:text-indigo-600 font-bold text-sm uppercase tracking-widest"
+            onClick={() => fetchVisitsSync(true)}
+            className={`flex items-center gap-2 px-4 py-3 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 font-bold rounded-2xl transition-all shadow-sm hover:shadow-md hover:bg-indigo-100 dark:hover:bg-indigo-900/50 ${refreshing ? 'opacity-50' : ''}`}
           >
-            <ArrowLeft size={18} />
-            Back to Overview
+            <Activity size={18} className={refreshing ? 'animate-spin' : ''} />
+            <span className="text-sm uppercase tracking-widest">{refreshing ? 'Syncing...' : 'Live Sync'}</span>
           </button>
-        )}
+        </div>
       </div>
 
       {loading ? (

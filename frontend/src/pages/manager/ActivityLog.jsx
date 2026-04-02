@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { useOutletContext } from 'react-router-dom';
 import { getExecutives, getLogsByUser } from '../../services/employee/activityService';
+import { getSyncCachedData } from '../../utils/cacheHelper';
 
 const ManagerActivityLog = () => {
   const { setPageLoading } = useOutletContext();
@@ -24,29 +25,44 @@ const ManagerActivityLog = () => {
   const [logsLoading, setLogsLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Fetch all executives on mount
-  useEffect(() => {
-    const fetchExecutives = async () => {
-      setIsLoading(true);
-      try {
-        const data = await getExecutives();
-        setExecutives(data.map(exec => ({
-          ...exec,
-          id: exec._id,
-          avatar: exec.name.split(' ').map(n => n[0]).join('').toUpperCase(),
-          statusColor: exec.isTracking ? 'bg-emerald-500' : 'bg-gray-400',
-          status: exec.isTracking ? 'Active' : 'Offline',
-          location: exec.profile?.location || 'Unknown'
-        })));
-      } catch (err) {
-        console.error('Error fetching executives:', err);
-        setError('Failed to load executives');
+   // --- 0s Hydration & Background Sync ---
+  const processExecutivesData = (data) => {
+    return data.map(exec => ({
+      ...exec,
+      id: exec._id,
+      avatar: exec.name.split(' ').map(n => n[0]).join('').toUpperCase(),
+      statusColor: exec.isTracking ? 'bg-emerald-500' : 'bg-gray-400',
+      status: exec.isTracking ? 'Active' : 'Offline',
+      location: exec.profile?.location || 'Unknown'
+    }));
+  };
+
+  const fetchExecutivesSync = async () => {
+    try {
+      const data = await getExecutives();
+      const mapped = processExecutivesData(data);
+      setExecutives(mapped);
+      setError(null);
+    } catch (err) {
+      console.error('Error syncing executives:', err);
+      if (!executives.length) setError('Failed to load executives');
     } finally {
-        setIsLoading(false);
-        if (setPageLoading) setPageLoading(false);
-      }
-    };
-    fetchExecutives();
+      setIsLoading(false);
+      if (setPageLoading) setPageLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    // 1. Initial Hydration from Cache
+    const cachedExecs = getSyncCachedData('executives');
+    if (cachedExecs) {
+      setExecutives(processExecutivesData(cachedExecs));
+      setIsLoading(false);
+      if (setPageLoading) setPageLoading(false);
+    }
+
+    // 2. Background Sync
+    fetchExecutivesSync();
   }, []);
 
   // Fetch specific logs when an executive is selected

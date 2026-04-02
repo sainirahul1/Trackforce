@@ -34,7 +34,7 @@ exports.register = async (req, res) => {
     const user = await User.create({
       name,
       company,
-      email,
+      email: normalizedEmail,
       password,
       role: role || 'employee',
       tenant: tenantId,
@@ -67,7 +67,10 @@ exports.register = async (req, res) => {
 // @access  Private
 exports.getMe = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).populate('tenant');
+    // Exclude profileImage (base64, can be 500KB–2MB) for fast response
+    const user = await User.findById(req.user.id)
+      .select('-profile.profileImage')
+      .populate('tenant');
     if (!user) return res.status(404).json({ message: 'User not found' });
 
     res.json({
@@ -80,6 +83,8 @@ exports.getMe = async (req, res) => {
       tenantStatus: user.tenant?.onboardingStatus || 'active',
       isDeactivated: user.isDeactivated,
       profile: user.profile || {},
+      // Flag so frontend knows avatar exists without sending the image bytes
+      hasProfileImage: !!(user.profile?.profileImage),
     });
   } catch (error) {
     res.status(500).json({ message: error.message });

@@ -15,12 +15,53 @@ const getAuthHeader = () => {
   return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
+// Persistent Caching Logic (localStorage)
+const CACHE_PREFIX = 'tf_cache_';
+const CACHE_DURATION = 300000; // 5 minutes (increased for better refresh experience)
+
+export const clearCache = () => {
+  Object.keys(localStorage).forEach(key => {
+    if (key.startsWith(CACHE_PREFIX)) {
+      localStorage.removeItem(key);
+    }
+  });
+};
+
+export const getSyncCachedData = (key) => {
+  try {
+    const cached = localStorage.getItem(`${CACHE_PREFIX}${key}`);
+    if (!cached) return null;
+    const { data, timestamp } = JSON.parse(cached);
+    if (Date.now() - timestamp < CACHE_DURATION) {
+      return data;
+    }
+    return null; // Expired
+  } catch (e) {
+    return null;
+  }
+};
+
+const fetchDataWithCache = async (key, fetcher) => {
+  const cachedData = getSyncCachedData(key);
+  if (cachedData) return cachedData;
+
+  const data = await fetcher();
+  try {
+    localStorage.setItem(`${CACHE_PREFIX}${key}`, JSON.stringify({ data, timestamp: Date.now() }));
+  } catch (e) {
+    console.warn('Cache write failed (storage full?):', e);
+  }
+  return data;
+};
+
 // Get all managers
 export const getManagers = async () => {
-  const response = await axios.get(`${API_URL}/managers`, {
-    headers: getAuthHeader(),
+  return fetchDataWithCache('managers', async () => {
+    const response = await axios.get(`${API_URL}/managers`, {
+      headers: getAuthHeader(),
+    });
+    return response.data;
   });
-  return response.data;
 };
 
 // Create a manager
@@ -28,6 +69,7 @@ export const createManager = async (managerData) => {
   const response = await axios.post(`${API_URL}/managers`, managerData, {
     headers: getAuthHeader(),
   });
+  clearCache(); // Invalidate cache on mutations
   return response;
 };
 
@@ -36,6 +78,7 @@ export const updateManager = async (id, managerData) => {
   const response = await axios.put(`${API_URL}/managers/${id}`, managerData, {
     headers: getAuthHeader(),
   });
+  clearCache();
   return response;
 };
 
@@ -44,15 +87,18 @@ export const deleteManager = async (id) => {
   const response = await axios.delete(`${API_URL}/managers/${id}`, {
     headers: getAuthHeader(),
   });
+  clearCache();
   return response;
 };
 
 // Get all employees
 export const getEmployees = async () => {
-  const response = await axios.get(`${API_URL}/employees`, {
-    headers: getAuthHeader(),
+  return fetchDataWithCache('employees', async () => {
+    const response = await axios.get(`${API_URL}/employees`, {
+      headers: getAuthHeader(),
+    });
+    return response.data;
   });
-  return response.data;
 };
 
 // Get an employee by ID
@@ -90,10 +136,12 @@ export const deleteEmployee = async (id) => {
 
 // Get tenant settings
 export const getSettings = async () => {
-  const response = await axios.get(`${API_URL}/settings`, {
-    headers: getAuthHeader(),
+  return fetchDataWithCache('tenant_settings', async () => {
+    const response = await axios.get(`${API_URL}/settings`, {
+      headers: getAuthHeader(),
+    });
+    return response.data;
   });
-  return response.data;
 };
 
 // Get subscription details (Tenant only)
@@ -171,17 +219,22 @@ export const getAvailablePlans = async () => {
 
 // Dashboard methods
 export const getDashboardStats = async () => {
-  const response = await axios.get(`${API_URL}/dashboard-stats`, {
-    headers: getAuthHeader(),
+  return fetchDataWithCache('dashboard_stats', async () => {
+    const response = await axios.get(`${API_URL}/dashboard-stats`, {
+      headers: getAuthHeader(),
+    });
+    return response.data;
   });
-  return response.data;
 };
 
 export const getDashboardManagers = async (page = 1, limit = 5, search = '') => {
-  const response = await axios.get(`${API_URL}/dashboard-managers?page=${page}&limit=${limit}&search=${search}`, {
-    headers: getAuthHeader(),
+  const cacheKey = `dashboard_managers_${page}_${limit}_${search}`;
+  return fetchDataWithCache(cacheKey, async () => {
+    const response = await axios.get(`${API_URL}/dashboard-managers?page=${page}&limit=${limit}&search=${search}`, {
+      headers: getAuthHeader(),
+    });
+    return response.data;
   });
-  return response.data;
 };
 
 const tenantService = {

@@ -8,7 +8,8 @@ const { logActivity } = require('../../utils/activityLogger');
 exports.getOrders = async (req, res) => {
   try {
     const orders = await Order.find({ tenant: req.tenantId })
-      .populate('employee', 'name email');
+      .populate('employee', 'name email')
+      .lean();
     res.json(orders);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -109,12 +110,12 @@ exports.getOrderStats = async (req, res) => {
     const currentOrders = await Order.find({
       tenant: tenantId,
       createdAt: { $gte: startOfMonth }
-    });
+    }).lean();
 
     const previousOrders = await Order.find({
       tenant: tenantId,
       createdAt: { $gte: startOfLastMonth, $lte: endOfLastMonth }
-    });
+    }).lean();
 
     const totalRevenue = currentOrders.reduce((sum, order) => sum + order.totalAmount, 0);
     const prevRevenue = previousOrders.reduce((sum, order) => sum + order.totalAmount, 0);

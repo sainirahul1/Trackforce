@@ -27,25 +27,49 @@ const Notification = require('../../models/tenant/Notification');
 // @access  Private/SuperAdmin
 exports.getAllTenants = async (req, res) => {
   try {
-    const tenants = await Tenant.find().sort({ createdAt: -1 }).populate('subscription.planId').lean();
-    
-    // Enrich with user and role counts
-    const enrichedTenants = await Promise.all(
-      tenants.map(async (tenant) => {
-        const [userCount, managerCount, employeeCount] = await Promise.all([
-          User.countDocuments({ tenant: tenant._id }),
-          User.countDocuments({ tenant: tenant._id, role: 'manager' }),
-          User.countDocuments({ tenant: tenant._id, role: 'employee' })
-        ]);
-        return { ...tenant, userCount, managerCount, employeeCount };
-      })
-    );
+    // Step 1: Single aggregation to get user/role counts per tenant in ONE query
+    const userCountsAgg = await User.aggregate([
+      { $match: { role: { $in: ['manager', 'employee', 'tenant'] } } },
+      {
+        $group: {
+          _id: '$tenant',
+          userCount: { $sum: 1 },
+          managerCount: { $sum: { $cond: [{ $eq: ['$role', 'manager'] }, 1, 0] } },
+          employeeCount: { $sum: { $cond: [{ $eq: ['$role', 'employee'] }, 1, 0] } }
+        }
+      }
+    ]);
+
+    // Build a lookup map for O(1) access
+    const countMap = {};
+    for (const row of userCountsAgg) {
+      if (row._id) countMap[row._id.toString()] = row;
+    }
+
+    // Step 2: Fetch tenants with populated planId in one query
+    const tenants = await Tenant.find()
+      .sort({ createdAt: -1 })
+      .populate('subscription.planId')
+      .lean();
+
+    // Step 3: Merge counts from map (no extra DB calls)
+    const enrichedTenants = tenants.map((tenant) => {
+      const counts = countMap[tenant._id.toString()] || { userCount: 0, managerCount: 0, employeeCount: 0 };
+      return {
+        ...tenant,
+        userCount: counts.userCount,
+        managerCount: counts.managerCount,
+        employeeCount: counts.employeeCount
+      };
+    });
+
     // Compute Global Stats from enriched tenants
     const totalOrganizations = enrichedTenants.length;
     const activeOrganizations = enrichedTenants.filter(t => t.onboardingStatus === 'active').length;
     const globalWorkforceNodes = enrichedTenants.reduce((sum, t) => sum + (t.userCount || 0), 0);
-    const avgUtilization = enrichedTenants.length ? 
-      (enrichedTenants.reduce((sum, t) => sum + ((t.userCount || 0) / (t.subscription?.employeeLimit || 50)), 0) / enrichedTenants.length * 100).toFixed(1) : '0.0';
+    const avgUtilization = enrichedTenants.length
+      ? (enrichedTenants.reduce((sum, t) => sum + ((t.userCount || 0) / (t.subscription?.employeeLimit || 50)), 0) / enrichedTenants.length * 100).toFixed(1)
+      : '0.0';
 
     res.json({
       stats: {

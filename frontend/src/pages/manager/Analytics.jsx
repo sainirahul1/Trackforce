@@ -14,6 +14,7 @@ import { Line, Bar } from 'react-chartjs-2';
 import tenantService from '../../services/core/tenantService';
 import { getTasks, getTaskById } from '../../services/employee/taskService';
 import { getVisitById, updateVisit } from '../../services/employee/visitService';
+import { getSyncCachedData } from '../../utils/cacheHelper';
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Filler, Tooltip);
 
 const IntelligenceSuite = () => {
@@ -145,149 +146,156 @@ const IntelligenceSuite = () => {
     }
   };
 
+  const processDashboardData = (empRes, taskRes) => {
+    const emps = Array.isArray(empRes) ? empRes : [];
+    const tasks = Array.isArray(taskRes) ? taskRes : [];
+
+    const now = new Date();
+    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startOfWeek = new Date(startOfDay.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const startOfMonth = new Date(startOfDay.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+    const calculateStats = (timeframeTasks) => {
+      let tRev = 0;
+      let aTasks = 0;
+      let cTasks = 0;
+
+      timeframeTasks.forEach(t => {
+        if (t.status === 'completed') {
+          tRev += (t.incentiveVal || Number(t.incentive) || 0);
+          cTasks++;
+        }
+        if (['pending', 'in-progress'].includes(t.status)) {
+          aTasks++;
+        }
+      });
+
+      const overallSuccess = timeframeTasks.length > 0 ? Math.round((cTasks / timeframeTasks.length) * 100) : 0;
+      const overallPerformance = timeframeTasks.length > 0 ? Math.round((cTasks / timeframeTasks.length) * 90) : 0;
+
+      return {
+        revenue: { val: `₹${tRev}`, data: [30, 45, 40, 70, 50, 85, 95] },
+        tasks: { val: aTasks.toString(), data: [20, 35, 25, 45, 30, 50, 42] },
+        success: { val: `${overallSuccess}%`, data: [60, 75, 70, 85, 80, 92, overallSuccess] },
+        performance: { val: `${overallPerformance}%`, data: [65, 70, 75, 72, 80, 85, overallPerformance] }
+      };
+    };
+
+    const dailyTasks = tasks.filter(t => new Date(t.date || t.createdAt) >= startOfDay);
+    const weeklyTasks = tasks.filter(t => new Date(t.date || t.createdAt) >= startOfWeek);
+    const monthlyTasks = tasks.filter(t => new Date(t.date || t.createdAt) >= startOfMonth);
+
+    setDashboardStats({
+      Daily: calculateStats(dailyTasks),
+      Weekly: calculateStats(weeklyTasks),
+      Monthly: calculateStats(monthlyTasks)
+    });
+
+    const empProcessed = emps.map(emp => {
+      const empTasks = tasks.filter(t => {
+        const tId = typeof t.employee === 'object' ? t.employee?._id : t.employee;
+        return tId === emp._id;
+      });
+
+      let empRevenue = 0;
+      let empCompleted = 0;
+      let activeTitle = 'Idle';
+      let empActive = false;
+
+      empTasks.forEach(t => {
+        if (t.status === 'completed') {
+          empRevenue += (t.incentiveVal || Number(t.incentive) || 0);
+          empCompleted++;
+        }
+        if (['pending', 'in-progress'].includes(t.status)) {
+          empActive = true;
+          if (activeTitle === 'Idle') activeTitle = t.title;
+        }
+      });
+
+      const empSuccess = empTasks.length > 0 ? Math.round((empCompleted / empTasks.length) * 100) : 0;
+      const initial = emp.name ? emp.name.match(/\b(\w)/g)?.join('').substring(0, 2).toUpperCase() : 'NA';
+      const role = emp.profile?.designation || emp.role || 'Employee';
+      const zone = emp.profile?.team || 'General';
+
+      return {
+        id: emp._id,
+        name: emp.name,
+        task: activeTitle,
+        success: empSuccess,
+        efficiency: `${empSuccess}%`,
+        revenue: `₹${empRevenue}`,
+        initial: initial || 'EM',
+        role: role,
+        zone: zone,
+        status: emp.isDeactivated ? 'Offline' : (empActive ? 'Online' : 'Offline')
+      };
+    });
+
+    setEmployees(empProcessed);
+
+    const mapSubmissionStatus = (backendStatus) => {
+      switch (backendStatus) {
+        case 'completed': return 'Completed';
+        case 'partially_completed': return 'Partial';
+        case 'not_interested': return 'No Interest';
+        case 'follow_up': return 'Follow-up';
+        default: return 'Pending';
+      }
+    };
+
+    const tLogs = tasks.map(t => {
+      let sts = t.status === 'completed' ? 'Completed' : t.status === 'in-progress' ? 'Ongoing' : t.status === 'rejected' || t.status === 'cancelled' ? 'Rejected' : 'Pending';
+      const visitDate = new Date(t.timestamp || t.date || t.createdAt);
+      const initials = (t.employee?.name || 'Unknown').split(' ').filter(Boolean).map(n => n[0]).join('').toUpperCase();
+
+      const photos = [];
+      if (t.evidence) {
+        if (t.evidence.storeFront) photos.push(t.evidence.storeFront);
+        if (t.evidence.selfie) photos.push(t.evidence.selfie);
+        if (t.evidence.productDisplay) photos.push(t.evidence.productDisplay);
+        if (t.evidence.officialDoc) photos.push(t.evidence.officialDoc);
+      }
+
+      return {
+        id: t._id,
+        employeeId: typeof t.employee === 'object' ? t.employee?._id : t.employee,
+        executive: t.employee?.name || 'Unknown',
+        avatar: initials,
+        designation: t.employee?.profile?.designation || 'Field Executive',
+        title: t.title,
+        client: t.store || t.companyName || 'Unknown Store',
+        status: sts,
+        submissionStatus: mapSubmissionStatus(t.status),
+        date: visitDate.toLocaleDateString(),
+        time: !isNaN(visitDate.getTime()) ? visitDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '---',
+        photosCount: photos.length || t.photos?.length || 0,
+        proofs: photos.length > 0 ? photos.map((url, idx) => ({ id: idx + 1, title: 'Evidence', img: url })) : [],
+        reviewStatus: t.reviewStatus || 'pending',
+        brief: t.visitNotes || t.description || 'Task assigned.'
+      };
+    });
+    setTaskLogs(tLogs);
+  };
+
   useEffect(() => {
+    // 1. Initial Hydration from Cache (0s Loading)
+    const cachedEmps = getSyncCachedData('employees');
+    const cachedTasks = getSyncCachedData('tasks');
+    if (cachedEmps && cachedTasks) {
+      processDashboardData(cachedEmps, cachedTasks);
+      setLoading(false);
+      if (setPageLoading) setPageLoading(false);
+    }
+
     const fetchRealtimeData = async () => {
       try {
-        setLoading(true);
+        if (!cachedEmps || !cachedTasks) setLoading(true);
         const [empRes, taskRes] = await Promise.all([
           tenantService.getEmployees(),
           getTasks()
         ]);
-
-        const emps = Array.isArray(empRes) ? empRes : [];
-        const tasks = Array.isArray(taskRes) ? taskRes : [];
-
-        let totalRevenue = 0;
-        let activeTasksCount = 0;
-        let completedTasksCount = 0;
-
-        const now = new Date();
-        const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        const startOfWeek = new Date(startOfDay.getTime() - 7 * 24 * 60 * 60 * 1000);
-        const startOfMonth = new Date(startOfDay.getTime() - 30 * 24 * 60 * 60 * 1000);
-
-        const calculateStats = (timeframeTasks) => {
-          let tRev = 0;
-          let aTasks = 0;
-          let cTasks = 0;
-
-          timeframeTasks.forEach(t => {
-            if (t.status === 'completed') {
-              tRev += (t.incentiveVal || Number(t.incentive) || 0);
-              cTasks++;
-            }
-            if (['pending', 'in-progress'].includes(t.status)) {
-              aTasks++;
-            }
-          });
-
-          const overallSuccess = timeframeTasks.length > 0 ? Math.round((cTasks / timeframeTasks.length) * 100) : 0;
-          const overallPerformance = timeframeTasks.length > 0 ? Math.round((cTasks / timeframeTasks.length) * 90) : 0;
-
-          return {
-            revenue: { val: `₹${tRev}`, data: [30, 45, 40, 70, 50, 85, 95] },
-            tasks: { val: aTasks.toString(), data: [20, 35, 25, 45, 30, 50, 42] },
-            success: { val: `${overallSuccess}%`, data: [60, 75, 70, 85, 80, 92, overallSuccess] },
-            performance: { val: `${overallPerformance}%`, data: [65, 70, 75, 72, 80, 85, overallPerformance] }
-          };
-        };
-
-        const dailyTasks = tasks.filter(t => new Date(t.date || t.createdAt) >= startOfDay);
-        const weeklyTasks = tasks.filter(t => new Date(t.date || t.createdAt) >= startOfWeek);
-        const monthlyTasks = tasks.filter(t => new Date(t.date || t.createdAt) >= startOfMonth);
-
-        setDashboardStats({
-          Daily: calculateStats(dailyTasks),
-          Weekly: calculateStats(weeklyTasks),
-          Monthly: calculateStats(monthlyTasks)
-        });
-
-        const empProcessed = emps.map(emp => {
-          const empTasks = tasks.filter(t => {
-            const tId = typeof t.employee === 'object' ? t.employee?._id : t.employee;
-            return tId === emp._id;
-          });
-
-          let empRevenue = 0;
-          let empCompleted = 0;
-          let activeTitle = 'Idle';
-          let empActive = false;
-
-          empTasks.forEach(t => {
-            if (t.status === 'completed') {
-              empRevenue += (t.incentiveVal || Number(t.incentive) || 0);
-              empCompleted++;
-            }
-            if (['pending', 'in-progress'].includes(t.status)) {
-              empActive = true;
-              if (activeTitle === 'Idle') activeTitle = t.title;
-            }
-          });
-
-          const empSuccess = empTasks.length > 0 ? Math.round((empCompleted / empTasks.length) * 100) : 0;
-          const initial = emp.name ? emp.name.match(/\b(\w)/g)?.join('').substring(0, 2).toUpperCase() : 'NA';
-          const role = emp.profile?.designation || emp.role || 'Employee';
-          const zone = emp.profile?.team || 'General';
-
-          return {
-            id: emp._id,
-            name: emp.name,
-            task: activeTitle,
-            success: empSuccess,
-            efficiency: `${empSuccess}%`,
-            revenue: `₹${empRevenue}`,
-            initial: initial || 'EM',
-            role: role,
-            zone: zone,
-            status: emp.isDeactivated ? 'Offline' : (empActive ? 'Online' : 'Offline')
-          };
-        });
-
-        setEmployees(empProcessed);
-
-        const mapSubmissionStatus = (backendStatus) => {
-          switch (backendStatus) {
-            case 'completed': return 'Completed';
-            case 'partially_completed': return 'Partial';
-            case 'not_interested': return 'No Interest';
-            case 'follow_up': return 'Follow-up';
-            default: return 'Pending';
-          }
-        };
-
-        const tLogs = tasks.map(t => {
-          let sts = t.status === 'completed' ? 'Completed' : t.status === 'in-progress' ? 'Ongoing' : t.status === 'rejected' || t.status === 'cancelled' ? 'Rejected' : 'Pending';
-          const visitDate = new Date(t.timestamp || t.date || t.createdAt);
-          const initials = (t.employee?.name || 'Unknown').split(' ').filter(Boolean).map(n => n[0]).join('').toUpperCase();
-
-          const photos = [];
-          if (t.evidence) {
-            if (t.evidence.storeFront) photos.push(t.evidence.storeFront);
-            if (t.evidence.selfie) photos.push(t.evidence.selfie);
-            if (t.evidence.productDisplay) photos.push(t.evidence.productDisplay);
-            if (t.evidence.officialDoc) photos.push(t.evidence.officialDoc);
-          }
-
-          return {
-            id: t._id,
-            employeeId: typeof t.employee === 'object' ? t.employee?._id : t.employee,
-            executive: t.employee?.name || 'Unknown',
-            avatar: initials,
-            designation: t.employee?.profile?.designation || 'Field Executive',
-            title: t.title,
-            client: t.store || t.companyName || 'Unknown Store',
-            status: sts,
-            submissionStatus: mapSubmissionStatus(t.status),
-            date: visitDate.toLocaleDateString(),
-            time: !isNaN(visitDate.getTime()) ? visitDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '---',
-            photosCount: photos.length || t.photos?.length || 0,
-            proofs: photos.length > 0 ? photos.map((url, idx) => ({ id: idx + 1, title: 'Evidence', img: url })) : [],
-            reviewStatus: t.reviewStatus || 'pending',
-            brief: t.visitNotes || t.description || 'Task assigned.'
-          };
-        });
-        setTaskLogs(tLogs);
-
+        processDashboardData(empRes, taskRes);
       } catch (err) {
         console.error('Failed to fetch realtime data', err);
       } finally {
@@ -295,9 +303,8 @@ const IntelligenceSuite = () => {
         if (setPageLoading) setPageLoading(false);
       }
     };
-
     fetchRealtimeData();
-  }, []);
+  }, [setPageLoading]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -848,9 +855,9 @@ const IntelligenceSuite = () => {
           </div>
         </div>
       )
-      )}
+    )}
 
-      {activePhoto && createPortal(
+    {activePhoto && createPortal(
         <div className="fixed inset-0 z-[99999] flex items-center justify-center p-0 animate-in fade-in duration-300">
           <div className="absolute inset-0 bg-gray-950/90 backdrop-blur-3xl" onClick={() => setActivePhoto(null)} />
           <div className="relative max-w-5xl w-full h-full flex flex-col items-center justify-center">

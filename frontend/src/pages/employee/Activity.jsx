@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { MapPin, ShoppingBag, LogIn, Navigation, Store, Download, Clock, XCircle, Activity, Loader2 } from 'lucide-react';
 import { getActivities } from '../../services/employee/activityService';
+import { getSyncCachedData } from '../../utils/cacheHelper';
 import { useSocket } from '../../context/SocketContext';
 
 const mapActivity = (log) => {
@@ -35,20 +36,31 @@ const EmployeeActivity = () => {
   const [showMore, setShowMore] = useState(false);
   const socket = useSocket();
 
+  const fetchActivities = async (isBackground = false) => {
+    try {
+      if (!isBackground) setLoading(true);
+      const data = await getActivities();
+      const mapped = data.map(mapActivity);
+      setActivities(mapped);
+    } catch (err) {
+      console.error('Error fetching activities:', err);
+    } finally {
+      setLoading(false);
+      if (setPageLoading) setPageLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchActivities = async () => {
-      try {
-        const data = await getActivities();
-        const mapped = data.map(mapActivity);
-        setActivities(mapped);
-      } catch (err) {
-        console.error('Error fetching activities:', err);
-      } finally {
-        setLoading(false);
-        if (setPageLoading) setPageLoading(false);
-      }
-    };
-    fetchActivities();
+    // 1. Initial Hydration from Cache (0s Loading)
+    const cachedActivities = getSyncCachedData('activities');
+    if (cachedActivities) {
+      setActivities(cachedActivities.map(mapActivity));
+      setLoading(false);
+      if (setPageLoading) setPageLoading(false);
+      fetchActivities(true); // Silent background update
+    } else {
+      fetchActivities();
+    }
   }, []);
 
   // Socket Listener

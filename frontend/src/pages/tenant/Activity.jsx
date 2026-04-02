@@ -1,7 +1,13 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import { Clock, LogIn, MapPin, CheckCircle, Smartphone, AlertTriangle } from 'lucide-react';
 
 const Activity = () => {
+  const { setPageLoading } = useOutletContext();
+
+  useEffect(() => {
+    if (setPageLoading) setPageLoading(false);
+  }, [setPageLoading]);
   const activities = [
     { id: 1, user: 'John Doel', action: 'Logged In', target: 'Mobile App', time: '2 minutes ago', icon: LogIn, color: 'text-indigo-600', bg: 'bg-indigo-50 dark:bg-indigo-900/20' },
     { id: 2, user: 'Jane Smith', action: 'Completed Visit', target: 'Apple Store NYC', time: '15 minutes ago', icon: CheckCircle, color: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-900/20' },

@@ -41,21 +41,13 @@ const DashboardLayout = ({ allowedRole }) => {
   const [maintenanceMode, setMaintenanceMode] = useState(false);
   const [isCheckingMaintenance, setIsCheckingMaintenance] = useState(true);
 
-  const storedRole = localStorage.getItem('role');
+  // CRITICAL: During impersonation, role is in sessionStorage. Read it first, fall back to localStorage.
+  const storedRole = sessionStorage.getItem('role') || localStorage.getItem('role');
   const { user: localUser, isLoading: authLoading, refreshUser } = useAuth();
 
   // Route Change Skeleton Trigger (Real-Time Synchronization Rollout)
-  useEffect(() => {
-    const isTargetRoute =
-      location.pathname.startsWith('/tenant') ||
-      location.pathname.startsWith('/manager') ||
-      location.pathname.startsWith('/employee');
-
-    if (isTargetRoute) {
-      // Force loading state on route start
-      setIsPageLoading(true);
-    }
-  }, [location.pathname]);
+  // Removed forced loading state to support 0s hydration and "Instant Water" flow
+  // Modules are now responsible for their own loading states if necessary.
 
   useEffect(() => {
     const fetchMaintenanceStatus = async () => {
@@ -96,7 +88,9 @@ const DashboardLayout = ({ allowedRole }) => {
     return <Navigate to="/login" replace />;
   }
 
-  if (maintenanceMode && storedRole !== 'superadmin') {
+  // Superadmins impersonating other roles bypass maintenance mode
+  const isImpersonating = !!sessionStorage.getItem('token');
+  if (maintenanceMode && storedRole !== 'superadmin' && !isImpersonating) {
     return <MaintenanceOverlay />;
   }
 
@@ -119,9 +113,9 @@ const DashboardLayout = ({ allowedRole }) => {
         </div>
         <main className="flex-1 p-4 sm:p-6 overflow-y-auto text-gray-900 dark:text-gray-100 print:p-0">
           <div className="max-w-7xl mx-auto print:max-w-none print:m-0">
-            <div className={isPageLoading ? 'hidden' : 'content-ready'}>
-              <Outlet context={{ workStatus, setWorkStatus, setPageLoading }} />
-            </div>
+          <div className="content-ready">
+            <Outlet context={{ workStatus, setWorkStatus, setPageLoading }} />
+          </div>
             {isPageLoading && (
               <div className="animate-in fade-in duration-300">
                 {location.pathname.startsWith('/tenant') ? (

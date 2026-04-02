@@ -1,3 +1,4 @@
+import { fetchDataWithCache, setCachedData, clearCache } from '../../utils/cacheHelper';
 
 const getBaseUrl = () => {
   let url = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
@@ -14,11 +15,13 @@ const getAuthHeader = () => {
 
 // Get all field executives for the sidebar
 export const getExecutives = async () => {
-  const response = await fetch(`${API_URL}/executives`, {
-    headers: getAuthHeader()
+  return fetchDataWithCache('executives', async () => {
+    const response = await fetch(`${API_URL}/executives`, {
+      headers: getAuthHeader()
+    });
+    if (!response.ok) throw new Error('Failed to fetch executives');
+    return response.json();
   });
-  if (!response.ok) throw new Error('Failed to fetch executives');
-  return response.json();
 };
 
 // Get activity logs for a specific user ID

@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useOutletContext } from 'react-router-dom';
 import { ArrowLeft, User, Mail, Phone, MapPin, Briefcase, Activity, Calendar, Shield, Clock } from 'lucide-react';
 import Button from '../../components/ui/Button';
 import tenantService from '../../services/core/tenantService';
 
 const ManagerDetails = () => {
+  const { setPageLoading } = useOutletContext();
   const { id } = useParams();
   const navigate = useNavigate();
   const [manager, setManager] = useState(null);
@@ -25,6 +26,7 @@ const ManagerDetails = () => {
         setError('Failed to load personnel profile.');
       } finally {
         setLoading(false);
+        if (setPageLoading) setPageLoading(false);
       }
     };
 

@@ -47,7 +47,17 @@ export const AuthProvider = ({ children }) => {
         const currentUser = JSON.parse(storedUserRaw || '{}');
         const token = currentUser.token || storage.getItem('token');
 
-        const updatedUser = { ...freshUser, token };
+        const updatedUser = { 
+          ...currentUser, 
+          ...freshUser, 
+          token,
+          // Ensure these are explicitly updated for immediate shell hydration
+          name: freshUser.name || currentUser.name,
+          profile: {
+            ...currentUser.profile,
+            ...freshUser.profile
+          }
+        };
         setUser(updatedUser);
         storage.setItem('user', JSON.stringify(updatedUser));
       }
@@ -58,12 +68,24 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
-  // Sync storage when state changes
+  // Sync storage and PRELOAD AVATAR when state changes
   useEffect(() => {
     if (user) {
       const isImpersonating = !!sessionStorage.getItem('token');
       const storage = isImpersonating ? sessionStorage : localStorage;
       storage.setItem('user', JSON.stringify(user));
+
+      // 0s-Load Optimization: Background Preheat for Avatar
+      const avatarPath = user.profile?.profileImage || user.avatar;
+      if (avatarPath && !avatarPath.startsWith('data:')) {
+        const imageUrl = (() => {
+          let url = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+          const base = url.replace(/\/api\/?$/, '');
+          return `${base}${avatarPath.startsWith('/') ? '' : '/'}${avatarPath}`;
+        })();
+        const img = new Image();
+        img.src = imageUrl;
+      }
     }
   }, [user]);
 

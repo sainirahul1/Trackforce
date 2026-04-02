@@ -14,6 +14,8 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
     unique: true,
+    lowercase: true,
+    trim: true,
   },
   password: {
     type: String,
@@ -157,5 +159,13 @@ userSchema.pre('save', async function () {
 userSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
+
+// Performance Indexes
+userSchema.index({ role: 1 }); // fast global role scans (e.g. aggregation pipeline)
+userSchema.index({ tenant: 1, role: 1, status: 1 });
+userSchema.index({ tenant: 1, createdAt: -1 }); // fast per-tenant user listings
+userSchema.index({ manager: 1, tenant: 1 });
+userSchema.index({ name: 1, tenant: 1 });
+userSchema.index({ 'profile.zone': 1, tenant: 1 });
 
 module.exports = mongoose.model('User', userSchema);

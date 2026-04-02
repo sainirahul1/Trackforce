@@ -1,4 +1,5 @@
 import { getAuthHeader } from '../core/authService';
+import { fetchDataWithCache, setCachedData, clearCache } from '../../utils/cacheHelper';
 
 const getBaseUrl = () => {
   let url = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
@@ -10,11 +11,13 @@ const BASE_URL = getBaseUrl();
 const API_URL = `${BASE_URL}/visits`;
 
 export const getVisits = async () => {
-  const response = await fetch(API_URL, {
-    headers: getAuthHeader()
+  return fetchDataWithCache('visits', async () => {
+    const response = await fetch(API_URL, {
+      headers: getAuthHeader()
+    });
+    if (!response.ok) throw new Error('Failed to fetch visits');
+    return response.json();
   });
-  if (!response.ok) throw new Error('Failed to fetch visits');
-  return response.json();
 };
 
 export const getVisitById = async (id) => {
@@ -35,6 +38,7 @@ export const createVisit = async (visitData) => {
     body: JSON.stringify(visitData)
   });
   if (!response.ok) throw new Error('Failed to create visit');
+  clearCache(); // Invalidate cache on mutations
   return response.json();
 };
 
@@ -48,5 +52,6 @@ export const updateVisit = async (id, visitData) => {
     body: JSON.stringify(visitData)
   });
   if (!response.ok) throw new Error('Failed to review visit');
+  clearCache(); // Invalidate cache on mutations
   return response.json();
 };
