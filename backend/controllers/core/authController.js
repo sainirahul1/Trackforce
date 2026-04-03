@@ -2,8 +2,8 @@ const User = require('../../models/tenant/User');
 const jwt = require('jsonwebtoken');
 
 // Generate JWT with metadata to reduce middleware DB hits
-const generateToken = (id, role, tenant) => {
-  return jwt.sign({ id, role, tenant }, process.env.JWT_SECRET, {
+const generateToken = (id, role, tenant, name, email) => {
+  return jwt.sign({ id, role, tenant, name, email }, process.env.JWT_SECRET, {
     expiresIn: '30d',
   });
 };
@@ -52,7 +52,7 @@ exports.register = async (req, res) => {
         tenantStatus: populatedUser.tenant?.onboardingStatus || 'active',
         isDeactivated: user.isDeactivated,
         profile: user.profile || {},
-        token: generateToken(user._id, user.role, user.tenant),
+        token: generateToken(user._id, user.role, user.tenant, user.name, user.email),
       });
     } else {
       res.status(400).json({ message: 'Invalid user data' });
@@ -113,7 +113,7 @@ exports.login = async (req, res) => {
         tenantStatus: user.tenant?.onboardingStatus || 'active',
         isDeactivated: user.isDeactivated,
         profile: user.profile || {},
-        token: generateToken(user._id, user.role, user.tenant?._id || user.tenant),
+        token: generateToken(user._id, user.role, user.tenant?._id || user.tenant, user.name, user.email),
       });
     } else {
       res.status(401).json({ message: 'Invalid email or password' });

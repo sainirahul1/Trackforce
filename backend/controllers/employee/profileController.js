@@ -13,10 +13,20 @@ const getMyProfile = async (req, res) => {
       .lean();
 
     if (!profile) {
+      // Safety: If name or email are missing from fast-path token, fetch from User
+      let name = req.user.name;
+      let email = req.user.email;
+      
+      if (!name || !email) {
+        const user = await User.findById(req.user._id).select('name email profile').lean();
+        name = name || user?.name || '';
+        email = email || user?.email || '';
+      }
+
       const created = await Profile.create({
         employeeId: req.user._id,
-        name: req.user.name || '',
-        email: req.user.email || '',
+        name: name,
+        email: email,
         phone: req.user.phone || '',
         designation: req.user.designation || '',
         team: req.user.team || '',
@@ -84,7 +94,7 @@ const updateMyProfile = async (req, res) => {
     let profile = await Profile.findOneAndUpdate(
       { employeeId: req.user._id },
       { $set: updates },
-      { new: true, runValidators: true }
+      { returnDocument: 'after', runValidators: true }
     );
 
     if (!profile) {
@@ -156,7 +166,7 @@ const updateSettings = async (req, res) => {
     const profile = await Profile.findOneAndUpdate(
       { employeeId: req.user._id },
       { $set: settingsUpdate },
-      { new: true, runValidators: true }
+      { returnDocument: 'after', runValidators: true }
     );
 
     if (!profile) {

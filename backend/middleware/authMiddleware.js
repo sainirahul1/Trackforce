@@ -24,6 +24,8 @@ const protect = async (req, res, next) => {
           id: decoded.id,
           _id: decoded.id,
           role: decoded.role,
+          name: decoded.name || null,
+          email: decoded.email || null,
           tenant: decoded.tenant || null // Handle users without tenants (SuperAdmins)
         };
         // Skip DB lookup & session invalidation for maximum performance
