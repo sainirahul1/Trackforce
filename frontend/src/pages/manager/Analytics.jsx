@@ -12,12 +12,14 @@ import {
 } from 'chart.js';
 import { Line, Bar } from 'react-chartjs-2';
 import tenantService from '../../services/core/tenantService';
-import { getTasks, getTaskById } from '../../services/employee/taskService';
 import { getVisitById, updateVisit } from '../../services/employee/visitService';
+import { getTasks, getTaskById } from '../../services/employee/taskService';
+import { useDialog } from '../../context/DialogContext';
 import { getSyncCachedData } from '../../utils/cacheHelper';
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Filler, Tooltip);
 
 const IntelligenceSuite = () => {
+  const { showAlert } = useDialog();
   const navigate = useNavigate();
   const { setPageLoading } = useOutletContext();
   const [view, setView] = useState('list');
@@ -140,9 +142,10 @@ const IntelligenceSuite = () => {
 
       setIsRejecting(false);
       setRejectionReasonInput('');
+      showAlert('Review status updated successfully.', 'Status Updated', 'success');
     } catch (err) {
       console.error('Error updating visit review status:', err);
-      alert('Failed to update review status.');
+      showAlert('Failed to update review status.', 'Update Error', 'error');
     }
   };
 
@@ -855,9 +858,9 @@ const IntelligenceSuite = () => {
           </div>
         </div>
       )
-    )}
+      )}
 
-    {activePhoto && createPortal(
+      {activePhoto && createPortal(
         <div className="fixed inset-0 z-[99999] flex items-center justify-center p-0 animate-in fade-in duration-300">
           <div className="absolute inset-0 bg-gray-950/90 backdrop-blur-3xl" onClick={() => setActivePhoto(null)} />
           <div className="relative max-w-5xl w-full h-full flex flex-col items-center justify-center">

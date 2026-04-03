@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import Button from '../../components/ui/Button';
 import superadminService from '../../services/superadmin/superadminService';
+import { useDialog } from '../../context/DialogContext';
 
 const mockNotifications = [
   {
@@ -51,6 +52,7 @@ const Notifications = () => {
   const [loading, setLoading] = useState(true);
   const [showBroadcastModal, setShowBroadcastModal] = useState(false);
   const [newAlert, setNewAlert] = useState({ title: '', message: '', type: 'announcement' });
+  const { showAlert } = useDialog();
 
   useEffect(() => {
     fetchNotifications();
@@ -79,8 +81,9 @@ const Notifications = () => {
       setShowBroadcastModal(false);
       setNewAlert({ title: '', message: '', type: 'announcement' });
       fetchNotifications();
+      showAlert('Alert broadcasted successfully.', 'Broadcast Sent', 'success');
     } catch (error) {
-      alert('Error broadcasting alert: ' + error.message);
+      showAlert('Error broadcasting alert: ' + error.message, 'Broadcast Failed', 'error');
     }
   };
 

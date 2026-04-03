@@ -7,6 +7,7 @@ import { getVisits } from '../../services/employee/visitService';
 import { getSyncCachedData } from '../../utils/cacheHelper';
 import { Users, Search, Download, CheckCircle2, BarChart3, AlertTriangle, MapPin, Activity, Mail, Phone, Linkedin, Briefcase, GraduationCap, ShieldCheck, FileText, Globe, Loader2, Edit, Trash2, Ban, X, UserPlus, ArrowLeft, Calendar, Clock, Shield, User, FileSignature, HeartPulse, Building2, Flame, Droplets, Map } from 'lucide-react';
 import Button from '../../components/ui/Button';
+import { useDialog } from '../../context/DialogContext';
 
 // --- Print-Only Consolidated Layout (Team Operation Application) ---
 const TeamPrintLayout = ({ stats, members }) => (
@@ -247,6 +248,7 @@ const ManagerTeam = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
   const itemsPerPage = 7;
+  const { showAlert, showConfirm } = useDialog();
 
   // Reset page on search
   useEffect(() => {
@@ -285,7 +287,7 @@ const ManagerTeam = () => {
       setNewEmployee({ name: '', email: '', password: '', zone: '', designation: 'Employee', status: 'Active' });
     } catch (error) {
       console.error('Failed to create employee:', error);
-      alert(error.response?.data?.message || 'Failed to create employee');
+      showAlert('Error', error.response?.data?.message || 'Failed to create employee', 'error');
     }
   };
 
@@ -298,7 +300,7 @@ const ManagerTeam = () => {
       setEditingEmployee(null);
     } catch (err) {
       console.error('Failed to edit employee:', err);
-      alert('Failed to edit employee');
+      showAlert('Error', 'Failed to edit employee', 'error');
     }
   };
 
@@ -309,12 +311,19 @@ const ManagerTeam = () => {
       setTeamMembers(teamMembers.map(emp => emp.id === id ? { ...emp, status: newStatus === 'Active' ? 'On Duty' : 'Inactive' } : emp));
     } catch (err) {
       console.error(err);
-      alert('Failed to update status');
+      showAlert('Error', 'Failed to update status', 'error');
     }
   };
 
   const handleDeleteEmployee = async (id) => {
-    if (window.confirm("Are you sure you want to remove this member?")) {
+    const isConfirmed = await showConfirm(
+      "Remove Member",
+      "Are you sure you want to remove this member?",
+      "Remove",
+      "Cancel",
+      "danger"
+    );
+    if (isConfirmed) {
       try {
         await tenantService.deleteEmployee(id);
         setTeamMembers(teamMembers.filter(emp => emp.id !== id));

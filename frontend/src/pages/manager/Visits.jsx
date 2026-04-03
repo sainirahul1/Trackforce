@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { getVisits, getVisitById, updateVisit } from '../../services/employee/visitService';
 import { getActiveTrackingSessions } from '../../services/employee/trackingService';
+import { useDialog } from '../../context/DialogContext';
 
 /**
  * VisitRow Component
@@ -148,6 +149,7 @@ const ManagerVisits = () => {
   const { setPageLoading } = useOutletContext() || {};
   const { socket } = useSocket() || {};
   const { isLoaded } = useGoogleMaps();
+  const { showAlert } = useDialog();
 
   const [map, setMap] = React.useState(null);
   const onLoad = React.useCallback(map => setMap(map), []);
@@ -351,7 +353,7 @@ const ManagerVisits = () => {
       setRejectionReasonInput('');
     } catch (err) {
       console.error('Error updating visit review status:', err);
-      alert('Failed to update review status.');
+      showAlert('Error', 'Failed to update review status.', 'error');
     }
   };
 

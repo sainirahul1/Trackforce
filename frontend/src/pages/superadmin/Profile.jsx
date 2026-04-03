@@ -3,8 +3,10 @@ import { User, Mail, Phone, MapPin, Building, ShieldCheck, Camera, Edit3, Key, B
 import Skeleton from '../../components/ui/Skeleton';
 import { getMe, updateProfile as updateAuthProfile, uploadProfileImage as uploadAuthImage, updateSuperadminCredentials } from '../../services/core/authService';
 import { useAuth } from '../../context/AuthContext';
+import { useDialog } from '../../context/DialogContext';
 
 const Profile = () => {
+  const { showAlert } = useDialog();
   const [avatarPreview, setAvatarPreview] = useState(null);
   const avatarInputRef = useRef(null);
   const { refreshUser } = useAuth();
@@ -129,9 +131,10 @@ const Profile = () => {
         const imageUrl = response.profileImage;
         setAvatarPreview(imageUrl);
         await refreshUser();
+        showAlert('Profile image updated successfully.', 'Image Uploaded', 'success');
       } catch (error) {
         console.error('Failed to upload image:', error);
-        alert(error.message || 'Failed to upload profile image');
+        showAlert(error.message || 'Failed to upload profile image', 'Upload Failed', 'error');
       } finally {
         setIsSaving(false);
       }
@@ -165,9 +168,10 @@ const Profile = () => {
         company: freshData.company || editForm.company,
       });
       setIsEditModalOpen(false);
+      showAlert('Profile information updated.', 'Profile Updated', 'success');
     } catch (error) {
       console.error('Failed to update profile:', error);
-      alert(error.message || 'Failed to update profile');
+      showAlert(error.message || 'Failed to update profile', 'Update Failed', 'error');
     } finally {
       setIsSaving(false);
     }

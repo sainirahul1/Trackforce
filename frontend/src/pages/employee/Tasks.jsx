@@ -47,7 +47,7 @@ import {
 } from 'lucide-react';
 import { useOutletContext } from 'react-router-dom';
 import Button from '../../components/ui/Button';
-import { getSyncCachedData } from '../../utils/cacheHelper';
+import { useDialog } from '../../context/DialogContext';
 
 // --- Sub-components (Consolidated & Styled) ---
 
@@ -535,14 +535,14 @@ const TaskDetailOverlay = ({ task, onClose, onUpdateOperationalData, onStartTask
                     }, true /* terminal */);
                     onClose();
                   }}
-                  className={`w-full py-4 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl transition-all hover:scale-[1.02] active:scale-95 ${localMissionStatus === 'Complete' 
-                    ? 'bg-emerald-600 shadow-emerald-100 dark:shadow-none' 
+                  className={`w-full py-4 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl transition-all hover:scale-[1.02] active:scale-95 ${localMissionStatus === 'Complete'
+                    ? 'bg-emerald-600 shadow-emerald-100 dark:shadow-none'
                     : 'bg-indigo-600 shadow-indigo-100 dark:shadow-none'}`}
                 >
-                  {localMissionStatus === 'Complete' 
-                    ? 'Complete Mission' 
-                    : (['Follow Up', 'Rejected'].includes(localMissionStatus) 
-                      ? 'Submit & Reschedule' 
+                  {localMissionStatus === 'Complete'
+                    ? 'Complete Mission'
+                    : (['Follow Up', 'Rejected'].includes(localMissionStatus)
+                      ? 'Submit & Reschedule'
                       : 'Update & Save')}
                 </button>
               </div>
@@ -679,6 +679,7 @@ const CreateTaskOverlay = ({ onClose, onCreate }) => {
 // --- Main Component ---
 const EmployeeTasks = () => {
   const { setPageLoading } = useOutletContext();
+  const { showAlert } = useDialog();
   const [view, setView] = useState('grid');
   const [activeTab, setActiveTab] = useState('hub');
   const [searchQuery, setSearchQuery] = useState('');
@@ -1133,7 +1134,7 @@ const EmployeeTasks = () => {
   const updateTaskOperationalData = async (taskId, data, isTerminal = false) => {
     try {
       const updatedTask = await taskService.updateTask(taskId, data);
-      
+
       // Only remove from list when caller explicitly marks this as a terminal action
       if (isTerminal) {
         setTaskList(prev => prev.filter(t => t._id !== taskId));
@@ -1155,12 +1156,12 @@ const EmployeeTasks = () => {
     try {
       setIsTaskLoading(true);
       setSelectedTask(task); // Show overlay immediately with partial data
-      
+
       const fullTask = await taskService.getTaskById(task._id || task.id);
-      
+
       // Update the selected task with full details
       setSelectedTask(fullTask);
-      
+
       // Also update the task in the list if it exists
       setTaskList(prev => prev.map(t => (t._id || t.id) === (fullTask._id || fullTask.id) ? fullTask : t));
     } catch (err) {
@@ -1224,7 +1225,7 @@ const EmployeeTasks = () => {
     if (file) {
       // 10MB soft limit to ensure it fits in a 16MB MongoDB document after Base64 encoding
       if (file.size > 10 * 1024 * 1024) {
-        alert('File is too large! Please upload images smaller than 10MB to ensure mission synchronization.');
+        showAlert('Warning', 'File is too large! Please upload images smaller than 10MB to ensure mission synchronization.', 'warning');
         return;
       }
 
@@ -1241,13 +1242,13 @@ const EmployeeTasks = () => {
           await updateTaskOperationalData(taskId, { evidence: newEvidence });
         } catch (err) {
           console.error('Upload failed:', err);
-          alert('Failed to synchronize mission evidence. Please try a smaller file.');
+          showAlert('Error', 'Failed to synchronize mission evidence. Please try a smaller file.', 'error');
         } finally {
           setIsTaskLoading(false);
         }
       };
       reader.onerror = () => {
-        alert('Failed to read file. Please try a different image format.');
+        showAlert('Error', 'Failed to read file. Please try a different image format.', 'error');
         setIsTaskLoading(false);
       };
       reader.readAsDataURL(file);
@@ -1547,12 +1548,12 @@ const EmployeeTasks = () => {
                 <div className="absolute inset-0 opacity-20 pointer-events-none" style={{ backgroundImage: 'radial-gradient(#6366F1 1.5px, transparent 1.5px)', backgroundSize: '40px 40px' }} />
 
                 {taskList.map((task) => (
-                  <div 
-                    key={task._id || task.id} 
-                    className="absolute transition-all hover:scale-110 cursor-pointer z-10 hover:z-[60] group/marker" 
-                    style={{ 
-                      left: `${task.coords?.x || 0}%`, 
-                      top: `${task.coords?.y || 0}%` 
+                  <div
+                    key={task._id || task.id}
+                    className="absolute transition-all hover:scale-110 cursor-pointer z-10 hover:z-[60] group/marker"
+                    style={{
+                      left: `${task.coords?.x || 0}%`,
+                      top: `${task.coords?.y || 0}%`
                     }}
                   >
                     <div className="relative">
@@ -1802,7 +1803,7 @@ const EmployeeTasks = () => {
                     </div>
                   )
                 ))}
-                
+
                 {filteredTasks.length === 0 && (
                   <div className="flex flex-col items-center justify-center py-20 bg-gray-50/50 dark:bg-gray-800/20 rounded-[3rem] border-2 border-dashed border-gray-100 dark:border-gray-800 animate-in fade-in zoom-in duration-500">
                     <div className="w-20 h-20 bg-white dark:bg-gray-800 rounded-full flex items-center justify-center mb-6 shadow-xl shadow-gray-200/50 dark:shadow-none border border-gray-50 dark:border-gray-700">
