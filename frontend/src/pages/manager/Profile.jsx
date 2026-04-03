@@ -21,7 +21,6 @@ const ManagerProfile = () => {
   const [isSaved, setIsSaved] = useState(false);
   const [profileImage, setProfileImage] = useState(null);
   const [isSavingAvatar, setIsSavingAvatar] = useState(false);
-  const [profileLoading, setProfileLoading] = useState(true);
   const { refreshUser } = useAuth();
   const fileInputRef = useRef(null);
 
@@ -45,24 +44,40 @@ const ManagerProfile = () => {
     { id: 2, device: 'iPhone 15 Pro — Safari @ iOS 17', loc: 'Bangalore, India', current: false, icon: Smartphone },
   ]);
 
+  // PERSISTENT CACHE INITIALIZATION (0s Loading)
+  const getInitialManagerData = () => {
+    const stored = localStorage.getItem('user') || sessionStorage.getItem('user');
+    if (!stored) return {
+      name: 'Manager', role: 'Regional Manager', email: '', phone: '', company: '', location: '', nationality: '', gender: '', dob: '', department: '', emergencyContact: '', address: '', timezone: 'IST (UTC +5:30)', joinDate: 'Jan 2024', avatar: 'MG'
+    };
+    try {
+      const data = JSON.parse(stored);
+      return {
+        name: data.name || '',
+        role: data.profile?.designation || (data.role === 'manager' ? 'Regional Manager' : data.role),
+        email: data.email || '',
+        phone: data.profile?.phone || '',
+        company: data.company || '',
+        location: data.profile?.location || '',
+        nationality: data.profile?.nationality || '',
+        gender: data.profile?.gender || '',
+        dob: data.profile?.dob || '',
+        department: data.profile?.department || '',
+        emergencyContact: data.profile?.emergencyContact || '',
+        address: data.profile?.address || '',
+        timezone: data.profile?.timezone || 'IST (UTC +5:30)',
+        joinDate: data.profile?.joinDate || 'Jan 2024',
+        avatar: data.name ? data.name.split(' ').map(n => n[0]).join('') : 'MG',
+        profileImage: data.profile?.profileImage || null
+      };
+    } catch (e) {
+      return { name: 'Manager', role: 'Regional Manager', email: '', phone: '', company: '', location: '', nationality: '', gender: '', dob: '', department: '', emergencyContact: '', address: '', timezone: 'IST (UTC +5:30)', joinDate: 'Jan 2024', avatar: 'MG' };
+    }
+  };
+
   // Manager Data State
-  const [managerData, setManagerData] = useState({
-    name: 'Abhiram Rangoon',
-    role: 'Regional Sales Manager',
-    email: 'abhiram@trackforce.com',
-    phone: '+91 98765 43210',
-    company: 'ReatchAll Technologies',
-    location: 'Bangalore, India',
-    nationality: 'Indian',
-    gender: 'Male',
-    dob: '15 May 1988',
-    department: 'Sales & Operations',
-    emergencyContact: 'Priya (Spouse) - 91234 56789',
-    address: 'Vasanth Nagar, Bangalore, KA 560001',
-    timezone: 'IST (UTC +5:30)',
-    joinDate: 'Jan 2024',
-    avatar: 'AR'
-  });
+  const [managerData, setManagerData] = useState(getInitialManagerData);
+  const [profileLoading, setProfileLoading] = useState(!localStorage.getItem('user') && !sessionStorage.getItem('user'));
 
   useEffect(() => {
     const fetchProfile = async () => {

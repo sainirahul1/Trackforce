@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate, useOutletContext } from 'react-router-dom';
 import { ArrowLeft, LayoutDashboard, User, Briefcase, FileText, Activity, Mail, Phone, MapPin, MoreVertical, ShieldCheck, TrendingUp, ShoppingBag, Map as MapIcon, Clock, HeartPulse, Building, Shield, UserCheck, Calendar, CheckCircle, Download, ExternalLink, Navigation, Store, LogIn, Linkedin, GraduationCap } from 'lucide-react';
 import { mockEmployees } from '../../utils/mockData';
 import Button from '../../components/ui/Button';
@@ -353,9 +353,14 @@ const TimelineSection = () => {
 };
 
 const EmployeeDetails = () => {
+  const { setPageLoading } = useOutletContext();
   const { id } = useParams();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
+
+  useEffect(() => {
+    if (setPageLoading) setPageLoading(false);
+  }, [setPageLoading]);
 
   const handleGeneratePDF = () => {
     window.print();

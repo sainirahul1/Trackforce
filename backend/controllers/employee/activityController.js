@@ -7,7 +7,7 @@ exports.getExecutives = async (req, res) => {
     const executives = await User.find({ 
       tenant: req.tenantId,
       role: 'employee'
-    }).select('name role profile isTracking createdAt');
+    }).select('name role profile isTracking createdAt').lean();
     
     res.json(executives);
   } catch (error) {
@@ -22,7 +22,7 @@ exports.getLogsByUser = async (req, res) => {
     const logs = await ActivityLog.find({ 
       tenant: req.tenantId,
       user: userId
-    }).sort({ timestamp: -1 });
+    }).sort({ timestamp: -1 }).lean();
     
     res.json(logs);
   } catch (error) {
@@ -36,7 +36,8 @@ exports.getActivities = async (req, res) => {
     const activities = await ActivityLog.find({ tenant: req.tenantId })
       .populate('user', 'name role')
       .sort({ timestamp: -1 })
-      .limit(15);
+      .limit(15)
+      .lean();
     res.json(activities);
   } catch (error) {
     res.status(500).json({ message: error.message });

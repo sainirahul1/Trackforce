@@ -10,7 +10,7 @@ import {
 import { 
   Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, ArcElement 
 } from 'chart.js';
-import tenantService from '../../services/core/tenantService';
+import tenantService, { getSyncCachedData } from '../../services/core/tenantService';
 import Skeleton from '../../components/ui/Skeleton';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, ArcElement);
@@ -18,14 +18,25 @@ ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarEleme
 const TenantDashboard = () => {
   const navigate = useNavigate();
   const { setPageLoading } = useOutletContext();
-  const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState(null);
+  
+  // IMMEDIATE PERSISTENT CACHE INITIALIZATION (0s Loading)
+  const cachedStats = getSyncCachedData('dashboard_stats');
+  
+  const [loading, setLoading] = useState(!cachedStats); // False if we have cache
+  const [stats, setStats] = useState(cachedStats);
   const [managers, setManagers] = useState([]);
   const [totalManagers, setTotalManagers] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [totalPages, setTotalPages] = useState(0);
   const limit = 5;
+
+  useEffect(() => {
+    // If we have cached stats, let the layout know we are "done" immediately
+    if (cachedStats && setPageLoading) {
+      setPageLoading(false);
+    }
+  }, [cachedStats, setPageLoading]);
 
   useEffect(() => {
     fetchStats();

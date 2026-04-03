@@ -15,7 +15,8 @@ exports.getTasks = async (req, res) => {
     const tasks = await Task.find(query)
     .select('-checklist')
     .populate('employee', 'name email')
-    .sort({ date: -1 });
+    .sort({ date: -1 })
+    .lean();
     
     console.log(`[DEBUG] Found ${tasks.length} lean tasks for tenant: ${req.tenantId}`);
     

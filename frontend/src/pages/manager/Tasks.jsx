@@ -11,6 +11,8 @@ import {
   Layout, LayoutPanelLeft, Columns, Settings, Trello
 } from 'lucide-react';
 import { getTasks, createTask, updateTask, deleteTask } from '../../services/employee/taskService';
+import tenantService from '../../services/core/tenantService';
+import { getSyncCachedData } from '../../utils/cacheHelper';
 
 const ManagerTasks = () => {
   const { setPageLoading } = useOutletContext();
@@ -43,39 +45,31 @@ const ManagerTasks = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const processTaskData = (fetchedTasks, fetchedEmployees) => {
+    setTasks(fetchedTasks.map(t => ({
+      ...t,
+      id: t._id,
+      assignee: t.employee?.name || 'Unassigned',
+      deadline: t.date ? new Date(t.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : 'No Date',
+      category: t.type || 'General'
+    })));
+    setTeamMembers(fetchedEmployees || []);
+  };
+
   // Fetch data
-  const fetchData = async () => {
-    setLoading(true);
+  const fetchData = async (isBackground = false) => {
+    if (!isBackground) setLoading(true);
     try {
-      const getBaseUrl = () => {
-        let url = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
-        url = url.replace(/\/$/, '');
-        if (!url.endsWith('/api')) url += '/api';
-        return url;
-      };
-      const BASE_URL = getBaseUrl();
       const [fetchedTasks, fetchedEmployees] = await Promise.all([
         getTasks(),
-        fetch(`${BASE_URL}/tenant/employees`, {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
-        }).then(res => res.json())
+        tenantService.getEmployees()
       ]);
       
-      setTasks(fetchedTasks.map(t => ({
-        ...t,
-        id: t._id,
-        assignee: t.employee?.name || 'Unassigned',
-        deadline: t.date ? new Date(t.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : 'No Date',
-        category: t.type || 'General'
-      })));
-      
-      setTeamMembers(fetchedEmployees);
+      processTaskData(fetchedTasks, fetchedEmployees);
       setError(null);
     } catch (err) {
       console.error('Error fetching data:', err);
-      setError('Failed to load dashboard data');
+      if (!isBackground) setError('Failed to load dashboard data');
     } finally {
       setLoading(false);
       if (setPageLoading) setPageLoading(false);
@@ -83,7 +77,17 @@ const ManagerTasks = () => {
   };
 
   useEffect(() => {
-    fetchData();
+    // 1. Initial Hydration from Cache (0s Loading)
+    const cachedTasks = getSyncCachedData('tasks');
+    const cachedEmps = getSyncCachedData('employees');
+    if (cachedTasks && cachedEmps) {
+      processTaskData(cachedTasks, cachedEmps);
+      setLoading(false);
+      if (setPageLoading) setPageLoading(false);
+      fetchData(true); // Silent background update
+    } else {
+      fetchData();
+    }
   }, []);
 
   // Close dropdowns on click outside

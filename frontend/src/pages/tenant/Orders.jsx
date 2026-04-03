@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import { ShoppingBag, TrendingUp, DollarSign, ArrowUpRight, ArrowDownRight, Package, Search, User, ChevronLeft, ChevronRight } from 'lucide-react';
 import { getOrders, getOrderStats } from '../../services/employee/orderService';
 
 const Orders = () => {
+  const { setPageLoading } = useOutletContext();
   const [orders, setOrders] = useState([]);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -32,6 +34,7 @@ const Orders = () => {
       console.error('Error fetching data:', error);
     } finally {
       setLoading(false);
+      if (setPageLoading) setPageLoading(false);
     }
   };
 
@@ -81,13 +84,7 @@ const Orders = () => {
     return 'bg-gray-100 text-gray-700 dark:bg-gray-900/30';
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-      </div>
-    );
-  }
+  if (loading) return null; // Let the layout's skeleton handle this
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">

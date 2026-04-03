@@ -1,7 +1,14 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import { Camera, Image as ImageIcon, Upload, CheckCircle2, ShieldCheck, Info, FileText, AlertCircle } from 'lucide-react';
 
 const UploadProof = () => {
+  const { setPageLoading } = useOutletContext();
+
+  useEffect(() => {
+    if (setPageLoading) setPageLoading(false);
+  }, [setPageLoading]);
+
   // --- STATE AND REFS MANAGEMENT ---
   // Stores files by ID and manages UI states for errors and successful submission.
   // Using a single object for 'uploads' prevents multiple state triggers.

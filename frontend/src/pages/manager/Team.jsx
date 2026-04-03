@@ -4,6 +4,7 @@ import { useNavigate, useOutletContext } from 'react-router-dom';
 import DataTable from '../../components/ui/DataTable';
 import tenantService from '../../services/core/tenantService';
 import { getVisits } from '../../services/employee/visitService';
+import { getSyncCachedData } from '../../utils/cacheHelper';
 import { Users, Search, Download, CheckCircle2, BarChart3, AlertTriangle, MapPin, Activity, Mail, Phone, Linkedin, Briefcase, GraduationCap, ShieldCheck, FileText, Globe, Loader2, Edit, Trash2, Ban, X, UserPlus, ArrowLeft, Calendar, Clock, Shield, User, FileSignature, HeartPulse, Building2, Flame, Droplets, Map } from 'lucide-react';
 import Button from '../../components/ui/Button';
 
@@ -323,107 +324,84 @@ const ManagerTeam = () => {
     }
   };
 
+  const processTeamData = (employeesResponse, visitsResponse) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const todayVisits = Array.isArray(visitsResponse) ? visitsResponse.filter(visit => {
+      const visitDate = new Date(visit.createdAt || visit.timestamp);
+      return visitDate >= today;
+    }) : [];
+
+    const formattedMembers = Array.isArray(employeesResponse) ? employeesResponse.map(emp => {
+      const empVisits = todayVisits.filter(v => v.employee && typeof v.employee === 'object' ? v.employee._id === emp._id : v.employee === emp._id).length;
+      const zoneName = emp.profile && (emp.profile.zone || emp.profile.team) ? (emp.profile.zone || emp.profile.team) : 'Unassigned';
+
+      return {
+        id: emp._id,
+        name: emp.name,
+        email: emp.email,
+        phone: emp.profile?.phone || '+1 (555) 000-0000',
+        location: emp.profile?.location || 'Unknown Location',
+        joinDate: new Date(emp.createdAt || Date.now()).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }),
+        designation: emp.profile?.designation || 'Employee',
+        status: emp.isDeactivated ? 'Inactive' : (emp.status || 'Off Duty'),
+        zone: zoneName,
+        visitsToday: empVisits,
+        avatar: emp.profile?.avatar || `https://i.pravatar.cc/150?u=${emp._id}`,
+        employeeId: emp.profile?.employeeId || `EMP-${emp._id.substring(0, 6).toUpperCase()}`,
+        address: emp.profile?.address || 'No address provided',
+        skills: emp.profile?.skills || [],
+        dob: emp.profile?.dob || 'Not provided',
+        gender: emp.profile?.gender || 'Not specified',
+        nationality: emp.profile?.nationality || 'Not specified',
+        bloodGroup: emp.profile?.bloodGroup || 'Not specified',
+        emergencyContact: emp.profile?.emergencyContact || 'Not provided',
+        allergies: emp.profile?.allergies || 'None',
+      };
+    }) : [];
+
+    setTeamMembers(formattedMembers);
+
+    // Stats calculation
+    const activeCount = formattedMembers.filter(m => m.status === 'On Duty' || m.status === 'Active').length;
+    const totalVisits = formattedMembers.reduce((sum, m) => sum + m.visitsToday, 0);
+    const avgVisits = formattedMembers.length > 0 ? (totalVisits / formattedMembers.length).toFixed(1) : '0.0';
+    const targetVisits = 8 * formattedMembers.length;
+    const targetPercent = targetVisits > 0 ? Math.round((totalVisits / targetVisits) * 100) : 0;
+    const lowPerformersCount = formattedMembers.filter(m => m.visitsToday < 4).length;
+
+    setStats([
+      { label: 'Active Members', value: `${activeCount}/${formattedMembers.length}`, unit: 'Active', icon: Users, color: 'text-blue-600', bg: 'bg-blue-50', progress: formattedMembers.length > 0 ? Math.round((activeCount / formattedMembers.length) * 100) : 0, barColor: 'bg-blue-500' },
+      { label: 'Target Achievement', value: `${targetPercent}%`, unit: 'Achieved', icon: CheckCircle2, color: 'text-emerald-600', bg: 'bg-emerald-50', progress: Math.min(targetPercent, 100), barColor: 'bg-emerald-500' },
+      { label: 'Avg. Visits per Employee', value: avgVisits, unit: 'per person', icon: BarChart3, color: 'text-purple-600', bg: 'bg-purple-50', progress: Math.min(Math.round((parseFloat(avgVisits) / 8) * 100), 100), barColor: 'bg-purple-500' },
+      { label: 'Low Performers', value: lowPerformersCount.toString(), unit: 'Members', icon: AlertTriangle, color: 'text-red-600', bg: 'bg-red-50', progress: formattedMembers.length > 0 ? Math.round((lowPerformersCount / formattedMembers.length) * 100) : 0, barColor: 'bg-red-500' },
+    ]);
+  };
+
   useEffect(() => {
     let active = true;
+
+    // 1. Initial Hydration from Cache (0s Loading)
+    const cachedEmps = getSyncCachedData('employees');
+    const cachedVisits = getSyncCachedData('visits');
+    if (cachedEmps && cachedVisits) {
+      processTeamData(cachedEmps, cachedVisits);
+      setLoading(false);
+      if (setPageLoading) setPageLoading(false);
+    }
+
     const fetchData = async () => {
       try {
-        setLoading(true);
+        if (!cachedEmps || !cachedVisits) setLoading(true);
         const [employeesResponse, visitsResponse] = await Promise.all([
           tenantService.getEmployees(),
           getVisits()
         ]);
 
         if (!active) return;
+        processTeamData(employeesResponse, visitsResponse);
 
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        const todayVisits = visitsResponse.filter(visit => {
-          const visitDate = new Date(visit.createdAt || visit.timestamp);
-          return visitDate >= today;
-        });
-
-        const formattedMembers = employeesResponse.map(emp => {
-          const empVisits = todayVisits.filter(v => v.employee && typeof v.employee === 'object' ? v.employee._id === emp._id : v.employee === emp._id).length;
-          // Extract zone name from profile or fallback
-          const zoneName = emp.profile && (emp.profile.zone || emp.profile.team) ? (emp.profile.zone || emp.profile.team) : 'Unassigned';
-
-          return {
-            id: emp._id,
-            name: emp.name,
-            email: emp.email,
-            phone: emp.profile?.phone || '+1 (555) 000-0000',
-            location: emp.profile?.location || 'Unknown Location',
-            joinDate: new Date(emp.createdAt || Date.now()).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }),
-            designation: emp.profile?.designation || 'Employee',
-            status: emp.isDeactivated ? 'Inactive' : (emp.status || 'Off Duty'),
-            zone: zoneName,
-            visitsToday: empVisits,
-            avatar: emp.profile?.avatar || `https://i.pravatar.cc/150?u=${emp._id}`,
-            employeeId: emp.profile?.employeeId || `EMP-${emp._id.substring(0, 6).toUpperCase()}`,
-            address: emp.profile?.address || 'No address provided',
-            skills: emp.profile?.skills || [],
-            dob: emp.profile?.dob || 'Not provided',
-            gender: emp.profile?.gender || 'Not specified',
-            nationality: emp.profile?.nationality || 'Not specified',
-            bloodGroup: emp.profile?.bloodGroup || 'Not specified',
-            emergencyContact: emp.profile?.emergencyContact || 'Not provided',
-            allergies: emp.profile?.allergies || 'None',
-          };
-        });
-
-        setTeamMembers(formattedMembers);
-
-        // Stats calculation
-        const activeCount = formattedMembers.filter(m => m.status === 'On Duty' || m.status === 'Active').length;
-        const totalVisits = formattedMembers.reduce((sum, m) => sum + m.visitsToday, 0);
-        const avgVisits = formattedMembers.length > 0 ? (totalVisits / formattedMembers.length).toFixed(1) : '0.0';
-        const targetVisits = 8 * formattedMembers.length;
-        const targetPercent = targetVisits > 0 ? Math.round((totalVisits / targetVisits) * 100) : 0;
-        const lowPerformersCount = formattedMembers.filter(m => m.visitsToday < 4).length;
-
-        setStats([
-          {
-            label: 'Active Members',
-            value: `${activeCount}/${formattedMembers.length}`,
-            unit: 'Active',
-            icon: Users,
-            color: 'text-blue-600',
-            bg: 'bg-blue-50',
-            progress: formattedMembers.length > 0 ? Math.round((activeCount / formattedMembers.length) * 100) : 0,
-            barColor: 'bg-blue-500'
-          },
-          {
-            label: 'Target Achievement',
-            value: `${targetPercent}%`,
-            unit: 'Achieved',
-            icon: CheckCircle2,
-            color: 'text-emerald-600',
-            bg: 'bg-emerald-50',
-            progress: Math.min(targetPercent, 100),
-            barColor: 'bg-emerald-500'
-          },
-          {
-            label: 'Avg. Visits per Employee',
-            value: avgVisits,
-            unit: 'per person',
-            icon: BarChart3,
-            color: 'text-purple-600',
-            bg: 'bg-purple-50',
-            progress: Math.min(Math.round((parseFloat(avgVisits) / 8) * 100), 100),
-            barColor: 'bg-purple-500'
-          },
-          {
-            label: 'Low Performers',
-            value: lowPerformersCount.toString(),
-            unit: 'Members',
-            icon: AlertTriangle,
-            color: 'text-red-600',
-            bg: 'bg-red-50',
-            progress: formattedMembers.length > 0 ? Math.round((lowPerformersCount / formattedMembers.length) * 100) : 0,
-            barColor: 'bg-red-500'
-          },
-        ]);
       } catch (err) {
         console.error('Failed to load team data:', err);
       } finally {
@@ -435,7 +413,7 @@ const ManagerTeam = () => {
     };
     fetchData();
     return () => { active = false; };
-  }, []);
+  }, [setPageLoading]);
 
   const columns = [
     {

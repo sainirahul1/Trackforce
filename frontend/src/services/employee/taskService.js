@@ -1,4 +1,5 @@
 import { getAuthHeader } from '../core/authService';
+import { fetchDataWithCache, setCachedData, clearCache } from '../../utils/cacheHelper';
 
 const getBaseUrl = () => {
   let url = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
@@ -10,14 +11,17 @@ const BASE_URL = getBaseUrl();
 const API_URL = `${BASE_URL}/employee/tasks`;
 
 export const getTasks = async () => {
-  const response = await fetch(API_URL, {
-    headers: getAuthHeader(),
+  // Use cache key 'manager_tasks'
+  return fetchDataWithCache('tasks', async () => {
+    const response = await fetch(API_URL, {
+      headers: getAuthHeader(),
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to fetch tasks');
+    }
+    return response.json();
   });
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || 'Failed to fetch tasks');
-  }
-  return response.json();
 };
 
 export const getTaskById = async (id) => {
@@ -44,6 +48,7 @@ export const createTask = async (taskData) => {
     const error = await response.json();
     throw new Error(error.message || 'Failed to create task');
   }
+  clearCache(); // Invalidate cache on mutations
   return response.json();
 };
 
@@ -60,6 +65,7 @@ export const updateTask = async (id, taskData) => {
     const error = await response.json();
     throw new Error(error.message || 'Failed to update task');
   }
+  clearCache(); // Invalidate cache on mutations
   return response.json();
 };
 
@@ -72,5 +78,6 @@ export const deleteTask = async (id) => {
     const error = await response.json();
     throw new Error(error.message || 'Failed to delete task');
   }
+  clearCache(); // Invalidate cache on mutations
   return response.json();
 };

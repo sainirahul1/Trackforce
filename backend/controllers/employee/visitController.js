@@ -17,7 +17,8 @@ exports.getVisits = async (req, res) => {
     const visits = await StoreVisit.find(query)
       .select('-checklist')
       .populate('employee', 'name email')
-      .sort({ timestamp: -1 });
+      .sort({ timestamp: -1 })
+      .lean();
     
     res.json(visits);
   } catch (error) {
@@ -31,7 +32,8 @@ exports.getVisits = async (req, res) => {
 exports.getVisitById = async (req, res) => {
   try {
     const visit = await StoreVisit.findOne({ _id: req.params.id, tenant: req.tenantId })
-      .populate('employee', 'name email');
+      .populate('employee', 'name email')
+      .lean();
     
     if (!visit) {
       return res.status(404).json({ message: 'Visit not found' });

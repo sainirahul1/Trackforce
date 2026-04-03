@@ -47,6 +47,7 @@ import {
 } from 'lucide-react';
 import { useOutletContext } from 'react-router-dom';
 import Button from '../../components/ui/Button';
+import { getSyncCachedData } from '../../utils/cacheHelper';
 
 // --- Sub-components (Consolidated & Styled) ---
 
@@ -1083,24 +1084,36 @@ const EmployeeTasks = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const fetchTasks = async () => {
-      try {
-        setIsLoading(true);
-        const data = await taskService.getTasks();
-        console.log('[DEBUG] Fetched Tasks from API:', data);
-        setTaskList(data);
-        setError(null);
-      } catch (err) {
-        console.error('Failed to fetch tasks:', err);
+  const fetchTasks = async (isBackground = false) => {
+    try {
+      if (!isBackground) setIsLoading(true);
+      const data = await taskService.getTasks();
+      console.log('[DEBUG] Fetched Tasks from API:', data);
+      setTaskList(data);
+      setError(null);
+    } catch (err) {
+      console.error('Failed to fetch tasks:', err);
+      if (!isBackground) {
         setError('Failed to load tasks from server.');
         setTaskList([]);
-      } finally {
-        setIsLoading(false);
-        if (setPageLoading) setPageLoading(false);
       }
-    };
-    fetchTasks();
+    } finally {
+      setIsLoading(false);
+      if (setPageLoading) setPageLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    // 1. Initial Hydration from Cache (0s Loading)
+    const cachedTasks = getSyncCachedData('tasks');
+    if (cachedTasks) {
+      setTaskList(cachedTasks);
+      setIsLoading(false);
+      if (setPageLoading) setPageLoading(false);
+      fetchTasks(true); // Silent background update
+    } else {
+      fetchTasks();
+    }
   }, []);
 
   const updateTaskStatus = async (taskId, newStatus) => {

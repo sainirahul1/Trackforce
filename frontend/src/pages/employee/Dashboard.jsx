@@ -11,6 +11,7 @@ import {
   LineElement, Tooltip, Legend, Filler, RadialLinearScale
 } from 'chart.js';
 import { Line, Radar } from 'react-chartjs-2';
+import { getSyncCachedData } from '../../utils/cacheHelper';
 
 // Register Chart.js components
 ChartJS.register(
@@ -509,65 +510,75 @@ const EmployeeDashboard = () => {
   }, [isOnDuty, socket, startGeoTracking]);
 
   // --- Initial Data Fetch & Profile Sync ---
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [stats, logs, allTasks] = await Promise.all([
-          getDashboardStats(),
-          getActivities(),
-          getTasks()
-        ]);
-        setStatsData(stats);
-        setActivities(logs.map(log => {
-          const logDate = new Date(log.timestamp || log.createdAt);
-          const isValidDate = !isNaN(logDate.getTime());
+  const fetchData = async (isBackground = false) => {
+    try {
+      if (!isBackground) setLoading(true);
+      
+      const [stats, logs, allTasks] = await Promise.all([
+        getDashboardStats(),
+        getActivities(),
+        getTasks()
+      ]);
+      setStatsData(stats);
+      setActivities(logs.map(log => {
+        const logDate = new Date(log.timestamp || log.createdAt);
+        const isValidDate = !isNaN(logDate.getTime());
 
-          return {
-            title: log.type.replace('_', ' ').toUpperCase(),
-            desc: log.details,
-            time: isValidDate ? logDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '---',
-            type: log.type.includes('start') ? 'success' : 'default'
-          };
-        }));
-
-        const pendingTask = allTasks.find(t => t.status === 'pending') || allTasks[0];
-        setNextTask(pendingTask);
-
-        // Sync user data and tracking status from server
-        console.log('Syncing tracking status...');
-        const statusResponse = await fetch(`${import.meta.env.VITE_API_URL}/tracking/status`, {
-          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-        });
-        const trackingStatus = await statusResponse.json();
-
-        const trackingActive = trackingStatus.isTracking || false;
-        setIsOnDuty(trackingActive);
-
-        // Auto-heal local user object with server-side metadata (tenant, role, etc.)
-        const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
-        const updatedUser = {
-          ...currentUser,
-          ...trackingStatus.user, // Priority to server data (tenant, role, manager)
-          isTracking: trackingActive
+        return {
+          title: log.type.replace('_', ' ').toUpperCase(),
+          desc: log.details,
+          time: isValidDate ? logDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '---',
+          type: log.type.includes('start') ? 'success' : 'default'
         };
-        localStorage.setItem('user', JSON.stringify(updatedUser));
-        console.log('User state auto-healed from server:', updatedUser.tenant);
+      }));
 
-        // If already tracking on mount, start the watcher
-        if (trackingActive) {
-          console.log('Auto-starting tracking from server status');
-          startGeoTracking();
-        }
-      } catch (err) {
-        console.error('Error fetching dashboard data:', err);
-      } finally {
-        setLoading(false);
-        if (setPageLoading) setPageLoading(false);
+      const pendingTask = allTasks.find(t => t.status === 'pending') || allTasks[0];
+      setNextTask(pendingTask);
+
+      // Sync user data and tracking status from server
+      const statusResponse = await fetch(`${import.meta.env.VITE_API_URL}/tracking/status`, {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+      });
+      const trackingStatus = await statusResponse.json();
+
+      const trackingActive = trackingStatus.isTracking || false;
+      setIsOnDuty(trackingActive);
+
+      // Auto-heal local user object
+      const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+      const updatedUser = {
+        ...currentUser,
+        ...trackingStatus.user,
+        isTracking: trackingActive
+      };
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+
+      if (trackingActive) {
+        startGeoTracking();
       }
-    };
+    } catch (err) {
+      console.error('Error fetching dashboard data:', err);
+    } finally {
+      setLoading(false);
+      if (setPageLoading) setPageLoading(false);
+    }
+  };
 
-    fetchData();
-  }, [startGeoTracking]);
+  useEffect(() => {
+    // 1. Initial Hydration from Cache (0s Loading)
+    const cachedStats = getSyncCachedData('tenant_dashboard_stats');
+    const cachedLogs = getSyncCachedData('activities'); // Check key in activityService
+    // Note: getActivities uses fetchDataWithCache('activities', ...)
+    
+    if (cachedStats) {
+      setStatsData(cachedStats);
+      setLoading(false);
+      if (setPageLoading) setPageLoading(false);
+      fetchData(true); // Silent background update
+    } else {
+      fetchData();
+    }
+  }, []);
 
   const handleToggleShift = async () => {
     // Re-read user from localStorage to get the auto-healed manager/tenant data

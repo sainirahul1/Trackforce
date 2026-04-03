@@ -1,5 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import { GoogleMap, InfoWindow, Polyline, OverlayView, OverlayViewF } from '@react-google-maps/api';
+import { getSyncCachedData } from '../../utils/cacheHelper';
+import { getActiveTrackingSessions } from '../../services/employee/trackingService';
 import { useGoogleMaps } from '../../context/GoogleMapsContext';
 import { useSocket } from '../../context/SocketContext';
 import { MapPin, Users, Activity, Navigation, Search, Filter, Shield, Info, Battery, Zap, Clock, X, ChevronLeft, ChevronRight, Loader2, ExternalLink, Home, Minimize2, Maximize2, Minus } from 'lucide-react';
@@ -21,6 +24,8 @@ const center = {
 // LIBRARIES moved to GoogleMapsContext.jsx
 
 const LiveTracking = () => {
+  const context = useOutletContext();
+  const { setPageLoading } = context;
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedId, setSelectedId] = useState(null);
   const [activeRouteId, setActiveRouteId] = useState(null);
@@ -95,76 +100,67 @@ const LiveTracking = () => {
     };
   }, [socket]);
 
-  // --- Initial Data Fetch ---
-  const fetchActiveSessions = React.useCallback(async (isManual = false) => {
-    try {
-      if (isManual) setRefreshing(true);
-      const token = localStorage.getItem('token');
-      const headers = { 'Authorization': `Bearer ${token}` };
-
-      // Auto-heal manager profile if tenant is missing
-      const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
-      if (!currentUser.tenant) {
-        console.log('Manager tenant missing, fetching profile...');
-        const profileRes = await fetch(`${import.meta.env.VITE_API_URL}/auth/me`, { headers });
-        const profileData = await profileRes.json();
-        if (profileData.tenant) {
-          const updatedUser = { ...currentUser, tenant: profileData.tenant };
-          localStorage.setItem('user', JSON.stringify(updatedUser));
-          if (socket && socket.connected) {
-            socket.emit('join', profileData.tenant);
-          }
-        }
+   // --- 0s Hydration & Background Sync ---
+  const processActiveSessions = (activeSessions) => {
+    const initialMap = {};
+    activeSessions.forEach(session => {
+      if (session.user?._id) {
+        const lastPoint = session.route?.[session.route.length - 1];
+        initialMap[session.user._id] = {
+          id: session.user._id,
+          name: session.employeeName || session.user.name,
+          role: session.user.role || 'employee',
+          status: 'On Duty',
+          lastSeen: session.updatedAt ? new Date(session.updatedAt).toLocaleTimeString() : 'Active',
+          battery: '---',
+          speed: '---',
+          location: session.currentAddress || 'Known Location',
+          address: session.currentAddress,
+          city: session.currentCity,
+          lat: lastPoint?.lat,
+          lng: lastPoint?.lng,
+          route: session.route?.map(p => ({ lat: Number(p.lat), lng: Number(p.lng) })) || [],
+          distance: session.distanceTravelled || 0,
+          timestamp: session.updatedAt
+        };
       }
+    });
+    return initialMap;
+  };
 
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/tracking/active`, { headers });
-      const activeSessions = await response.json();
-      const initialMap = {};
-      activeSessions.forEach(session => {
-        if (session.user?._id) {
-          const lastPoint = session.route?.[session.route.length - 1];
-          initialMap[session.user._id] = {
-            id: session.user._id,
-            name: session.employeeName || session.user.name,
-            role: session.user.role || 'employee',
-            status: 'On Duty',
-            lastSeen: session.updatedAt ? new Date(session.updatedAt).toLocaleTimeString() : 'Active',
-            battery: '---',
-            speed: '---',
-            location: session.currentAddress || 'Known Location',
-            address: session.currentAddress,
-            city: session.currentCity,
-            lat: lastPoint?.lat,
-            lng: lastPoint?.lng,
-            route: session.route?.map(p => ({ lat: Number(p.lat), lng: Number(p.lng) })) || [],
-            distance: session.distanceTravelled || 0,
-            timestamp: session.updatedAt
-          };
-        }
-      });
+  const fetchActiveSessionsSync = React.useCallback(async (isManual = false) => {
+    if (isManual) setRefreshing(true);
+    try {
+      const activeSessions = await getActiveTrackingSessions();
+      const initialMap = processActiveSessions(activeSessions);
       setEmployees(initialMap);
       setLastSyncTime(new Date());
       hasFetched.current = true;
     } catch (err) {
-      console.error('Error fetching active sessions:', err);
+      console.error('Error syncing tracking sessions:', err);
     } finally {
-      if (isManual) setRefreshing(false);
+      setRefreshing(false);
+      if (setPageLoading) setPageLoading(false);
     }
-  }, [socket]);
+  }, []);
 
   useEffect(() => {
-    fetchActiveSessions();
+    const { setPageLoading } = context; // Access via closure if needed or use previous destructuring
 
-    // Auto-refresh every 2 minutes (120000ms)
-    const intervalId = setInterval(() => {
-      if (isAutoSync) {
-        console.log('[AUTO-SYNC] Triggering background refresh...');
-        fetchActiveSessions();
-      }
-    }, 120000);
+    // 1. Initial Hydration from Cache
+    const cachedSessions = getSyncCachedData('active_tracking_sessions');
+    if (cachedSessions) {
+      setEmployees(processActiveSessions(cachedSessions));
+      if (setPageLoading) setPageLoading(false);
+    }
 
+    // 2. Background Sync
+    fetchActiveSessionsSync();
+
+    // 3. Periodic Refresh
+    const intervalId = setInterval(() => fetchActiveSessionsSync(), 120000);
     return () => clearInterval(intervalId);
-  }, [fetchActiveSessions, isAutoSync]);
+  }, []);
 
   const employeeList = Object.values(employees);
 
@@ -377,7 +373,7 @@ const LiveTracking = () => {
             </span>
           </div>
           <button
-            onClick={() => fetchActiveSessions(true)}
+            onClick={() => fetchActiveSessionsSync(true)}
             disabled={refreshing}
             className={`flex items-center gap-3 px-5 py-3 rounded-full transition-all active:scale-95 shadow-xl font-black uppercase tracking-[0.15em] text-[10px] group ${refreshing
                 ? 'bg-indigo-400 cursor-wait shadow-indigo-400/20 text-white/50'
@@ -792,10 +788,28 @@ const LiveTracking = () => {
               )}
             </GoogleMap>
           ) : (
-            <div className="w-full h-full flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-              <div className="flex flex-col items-center gap-4">
-                <Loader2 className="animate-spin text-indigo-600" size={48} />
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Initializing Command Map...</p>
+            <div className="w-full h-full flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-950 relative overflow-hidden">
+              {/* Map Skeleton Background */}
+              <div className="absolute inset-0 bg-[radial-gradient(#e5e7eb_1.5px,transparent_1.5px)] dark:bg-[radial-gradient(#1f2937_1.5px,transparent_1.5px)] [background-size:40px_40px] opacity-40"></div>
+              
+              <div className="z-10 flex flex-col items-center gap-6">
+                <div className="relative">
+                  <div className="w-20 h-20 bg-white dark:bg-gray-900 rounded-[2rem] flex items-center justify-center text-indigo-600 shadow-2xl border border-gray-100 dark:border-gray-800">
+                    <Loader2 className="animate-spin" size={32} />
+                  </div>
+                  <div className="absolute inset-0 border-4 border-indigo-400 rounded-[2rem] animate-ping opacity-20" />
+                </div>
+                <div className="text-center space-y-2">
+                  <p className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-widest">Initializing Map Interface</p>
+                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-[0.2em]">Establishing Secure Fleet Link...</p>
+                </div>
+              </div>
+
+              {/* Skeleton Controls */}
+              <div className="absolute top-8 right-8 flex flex-col gap-3">
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="w-12 h-12 bg-white/50 dark:bg-gray-900/50 rounded-2xl animate-pulse" />
+                ))}
               </div>
             </div>
           )}

@@ -75,6 +75,9 @@ exports.getDashboardStats = async (req, res) => {
 // @desc    Get paginated managers
 // @route   GET /api/tenant/dashboard-managers
 // @access  Private (Tenant)
+// @desc    Get paginated managers
+// @route   GET /api/tenant/dashboard-managers
+// @access  Private (Tenant)
 exports.getDashboardManagers = async (req, res) => {
   try {
     const tenantId = req.user.tenant;
@@ -82,7 +85,8 @@ exports.getDashboardManagers = async (req, res) => {
     const limit = parseInt(req.query.limit) || 5;
     const search = req.query.search || '';
 
-    const query = {
+    // Step 1: Count total managers (for pagination)
+    const countQuery = {
       tenant: tenantId,
       role: 'manager',
       $or: [
@@ -90,48 +94,97 @@ exports.getDashboardManagers = async (req, res) => {
         { 'profile.zone': { $regex: search, $options: 'i' } }
       ]
     };
+    const total = await User.countDocuments(countQuery);
 
-    const total = await User.countDocuments(query);
-    const managers = await User.find(query)
-      .skip((page - 1) * limit)
-      .limit(limit)
-      .lean();
-
-    const mappedManagers = await Promise.all(managers.map(async (m) => {
-      // 1. Calculate Real Span (Subordinates count)
-      const subordinatesCount = await User.countDocuments({ manager: m._id, tenant: tenantId });
-      
-      // 2. Calculate Efficiency Index based on Subordinates' Tasks
-      // Find all employees managed by this manager
-      const subordinates = await User.find({ manager: m._id, tenant: tenantId }).select('_id');
-      const subIds = subordinates.map(s => s._id);
-      
-      let efficiency = '95.0%'; // Default baseline
-      
-      if (subIds.length > 0) {
-        const totalTasks = await Task.countDocuments({ employee: { $in: subIds }, tenant: tenantId });
-        if (totalTasks > 0) {
-          const completedTasks = await Task.countDocuments({ 
-            employee: { $in: subIds }, 
-            status: 'completed',
-            tenant: tenantId 
-          });
-          efficiency = `${((completedTasks / totalTasks) * 100).toFixed(1)}%`;
-        } else {
-          // Check if they have any visits as a fallback indicator
-          const hasVisits = await Task.exists({ employee: { $in: subIds }, tenant: tenantId });
-          efficiency = hasVisits ? '98.4%' : '0.0%';
+    // Step 2: Use Aggregation for high-speed metrics retrieval (1 DB call instead of 25+)
+    const managers = await User.aggregate([
+      // A. Filter Managers
+      {
+        $match: {
+          tenant: new (require('mongoose').Types.ObjectId)(tenantId),
+          role: 'manager',
+          $or: [
+            { name: { $regex: search, $options: 'i' } },
+            { 'profile.zone': { $regex: search, $options: 'i' } }
+          ]
+        }
+      },
+      // B. Pagination
+      { $skip: (page - 1) * limit },
+      { $limit: limit },
+      // C. Subordinates Counting
+      {
+        $lookup: {
+          from: 'tenant.users',
+          let: { managerId: '$_id' },
+          pipeline: [
+            { $match: { $expr: { $eq: ['$manager', '$$managerId'] } } },
+            { $project: { _id: 1 } }
+          ],
+          as: 'subordinates'
+        }
+      },
+      // D. Efficiently calculate counts and efficiency
+      {
+        $addFields: {
+          subIds: { $map: { input: '$subordinates', as: 's', in: '$$s._id' } },
+          span: { $size: '$subordinates' }
+        }
+      },
+      // E. Metrics Lookup for all subordinates in one go
+      {
+        $lookup: {
+          from: 'employee.tasks',
+          let: { subIds: '$subIds' },
+          pipeline: [
+            { $match: { $expr: { $in: ['$employee', '$$subIds'] } } },
+            {
+              $group: {
+                _id: null,
+                total: { $sum: 1 },
+                completed: {
+                  $sum: { $cond: [{ $eq: ['$status', 'completed'] }, 1, 0] }
+                }
+              }
+            }
+          ],
+          as: 'taskMetrics'
+        }
+      },
+      // F. Final Map
+      {
+        $project: {
+          _id: 1,
+          name: 1,
+          region: { $ifNull: ['$profile.zone', 'Global'] },
+          employees: '$span',
+          efficiency: {
+            $let: {
+              vars: {
+                metrics: { $arrayElemAt: ['$taskMetrics', 0] }
+              },
+              in: {
+                $cond: [
+                  { $gt: ['$$metrics.total', 0] },
+                  {
+                    $concat: [
+                      { $substr: [{ $multiply: [{ $divide: ['$$metrics.completed', '$$metrics.total'] }, 100] }, 0, 4] },
+                      '%'
+                    ]
+                  },
+                  '95.0%' // Baseline for nodes with no tasks yet
+                ]
+              }
+            }
+          }
         }
       }
+    ]);
 
-      return {
-        _id: m._id,
-        name: m.name,
-        region: m.profile?.zone || 'Global',
-        employees: subordinatesCount,
-        efficiency: efficiency,
-        initial: m.name.split(' ').map(n => n[0]).join('').toUpperCase()
-      };
+    // Format for frontend
+    const mappedManagers = managers.map(m => ({
+      ...m,
+      initial: m.name.split(' ').map(n => n[0]).join('').toUpperCase()
     }));
 
     res.status(200).json({

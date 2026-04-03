@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import {
   ShoppingBag, IndianRupee, TrendingUp, TrendingDown,
   ArrowUpRight, Package, Truck, CheckCircle2,
@@ -7,12 +8,15 @@ import {
   Zap, ArrowRight, ShieldCheck, Tag, AlertCircle,
   RotateCw, ChevronLeft, ChevronRight
 } from 'lucide-react';
+import { getSyncCachedData } from '../../utils/cacheHelper';
 import { Chart as ChartJS, registerables } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
 import { useNavigate } from 'react-router-dom';
 import { getManagerStats, getRevenueChartData, getRecentOrders } from '../../services/manager/managerOrderService';
 
 ChartJS.register(...registerables);
+
+
 
 /**
  * InventoryOrders Component
@@ -49,9 +53,34 @@ const InventoryOrders = () => {
   const [hasFetched, setHasFetched] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const fetchData = async (search = '', page = 1) => {
+  const processInventoryData = (statsRes, chartRes, ordersRes) => {
+    if (statsRes && statsRes.success) setStats(statsRes.data);
+    if (chartRes && chartRes.success) {
+      setChartDataState({
+        labels: chartRes.data.labels,
+        datasets: [{
+          label: 'Daily Revenue',
+          data: chartRes.data.data,
+          backgroundColor: '#6366f1',
+          borderRadius: 12,
+          barPercentage: 0.5,
+          categoryPercentage: 0.8,
+          maxBarThickness: 40,
+        }]
+      });
+    }
+    if (ordersRes && ordersRes.success) {
+      setOrders(ordersRes.data);
+      setPagination({
+          currentPage: ordersRes.pagination.currentPage,
+          totalPages: ordersRes.pagination.totalPages
+      });
+    }
+  };
+
+  const fetchData = async (search = '', page = 1, isBackground = false) => {
     try {
-      if (!hasFetched || !search) setLoading(true);
+      if (!isBackground && (!hasFetched || !search)) setLoading(true);
       if (isRefreshing) setLoading(false); 
 
       const [statsRes, chartRes, ordersRes] = await Promise.all([
@@ -60,32 +89,11 @@ const InventoryOrders = () => {
         getRecentOrders(search, page)
       ]);
 
-      if (statsRes && statsRes.success) setStats(statsRes.data);
-      if (chartRes && chartRes.success) {
-        setChartDataState({
-          labels: chartRes.data.labels,
-          datasets: [{
-            label: 'Daily Revenue',
-            data: chartRes.data.data,
-            backgroundColor: '#6366f1',
-            borderRadius: 12,
-            barPercentage: 0.5,
-            categoryPercentage: 0.8,
-            maxBarThickness: 40,
-          }]
-        });
-      }
-      if (ordersRes && ordersRes.success) {
-        setOrders(ordersRes.data);
-        setPagination({
-            currentPage: ordersRes.pagination.currentPage,
-            totalPages: ordersRes.pagination.totalPages
-        });
-      }
+      processInventoryData(statsRes, chartRes, ordersRes);
       setErrorMsg(null);
     } catch (error) {
       console.error('Error fetching inventory data:', error);
-      setErrorMsg(error.message || 'Failed to sync with backend');
+      if (!isBackground) setErrorMsg(error.message || 'Failed to sync with backend');
     } finally {
       setLoading(false);
       setHasFetched(true);
@@ -94,7 +102,19 @@ const InventoryOrders = () => {
   };
 
   useEffect(() => {
-    fetchData();
+    // 1. Initial Hydration from Cache (0s Loading)
+    const cachedStats = getSyncCachedData('manager_stats');
+    const cachedChart = getSyncCachedData('revenue_chart');
+    const cachedOrders = getSyncCachedData('recent_orders__1_5'); // Default key
+    
+    if (cachedStats && cachedChart && cachedOrders) {
+      processInventoryData(cachedStats, cachedChart, cachedOrders);
+      setLoading(false);
+      setHasFetched(true);
+      fetchData('', 1, true); // Silent background update
+    } else {
+      fetchData();
+    }
   }, []);
 
   useEffect(() => {

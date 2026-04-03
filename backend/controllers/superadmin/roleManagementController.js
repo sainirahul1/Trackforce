@@ -74,12 +74,16 @@ exports.createAuditLog = async (req, res) => {
   }
 };
 
-// @desc    Get users by role
+// @desc    Get users by role (optimized: lean + field projection + pagination)
 // @route   GET /api/superadmin/manage/users/:role
 // @access  Private/SuperAdmin
 exports.getUsersByRole = async (req, res) => {
   try {
     const { role } = req.params;
+    const limit = parseInt(req.query.limit) || 200;
+    const page = parseInt(req.query.page) || 1;
+    const skip = (page - 1) * limit;
+
     // Map human-readable role name back to DB role if necessary
     const roleMap = {
       'tenant admin': 'tenant',
@@ -88,12 +92,15 @@ exports.getUsersByRole = async (req, res) => {
       'employee': 'employee'
     };
     const dbRole = roleMap[role.toLowerCase()] || role.toLowerCase();
-    
+
     const users = await User.find({ role: dbRole })
-      .select('-password')
-      .populate('tenant', 'name domain')
-      .sort({ createdAt: -1 });
-      
+      .select('name email role status company createdAt tenant')
+      .populate('tenant', 'name domain industry subscription onboardingStatus')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
+
     res.json(users);
   } catch (err) {
     res.status(500).json({ message: err.message });

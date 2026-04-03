@@ -8,10 +8,13 @@ const Subscription = require('../../models/superadmin/Subscription');
 // @access  Private (Manager/Tenant)
 exports.getEmployees = async (req, res) => {
   try {
+    const tenantId = req.tenantId || req.user.tenant;
     const employees = await User.find({
-      tenant: req.tenantId,
+      tenant: tenantId,
       role: 'employee'
-    }).select('-password');
+    })
+    .select('-password')
+    .lean();
 
     res.json(employees);
   } catch (error) {
@@ -63,10 +66,13 @@ exports.getEmployeeById = async (req, res) => {
 // @access  Private (Tenant)
 exports.getManagers = async (req, res) => {
   try {
+    const tenantId = req.tenantId || req.user.tenant;
     const managers = await User.find({
-      tenant: req.tenantId,
+      tenant: tenantId,
       role: 'manager'
-    }).select('-password');
+    })
+    .select('-password')
+    .lean();
 
     res.json(managers);
   } catch (error) {

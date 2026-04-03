@@ -1,9 +1,15 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import { Bell, MessageSquare, AlertCircle, Info, CheckCircle2, MoreHorizontal, Trash2 } from 'lucide-react';
 import { useNotifications } from '../../context/NotificationContext';
 
 const EmployeeNotifications = () => {
+  const { setPageLoading } = useOutletContext();
   const { notifications, isLoading, markAsRead, markAllAsRead, deleteNotification } = useNotifications();
+
+  useEffect(() => {
+    if (setPageLoading) setPageLoading(false);
+  }, [setPageLoading]);
 
   const getIcon = (type) => {
     switch (type) {
@@ -16,6 +22,7 @@ const EmployeeNotifications = () => {
   };
 
   const getColor = (type) => {
+
     switch (type) {
       case 'alert': return 'bg-orange-50 text-orange-600';
       case 'success': return 'bg-emerald-50 text-emerald-600';

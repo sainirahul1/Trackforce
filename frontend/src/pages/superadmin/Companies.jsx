@@ -95,28 +95,22 @@ const CompaniesList = () => {
     initialEmployees: [] // [{ name, email, password }]
   });
 
+  // Stale-time tracking: don't re-fetch same tab within 60s
+  const [lastFetchedAt, setLastFetchedAt] = useState({});
+
   useEffect(() => {
+    // Only fetch companies on mount — no aggressive prefetch
     fetchCompanies();
-    // Silently prefetch users for zero-latency tab switches
-    superadminService.getGlobalUsersByRole('manager').then(data => {
-      setGlobalUsers(prev => { 
-        const next = { ...prev, manager: data };
-        sessionStorage.setItem('tf_globalUsersCache', JSON.stringify(next));
-        return next;
-      });
-    }).catch(e => console.error(e));
-    superadminService.getGlobalUsersByRole('employee').then(data => {
-      setGlobalUsers(prev => { 
-        const next = { ...prev, employee: data };
-        sessionStorage.setItem('tf_globalUsersCache', JSON.stringify(next));
-        return next;
-      });
-    }).catch(e => console.error(e));
   }, []);
 
   useEffect(() => {
     if (globalActiveTab !== 'organizations') {
-      fetchGlobalUsers(globalActiveTab);
+      const now = Date.now();
+      const lastFetch = lastFetchedAt[globalActiveTab] || 0;
+      // Only re-fetch if data is stale (>60s) or not cached yet
+      if (!globalUsers[globalActiveTab] || (now - lastFetch) > 60000) {
+        fetchGlobalUsers(globalActiveTab);
+      }
     }
     setGlobalCurrentPage(1);
   }, [globalActiveTab]);
@@ -130,15 +124,16 @@ const CompaniesList = () => {
   }, [activeModalTab, selectedTenant]);
 
   const fetchGlobalUsers = async (role) => {
-    if (!globalUsers[role]) {
+    // Show spinner only if we have no cached data at all
+    if (!globalUsers[role] || globalUsers[role].length === 0) {
       setLoadingGlobalUsers(true);
     }
     try {
-      // Direct mapping for backend roles
       const data = await superadminService.getGlobalUsersByRole(role);
+      setLastFetchedAt(prev => ({ ...prev, [role]: Date.now() }));
       setGlobalUsers(prev => {
         const next = { ...prev, [role]: data };
-        sessionStorage.setItem('tf_globalUsersCache', JSON.stringify(next));
+        try { sessionStorage.setItem('tf_globalUsersCache', JSON.stringify(next)); } catch {}
         return next;
       });
     } catch (err) {

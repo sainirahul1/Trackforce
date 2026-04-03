@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback, memo } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import IssueStats from '../../components/issues/IssueStats';
+import { getSyncCachedData } from '../../utils/cacheHelper';
 import IssueFilters from '../../components/issues/IssueFilters';
 import {
   CheckCircle2,
@@ -545,20 +547,31 @@ const Issues = () => {
   const [showToast, setShowToast] = useState({ show: false, message: '', type: 'success' });
   const [selectedIssue, setSelectedIssue] = useState(null);
 
-  const fetchIssues = async (showLoading = true) => {
+   // --- 0s Hydration & Background Sync ---
+  const fetchIssuesSync = async (showLoading = false) => {
     if (showLoading) setLoading(true);
     try {
       const data = await getIssues();
       setIssuesList(data);
     } catch (err) {
-      console.error('Error fetching issues:', err);
+      console.error('Error syncing issues:', err);
     } finally {
-      if (showLoading) setLoading(false);
+      setLoading(false);
+      if (setPageLoading) setPageLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchIssues();
+    // 1. Initial Hydration from Cache
+    const cachedIssues = getSyncCachedData('issues');
+    if (cachedIssues) {
+      setIssuesList(cachedIssues);
+      setLoading(false);
+      if (setPageLoading) setPageLoading(false);
+    }
+
+    // 2. Background Sync
+    fetchIssuesSync(!cachedIssues);
   }, []);
 
   // Manage Real-time Subscriptions
@@ -599,7 +612,7 @@ const Issues = () => {
       triggerToast('Status updated successfully');
     } catch (err) {
       // Background sync on failure to recover state
-      fetchIssues(false);
+      fetchIssuesSync();
       triggerToast(err.message, 'error');
     }
   }, [issuesList, selectedIssue]);
@@ -646,7 +659,7 @@ const Issues = () => {
       triggerToast('Issue reported successfully to Super Admin');
       
       // Silent sync
-      fetchIssues(false);
+      fetchIssuesSync();
     } catch (err) {
       triggerToast(err.message, 'error');
     }

@@ -4,7 +4,7 @@ const User = require('../../models/tenant/User');
 const mongoose = require('mongoose');
 
 const getTeamEmployeeIds = async (managerId, tenantId) => {
-  const employees = await User.find({ manager: managerId, tenant: tenantId }, '_id');
+  const employees = await User.find({ manager: managerId, tenant: tenantId }, '_id').lean();
   return employees.map(emp => emp._id);
 };
 
@@ -179,7 +179,7 @@ exports.getRecentOrders = async (req, res) => {
       const matchingEmployees = await User.find({
         _id: { $in: teamEmployeeIds },
         name: { $regex: search, $options: 'i' }
-      }, '_id');
+      }, '_id').lean();
       const matchingEmployeeIds = matchingEmployees.map(e => e._id);
 
       query.$or = [
@@ -194,7 +194,8 @@ exports.getRecentOrders = async (req, res) => {
       .populate('employee', 'name')
       .sort({ timestamp: -1 })
       .skip(skip)
-      .limit(limitNum);
+      .limit(limitNum)
+      .lean();
 
     const formattedOrders = orders.map(order => ({
       id: `ORD-${order._id.toString().slice(-4).toUpperCase()}`,
@@ -265,7 +266,7 @@ exports.exportLedger = async (req, res) => {
 exports.getInventory = async (req, res) => {
   try {
     const tenantId = req.user.tenant;
-    const inventory = await ManagerOrder.find({ tenant: tenantId });
+    const inventory = await ManagerOrder.find({ tenant: tenantId }).lean();
     res.status(200).json({ success: true, data: inventory });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

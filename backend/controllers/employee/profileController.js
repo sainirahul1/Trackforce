@@ -6,10 +6,14 @@ const User = require('../../models/tenant/User');
 // @access  Private
 const getMyProfile = async (req, res) => {
   try {
-    let profile = await Profile.findOne({ employeeId: req.user._id });
+    // Exclude avatar (base64, can be 500KB–2MB) from main profile fetch for speed.
+    // Avatar is served by the dedicated GET /avatar endpoint.
+    let profile = await Profile.findOne({ employeeId: req.user._id })
+      .select('-avatar')
+      .lean();
 
     if (!profile) {
-      profile = await Profile.create({
+      const created = await Profile.create({
         employeeId: req.user._id,
         name: req.user.name || '',
         email: req.user.email || '',
@@ -19,11 +23,39 @@ const getMyProfile = async (req, res) => {
         location: req.user.location || '',
         avatar: req.user.avatar || '',
       });
+      // Return without avatar
+      const { avatar: _a, ...profileWithoutAvatar } = created.toObject();
+      return res.json(profileWithoutAvatar);
     }
 
     res.json(profile);
   } catch (error) {
     console.error('getMyProfile error:', error.message);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// @desc    Get current user's avatar only (lightweight, cacheable)
+// @route   GET /api/employee/profile/avatar
+// @access  Private
+const getMyAvatar = async (req, res) => {
+  try {
+    const profile = await Profile.findOne({ employeeId: req.user._id })
+      .select('avatar email')
+      .lean();
+
+    // Also check User model's profileImage as a fallback
+    let avatar = profile?.avatar || '';
+    if (!avatar) {
+      const user = await User.findById(req.user._id).select('profile.profileImage').lean();
+      avatar = user?.profile?.profileImage || '';
+    }
+
+    // Set long-lived cache headers since the avatar only changes on explicit upload
+    res.set('Cache-Control', 'private, max-age=86400'); // 24 hours
+    res.json({ avatar });
+  } catch (error) {
+    console.error('getMyAvatar error:', error.message);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
@@ -176,6 +208,7 @@ const changePassword = async (req, res) => {
 
 module.exports = {
   getMyProfile,
+  getMyAvatar,
   updateMyProfile,
   updateSettings,
   changePassword,

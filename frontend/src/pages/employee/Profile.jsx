@@ -6,8 +6,9 @@ import { User, Briefcase, FileText, Activity, LayoutDashboard, Settings, Mail, P
 import { useNotifications } from '../../context/NotificationContext';
 import { useAuth } from '../../context/AuthContext';
 import { uploadProfileImage } from '../../services/core/authService';
-import { getMyProfile, updateMyProfile, changePassword } from '../../services/employee/profileService';
+import { getMyProfile, getMyAvatar, updateMyProfile, changePassword } from '../../services/employee/profileService';
 import { fetchDocuments, uploadDocument, updateDocumentService, deleteDocumentService } from '../../services/employee/documentService';
+import { getSyncCachedData } from '../../utils/cacheHelper';
 
 const ScrollStyles = () => (
   <style>{`
@@ -141,6 +142,65 @@ const ShareProfileModal = ({ isOpen, onClose, employee }) => {
   );
 };
 
+const AvatarWithEffect = ({ employee }) => {
+  const name = employee?.name || 'User';
+  const cacheKey = employee?.email ? `cached_avatar_${employee.email}` : null;
+
+  // Read from localStorage instantly — no waiting for API
+  const [src, setSrc] = useState(() => {
+    if (cacheKey) return localStorage.getItem(cacheKey) || '';
+    return '';
+  });
+  // If we already have a src from cache, show it immediately (no flicker)
+  const [loaded, setLoaded] = useState(!!src);
+  const [hasAvatar, setHasAvatar] = useState(!!src);
+
+  useEffect(() => {
+    if (!cacheKey) return;
+    // If no cache, fetch from the new dedicated lightweight avatar endpoint
+    if (!src) {
+      getMyAvatar().then((avatarData) => {
+        if (avatarData) {
+          setSrc(avatarData);
+          setHasAvatar(true);
+          try { localStorage.setItem(cacheKey, avatarData); } catch (_) {}
+        } else {
+          // No avatar uploaded - show dicebear fallback
+          setSrc(`https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}`);
+          setHasAvatar(false);
+        }
+        setLoaded(true);
+      }).catch(() => {
+        // Error fetching - show dicebear fallback
+        setSrc(`https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}`);
+        setHasAvatar(false);
+        setLoaded(true);
+      });
+    }
+  }, [cacheKey, name]);
+
+  return (
+    <div className="relative w-full h-full bg-indigo-600 flex items-center justify-center text-white font-black">
+      {!loaded && (
+        <span className="absolute">{name.charAt(0).toUpperCase()}</span>
+      )}
+      {src && (
+        <img
+          src={src}
+          alt="Avatar"
+          onLoad={() => setLoaded(true)}
+          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${loaded ? 'opacity-100' : 'opacity-0'}`}
+          onError={(e) => { 
+            e.target.onerror = null; 
+            e.target.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}`; 
+            setLoaded(true); 
+          }}
+        />
+      )}
+    </div>
+  );
+};
+
 const ProfileUnifiedOverlay = ({ isOpen, onClose, employee, documents, activeTab, setActiveTab, onEditDocument, onViewDocument, onDeleteDocument, onEditProfile, onSaveProfile }) => {
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   useEffect(() => {
@@ -195,22 +255,8 @@ const ProfileUnifiedOverlay = ({ isOpen, onClose, employee, documents, activeTab
         </div>
         <div className="p-4 border-t border-gray-100 dark:border-gray-800">
           <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-800 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center text-indigo-600 font-bold shrink-0 overflow-hidden">
-              {employee.avatar ? (
-                <img
-                  src={employee.avatar?.startsWith('data:') ? employee.avatar : (() => {
-                    if (!employee.avatar) return "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix";
-                    let url = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
-                    url = url.replace(/\/$/, '');
-                    if (!url.endsWith('/api')) url += '/api';
-                    return `${url.replace('/api', '')}${employee.avatar}`;
-                  })()}
-                  alt="DP"
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                employee.name.charAt(0)
-              )}
+            <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center text-indigo-600 font-bold shrink-0 overflow-hidden shadow-inner relative group-hover:scale-105 transition-transform">
+              <AvatarWithEffect employee={employee} />
             </div>
             <div className="min-w-0">
               <p className="font-black text-gray-900 dark:text-white text-sm truncate">{employee.name}</p>
@@ -713,6 +759,12 @@ const ChangePasswordModal = ({ isOpen, onClose }) => {
 const ProfileHeader = ({ employee, onEditProfile, onOpenSettings, onShareProfile, onOpenNavigation, onAvatarUpload, isSavingAvatar, loading }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [showToast, setShowToast] = useState(false);
+  const cacheKey = employee?.email ? `cached_avatar_${employee.email}` : null;
+  // Read from localStorage synchronously — renders with image on first paint, no flicker
+  const [persistentAvatar, setPersistentAvatar] = useState(() => {
+    return cacheKey ? localStorage.getItem(cacheKey) : null;
+  });
+  const [imageLoaded, setImageLoaded] = useState(!!persistentAvatar);
   const menuRef = useRef(null);
   const toastTimerRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -727,6 +779,34 @@ const ProfileHeader = ({ employee, onEditProfile, onOpenSettings, onShareProfile
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, [menuOpen]);
+
+  // On first visit: no persistent avatar yet → fetch from dedicated endpoint, persist, show
+  useEffect(() => {
+    if (!cacheKey || persistentAvatar) return; // Already have it, skip
+    getMyAvatar().then((avatarData) => {
+      if (avatarData) {
+        setPersistentAvatar(avatarData);
+        setImageLoaded(true);
+        try { localStorage.setItem(cacheKey, avatarData); } catch (_) {}
+      } else {
+        // No avatar uploaded - show dicebear fallback
+        setPersistentAvatar(`https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(employee?.name || 'User')}`);
+        setImageLoaded(true);
+      }
+    }).catch(() => {
+      // Error fetching - show dicebear fallback
+      setPersistentAvatar(`https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(employee?.name || 'User')}`);
+      setImageLoaded(true);
+    });
+  }, [cacheKey, employee?.name]);
+
+  // After upload: employee.avatar changes → sync into local state so new photo shows immediately
+  useEffect(() => {
+    if (employee?.avatar && employee.avatar !== persistentAvatar) {
+      setPersistentAvatar(employee.avatar);
+      setImageLoaded(true);
+    }
+  }, [employee?.avatar]);
 
   const handleShare = () => {
     setMenuOpen(false);
@@ -772,27 +852,28 @@ const ProfileHeader = ({ employee, onEditProfile, onOpenSettings, onShareProfile
         <div className="flex-shrink-0" onClick={(e) => e.stopPropagation()}>
           <div className="relative">
             <div className="relative group/avatar">
-              {loading ? (
+              {(loading && !employee.avatar) ? (
                 <div className="h-24 w-24 sm:h-32 sm:w-32 rounded-2xl sm:rounded-3xl bg-gray-200 dark:bg-gray-800 animate-pulse border-2 border-transparent" />
               ) : (
-                <>
+                <div className="relative h-24 w-24 sm:h-32 sm:w-32">
+                  {/* Shared Initials Fallback - Always rendered but buried if image loads */}
+                  <div className={`absolute inset-0 flex items-center justify-center bg-indigo-600 text-white text-3xl sm:text-4xl font-black rounded-2xl sm:rounded-3xl transition-opacity duration-300 ${imageLoaded ? 'opacity-0' : 'opacity-100'}`}>
+                    {employee.name.charAt(0) || 'U'}
+                  </div>
+
                   <img
-                    src={employee.avatar?.startsWith('data:') ? employee.avatar : (() => {
-                      if (!employee.avatar) return "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix";
-                      let url = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
-                      url = url.replace(/\/$/, '');
-                      if (!url.endsWith('/api')) url += '/api';
-                      return `${url.replace('/api', '')}${employee.avatar}`;
-                    })()}
+                    src={persistentAvatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${employee.name || 'User'}`}
                     alt={employee.name}
-                    className="h-24 w-24 sm:h-32 sm:w-32 rounded-2xl sm:rounded-3xl border-2 border-slate-200 dark:border-white/10 object-cover shadow-xl"
+                    onLoad={() => setImageLoaded(true)}
+                    className={`h-full w-full rounded-2xl sm:rounded-3xl border-2 border-slate-200 dark:border-white/10 object-cover shadow-xl transition-all duration-700 group-hover/avatar:scale-105 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
+                    onError={(e) => { e.target.onerror = null; e.target.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${employee.name || 'User'}`; setImageLoaded(true); }}
                   />
                   <button
                     onClick={() => fileInputRef.current?.click()}
                     disabled={isSavingAvatar}
-                    className="absolute inset-0 bg-black/40 rounded-2xl sm:rounded-3xl opacity-0 group-hover/avatar:opacity-100 transition-all flex items-center justify-center text-white"
+                    className="absolute inset-0 bg-black/40 rounded-2xl sm:rounded-3xl opacity-0 group-hover/avatar:opacity-100 transition-all flex items-center justify-center text-white backdrop-blur-[2px]"
                   >
-                    {isSavingAvatar ? <Loader2 className="animate-spin" /> : <Camera size={24} />}
+                    {isSavingAvatar ? <Loader2 className="animate-spin text-white" /> : <Camera size={24} className="text-white drop-shadow-lg" />}
                   </button>
                   <input
                     type="file"
@@ -804,7 +885,7 @@ const ProfileHeader = ({ employee, onEditProfile, onOpenSettings, onShareProfile
                       if (file) onAvatarUpload(file);
                     }}
                   />
-                </>
+                </div>
               )}
             </div>
             {!loading && (
@@ -819,29 +900,29 @@ const ProfileHeader = ({ employee, onEditProfile, onOpenSettings, onShareProfile
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="space-y-3">
               <div className="flex items-center gap-3">
-                {loading ? (
+                {(loading && !employee.name) ? (
                   <div className="h-10 w-64 bg-gray-200 dark:bg-gray-800 animate-pulse rounded-xl" />
                 ) : (
                   <>
                     <h1 className="text-2xl sm:text-4xl font-black tracking-tight">
                       <span className="text-slate-900 dark:text-white drop-shadow-sm">
-                        {employee.name}
+                        {employee.name || 'Profile User'}
                       </span>
                     </h1>
                     <span className="flex items-center gap-1 rounded-full bg-slate-100 dark:bg-white/10 px-2.5 py-1 text-[10px] sm:text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-300">
-                      <ShieldCheck size={14} />
+                      <ShieldCheck size={14} className="text-indigo-500" />
                       Verified Profile
                     </span>
                   </>
                 )}
               </div>
-              {loading ? (
-                <div className="h-6 w-48 bg-gray-100 dark:bg-gray-800/50 animate-pulse rounded-lg" />
-              ) : (
-                <p className="mt-1 sm:mt-2 text-base sm:text-lg font-medium text-slate-500 dark:text-slate-400">
-                  {employee.designation} • {employee.team}
-                </p>
-              )}
+                {(loading && !employee.designation) ? (
+                  <div className="h-6 w-48 bg-gray-100 dark:bg-gray-800/50 animate-pulse rounded-lg" />
+                ) : (
+                  <p className="mt-1 sm:mt-2 text-base sm:text-lg font-medium text-slate-500 dark:text-slate-400">
+                    {employee.designation || 'Staff Member'} • {employee.team || 'Operations'}
+                  </p>
+                )}
             </div>
             {!loading && (
               <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
@@ -2329,7 +2410,7 @@ const DeleteConfirmationModal = ({ isOpen, onClose, onConfirm, documentName }) =
 const EmployeeProfile = () => {
   const { setPageLoading } = useOutletContext();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const { refreshUser } = useAuth();
+  const { user: authUser, refreshUser } = useAuth();
   const [isSavingAvatar, setIsSavingAvatar] = useState(false);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
@@ -2358,94 +2439,120 @@ const EmployeeProfile = () => {
 
   const [documents, setDocuments] = useState([]);
 
-  const [employee, setEmployee] = useState({
-    name: '',
-    designation: '',
-    team: '',
-    status: 'Off Duty',
-    email: '',
-    phone: '',
-    location: '',
-    address: '',
-    gender: '',
-    nationality: '',
-    dob: '',
-    bloodGroup: '',
-    emergencyContact: '',
-    allergies: '',
-    avatar: '',
-    employeeCode: '',
-    dateOfJoin: '',
-    workArea: '',
-    reportingTo: '',
-    securityLevel: ''
-  });
-  const [profileLoading, setProfileLoading] = useState(true);
+  // PERSISTENT CACHE INITIALIZATION (0s Loading)
+  const getInitialEmployee = () => {
+    // 1. Prioritize active AuthContext user for immediate ID rendering (Name/DP)
+    if (authUser) {
+      return {
+        ...authUser,
+        ...authUser.profile,
+        name: authUser.name || '',
+        avatar: authUser.profile?.profileImage || authUser.avatar || ''
+      };
+    }
 
-  // Fetch profile from backend on mount
+    // 2. Fallback to localStorage
+    const stored = localStorage.getItem('user') || sessionStorage.getItem('user');
+    if (!stored) return {
+      name: '', designation: '', team: '', status: 'Off Duty', email: '', phone: '', location: '', address: '', gender: '', nationality: '', dob: '', bloodGroup: '', emergencyContact: '', allergies: '', avatar: '', employeeCode: '', dateOfJoin: '', workArea: '', reportingTo: '', securityLevel: ''
+    };
+    try {
+      const data = JSON.parse(stored);
+      return {
+        ...data,
+        ...data.profile,
+        name: data.name || '',
+        avatar: data.profile?.profileImage || data.avatar || ''
+      };
+    } catch (e) {
+      return { name: '', designation: '', team: '', status: 'Off Duty', email: '', phone: '', location: '', address: '', gender: '', nationality: '', dob: '', bloodGroup: '', emergencyContact: '', allergies: '', avatar: '', employeeCode: '', dateOfJoin: '', workArea: '', reportingTo: '', securityLevel: '' };
+    }
+  };
+
+  const [employee, setEmployee] = useState(getInitialEmployee);
+
+  // Sync with authUser changes (e.g. after background refresh)
   useEffect(() => {
-    const fetchProfile = async () => {
-      try {
+    if (authUser) {
+      setEmployee(prev => ({
+        ...prev,
+        ...authUser,
+        ...authUser.profile,
+        name: authUser.name || prev.name,
+        avatar: authUser.profile?.profileImage || authUser.avatar || prev.avatar
+      }));
+    }
+  }, [authUser]);
+
+  const [profileLoading, setProfileLoading] = useState(!localStorage.getItem('user') && !sessionStorage.getItem('user') && !authUser);
+
+  // Instant Identity Reveal Signal
+  useEffect(() => {
+    if (authUser && setPageLoading) {
+      setPageLoading(false);
+    }
+  }, [authUser, setPageLoading]);
+
+  const fetchProfile = async (isBackground = false) => {
+    try {
+      if (!isBackground) {
         setProfileLoading(true);
-        const data = await getMyProfile();
-        setEmployee(data);
-      } catch (err) {
-        console.error('Failed to load profile:', err.message);
-      } finally {
-        setProfileLoading(false);
-        if (setPageLoading) setPageLoading(false);
+        if (setPageLoading) setPageLoading(true);
       }
-    };
-    fetchProfile();
-  }, []);
+      const data = await getMyProfile();
+      setEmployee(data);
+    } catch (err) {
+      console.error('Failed to load profile:', err.message);
+    } finally {
+      setProfileLoading(false);
+      if (setPageLoading) setPageLoading(false);
+    }
+  };
 
-  // Fetch documents from backend on mount
-  useEffect(() => {
-    const loadDocuments = async () => {
-      try {
-        const data = await fetchDocuments();
-        setDocuments(data);
-      } catch (err) {
-        console.error('Failed to load documents:', err.message);
-      }
-    };
-    loadDocuments();
-  }, []);
+  const loadDocuments = async (isBackground = false) => {
+    try {
+      const data = await fetchDocuments();
+      setDocuments(data);
+    } catch (err) {
+      console.error('Failed to load documents:', err.message);
+    }
+  };
 
+  // 0s Hydration & Background Sync
   useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const userInfo = JSON.parse(localStorage.getItem('user'));
-        if (!userInfo || !userInfo.token) return;
-        const getBaseUrl = () => {
-          let url = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
-          url = url.replace(/\/$/, '');
-          if (!url.endsWith('/api')) url += '/api';
-          return url;
-        };
-        const BASE_URL = getBaseUrl();
-        const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
-        const { data } = await axios.get(`${BASE_URL}/auth/me`, config);
-        setEmployee(prev => ({
-          ...prev,
-          name: data.name || prev.name,
-          email: data.email || prev.email,
-          phone: data.profile?.phone || prev.phone,
-          address: data.profile?.address || prev.address,
-          dob: data.profile?.dob || prev.dob,
-          gender: data.profile?.gender || prev.gender,
-          nationality: data.profile?.nationality || prev.nationality,
-          bloodGroup: data.profile?.bloodGroup || prev.bloodGroup,
-          emergencyContact: data.profile?.emergencyContact || prev.emergencyContact,
-          allergies: data.profile?.allergies || prev.allergies,
-          location: data.profile?.location || prev.location,
-        }));
-      } catch (err) {
-        console.error("Error fetching profile", err);
+    // 1. Profile Hydration (avatar excluded from this call for speed)
+    const cachedProfile = getSyncCachedData('employee_profile');
+    if (cachedProfile) {
+      setEmployee(cachedProfile);
+      setProfileLoading(false);
+      if (setPageLoading) setPageLoading(false);
+      fetchProfile(true); // Background sync
+    } else {
+      fetchProfile();
+    }
+
+    // 2. Documents Hydration
+    const cachedDocs = getSyncCachedData('employee_documents');
+    if (cachedDocs) {
+      setDocuments(cachedDocs);
+      loadDocuments(true); // Background sync
+    } else {
+      loadDocuments();
+    }
+
+    // 3. Avatar Hydration — if not already in localStorage, fetch from the
+    //    dedicated lightweight endpoint and persist for all future visits
+    const email = authUser?.email;
+    if (email) {
+      const cacheKey = `cached_avatar_${email}`;
+      if (!localStorage.getItem(cacheKey)) {
+        getMyAvatar().then((avatarData) => {
+          if (avatarData) {
+            try { localStorage.setItem(cacheKey, avatarData); } catch (_) {}
+          }
+        }).catch(() => {});
       }
-    };
-    fetchProfile();
-    if (setPageLoading) setPageLoading(false);
+    }
   }, []);
 
   const handleSaveProfile = async (updates) => {
@@ -2475,12 +2582,15 @@ const EmployeeProfile = () => {
       formData.append('image', file);
 
       const response = await uploadProfileImage(formData);
+      const newAvatar = response.profileImage || response.url || '';
+
+      // Persist to localStorage IMMEDIATELY so next visit is instant (0ms)
+      if (newAvatar && employee?.email) {
+        try { localStorage.setItem(`cached_avatar_${employee.email}`, newAvatar); } catch (_) {}
+      }
 
       // Update local state
-      setEmployee(prev => ({
-        ...prev,
-        avatar: response.profileImage || response.url
-      }));
+      setEmployee(prev => ({ ...prev, avatar: newAvatar }));
 
       // Sync with global state (Sidebar, Navbar)
       await refreshUser();

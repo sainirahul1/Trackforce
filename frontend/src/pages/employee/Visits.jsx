@@ -4,6 +4,7 @@ import { MapPin, Navigation, Clock, CheckCircle2, ChevronRight, Calendar, AlertC
 import Button from '../../components/ui/Button';
 
 import { getVisits, getVisitById } from '../../services/employee/visitService';
+import { getSyncCachedData } from '../../utils/cacheHelper';
 
 const EmployeeVisits = () => {
   const { setPageLoading } = useOutletContext();
@@ -15,44 +16,59 @@ const EmployeeVisits = () => {
   const [loading, setLoading] = useState(true);
   const dateInputRef = React.useRef(null);
 
+  const transformVisits = (data) => {
+    return data.map(v => {
+      const visitDate = new Date(v.timestamp || v.createdAt);
+      const isValidDate = !isNaN(visitDate.getTime());
+      
+      let statusLabel = v.status ? v.status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'Unknown';
+      if (v.status === 'not_interested') statusLabel = 'Rejected';
+      
+      return {
+        ...v,
+        store: v.storeName,
+        time: isValidDate ? visitDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '---',
+        date: isValidDate ? visitDate.toISOString().split('T')[0] : '---',
+        address: v.address || 'Location data not available',
+        distance: v.distance || '---', 
+        eta: v.eta || '---',
+        status: statusLabel,
+        reviewStatus: v.reviewStatus || 'pending',
+        rejectionReason: v.rejectionReason || null,
+        companyDescription: 'Organization Partner',
+        feedback: v.notes || 'No specific feedback recorded.',
+        uploadedImages: v.photos || [],
+        taskTitle: v.taskTitle,
+        taskType: v.taskType,
+        checklist: v.checklist || []
+      };
+    });
+  };
+
+  const fetchVisits = async (isBackground = false) => {
+    try {
+      if (!isBackground) setLoading(true);
+      const data = await getVisits();
+      setVisits(transformVisits(data));
+    } catch (err) {
+      console.error('Error fetching visits:', err);
+    } finally {
+      setLoading(false);
+      if (setPageLoading) setPageLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchVisits = async () => {
-      try {
-        const data = await getVisits();
-        setVisits(data.map(v => {
-          const visitDate = new Date(v.timestamp || v.createdAt);
-          const isValidDate = !isNaN(visitDate.getTime());
-          
-          let statusLabel = v.status ? v.status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'Unknown';
-          if (v.status === 'not_interested') statusLabel = 'Rejected';
-          
-          return {
-            ...v,
-            store: v.storeName,
-            time: isValidDate ? visitDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '---',
-            date: isValidDate ? visitDate.toISOString().split('T')[0] : '---',
-            address: v.address || 'Location data not available',
-            distance: v.distance || '---', 
-            eta: v.eta || '---',
-            status: statusLabel,
-            reviewStatus: v.reviewStatus || 'pending',
-            rejectionReason: v.rejectionReason || null,
-            companyDescription: 'Organization Partner',
-            feedback: v.notes || 'No specific feedback recorded.',
-            uploadedImages: v.photos || [],
-            taskTitle: v.taskTitle,
-            taskType: v.taskType,
-            checklist: v.checklist || []
-          };
-        }));
-      } catch (err) {
-        console.error('Error fetching visits:', err);
-      } finally {
-        setLoading(false);
-        if (setPageLoading) setPageLoading(false);
-      }
-    };
-    fetchVisits();
+    // 1. Initial Hydration from Cache (0s Loading)
+    const cachedData = getSyncCachedData('visits');
+    if (cachedData) {
+      setVisits(transformVisits(cachedData));
+      setLoading(false);
+      if (setPageLoading) setPageLoading(false);
+      fetchVisits(true); // Silent background update
+    } else {
+      fetchVisits();
+    }
   }, []);
 
   const handleVisitClick = async (visit) => {

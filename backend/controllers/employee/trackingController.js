@@ -75,7 +75,7 @@ exports.getActiveSessions = async (req, res) => {
       path: 'user',
       match: { role: 'employee', isTracking: true },
       select: 'name role isTracking'
-    });
+    }).lean();
 
     // Remove any that didn't match the inner populate filter (only really active employees)
     const activeEmployees = employeeSessions.filter(s => s.user != null);
@@ -139,11 +139,11 @@ exports.stopTracking = async (req, res) => {
 
 exports.getTrackingStatus = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id).select('isTracking tenant role manager name');
+    const user = await User.findById(req.user._id).select('isTracking tenant role manager name').lean();
     const activeSession = await TrackingSession.findOne({
       user: req.user._id,
       status: 'active'
-    });
+    }).lean();
 
     res.json({
       isTracking: !!(user?.isTracking && activeSession),

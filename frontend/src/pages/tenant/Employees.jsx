@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useLocation, useOutletContext } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import DataTable from '../../components/ui/DataTable';
-import tenantService from '../../services/core/tenantService';
+import tenantService, { getSyncCachedData } from '../../services/core/tenantService';
 import Button from '../../components/ui/Button';
 import { UserPlus, Search, Download, Shield, Users, Activity, CheckCircle2, X, ArrowLeft, Mail, Phone, MapPin, Briefcase, Calendar, User, Clock, Edit, Trash2, Ban } from 'lucide-react';
 
@@ -24,8 +24,30 @@ const getRelativeTime = (timestamp) => {
 const EmployeeList = () => {
   const location = useLocation();
   const { setPageLoading } = useOutletContext();
-  const [employees, setEmployees] = useState([]);
-  const [teamMembers, setTeamMembers] = useState([]);
+  
+  // PERSISTENT CACHE INITIALIZATION (0s Loading)
+  const cachedManagers = getSyncCachedData('managers');
+  const cachedEmployees = getSyncCachedData('employees');
+  const hasCache = !!(cachedManagers || cachedEmployees);
+
+  const [employees, setEmployees] = useState(cachedManagers ? cachedManagers.map(m => ({
+    id: m._id,
+    name: m.name,
+    email: m.email,
+    designation: m.profile?.designation || 'Manager',
+    status: m.status || (m.isDeactivated ? 'Inactive' : 'On Duty'),
+    zone: m.profile?.zone || m.profile?.team || 'N/A',
+    avatar: `https://i.pravatar.cc/150?u=${m._id}`
+  })) : []);
+  
+  const [teamMembers, setTeamMembers] = useState(cachedEmployees ? cachedEmployees.map(e => ({
+    id: e._id,
+    name: e.name,
+    role: e.profile?.designation || 'Employee',
+    status: e.isDeactivated ? 'Inactive' : 'Active',
+    lastActivity: new Date().toISOString()
+  })) : []);
+
   const [selectedManager, setSelectedManager] = useState(null);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -36,10 +58,17 @@ const EmployeeList = () => {
   const [statusFilter, setStatusFilter] = useState('All');
   const [showSuccess, setShowSuccess] = useState(false);
   const [addedManagerName, setAddedManagerName] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(!hasCache);
   const [activeTab, setActiveTab] = useState('managers');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 7;
+
+  useEffect(() => {
+    // Immediate loading clearing if cache exists
+    if (hasCache && setPageLoading) {
+      setPageLoading(false);
+    }
+  }, [hasCache, setPageLoading]);
 
   // Reset page on search, filter, or tab change
   useEffect(() => {
@@ -59,13 +88,17 @@ const EmployeeList = () => {
 
   useEffect(() => {
     const loadData = async () => {
-      setIsLoading(true);
+      // Only show local skeletons if we have absolutely NO data (fresh load)
+      if (!hasCache) {
+        setIsLoading(true);
+      }
+      
       await Promise.all([fetchManagers(), fetchTeamMembers()]);
       setIsLoading(false);
       if (setPageLoading) setPageLoading(false);
     };
     loadData();
-  }, []);
+  }, [hasCache, setPageLoading]);
 
   const fetchTeamMembers = async () => {
     try {

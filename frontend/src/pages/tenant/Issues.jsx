@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import IssueStats from '../../components/issues/IssueStats';
 import IssueFilters from '../../components/issues/IssueFilters';
 import IssueCard from '../../components/issues/IssueCard';
@@ -6,7 +7,12 @@ import { mockIssues } from '../../utils/mockData';
 import { CheckCircle2 } from 'lucide-react';
 
 const Issues = () => {
+  const { setPageLoading } = useOutletContext();
   const role = 'tenant';
+
+  useEffect(() => {
+    if (setPageLoading) setPageLoading(false);
+  }, [setPageLoading]);
   const [filterStatus, setFilterStatus] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
 

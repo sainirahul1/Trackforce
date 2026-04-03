@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import { Plus, CheckCircle2, CheckCircle, Clock, AlertCircle } from 'lucide-react';
 import CreateIssueModal from '../../components/issues/CreateIssueModal';
 import { createIssue, getIssues } from '../../services/core/issueService';
@@ -6,6 +7,7 @@ import IssueCard from '../../components/issues/IssueCard';
 import { useSocket } from '../../context/SocketContext';
 
 const EmployeeIssues = () => {
+  const { setPageLoading } = useOutletContext();
   const { socket } = useSocket();
   const [issues, setIssues] = useState([]);
   const [loading, setLoading] = useState(true);
