@@ -145,8 +145,8 @@ const ManagerVisits = () => {
   const [observationCategory, setObservationCategory] = React.useState('General Overview'); // Active category for observation notes
   const [liveEmployees, setLiveEmployees] = React.useState({});         // Map of employeeId -> latest location data
   const { user } = useAuth();
-  const { setPageLoading } = useOutletContext();
-  const socket = useSocket();
+  const { setPageLoading } = useOutletContext() || {};
+  const { socket } = useSocket() || {};
   const { isLoaded } = useGoogleMaps();
 
   const [map, setMap] = React.useState(null);

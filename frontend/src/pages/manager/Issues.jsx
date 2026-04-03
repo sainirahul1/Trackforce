@@ -537,9 +537,9 @@ const IssueDetails = ({ issue, onBack, onStatusUpdate, onUpdatePriority, onDelet
 const Issues = () => {
   const { socket } = useSocket();
   const { user } = useAuth();
-  const { setPageLoading } = useOutletContext();
+  const { setPageLoading } = useOutletContext() || {};
   const role = 'manager';
-  
+
   const [filterStatus, setFilterStatus] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
   const [issuesList, setIssuesList] = useState([]);
@@ -548,7 +548,7 @@ const Issues = () => {
   const [showToast, setShowToast] = useState({ show: false, message: '', type: 'success' });
   const [selectedIssue, setSelectedIssue] = useState(null);
 
-   // --- 0s Hydration & Background Sync ---
+  // --- 0s Hydration & Background Sync ---
   const fetchIssuesSync = async (showLoading = false) => {
     if (showLoading) setLoading(true);
     try {
@@ -580,7 +580,7 @@ const Issues = () => {
     if (socket && user?.tenant) {
       // Join organizational role room
       socket.emit('join_tenant_role', { tenantId: user.tenant, role: 'manager' });
-      
+
       const handleNewIssue = (newIssue) => {
         setIssuesList(prev => [newIssue, ...prev]);
         triggerToast(`New ticket: ${newIssue.subject}`, 'success');
@@ -652,13 +652,13 @@ const Issues = () => {
         ...newData,
         to: 'superadmin' // Manager reports to superadmin
       });
-      
+
       // OPTIMISTIC UPDATE
       setIssuesList(prev => [created, ...prev]);
-      
+
       setShowCreateModal(false);
       triggerToast('Issue reported successfully to Super Admin');
-      
+
       // Silent sync
       fetchIssuesSync();
     } catch (err) {
@@ -685,7 +685,7 @@ const Issues = () => {
     return issuesList.filter(issue => {
       const isForMe = issue.to === role;
       const matchesStatus = filterStatus === 'All' || issue.status === filterStatus;
-      const matchesSearch = 
+      const matchesSearch =
         issue.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (issue.fromName || (typeof issue.from === 'object' ? issue.from.name : issue.from)).toLowerCase().includes(searchTerm.toLowerCase());
       return isForMe && matchesStatus && matchesSearch;
