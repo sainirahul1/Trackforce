@@ -27,7 +27,7 @@ import { getActiveTrackingSessions } from '../../services/employee/trackingServi
  * VisitRow Component
  * Renders a high-density, horizontal entry for the visits feed.
  */
-const VisitRow = ({ visit, onReview, isLive }) => (
+const VisitRow = ({ visit, onReview, isLive, refreshing, onRefresh }) => (
   <div
     onClick={onReview}
     className={`group bg-white dark:bg-gray-900 px-4 py-2.5 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-xl transition-all cursor-pointer flex flex-col lg:flex-row items-center gap-4 border-l-[4px] transition-all ${isLive ? 'border-l-emerald-500' : 'hover:border-l-indigo-600 border-l-transparent'}`}
@@ -36,7 +36,7 @@ const VisitRow = ({ visit, onReview, isLive }) => (
     <div className="flex items-center gap-3 w-full lg:w-[20%] shrink-0">
       <div className="relative">
         <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-black text-xs shadow-md shrink-0 group-hover:scale-105 transition-transform">
-          {visit.avatar}
+          {visit.avatar || '??'}
         </div>
         {isLive && (
           <div className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-500 rounded-full border-2 border-white dark:border-gray-950 animate-pulse" />
@@ -65,9 +65,9 @@ const VisitRow = ({ visit, onReview, isLive }) => (
       </div>
 
       <div className="hidden xl:flex items-center gap-5">
-        <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md border ${visit.location.includes('Warning') ? 'bg-rose-50 border-rose-100 text-rose-500' : 'bg-emerald-50 border-emerald-100 text-emerald-500'} dark:bg-opacity-5 dark:border-opacity-10 text-[8px] font-black uppercase tracking-tight`}>
+        <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md border ${(visit.location || '').includes('Warning') ? 'bg-rose-50 border-rose-100 text-rose-500' : 'bg-emerald-50 border-emerald-100 text-emerald-500'} dark:bg-opacity-5 dark:border-opacity-10 text-[8px] font-black uppercase tracking-tight`}>
           <Radio size={9} className={isLive ? 'animate-pulse text-emerald-500' : 'shrink-0'} fill="currentColor" fillOpacity={0.2} />
-          {isLive && visit.city ? visit.city : visit.location.split(' ')[0]}
+          {isLive && visit.city ? visit.city : (visit.location || 'Unknown').split(' ')[0]}
         </div>
         <div className="flex items-center gap-1.5 text-gray-400 text-[9px] font-bold tabular-nums">
           <Clock size={11} />
@@ -80,7 +80,7 @@ const VisitRow = ({ visit, onReview, isLive }) => (
     <div className="flex items-center justify-between lg:justify-end gap-5 w-full lg:flex-1">
       <div className="flex items-center gap-4">
         <button
-          onClick={() => fetchData(true)}
+          onClick={() => onRefresh(true)}
           className={`flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 font-bold transition-all active:scale-95 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 ${refreshing ? 'opacity-50' : ''}`}
         >
           <Activity size={16} className={refreshing ? 'animate-spin' : ''} />
@@ -204,18 +204,26 @@ const ManagerVisits = () => {
       const visitsResponse = await fetch(`${import.meta.env.VITE_API_URL}/visits`, { headers });
       const visitsData = await visitsResponse.json();
 
-      const formattedVisits = visitsData.map(v => ({
-        id: v._id,
-        store: v.storeName,
-        executive: v.employee?.name || 'Unknown',
-        designation: v.employee?.role || 'Field Executive',
-        team: 'Field Operations',
-        type: v.taskType || 'Store Visit',
-        status: v.reviewStatus || 'Pending Review',
-        time: new Date(v.timestamp || v.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        raw: v,
-        employee: v.employee // Ensure employee object is passed for live data lookup
-      }));
+      const formattedVisits = visitsData.map(v => {
+        const empName = v.employee?.name || 'Unknown';
+        const initials = empName.split(' ').filter(Boolean).map(n => n[0]).join('').toUpperCase();
+        return {
+          id: v._id,
+          store: v.storeName,
+          executive: empName,
+          designation: v.employee?.role || 'Field Executive',
+          team: 'Field Operations',
+          type: v.taskType || 'Store Visit',
+          status: v.reviewStatus || 'Pending Review',
+          submissionStatus: mapSubmissionStatus(v.status),
+          location: v.gps?.lat ? `Verified (GPS: ${v.gps.lat.toFixed(4)}, ${v.gps.lng.toFixed(4)})` : 'Location data not available',
+          time: new Date(v.timestamp || v.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          photos: v.photos?.length || 0,
+          avatar: initials,
+          raw: v,
+          employee: v.employee
+        };
+      });
       setVisits(formattedVisits);
 
       // Fetch active tracking sessions
@@ -506,6 +514,8 @@ const ManagerVisits = () => {
                               liveData: liveData
                             })}
                             isLive={!!liveData}
+                            refreshing={refreshing}
+                            onRefresh={fetchData}
                           />
                         );
                       })
@@ -562,6 +572,8 @@ const ManagerVisits = () => {
                               ...visit,
                               liveData: liveData
                             })}
+                            refreshing={refreshing}
+                            onRefresh={fetchData}
                           />
                         );
                       })
@@ -680,8 +692,8 @@ const ManagerVisits = () => {
                           label: isLive ? 'Current GPS' : 'Geospatial Delta',
                           value: isLive ? `L: ${activeLocation.location.lat.toFixed(4)}, ${activeLocation.location.lng.toFixed(4)}` : selectedVisit.location,
                           icon: isLive ? Radio : MapPin,
-                          color: (!isLive && selectedVisit.location.includes('Warning')) ? 'text-rose-600' : 'text-emerald-600',
-                          bg: (!isLive && selectedVisit.location.includes('Warning')) ? 'bg-rose-50' : 'bg-emerald-50'
+                          color: (!isLive && (selectedVisit.location || '').includes('Warning')) ? 'text-rose-600' : 'text-emerald-600',
+                          bg: (!isLive && (selectedVisit.location || '').includes('Warning')) ? 'bg-rose-50' : 'bg-emerald-50'
                         },
                         { label: 'Visual Evidence', value: `${selectedVisit.photos} HD Assets`, icon: Camera, color: 'text-indigo-600', bg: 'bg-indigo-50' }
                       ].map((item, id) => (
