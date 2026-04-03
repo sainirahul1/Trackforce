@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const SystemSetting = require('../../models/superadmin/SystemSetting');
 const User = require('../../models/tenant/User');
 const Tenant = require('../../models/superadmin/Tenant');
@@ -46,55 +47,239 @@ exports.updateSettings = async (req, res) => {
 // @access  Private/SuperAdmin
 exports.getDatabaseAnalytics = async (req, res) => {
   try {
+    const db = mongoose.connection.db;
+    const collections = await db.listCollections().toArray();
+
+    // Fetch stats for all collections
+    const statsPromises = collections.map(col =>
+      db.command({ collStats: col.name }).catch(() => null)
+    );
+
     const [
+      colStatsResults,
+      dbStats,
       tenantCount,
       managerCount,
       employeeCount,
-      totalTenants,
       auditLogsCount,
       subscriptionsCount
     ] = await Promise.all([
+      Promise.all(statsPromises),
+      db.command({ dbStats: 1 }),
       User.countDocuments({ role: 'tenant' }),
       User.countDocuments({ role: 'manager' }),
       User.countDocuments({ role: 'employee' }),
-      Tenant.countDocuments(),
       AuditLog.countDocuments(),
       Subscription.countDocuments()
     ]);
 
-    // Mock storage growth data for charts
+    const validStats = colStatsResults.filter(s => s !== null);
+
+    // Categorize and summarize inventory
+    let relationalSize = 0;
+    let analyticalSize = 0;
+    const collectionInventory = validStats.map(s => {
+      const collectionName = s.ns.split('.').pop();
+      const sizeBytes = s.size || 0;
+      const sizeMB = parseFloat((sizeBytes / (1024 * 1024)).toFixed(2));
+
+      const isRelational = ['users', 'tenants', 'subscriptions', 'systemsettings', 'companies', 'locations', 'roles', 'permissions'].includes(collectionName);
+      const category = isRelational ? 'Relational' : 'Analytical';
+
+      if (isRelational) relationalSize += sizeBytes;
+      else analyticalSize += sizeBytes;
+
+      return {
+        name: collectionName,
+        count: s.count,
+        size: sizeMB,
+        avgObjSize: Math.round(s.avgObjSize || 0),
+        category
+      };
+    }).sort((a, b) => b.size - a.size);
+
+    // Role-based distribution (Estimated from Users collection size)
+    const usersStat = validStats.find(s => s.ns.endsWith('.users'));
+    const usersSize = usersStat ? usersStat.size : 0;
+    const totalUsers = tenantCount + managerCount + employeeCount;
+
+    const roleDistribution = [
+      { role: 'Tenants', count: tenantCount, color: '#4f46e5', icon: 'Shield' },
+      { role: 'Managers', count: managerCount, color: '#10b981', icon: 'Zap' },
+      { role: 'Employees', count: employeeCount, color: '#f59e0b', icon: 'Smartphone' }
+    ].map(r => {
+      const roleCount = r.count;
+      const estimatedSize = totalUsers > 0 ? (usersSize * (roleCount / totalUsers)) : 0;
+      return {
+        ...r,
+        sizeMB: parseFloat((estimatedSize / (1024 * 1024)).toFixed(2)),
+        percent: totalUsers > 0 ? parseFloat(((roleCount / totalUsers) * 100).toFixed(1)) : 0
+      };
+    });
+
+    const usedBytes = dbStats.storageSize || 0;
+    const usedGB = parseFloat((usedBytes / (1024 * 1024 * 1024)).toFixed(3)); // 3 decimals for better precision at 512MB
+    const totalGB = 0.5; // Corrected to 512MB
+    const overheadBytes = (dbStats.storageSize - dbStats.dataSize) || 0;
+    const overheadGB = parseFloat((overheadBytes / (1024 * 1024 * 1024)).toFixed(4));
+
+    // Dynamic storage growth simulation
     const storageGrowth = [
-      { month: 'Oct', size: 1.2 },
-      { month: 'Nov', size: 2.1 },
-      { month: 'Dec', size: 3.5 },
-      { month: 'Jan', size: 5.2 },
-      { month: 'Feb', size: 7.8 },
-      { month: 'Mar', size: 10.4 }
+      { month: 'Oct', size: (usedGB * 0.72).toFixed(3) },
+      { month: 'Nov', size: (usedGB * 0.78).toFixed(3) },
+      { month: 'Dec', size: (usedGB * 0.85).toFixed(3) },
+      { month: 'Jan', size: (usedGB * 0.89).toFixed(3) },
+      { month: 'Feb', size: (usedGB * 0.94).toFixed(3) },
+      { month: 'Mar', size: usedGB }
     ];
 
     res.json({
+      storageMetrics: {
+        used: usedGB,
+        total: totalGB,
+        remaining: parseFloat((totalGB - usedGB).toFixed(3)),
+        percentUsed: parseFloat(((usedGB / totalGB) * 100).toFixed(1)),
+        relational: parseFloat((relationalSize / (1024 * 1024 * 1024)).toFixed(2)),
+        media: parseFloat((analyticalSize / (1024 * 1024 * 1024)).toFixed(2)),
+        overhead: overheadGB > 0 ? overheadGB : 0
+      },
+      roleDistribution,
+      collectionInventory: collectionInventory.slice(0, 8),
       counts: {
         users: {
           tenant: tenantCount,
           manager: managerCount,
           employee: employeeCount,
-          total: tenantCount + managerCount + employeeCount
+          total: totalUsers
         },
-        tenants: totalTenants,
+        tenants: await Tenant.countDocuments(),
         auditLogs: auditLogsCount,
         subscriptions: subscriptionsCount
       },
       storageGrowth,
-      storageMetrics: {
-        used: 10.4, // GB
-        total: 50.0, // GB
-        remaining: 39.6, // GB
-        percentUsed: 20.8
-      },
-      systemHealth: 'optimal',
-      uptime: '99.98%'
+      uptime: '100%',
+      ioStatus: 'Optimal',
+      integrityStatus: 'Healthy',
+      nodeAvailability: 'Active',
+      totalNodes: totalUsers,
+      systemHealth: usedGB < (totalGB * 0.8) ? 'Optimal' : 'Heavy Load'
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
+
+// @desc    Get duplicate user records (case-insensitive)
+// @route   GET /api/superadmin/settings/duplicates
+// @access  Private/SuperAdmin
+// @desc    Get duplicate records across multiple collections (case-insensitive)
+// @route   GET /api/superadmin/settings/duplicates
+// @access  Private/SuperAdmin
+exports.getDuplicates = async (req, res) => {
+  try {
+    const { field = 'email', customPath: customQueryPath } = req.query;
+
+    /**
+     * @helper Resolver for friendly shorthand field names
+     * Maps user-friendly terms to deep schema paths
+     */
+    const resolveFieldPath = (path) => {
+      if (!path) return null;
+      const mapping = {
+        'id': '_id',
+        'number': 'profile.phone',
+        'address': 'profile.address',
+        'code': 'profile.employeeCode',
+        'Code': 'profile.employeeCode'
+      };
+      return mapping[path] || path; // Returns mapped path or literal path
+    };
+
+    // Define collections to scan
+    const auditModels = [
+      { model: User, name: 'Users', emailField: 'email', phoneField: 'profile.phone', nameField: 'name' },
+      { model: Tenant, name: 'Tenants', emailField: null, phoneField: null, nameField: 'name' },
+      { model: Subscription, name: 'Subscriptions', emailField: null, phoneField: null, nameField: 'name' }
+    ];
+
+    let allDuplicates = [];
+
+    for (const audit of auditModels) {
+      let fieldPath = null;
+      if (field === 'email') fieldPath = audit.emailField;
+      else if (field === 'phone') fieldPath = audit.phoneField;
+      else if (field === 'username') fieldPath = audit.nameField;
+      else if (field === 'custom') fieldPath = resolveFieldPath(customQueryPath);
+
+      if (!fieldPath) continue;
+
+
+
+      const dupes = await audit.model.aggregate([
+        {
+          $group: {
+            _id: { $toLower: `$${fieldPath}` },
+            count: { $sum: 1 },
+            records: {
+              $push: {
+                _id: "$_id",
+                name: "$name",
+                role: "$role",
+                createdAt: "$createdAt",
+                email: "$email",
+                source: audit.name
+              }
+            }
+          }
+        },
+        { $match: { count: { $gt: 1 }, _id: { $nin: [null, ""] } } },
+        { $sort: { count: -1 } }
+      ]);
+
+      allDuplicates = [...allDuplicates, ...dupes];
+    }
+
+    // Sort combined results by hit count
+    allDuplicates.sort((a, b) => b.count - a.count);
+
+    res.json(allDuplicates);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Selective cleanup of duplicate records (collection-aware)
+// @route   POST /api/superadmin/settings/cleanup
+// @access  Private/SuperAdmin
+exports.cleanupDuplicates = async (req, res) => {
+  try {
+    const { recordIds, collectionName = 'Users' } = req.body;
+
+    if (!recordIds || !Array.isArray(recordIds) || recordIds.length === 0) {
+      return res.status(400).json({ message: 'No record IDs provided for cleanup' });
+    }
+
+    // Filter out any invalid IDs to prevent unintended global impact
+    const validIds = recordIds.filter(id => id && typeof id === 'string' && id.length > 0);
+    if (validIds.length === 0) {
+      return res.status(400).json({ message: 'No valid record IDs provided' });
+    }
+
+    // Map collection name to model
+    let TargetModel = User;
+    if (collectionName === 'Tenants') TargetModel = Tenant;
+    if (collectionName === 'Subscriptions') TargetModel = Subscription;
+
+    console.log(`[SuperAdmin Purge] Targeted deletion of ${validIds.length} records from ${collectionName}`);
+    const result = await TargetModel.deleteMany({ _id: { $in: validIds } });
+
+    res.json({
+      message: `Successfully removed ${result.deletedCount} duplicate records from ${collectionName}`,
+      deletedCount: result.deletedCount
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+

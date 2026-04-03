@@ -126,6 +126,15 @@ const superadminService = {
   getDatabaseAnalytics: async () => {
     const response = await axios.get(`${API_URL}/settings/analytics`, { headers: getAuthHeader() });
     return response.data;
+  },
+  getDuplicates: async (field = 'email', customPath = '') => {
+    const url = `${API_URL}/settings/duplicates?field=${field}${customPath ? `&customPath=${customPath}` : ''}`;
+    const response = await axios.get(url, { headers: getAuthHeader() });
+    return response.data;
+  },
+  cleanupDuplicates: async (recordIds, collectionName = 'Users') => {
+    const response = await axios.post(`${API_URL}/settings/cleanup`, { recordIds, collectionName }, { headers: getAuthHeader() });
+    return response.data;
   }
 };
 
