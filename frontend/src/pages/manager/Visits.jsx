@@ -101,12 +101,14 @@ const VisitRow = ({ visit, onReview, isLive }) => (
         </div>
       </div>
 
-      <button
-        onClick={(e) => { e.stopPropagation(); onReview(); }}
-        className="px-4 py-1.5 bg-indigo-600 text-white rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-indigo-500 transition-all shadow-md flex items-center justify-center gap-1.5 shrink-0"
-      >
-        Review <ArrowRight size={11} />
-      </button>
+      {visit.reviewStatus === 'pending' && (
+        <button
+          onClick={(e) => { e.stopPropagation(); onReview(); }}
+          className="px-4 py-1.5 bg-indigo-600 text-white rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-indigo-500 transition-all shadow-md flex items-center justify-center gap-1.5 shrink-0"
+        >
+          Review <ArrowRight size={11} />
+        </button>
+      )}
     </div>
   </div>
 );
