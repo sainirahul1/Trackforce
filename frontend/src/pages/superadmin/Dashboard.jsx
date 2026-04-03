@@ -24,6 +24,8 @@ const SuperAdminDashboard = () => {
   const [growthData, setGrowthData] = useState(null);
   const [companies, setCompanies] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [exportPeriod, setExportPeriod] = useState('Today');
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     fetchDashboardData(true);
@@ -44,6 +46,85 @@ const SuperAdminDashboard = () => {
       console.error('Error fetching dashboard data:', error);
     } finally {
       if (showLoading) setLoading(false);
+    }
+  };
+
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      // ── Section 1: Key Metrics ──────────────────────────────────────────
+      const rows = [];
+
+      rows.push(['PLATFORM INTELLIGENCE EXPORT']);
+      rows.push([`Period: ${exportPeriod}`]);
+      rows.push([`Generated: ${new Date().toLocaleString()}`]);
+      rows.push([]);
+
+      rows.push(['--- KEY METRICS ---']);
+      rows.push(['Metric', 'Value']);
+      rows.push(['Total Companies', statsData?.totalTenants ?? 0]);
+      rows.push(['Platform Users', statsData?.totalUsers ?? 0]);
+      rows.push(['Global Visits', statsData?.totalVisits ?? 0]);
+      rows.push(['Estimated Revenue (MRR)', `$${statsData?.totalMRR ?? 0}`]);
+      rows.push([]);
+
+      // ── Section 2: Subscription Distribution ───────────────────────────
+      rows.push(['--- SUBSCRIPTION DISTRIBUTION ---']);
+      rows.push(['Plan', 'Share (%)']);
+      const dist = statsData?.subscriptionDistribution || [
+        { name: 'Basic', value: 45 },
+        { name: 'Premium', value: 35 },
+        { name: 'Enterprise', value: 20 },
+      ];
+      dist.forEach(d => rows.push([d.name, d.value]));
+      rows.push([]);
+
+      // ── Section 3: Monthly Growth ───────────────────────────────────────
+      rows.push(['--- MONTHLY GROWTH (NEW TENANTS) ---']);
+      rows.push(['Month', 'New Tenants']);
+      const defaultLabels = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      const defaultDataArr = [30,45,35,60,50,85,70,90,65,80,95,100];
+      const labels = growthData?.labels || defaultLabels;
+      const dataArr = growthData?.data || defaultDataArr;
+      labels.forEach((label, i) => rows.push([label, dataArr[i] ?? 0]));
+      rows.push([]);
+
+      // ── Section 4: Recent Companies ─────────────────────────────────────
+      rows.push(['--- RECENT ONBOARDED COMPANIES ---']);
+      rows.push(['Company Name', 'Industry', 'Status', 'Employee Limit']);
+      companies.forEach(c =>
+        rows.push([
+          c.name,
+          c.industry || 'Technology',
+          c.onboardingStatus || 'N/A',
+          c.subscription?.employeeLimit ?? 'N/A',
+        ])
+      );
+
+      // ── Build CSV string ────────────────────────────────────────────────
+      const escapeCell = (val) => {
+        const str = String(val ?? '');
+        return str.includes(',') || str.includes('"') || str.includes('\n')
+          ? `"${str.replace(/"/g, '""')}"`
+          : str;
+      };
+      const csvContent = rows.map(r => r.map(escapeCell).join(',')).join('\n');
+
+      // ── Trigger download ────────────────────────────────────────────────
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      const safePeriod = exportPeriod.replace(/\s+/g, '_').toLowerCase();
+      link.href = url;
+      link.download = `platform_report_${safePeriod}_${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Export failed:', err);
+    } finally {
+      setExporting(false);
     }
   };
 
@@ -165,15 +246,23 @@ const SuperAdminDashboard = () => {
             </>
           ) : (
             <>
-              <select className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2.5 text-sm font-bold text-gray-700 dark:text-gray-300 outline-none shadow-sm cursor-pointer appearance-none">
+              <select
+                value={exportPeriod}
+                onChange={(e) => setExportPeriod(e.target.value)}
+                className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2.5 text-sm font-bold text-gray-700 dark:text-gray-300 outline-none shadow-sm cursor-pointer appearance-none"
+              >
                 <option>Today</option>
                 <option>Yesterday</option>
                 <option>Last Week</option>
                 <option>Last 30 Days</option>
               </select>
-              <button className="flex items-center space-x-2 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl transition-colors font-bold text-sm shadow-sm opacity-90 hover:opacity-100">
-                <Download size={16} />
-                <span>Export</span>
+              <button
+                onClick={handleExport}
+                disabled={exporting || loading}
+                className="flex items-center space-x-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed text-white px-5 py-2.5 rounded-xl transition-colors font-bold text-sm shadow-sm"
+              >
+                <Download size={16} className={exporting ? 'animate-bounce' : ''} />
+                <span>{exporting ? 'Exporting…' : 'Export'}</span>
               </button>
             </>
           )}

@@ -1,9 +1,10 @@
 import React, { useEffect } from 'react';
-import { useOutletContext } from 'react-router-dom';
+import { useOutletContext, useNavigate } from 'react-router-dom';
 import { Camera, MapPin, Calendar, CheckCircle, Clock, ChevronRight, User } from 'lucide-react';
 
 const Visits = () => {
   const { setPageLoading } = useOutletContext();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (setPageLoading) setPageLoading(false);
@@ -53,11 +54,20 @@ const Visits = () => {
             <Calendar size={18} className="text-indigo-600" />
             Recent Visit Activity
           </h3>
-          <button className="text-indigo-600 font-bold text-sm hover:underline">View All</button>
+          <button
+            onClick={() => navigate('/tenant/activity')}
+            className="text-indigo-600 font-bold text-sm hover:underline transition-colors hover:text-indigo-800"
+          >
+            View All
+          </button>
         </div>
         <div className="divide-y divide-gray-50 dark:divide-gray-800">
           {visits.map((visit) => (
-            <div key={visit.id} className="p-6 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-all flex items-center justify-between">
+            <div
+              key={visit.id}
+              onClick={() => navigate('/tenant/activity', { state: { selectedVisit: visit } })}
+              className="p-6 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-all flex items-center justify-between cursor-pointer group"
+            >
               <div className="flex items-center gap-4">
                 <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${
                   visit.type === 'Store' ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600' : 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600'

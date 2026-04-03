@@ -34,6 +34,7 @@ const RolesPermissions = () => {
   const [currentRole, setCurrentRole] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [permSearchQuery, setPermSearchQuery] = useState('');
+  const [auditSearchQuery, setAuditSearchQuery] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   
@@ -214,6 +215,17 @@ const RolesPermissions = () => {
 
   const filteredPermissions = permissions.filter(p =>
     p.module.toLowerCase().includes(permSearchQuery.toLowerCase())
+  );
+
+  const q = auditSearchQuery.toLowerCase();
+  const filteredAuditLog = auditLog.filter(log =>
+    !q ||
+    log.action?.toLowerCase().includes(q) ||
+    log.user?.toLowerCase().includes(q) ||
+    log.email?.toLowerCase().includes(q) ||
+    log.type?.toLowerCase().includes(q) ||
+    log.role?.toLowerCase().includes(q) ||
+    log.status?.toLowerCase().includes(q)
   );
 
   const renderRoles = () => (
@@ -613,9 +625,24 @@ const RolesPermissions = () => {
               <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Your chronological field performance history</p>
             </div>
             <div className="flex items-center gap-4 w-full md:w-auto">
-              <div className="p-3.5 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm flex items-center gap-2 flex-grow">
+              <div className="p-3.5 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm flex items-center gap-2 flex-grow focus-within:ring-2 focus-within:ring-indigo-500 transition-all">
                 <Search size={16} className="text-gray-400" />
-                <input type="text" placeholder="Search activities..." className="bg-transparent border-none text-xs font-black outline-none w-40" />
+                <input
+                  type="text"
+                  placeholder="Search activities..."
+                  value={auditSearchQuery}
+                  onChange={(e) => setAuditSearchQuery(e.target.value)}
+                  className="bg-transparent border-none text-xs font-black outline-none w-40"
+                />
+                {auditSearchQuery && (
+                  <button
+                    onClick={() => setAuditSearchQuery('')}
+                    className="text-gray-300 hover:text-gray-500 transition-colors ml-1 shrink-0"
+                    title="Clear search"
+                  >
+                    <XCircle size={14} />
+                  </button>
+                )}
               </div>
               <button
                 onClick={handleExportLog}
@@ -632,8 +659,12 @@ const RolesPermissions = () => {
       {/* Timeline Section */}
       <div className="p-10 bg-white dark:bg-gray-900">
         <div className="flex items-center justify-between mb-10 pb-4 border-b border-gray-100 dark:border-gray-800">
-          <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">Timeline History</h4>
-          <span className="text-[10px] font-black text-indigo-600 bg-indigo-50 dark:bg-indigo-900/30 px-3 py-1 rounded-full">{auditLog.length} TOTAL</span>
+          <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">
+            {auditSearchQuery ? `Results for "${auditSearchQuery}"` : 'Timeline History'}
+          </h4>
+          <span className="text-[10px] font-black text-indigo-600 bg-indigo-50 dark:bg-indigo-900/30 px-3 py-1 rounded-full">
+            {filteredAuditLog.length}{auditSearchQuery ? ` / ${auditLog.length}` : ''} TOTAL
+          </span>
         </div>
 
         <div className="space-y-6 relative before:absolute before:left-[11rem] before:top-2 before:bottom-0 before:w-0.5 before:bg-gray-100 dark:before:bg-gray-800">
@@ -656,7 +687,20 @@ const RolesPermissions = () => {
                 </div>
               </div>
             ))
-          ) : auditLog.map((log) => (
+          ) : filteredAuditLog.length === 0 ? (
+            <div className="flex flex-col items-center gap-4 py-20">
+              <div className="p-5 rounded-full bg-gray-50 dark:bg-gray-800 text-gray-300">
+                <Search size={36} />
+              </div>
+              <p className="text-sm font-black text-gray-400 uppercase tracking-widest">No results for "{auditSearchQuery}"</p>
+              <button
+                onClick={() => setAuditSearchQuery('')}
+                className="text-xs font-black text-indigo-600 hover:underline tracking-widest uppercase"
+              >
+                Clear Search
+              </button>
+            </div>
+          ) : filteredAuditLog.map((log) => (
             <div key={log.id} className="flex gap-12 group animate-in fade-in slide-in-from-right-4 duration-500">
               {/* Date/Time Column */}
               <div className="w-[8rem] flex flex-col items-end shrink-0 pt-1">
@@ -681,7 +725,6 @@ const RolesPermissions = () => {
                   </span>
                 </div>
                 <h5 className="text-sm font-black text-gray-800 dark:text-gray-200 leading-relaxed mb-4">{log.action}</h5>
-
               </div>
             </div>
           ))}
