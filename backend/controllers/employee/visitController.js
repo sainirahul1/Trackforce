@@ -66,8 +66,8 @@ exports.createVisit = async (req, res) => {
       userId: req.user._id,
       tenantId: req.tenantId,
       type: 'visit_end',
-      title: 'Visit Logged',
-      details: `Employee logged a visit at ${storeName} with status: ${status}.`,
+      title: 'Store Visit Finished',
+      details: `Employee finished a visit at ${storeName} with status: ${status}.`,
       status: status === 'completed' ? 'success' : 'info',
       metadata: { visitId: visit._id, store: storeName }
     });

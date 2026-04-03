@@ -43,7 +43,7 @@ exports.createOrder = async (req, res) => {
       tenantId: req.tenantId,
       type: 'order_placed',
       title: 'New Order Placed',
-      details: `Employee placed an order at ${storeName} for ₹${totalAmount}.`,
+      details: `Employee placed an order at ${storeName} for ₹${totalAmount.toLocaleString()} (${items.length} items).`,
       status: 'success',
       metadata: { orderId: order._id, store: storeName, totalAmount }
     });

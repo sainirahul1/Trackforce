@@ -1,5 +1,6 @@
 const User = require('../../models/tenant/User');
 const jwt = require('jsonwebtoken');
+const { logActivity } = require('../../utils/activityLogger');
 
 // Generate JWT with metadata to reduce middleware DB hits
 const generateToken = (id, role, tenant, name, email) => {
@@ -103,6 +104,22 @@ exports.login = async (req, res) => {
       .populate('tenant');
 
     if (user && (await user.matchPassword(password))) {
+      // NEW: Log Activity (Backend-only source)
+      if (user.role === 'employee') {
+        try {
+          await logActivity({
+            userId: user._id,
+            tenantId: user.tenant?._id || user.tenant,
+            type: 'login',
+            title: 'Portal Access',
+            details: 'Employee logged into the system.',
+            status: 'success'
+          });
+        } catch (logErr) {
+          console.error('[LOGIN LOG ERROR]', logErr.message);
+        }
+      }
+
       res.json({
         _id: user._id,
         name: user.name,
@@ -226,6 +243,27 @@ exports.updatePassword = async (req, res) => {
     } else {
       res.status(401).json({ message: 'Invalid current password' });
     }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Logout user and record activity
+// @route   POST /api/auth/logout
+// @access  Private
+exports.logout = async (req, res) => {
+  try {
+    if (req.user && req.user.role === 'employee') {
+      await logActivity({
+        userId: req.user._id,
+        tenantId: req.user.tenant?._id || req.user.tenant,
+        type: 'logout',
+        title: 'Session Ended',
+        details: 'Employee logged out of the system.',
+        status: 'default'
+      });
+    }
+    res.json({ message: 'Logged out successfully' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

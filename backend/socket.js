@@ -12,9 +12,33 @@ const initSocket = (server) => {
   io.on('connection', (socket) => {
     console.log('A user connected:', socket.id);
 
+    // Standard Room Joining Logic for Isolated Real-time Sync
+    socket.on('join_user', (userId) => {
+      socket.join(`user:${userId}`);
+      console.log(`[SOCKET] User ${userId} joined room: user:${userId}`);
+    });
+
+    socket.on('join_tenant', (tenantId) => {
+      socket.join(`tenant:${tenantId}`);
+      console.log(`[SOCKET] Tenant room joined: tenant:${tenantId}`);
+    });
+
+    socket.on('join_tenant_role', ({ tenantId, role }) => {
+      const room = `tenant:${tenantId}:role:${role}`;
+      socket.join(room);
+      console.log(`[SOCKET] Role room joined: ${room}`);
+    });
+
+    socket.on('join_role', (role) => {
+      socket.join(`role:${role}`);
+      console.log(`[SOCKET] Global role room joined: role:${role}`);
+    });
+
+    // Legacy support for basic join
     socket.on('join', (userId) => {
+      socket.join(`user:${userId}`);
       socket.join(userId);
-      console.log(`User ${userId} joined their room.`);
+      console.log(`[SOCKET] User ${userId} joined (legacy)`);
     });
 
     socket.on('tracking:update', async (data) => {

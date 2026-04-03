@@ -1,5 +1,6 @@
 const Issue = require('../../models/core/Issue');
 const User = require('../../models/tenant/User');
+const { logActivity } = require('../../utils/activityLogger');
 
 // @desc    Create a new support issue
 // @route   POST /api/issues
@@ -36,6 +37,20 @@ exports.createIssue = async (req, res) => {
       const room = `tenant:${req.user.tenant}:role:${populatedIssue.to}`;
       io.to(room).emit('issue:new', populatedIssue);
     }
+
+    // NEW: Log Activity & Create Formal Notification for the target role/manager
+    // This makes it "properly" reflect in the notification system
+    await logActivity({
+      userId: req.user._id, // The creator's activity log
+      tenantId: req.user.tenant,
+      type: 'alert',
+      title: 'Support Issue Raised',
+      details: `New issue: "${subject}" created by ${fromName}.`,
+      status: priority === 'High' ? 'urgent' : 'warning',
+      metadata: { issueId: issue._id },
+      notify: true, // This creates the Notification object
+      priority: priority === 'High' ? 'high' : 'medium'
+    });
 
     res.status(201).json(populatedIssue);
   } catch (err) {
@@ -121,6 +136,19 @@ exports.updateIssue = async (req, res) => {
     if (io) {
       io.to(`user:${issue.from}`).emit('issue:status_update', updatedIssue);
     }
+
+    // NEW: Log Activity & Notify Creator about the update
+    await logActivity({
+      userId: issue.from,
+      tenantId: issue.tenant,
+      type: 'message',
+      title: 'Issue Status Updated',
+      details: `Your issue "${issue.subject}" has been updated to: ${status}.`,
+      status: status === 'Resolved' ? 'success' : 'info',
+      metadata: { issueId: updatedIssue._id, status },
+      notify: true,
+      priority: 'medium'
+    });
 
     res.json(updatedIssue);
   } catch (err) {

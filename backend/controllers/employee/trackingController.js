@@ -49,12 +49,14 @@ exports.startTracking = async (req, res) => {
       });
       await existingSession.save();
 
-      // Log activity
-      await ActivityLog.create({
-        user: user._id,
-        tenant: req.tenantId,
-        type: 'start_tracking',
-        details: 'Started shift / On Duty'
+      // Log activity using the centralized utility for real-time emission
+      await logActivity({
+        userId: user._id,
+        tenantId: req.tenantId,
+        type: 'shift_start',
+        title: 'Shift Started',
+        details: 'Employee is now On Duty and tracking has started.',
+        status: 'success'
       });
       console.log(`[DATABASE] Created new tracking session for ${user.name}`);
     }

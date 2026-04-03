@@ -1,5 +1,6 @@
 const ActivityLog = require('../../models/employee/ActivityLog');
 const User = require('../../models/tenant/User');
+const { logActivity } = require('../../utils/activityLogger');
 
 // Get all executives (employees) for the current tenant
 exports.getExecutives = async (req, res) => {
@@ -33,10 +34,17 @@ exports.getLogsByUser = async (req, res) => {
 // Legacy/Bulk fetch (if needed)
 exports.getActivities = async (req, res) => {
   try {
-    const activities = await ActivityLog.find({ tenant: req.tenantId })
+    const query = { tenant: req.tenantId };
+    
+    // STRICT SCOPING: If employee, only show their own activities
+    if (req.user && req.user.role === 'employee') {
+      query.user = req.user._id;
+    }
+
+    const activities = await ActivityLog.find(query)
       .populate('user', 'name role')
       .sort({ timestamp: -1 })
-      .limit(15)
+      .limit(30)
       .lean();
     res.json(activities);
   } catch (error) {
@@ -48,16 +56,18 @@ exports.getActivities = async (req, res) => {
 exports.createActivity = async (req, res) => {
   try {
     const { type, details, title, status, metadata } = req.body;
-    const newLog = new ActivityLog({
-      user: req.user._id,
-      tenant: req.tenantId,
+    
+    // Use the centralized logger to ensure Socket.io emission
+    const newLog = await logActivity({
+      userId: req.user._id,
+      tenantId: req.tenantId,
       type,
       details,
       title,
-      status,
-      metadata
+      status: status || 'default',
+      metadata: metadata || {}
     });
-    await newLog.save();
+
     res.status(201).json(newLog);
   } catch (error) {
     res.status(400).json({ message: error.message });

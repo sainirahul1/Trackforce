@@ -41,10 +41,10 @@ const logActivity = async ({ userId, tenantId, type, title, details, status = 'd
 
     await newLog.save();
 
-    // Broadcast to the tenant's room if io is initialized
+    // Broadcast to the user's private room only (Privacy)
     if (io) {
-      io.to(`tenant:${tenantId}`).emit('activity:new', newLog);
       io.to(`user:${userId}`).emit('activity:new', newLog);
+      console.log(`[ACTIVITY] Logged and emitted to user: user:${userId}`);
     }
 
     // NEW: Formal Notification for isolation and alerting
@@ -62,7 +62,7 @@ const logActivity = async ({ userId, tenantId, type, title, details, status = 'd
       if (io) {
         // Emit formal notification event for real-time alerting
         io.to(`user:${userId}`).emit('notification:new', newNotification);
-        console.log(`[NOTIFICATION] Created and emitted to user: ${userId}`);
+        console.log(`[NOTIFICATION] Created and emitted to user: user:${userId}`);
       }
     }
 
