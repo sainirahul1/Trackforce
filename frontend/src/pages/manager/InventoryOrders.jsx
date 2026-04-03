@@ -204,10 +204,10 @@ const InventoryOrders = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
         {loading && !hasFetched ? Array(4).fill(0).map((_, i) => <SkeletonCard key={i} />) : [
-          { id: 'revenue', label: 'Weekly Revenue', value: `₹${stats.weeklyRevenue.toLocaleString()}`, trend: stats.revenueTrend, isUp: stats.revenueTrend.startsWith('+'), icon: IndianRupee, color: 'text-indigo-600', bg: 'bg-indigo-50' },
-          { id: 'orders', label: 'Orders Collected', value: stats.ordersCollected.toString(), trend: stats.ordersTrend, isUp: stats.ordersTrend.startsWith('+'), icon: ShoppingBag, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-          { id: 'inventory', label: 'Avg. Ticket Size', value: `₹${stats.avgTicketSize.toLocaleString()}`, trend: stats.ticketTrend, isUp: stats.ticketTrend.startsWith('+'), icon: Package, color: 'text-blue-600', bg: 'bg-blue-50' },
-          { id: 'pending', label: 'Pending Approval', value: stats.pendingApproval.toString(), trend: stats.pendingApproval > 0 ? 'Action Needed' : 'All Clear', isUp: stats.pendingApproval === 0, icon: Clock, color: 'text-rose-600', bg: 'bg-rose-50' },
+          { id: 'revenue', label: 'Weekly Revenue', value: `₹${(stats.weeklyRevenue || 0).toLocaleString()}`, trend: stats.revenueTrend || '+0%', isUp: (stats.revenueTrend || '').startsWith('+'), icon: IndianRupee, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+          { id: 'orders', label: 'Orders Collected', value: (stats.ordersCollected || 0).toString(), trend: stats.ordersTrend || '+0%', isUp: (stats.ordersTrend || '').startsWith('+'), icon: ShoppingBag, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+          { id: 'inventory', label: 'Avg. Ticket Size', value: `₹${(stats.avgTicketSize || 0).toLocaleString()}`, trend: stats.ticketTrend || '+0%', isUp: (stats.ticketTrend || '').startsWith('+'), icon: Package, color: 'text-blue-600', bg: 'bg-blue-50' },
+          { id: 'pending', label: 'Pending Approval', value: (stats.pendingApproval || 0).toString(), trend: stats.pendingApproval > 0 ? 'Action Needed' : 'All Clear', isUp: !stats.pendingApproval, icon: Clock, color: 'text-rose-600', bg: 'bg-rose-50' },
         ].map((stat, i) => {
           const isPending = stat.id === 'pending';
           const Component = isPending ? 'button' : 'div';
