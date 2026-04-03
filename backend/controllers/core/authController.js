@@ -195,7 +195,8 @@ exports.uploadProfileImage = async (req, res) => {
       const Profile = require('../../models/employee/Profile');
       await Profile.findOneAndUpdate(
         { employeeId: user._id },
-        { $set: { avatar: base64Image } }
+        { $set: { avatar: base64Image } },
+        { returnDocument: 'after' }
       );
     } catch (profileError) {
       // Profile might not exist for non-employee roles, ignore or log

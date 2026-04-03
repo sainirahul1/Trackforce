@@ -14,6 +14,7 @@ import { getTasks, createTask, updateTask, deleteTask } from '../../services/emp
 import { useDialog } from '../../context/DialogContext';
 import tenantService from '../../services/core/tenantService';
 import { getSyncCachedData } from '../../utils/cacheHelper';
+import { logActivity } from '../../services/employee/activityService';
 
 const ManagerTasks = () => {
   const { setPageLoading } = useOutletContext();
@@ -179,8 +180,17 @@ const ManagerTasks = () => {
     );
     if (isConfirmed) {
       try {
+        const task = tasks.find(t => t.id === id);
         await deleteTask(id);
         setTasks(prev => prev.filter(t => t.id !== id));
+
+        // Log task deletion
+        try {
+          logActivity('task_deleted', `Deleted mission: "${task?.title || 'Unknown'}" (ID: ${id})`);
+        } catch (e) {
+          console.error('Failed to log task deletion:', e);
+        }
+
         setOpenDropdownId(null);
       } catch (err) {
         showAlert('Error', err.message, 'error');
@@ -199,6 +209,14 @@ const ManagerTasks = () => {
         category: updated.type || 'General'
       };
       setTasks(prev => prev.map(t => t.id === taskId ? formatted : t));
+
+      // Log task reassignment
+      try {
+        logActivity('task_reassigned', `Reassigned task: "${formatted.title}" to ${formatted.assignee}`);
+      } catch (e) {
+        console.error('Failed to log task reassignment:', e);
+      }
+
       if (selectedTask && selectedTask.id === taskId) {
         setSelectedTask(formatted);
       }
@@ -267,6 +285,14 @@ const ManagerTasks = () => {
           },
           ...prev,
         ]);
+
+        // Log new task assignment
+        try {
+          const taskTitle = created.title || form.title;
+          logActivity('task_assigned', `Assigned new task: "${taskTitle}" to ${employeeName}`);
+        } catch (e) {
+          console.error('Failed to log task assignment:', e);
+        }
       }
       closeModal();
     } catch (err) {

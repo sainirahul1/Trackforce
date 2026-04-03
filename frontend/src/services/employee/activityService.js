@@ -34,7 +34,11 @@ export const getLogsByUser = async (userId) => {
 };
 
 export const getActivities = async () => {
-  const response = await fetch(API_URL, {
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  // Managers use a dedicated collection, Employees use the general one
+  const path = user.role === 'manager' ? `${BASE_URL}/manager/activity` : API_URL;
+  
+  const response = await fetch(path, {
     headers: getAuthHeader()
   });
   if (!response.ok) throw new Error('Failed to fetch activity logs');
@@ -42,7 +46,11 @@ export const getActivities = async () => {
 };
 
 export const logActivity = async (type, details) => {
-  const response = await fetch(API_URL, {
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  // Managers log to a dedicated collection
+  const path = user.role === 'manager' ? `${BASE_URL}/manager/activity` : API_URL;
+
+  const response = await fetch(path, {
     method: 'POST',
     headers: {
       ...getAuthHeader(),

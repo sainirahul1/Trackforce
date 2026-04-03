@@ -25,8 +25,8 @@ const getMyProfile = async (req, res) => {
 
       const created = await Profile.create({
         employeeId: req.user._id,
-        name: name,
-        email: email,
+        name: name || 'Unknown User',
+        email: email || `user_${req.user._id}@trackforce.com`,
         phone: req.user.phone || '',
         designation: req.user.designation || '',
         team: req.user.team || '',

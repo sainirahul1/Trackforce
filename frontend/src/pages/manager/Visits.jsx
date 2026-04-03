@@ -24,6 +24,7 @@ import {
 import { getVisits, getVisitById, updateVisit } from '../../services/employee/visitService';
 import { getActiveTrackingSessions } from '../../services/employee/trackingService';
 import { useDialog } from '../../context/DialogContext';
+import { logActivity } from '../../services/employee/activityService';
 
 /**
  * VisitRow Component
@@ -348,6 +349,19 @@ const ManagerVisits = () => {
       if (reason) payload.rejectionReason = reason;
       await updateVisit(id, payload);
       setVisits(prev => prev.map(v => v.id === id ? { ...v, reviewStatus: newReviewStatus, rejectionReason: reason } : v));
+
+      // Log manager activity
+      try {
+        const visit = visits.find(v => v.id === id);
+        const type = newReviewStatus === 'accepted' ? 'visit_approved' : 'visit_rejected';
+        const actionVerb = newReviewStatus === 'accepted' ? 'Approved' : 'Rejected';
+        const detail = `${actionVerb} ${visit?.type || 'field audit'} for ${visit?.executive || 'Unknown'} at ${visit?.store || 'Unknown'}${reason ? `. Reason: ${reason}` : ''}`;
+
+        logActivity(type, detail);
+      } catch (e) {
+        console.error('Failed to log visit activity:', e);
+      }
+
       setSelectedVisit(null);
       setIsRejecting(false);
       setRejectionReasonInput('');

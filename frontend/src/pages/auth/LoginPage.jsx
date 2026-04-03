@@ -5,7 +5,7 @@ import { ShieldCheck, Lock, Mail, ChevronRight, Loader2, ArrowLeft } from 'lucid
 import { useAuth } from '../../context/AuthContext';
 import Button from '../../components/ui/Button';
 import ThemeToggle from '../../components/ui/ThemeToggle';
-
+// test
 const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -22,7 +22,7 @@ const LoginPage = () => {
       const u = await authServiceLogin(email, password);
       // Synchronize with global AuthContext before navigation
       globalLogin(u);
-      
+
       // u.role will determine where we go
       navigate(`/${u.role}/dashboard`);
     } catch (err) {
@@ -51,8 +51,8 @@ const LoginPage = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950 p-6 transition-colors duration-300">
       <div className="absolute top-6 left-6">
-        <Link 
-          to="/" 
+        <Link
+          to="/"
           className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-900 text-gray-500 hover:text-primary-main rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-md transition-all font-black text-[10px] uppercase tracking-widest active:scale-95"
         >
           <ArrowLeft size={14} />
