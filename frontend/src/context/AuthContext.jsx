@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import * as authService from '../services/core/authService';
+import { logActivity } from '../services/employee/activityService';
 
 const AuthContext = createContext();
 
@@ -106,6 +107,16 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (userData) => {
     setUser(userData);
+    if (userData?.role === 'manager') {
+      try {
+        const now = new Date();
+        const formattedDate = now.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+        const formattedTime = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+        logActivity('login', `Logged into the Manager Portal on ${formattedDate} at ${formattedTime}`);
+      } catch (e) {
+        console.error('Failed to log login activity:', e);
+      }
+    }
   };
 
   const logout = () => {

@@ -85,6 +85,7 @@ app.use('/api/superadmin/manage', require('./routes/superadmin/roleManagementRou
 app.use('/api/superadmin/update-credentials', require('./routes/superadmin/credentialsRoutes'));
 app.use('/api/tenant', require('./routes/tenant/tenantRoutes'));
 app.use('/api/manager/inventory-orders', require('./routes/manager/inventoryOrderRoutes'));
+app.use('/api/manager/activity', require('./routes/manager/activityRoutes'));
 
 // Employee Routes
 app.use('/api/employee/tasks', require('./routes/employee/taskRoutes'));

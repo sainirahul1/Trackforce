@@ -4,6 +4,7 @@ import { useNavigate, useOutletContext } from 'react-router-dom';
 import DataTable from '../../components/ui/DataTable';
 import tenantService from '../../services/core/tenantService';
 import { getVisits } from '../../services/employee/visitService';
+import { logActivity } from '../../services/employee/activityService';
 import { Users, Search, Download, CheckCircle2, BarChart3, AlertTriangle, MapPin, Activity, Mail, Phone, Linkedin, Briefcase, GraduationCap, ShieldCheck, FileText, Globe, Loader2, Edit, Trash2, Ban, X, UserPlus, ArrowLeft, Calendar, Clock, Shield, User, FileSignature, HeartPulse, Building2, Flame, Droplets, Map } from 'lucide-react';
 import Button from '../../components/ui/Button';
 
@@ -273,13 +274,25 @@ const ManagerTeam = () => {
       const formatted = {
         id: emp._id,
         name: emp.name,
-        designation: emp.profile?.designation || 'Employee',
-        status: emp.status || 'On Duty',
-        zone: emp.profile?.zone || emp.profile?.team || 'Unassigned',
+        email: emp.email,
+        phone: emp.profile?.phone || '+1 (555) 000-0000',
+        designation: emp.profile?.designation || newEmployee.designation || 'Employee',
+        status: emp.status || newEmployee.status || 'Active',
+        zone: emp.profile?.zone || emp.profile?.team || newEmployee.zone || 'Unassigned',
         visitsToday: 0,
-        avatar: emp.profile?.avatar || `https://i.pravatar.cc/150?u=${emp._id}`
+        avatar: emp.profile?.avatar || `https://i.pravatar.cc/150?u=${emp._id}`,
+        employeeId: emp.profile?.employeeId || `EMP-${emp._id.substring(0, 6).toUpperCase()}`,
+        joinDate: new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })
       };
       setTeamMembers([formatted, ...teamMembers]);
+      
+      // Log manager activity
+      try {
+        logActivity('team_member_added', `Added ${newEmployee.name} to the team (Zone: ${newEmployee.zone || 'Unassigned'})`);
+      } catch (e) {
+        console.error('Failed to log team activity:', e);
+      }
+
       setIsModalOpen(false);
       setNewEmployee({ name: '', email: '', password: '', zone: '', designation: 'Employee', status: 'Active' });
     } catch (error) {
@@ -936,7 +949,7 @@ const ManagerTeam = () => {
           <div className="p-4">
             {(() => {
               const filteredData = teamMembers.filter(m =>
-                m.status === 'On Duty' && (
+                (m.status === 'On Duty' || m.status === 'Active') && (
                   m.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                   m.zone.toLowerCase().includes(searchTerm.toLowerCase()) ||
                   m.designation.toLowerCase().includes(searchTerm.toLowerCase())
