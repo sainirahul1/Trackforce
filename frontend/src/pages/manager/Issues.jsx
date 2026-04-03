@@ -537,6 +537,7 @@ const IssueDetails = ({ issue, onBack, onStatusUpdate, onUpdatePriority, onDelet
 const Issues = () => {
   const { socket } = useSocket();
   const { user } = useAuth();
+  const { setPageLoading } = useOutletContext();
   const role = 'manager';
   
   const [filterStatus, setFilterStatus] = useState('All');
