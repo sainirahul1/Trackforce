@@ -6,7 +6,6 @@
  */
 
 import React, { useState, useMemo, useEffect } from 'react';
-// import React, { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useSocket } from '../../context/SocketContext';
@@ -120,14 +119,7 @@ const getMarkerColor = (employeeId) => {
   return colors[Math.abs(hash) % colors.length];
 };
 
-// Category-based default observation notes
-const categoryContent = {
-  'General Overview': 'Field executive completed a comprehensive walkthrough of the premises. Inventory levels appear stable with minor discrepancies noted for follow-up.',
-  'Inventory Compliance': 'Stock levels were cross-checked against the manifest. 3 SKUs flagged for reorder. Shelf placement follows brand guidelines.',
-  'Staff Performance': 'On-site team demonstrated adequate product knowledge. Adherence to uniform and protocol was noted to be satisfactory.',
-  'Client Feedback': 'Store manager expressed satisfaction with delivery timelines. Minor concerns about promotional material placement were noted.',
-  'Protocol Variance': 'Deviation from standard operating procedure observed in the loading bay area. Corrective action recommended.',
-};
+
 
 
 /**
@@ -233,7 +225,7 @@ const ManagerVisits = () => {
     if (isManual) setRefreshing(true);
 
     try {
-      const data = await getVisits();
+      const data = await getVisits(isManual || hasFetched.current); // Force refresh if manual OR background sync after first load
       const mapped = processVisitsData(data);
       setVisits(mapped);
       setError(null);
@@ -278,6 +270,11 @@ const ManagerVisits = () => {
     const intervalId = setInterval(() => fetchVisitsSync(), 120000);
     return () => clearInterval(intervalId);
   }, []);
+
+  // --- History Filtering (Simplified) ---
+  const filteredHistoryVisits = useMemo(() => {
+    return visits.filter(v => v.reviewStatus !== 'pending');
+  }, [visits]);
 
   // Handle clicking a visit row to load full details
   const handleReviewVisit = async (visit) => {
@@ -419,10 +416,10 @@ const ManagerVisits = () => {
             ))}
           </div>
 
-          <div className="space-y-12">
+          <div className="space-y-6">
             {/* --- SECTION 1: AWAITING ACTION ---
                 Renders pending review requests with a blink-status indicator. */}
-            {(filterStatus === 'Total' || filterStatus === 'Pending') && visits.some(v => v.reviewStatus === 'pending') && (
+            {(filterStatus === 'Total' || filterStatus === 'Pending') && (
               <div className="space-y-4">
                 <button
                   onClick={() => setIsPendingExpanded(!isPendingExpanded)}
@@ -468,8 +465,11 @@ const ManagerVisits = () => {
                         );
                       })
                     ) : (
-                      <div className="py-12 text-center bg-gray-50/50 dark:bg-gray-800/10 rounded-[2.5rem] border-2 border-dashed border-gray-100 dark:border-gray-800">
-                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">No pending audits matching current filter</p>
+                      <div className="py-24 text-center bg-gray-50/50 dark:bg-gray-800/10 rounded-[3rem] border-2 border-dashed border-gray-100 dark:border-gray-800">
+                        <div className="mx-auto w-16 h-16 rounded-full bg-gray-50 dark:bg-gray-800 flex items-center justify-center mb-6">
+                          <Clock size={32} className="text-gray-300 dark:text-gray-600" />
+                        </div>
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">No pending audits matching current filter</p>
                       </div>
                     )}
                   </div>
@@ -477,7 +477,7 @@ const ManagerVisits = () => {
               </div>
             )}
 
-            {/* --- SECTION 2: OPERATIONAL INTELLIGENCE ---
+            {/* --- SECTION 2: OPERATIONAL HISTORY ---
                 Renders the history of processed visits (Accepted, Rejected, etc.) */}
             {(filterStatus === 'Total' || filterStatus === 'Accepted' || filterStatus === 'Rejected') && (
               <div className="space-y-4">
@@ -493,7 +493,7 @@ const ManagerVisits = () => {
                       <h3 className="text-sm font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-[0.2em] flex items-center gap-2">
                         Operational History
                       </h3>
-                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-0.5">VIEWING {visits.filter(v => v.reviewStatus !== 'pending').length} RECORDED ENTRIES</p>
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-0.5">{filteredHistoryVisits.length} RECORDED ENTRIES FOUND</p>
                     </div>
                   </div>
                   <div className={`p-2 rounded-xl bg-white dark:bg-gray-900 border border-indigo-100 dark:border-indigo-500/20 text-indigo-600 transition-transform duration-300 ${isHistoryExpanded ? 'rotate-180' : ''}`}>
@@ -503,8 +503,8 @@ const ManagerVisits = () => {
 
                 {isHistoryExpanded && (
                   <div className="flex flex-col gap-4 animate-in slide-in-from-top-4 duration-500">
-                    {filteredVisits.filter(v => v.reviewStatus !== 'pending').length > 0 ? (
-                      filteredVisits.filter(v => v.reviewStatus !== 'pending').map((visit) => {
+                    {filteredHistoryVisits.length > 0 ? (
+                      filteredHistoryVisits.map((visit) => {
                         const liveData = liveEmployees[visit.employee?._id];
                         return (
                           <VisitRow
@@ -524,11 +524,11 @@ const ManagerVisits = () => {
                         );
                       })
                     ) : (
-                      <div className="col-span-full py-24 text-center bg-gray-50/50 dark:bg-gray-800/10 rounded-[3rem] border-2 border-dashed border-gray-100 dark:border-gray-800">
+                      <div className="py-24 text-center bg-gray-50/50 dark:bg-gray-800/10 rounded-[3rem] border-2 border-dashed border-gray-100 dark:border-gray-800">
                         <div className="mx-auto w-16 h-16 rounded-full bg-gray-50 dark:bg-gray-800 flex items-center justify-center mb-6">
                           <History size={32} className="text-gray-300 dark:text-gray-600" />
                         </div>
-                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">No historical data found for this filter</p>
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">No historical data found for this filter</p>
                       </div>
                     )}
                   </div>

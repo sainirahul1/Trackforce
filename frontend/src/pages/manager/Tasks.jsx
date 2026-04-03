@@ -34,6 +34,7 @@ const ManagerTasks = () => {
   // Dynamic Categories (Sections/Columns)
   const [categories, setCategories] = useState([
     { id: 'pending', label: 'Pending', icon: ClipboardList, color: 'bg-slate-500', lightColor: 'text-slate-600', bgColor: 'bg-slate-50', theme: 'slate' },
+    { id: 'rejected', label: 'Rejected', icon: AlertCircle, color: 'bg-rose-500', lightColor: 'text-rose-600', bgColor: 'bg-rose-50', theme: 'rose' },
     { id: 'in-progress', label: 'In Progress', icon: PlayCircle, color: 'bg-blue-600', lightColor: 'text-blue-600', bgColor: 'bg-blue-50', theme: 'blue' },
     { id: 'delayed', label: 'Delayed', icon: ShieldCheck, color: 'bg-amber-600', lightColor: 'text-amber-600', bgColor: 'bg-amber-50', theme: 'amber' },
     { id: 'cancelled', label: 'Cancelled', icon: Ban, color: 'bg-rose-600', lightColor: 'text-rose-600', bgColor: 'bg-rose-50', theme: 'rose' },
@@ -61,7 +62,7 @@ const ManagerTasks = () => {
     if (!isBackground) setLoading(true);
     try {
       const [fetchedTasks, fetchedEmployees] = await Promise.all([
-        getTasks(),
+        getTasks(isBackground),
         tenantService.getEmployees()
       ]);
       

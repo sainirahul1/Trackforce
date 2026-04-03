@@ -1,4 +1,5 @@
 const StoreVisit = require('../../models/employee/StoreVisit');
+const Task = require('../../models/employee/Task');
 const { logActivity } = require('../../utils/activityLogger');
 
 // @desc    Get all store visits for the tenant
@@ -93,6 +94,15 @@ exports.updateVisit = async (req, res) => {
     if (req.body.reviewStatus) {
       visit.reviewStatus = req.body.reviewStatus;
       visit.reviewedBy = req.user._id;
+
+      // NEW: Task Reversion Logic
+      if (req.body.reviewStatus === 'rejected' && visit.taskId) {
+        await Task.findByIdAndUpdate(visit.taskId, { 
+          status: 'rejected', 
+          missionStatus: 'Rejected' 
+        });
+        console.log(`[WORKFLOW] Visit ${visit._id} rejected. Reverting Task ${visit.taskId} to rejected.`);
+      }
     }
 
     if (req.body.rejectionReason) {

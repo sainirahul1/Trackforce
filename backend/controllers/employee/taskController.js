@@ -141,6 +141,7 @@ exports.updateTask = async (req, res) => {
         distance: updatedTask.distance,
         eta: updatedTask.eta,
         status: visitStatus,
+        taskId: updatedTask._id,
         gps: { lat: updatedTask.coords?.x || 0, lng: updatedTask.coords?.y || 0 },
         photos: photos,
         notes: updatedTask.visitNotes || `${req.body.missionStatus} - Task: ${updatedTask.title}`,

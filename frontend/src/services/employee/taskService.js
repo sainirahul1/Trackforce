@@ -10,8 +10,8 @@ const getBaseUrl = () => {
 const BASE_URL = getBaseUrl();
 const API_URL = `${BASE_URL}/employee/tasks`;
 
-export const getTasks = async () => {
-  // Use cache key 'manager_tasks'
+export const getTasks = async (force = false) => {
+  // Use cache key 'tasks'
   return fetchDataWithCache('tasks', async () => {
     const response = await fetch(API_URL, {
       headers: getAuthHeader(),
@@ -21,7 +21,7 @@ export const getTasks = async () => {
       throw new Error(error.message || 'Failed to fetch tasks');
     }
     return response.json();
-  });
+  }, force);
 };
 
 export const getTaskById = async (id) => {
