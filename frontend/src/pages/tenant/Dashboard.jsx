@@ -447,7 +447,10 @@ const TenantDashboard = () => {
               ))}
             </div>
 
-            <button className="w-full mt-10 py-4 border-2 border-dashed border-gray-100 dark:border-gray-700 rounded-2xl text-[10px] font-black uppercase text-gray-400 hover:text-blue-600 hover:border-blue-500/40 transition-all tracking-widest">
+            <button
+              onClick={() => navigate('/tenant/activity')}
+              className="w-full mt-10 py-4 border-2 border-dashed border-gray-100 dark:border-gray-700 rounded-2xl text-[10px] font-black uppercase text-gray-400 hover:text-blue-600 hover:border-blue-500/40 transition-all tracking-widest"
+            >
               View Full Audit Log
             </button>
           </div>

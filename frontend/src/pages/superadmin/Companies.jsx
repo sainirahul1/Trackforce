@@ -21,6 +21,7 @@ import {
   RotateCcw,
   Users,
   ArrowRight,
+  ArrowLeft,
   Edit,
   Trash2,
   UserPlus,
@@ -36,7 +37,7 @@ const CompaniesList = () => {
   const [subscriptions, setSubscriptions] = useState([]);
   const [backendStats, setBackendStats] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
+  const [showForm, setShowForm] = useState(false);
   const [isProvisioning, setIsProvisioning] = useState(false);
   const [success, setSuccess] = useState(false);
   const [editingTenant, setEditingTenant] = useState(null);
@@ -71,7 +72,7 @@ const CompaniesList = () => {
     const employees = (globalUsers.employee || []).filter(u => (u.tenant?._id || u.tenant) === tenantId);
     return [...managers, ...employees];
   };
-  
+
   const [tenantUsersCache, setTenantUsersCache] = useState({});
   const tenantUsers = selectedTenant ? (tenantUsersCache[selectedTenant._id] || getPrecachedTenantUsers(selectedTenant._id)) : [];
   const [loadingUsers, setLoadingUsers] = useState(false);
@@ -101,6 +102,21 @@ const CompaniesList = () => {
   useEffect(() => {
     // Only fetch companies on mount — no aggressive prefetch
     fetchCompanies();
+    // Silently prefetch users for zero-latency tab switches
+    superadminService.getGlobalUsersByRole('manager').then(data => {
+      setGlobalUsers(prev => {
+        const next = { ...prev, manager: data };
+        sessionStorage.setItem('tf_globalUsersCache', JSON.stringify(next));
+        return next;
+      });
+    }).catch(e => console.error(e));
+    superadminService.getGlobalUsersByRole('employee').then(data => {
+      setGlobalUsers(prev => {
+        const next = { ...prev, employee: data };
+        sessionStorage.setItem('tf_globalUsersCache', JSON.stringify(next));
+        return next;
+      });
+    }).catch(e => console.error(e));
   }, []);
 
   useEffect(() => {
@@ -133,7 +149,7 @@ const CompaniesList = () => {
       setLastFetchedAt(prev => ({ ...prev, [role]: Date.now() }));
       setGlobalUsers(prev => {
         const next = { ...prev, [role]: data };
-        try { sessionStorage.setItem('tf_globalUsersCache', JSON.stringify(next)); } catch {}
+        try { sessionStorage.setItem('tf_globalUsersCache', JSON.stringify(next)); } catch { }
         return next;
       });
     } catch (err) {
@@ -181,14 +197,14 @@ const CompaniesList = () => {
 
   const handleImpersonate = async (tenantId, tenantName) => {
     setImpersonating(tenantId);
-    
+
     try {
       const data = await superadminService.impersonateTenant(tenantId);
 
       // Write tenant credentials, then redirect in the current tab
       const tenantUrl = new URL(window.location.href);
       tenantUrl.pathname = '/tenant/dashboard';
-      tenantUrl.search   = '';
+      tenantUrl.search = '';
 
       // Encode the impersonation payload in the URL so the tab can bootstrap itself
       const payload = encodeURIComponent(JSON.stringify(data));
@@ -216,7 +232,7 @@ const CompaniesList = () => {
       } else {
         tenantUrl.pathname = '/tenant/dashboard';
       }
-      tenantUrl.search   = '';
+      tenantUrl.search = '';
 
       const payload = encodeURIComponent(JSON.stringify(data));
       tenantUrl.searchParams.set('impersonate', payload);
@@ -285,7 +301,7 @@ const CompaniesList = () => {
       setSuccess(true);
       setTimeout(() => {
         setSuccess(false);
-        setShowModal(false);
+        setShowForm(false);
         setEditingUser(null);
         setUserFormData({ name: '', email: '', password: '', role: 'employee', tenantId: '' });
       }, 2000);
@@ -469,7 +485,7 @@ const CompaniesList = () => {
                 Login As
               </span>
             </button>
-            <button onClick={(e) => { e.stopPropagation(); setEditingUser(row); setUserFormData({ name: row.name, email: row.email, password: '', role: row.role, tenantId: row.tenant?._id }); setProvisionEntity(row.role); setShowModal(true); }} className="p-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-gray-400 hover:text-blue-500 rounded-xl transition-colors"><Edit size={16} /></button>
+            <button onClick={(e) => { e.stopPropagation(); setEditingUser(row); setUserFormData({ name: row.name, email: row.email, password: '', role: row.role, tenantId: row.tenant?._id }); setProvisionEntity(row.role); setShowForm(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="p-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-gray-400 hover:text-blue-500 rounded-xl transition-colors"><Edit size={16} /></button>
             <button onClick={(e) => { e.stopPropagation(); handleDeleteUser(row._id, row.tenant?._id); }} className="p-2 hover:bg-rose-50 dark:hover:bg-rose-900/20 text-gray-400 hover:text-rose-500 rounded-xl transition-colors"><Trash2 size={16} /></button>
           </div>
         );
@@ -510,7 +526,7 @@ const CompaniesList = () => {
       fetchCompanies();
       setTimeout(() => {
         setSuccess(false);
-        setShowModal(false);
+        setShowForm(false);
         setEditingTenant(null);
         setFormData({ name: '', domain: '', adminEmail: '', password: '', plan: 'Premium', planId: '', industry: '', initialManagers: [], initialEmployees: [] });
       }, 2000);
@@ -631,7 +647,8 @@ const CompaniesList = () => {
                   initialManagers: [],
                   initialEmployees: []
                 });
-                setShowModal(true);
+                setShowForm(true);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
               className="p-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-xl text-gray-400 hover:text-blue-600 transition-all flex items-center justify-center"
               title="Edit Details"
@@ -661,6 +678,381 @@ const CompaniesList = () => {
     },
   ];
 
+  const handleBack = () => {
+    setShowForm(false);
+    setEditingTenant(null);
+    setEditingUser(null);
+    setSuccess(false);
+  };
+
+  if (showForm) {
+    return (
+      <div className="min-h-screen animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
+        {/* Header with Back button */}
+        <div className="flex items-center justify-between mb-10">
+          <div className="flex items-center space-x-6">
+            <button
+              onClick={handleBack}
+              className="p-3 bg-blue-600 text-white hover:bg-blue-700 rounded-2xl transition-all shadow-lg shadow-blue-200 dark:shadow-none group"
+            >
+              <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
+            </button>
+            <div>
+              <h1 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">
+                {editingTenant || editingUser ? 'Update' : 'Provision New'} {provisionEntity === 'organization' ? 'Organization' : provisionEntity}
+              </h1>
+              <p className="text-gray-500 dark:text-gray-400 font-medium mt-1 uppercase text-[10px] tracking-widest leading-none">
+                {provisionEntity === 'organization' ? 'Infrastructure Configuration Dashboard' : 'Entity Management Portal'}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-3">
+            <Button
+              disabled={isProvisioning}
+              onClick={(e) => provisionEntity === 'organization' ? handleProvision(e) : handleSaveUser(e)}
+              variant="primary"
+              className="px-8 py-2.5 rounded-2xl font-bold text-sm shadow-xl shadow-indigo-100 dark:shadow-none"
+            >
+              {isProvisioning ? (
+                <div className="flex items-center space-x-2">
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <span>Applying...</span>
+                </div>
+              ) : (
+                <div className="flex items-center space-x-2">
+                  <ArrowRight size={18} />
+                  <span>{editingTenant || editingUser ? 'Save Changes' : `Confirm ${provisionEntity}`}</span>
+                </div>
+              )}
+            </Button>
+          </div>
+        </div>
+
+        {/* Success State */}
+        {success ? (
+          <div className="bg-white dark:bg-gray-900 rounded-[3rem] p-20 text-center border border-gray-100 dark:border-gray-800 shadow-xl max-w-4xl mx-auto space-y-6">
+            <div className="w-24 h-24 bg-emerald-100 dark:bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto text-emerald-600">
+              <CheckCircle2 size={48} strokeWidth={3} />
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-3xl font-black text-gray-900 dark:text-white uppercase tracking-tight">Success!</h3>
+              <p className="text-gray-500 font-bold italic tracking-wide">Infrastructure synchronized. Finalizing deployment...</p>
+            </div>
+          </div>
+        ) : (
+          <form onSubmit={provisionEntity === 'organization' ? handleProvision : handleSaveUser} className="space-y-8">
+            <div className="bg-white dark:bg-gray-900 rounded-[2.5rem] shadow-xl border border-gray-100 dark:border-gray-800 overflow-hidden">
+              {/* Entity Type Selector */}
+              {!editingTenant && !editingUser && (
+                <div className="px-10 py-6 border-b border-gray-50 dark:border-gray-800 bg-gray-50/30 dark:bg-gray-800/20">
+                  <div className="flex space-x-4 max-w-xl">
+                    {[
+                      { id: 'organization', label: 'Organization', icon: Building2 },
+                      { id: 'manager', label: 'Manager', icon: ShieldCheck },
+                      { id: 'employee', label: 'Employee', icon: Users }
+                    ].map((role) => (
+                      <button
+                        key={role.id}
+                        type="button"
+                        onClick={() => {
+                          setProvisionEntity(role.id);
+                          if (role.id !== 'organization') {
+                            setUserFormData(prev => ({ ...prev, role: role.id }));
+                          }
+                        }}
+                        className={`flex-1 flex items-center justify-center space-x-3 py-3 rounded-2xl transition-all duration-300 border ${provisionEntity === role.id
+                          ? 'bg-indigo-600 text-white border-indigo-600 shadow-lg shadow-indigo-200 dark:shadow-none translate-y-[-2px]'
+                          : 'bg-white dark:bg-gray-900 text-gray-400 border-gray-100 dark:border-gray-800 hover:border-gray-200 hover:text-gray-600'
+                          }`}
+                      >
+                        <role.icon size={18} />
+                        <span className="text-xs font-black uppercase tracking-wider">{role.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="p-10">
+                {provisionEntity === 'organization' ? (
+                  <div className="space-y-10">
+                    {/* Core Identity */}
+                    <div className="space-y-6">
+                      <h4 className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.3em] ml-1">Identity & Branding</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Company Name</label>
+                          <div className="relative">
+                            <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
+                            <input
+                              required
+                              value={formData.name}
+                              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                              placeholder="e.g. Acme Corp"
+                              className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-indigo-500/10 outline-none"
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Primary Domain</label>
+                          <div className="relative">
+                            <Globe className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
+                            <input
+                              required
+                              value={formData.domain}
+                              onChange={(e) => setFormData({ ...formData, domain: e.target.value })}
+                              placeholder="acme.com"
+                              className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl text-sm font-bold outline-none"
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Industry</label>
+                          <select
+                            value={formData.industry}
+                            onChange={(e) => setFormData({ ...formData, industry: e.target.value })}
+                            className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl text-sm font-bold outline-none appearance-none cursor-pointer"
+                          >
+                            <option value="">Select Industry</option>
+                            <option value="Technology">Technology</option>
+                            <option value="Logistics">Logistics</option>
+                            <option value="Supply Chain">Supply Chain</option>
+                            <option value="E-commerce">E-commerce</option>
+                            <option value="Healthcare">Healthcare</option>
+                            <option value="Finance">Finance</option>
+                            <option value="Manufacturing">Manufacturing</option>
+                            <option value="Retail">Retail</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Master Credentials */}
+                    <div className="space-y-6">
+                      <h4 className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.3em] ml-1">Administrative Access</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Admin Email</label>
+                          <div className="relative">
+                            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
+                            <input
+                              required
+                              type="email"
+                              value={formData.adminEmail}
+                              onChange={(e) => setFormData({ ...formData, adminEmail: e.target.value })}
+                              placeholder="admin@acme.com"
+                              className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl text-sm font-bold outline-none"
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Admin Password</label>
+                          <div className="relative">
+                            <ShieldCheck className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
+                            <input
+                              required={!editingTenant}
+                              type="password"
+                              value={formData.password}
+                              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                              placeholder={editingTenant ? "Keep current" : "Min 6 chars"}
+                              minLength={editingTenant ? 0 : 6}
+                              className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl text-sm font-bold outline-none"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Licensing */}
+                    <div className="space-y-6">
+                      <h4 className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.3em] ml-1">Licensing Plan</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {subscriptions.map(sub => (
+                          <button
+                            key={sub._id}
+                            type="button"
+                            onClick={() => setFormData({ ...formData, plan: sub.name, planId: sub._id })}
+                            className={`p-6 rounded-[2rem] border transition-all text-left group ${formData.planId === sub._id || (formData.plan === sub.name && !formData.planId)
+                              ? 'bg-indigo-600 border-indigo-600 text-white shadow-xl shadow-indigo-100 dark:shadow-none'
+                              : 'bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-800 hover:border-gray-200 text-gray-500'}`}
+                          >
+                            <div className="flex justify-between items-center mb-3">
+                              <span className={`text-[10px] font-black uppercase tracking-widest ${formData.planId === sub._id ? 'text-indigo-100' : 'text-indigo-600'}`}>
+                                {sub.name}
+                              </span>
+                              {(formData.planId === sub._id || (formData.plan === sub.name && !formData.planId)) && <CheckCircle2 size={16} />}
+                            </div>
+                            <p className={`text-2xl font-black ${formData.planId === sub._id ? 'text-white' : 'text-gray-900 dark:text-white'}`}>
+                              {sub.employeeLimit?.toLocaleString()} <span className="text-[10px] font-bold opacity-60">Nodes</span>
+                            </p>
+                            <p className={`text-[10px] font-bold mt-1 ${formData.planId === sub._id ? 'text-indigo-100' : 'text-gray-400'}`}>Professional user node allocation</p>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Initial Provisions */}
+                    {!editingTenant && (
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 pt-10 border-t border-gray-100 dark:border-gray-800">
+                        <div className="space-y-6">
+                          <div className="flex justify-between items-center">
+                            <h4 className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.3em] ml-1">Initial Management</h4>
+                            <button
+                              type="button"
+                              onClick={() => setFormData({ ...formData, initialManagers: [...formData.initialManagers, { name: '', email: '', password: '' }] })}
+                              className="flex items-center space-x-2 px-4 py-2 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 rounded-xl hover:bg-indigo-100 transition-colors text-[10px] font-black uppercase"
+                            >
+                              <Plus size={14} /> <span>Admin</span>
+                            </button>
+                          </div>
+                          <div className="space-y-3">
+                            {formData.initialManagers?.map((mgr, idx) => (
+                              <div key={idx} className="bg-gray-50/50 dark:bg-gray-800/40 p-5 rounded-3xl relative border border-gray-100 dark:border-gray-700/50 animate-in slide-in-from-right-4">
+                                <button type="button" onClick={() => {
+                                  const next = [...formData.initialManagers]; next.splice(idx, 1);
+                                  setFormData({ ...formData, initialManagers: next });
+                                }} className="absolute top-4 right-4 text-gray-300 hover:text-rose-500 transition-colors"><X size={14} /></button>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                  <input required value={mgr.name} onChange={e => {
+                                    const next = [...formData.initialManagers]; next[idx].name = e.target.value;
+                                    setFormData({ ...formData, initialManagers: next });
+                                  }} placeholder="Admin Name" className="bg-white dark:bg-gray-900 border-none rounded-xl px-4 py-2.5 text-xs font-bold outline-none shadow-sm" />
+                                  <input required type="email" value={mgr.email} onChange={e => {
+                                    const next = [...formData.initialManagers]; next[idx].email = e.target.value;
+                                    setFormData({ ...formData, initialManagers: next });
+                                  }} placeholder="Email Address" className="bg-white dark:bg-gray-900 border-none rounded-xl px-4 py-2.5 text-xs font-bold outline-none shadow-sm" />
+                                  <input required type="password" value={mgr.password} onChange={e => {
+                                    const next = [...formData.initialManagers]; next[idx].password = e.target.value;
+                                    setFormData({ ...formData, initialManagers: next });
+                                  }} placeholder="Master Password" className="bg-white dark:bg-gray-900 border-none rounded-xl px-4 py-2.5 text-xs font-bold md:col-span-2 outline-none shadow-sm" />
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="space-y-6">
+                          <div className="flex justify-between items-center">
+                            <h4 className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.3em] ml-1">Personnel Nodes</h4>
+                            <button
+                              type="button"
+                              onClick={() => setFormData({ ...formData, initialEmployees: [...formData.initialEmployees, { name: '', email: '', password: '' }] })}
+                              className="flex items-center space-x-2 px-4 py-2 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 rounded-xl hover:bg-emerald-100 transition-colors text-[10px] font-black uppercase"
+                            >
+                              <Plus size={14} /> <span>Node</span>
+                            </button>
+                          </div>
+                          <div className="space-y-3">
+                            {formData.initialEmployees?.map((emp, idx) => (
+                              <div key={idx} className="bg-gray-50/50 dark:bg-gray-800/40 p-5 rounded-3xl relative border border-gray-100 dark:border-gray-700/50 animate-in slide-in-from-right-4">
+                                <button type="button" onClick={() => {
+                                  const next = [...formData.initialEmployees]; next.splice(idx, 1);
+                                  setFormData({ ...formData, initialEmployees: next });
+                                }} className="absolute top-4 right-4 text-gray-300 hover:text-rose-500 transition-colors"><X size={14} /></button>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                  <input required value={emp.name} onChange={e => {
+                                    const next = [...formData.initialEmployees]; next[idx].name = e.target.value;
+                                    setFormData({ ...formData, initialEmployees: next });
+                                  }} placeholder="Employee Name" className="bg-white dark:bg-gray-900 border-none rounded-xl px-4 py-2.5 text-xs font-bold outline-none shadow-sm" />
+                                  <input required type="email" value={emp.email} onChange={e => {
+                                    const next = [...formData.initialEmployees]; next[idx].email = e.target.value;
+                                    setFormData({ ...formData, initialEmployees: next });
+                                  }} placeholder="Email Address" className="bg-white dark:bg-gray-900 border-none rounded-xl px-4 py-2.5 text-xs font-bold outline-none shadow-sm" />
+                                  <input required type="password" value={emp.password} onChange={e => {
+                                    const next = [...formData.initialEmployees]; next[idx].password = e.target.value;
+                                    setFormData({ ...formData, initialEmployees: next });
+                                  }} placeholder="Initial Access Key" className="bg-white dark:bg-gray-900 border-none rounded-xl px-4 py-2.5 text-xs font-bold md:col-span-2 outline-none shadow-sm" />
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-10 max-w-4xl">
+                    <div className="space-y-6">
+                      <h4 className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.3em] ml-1">Identity & Access</h4>
+                      <div className="space-y-4">
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Full Name</label>
+                          <div className="relative">
+                            <Users className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
+                            <input
+                              required
+                              value={userFormData.name}
+                              onChange={(e) => setUserFormData({ ...userFormData, name: e.target.value })}
+                              placeholder="John Doe"
+                              className="w-full pl-12 pr-4 py-2.5 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl text-sm font-bold outline-none"
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Email Address</label>
+                          <div className="relative">
+                            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
+                            <input
+                              required
+                              type="email"
+                              value={userFormData.email}
+                              onChange={(e) => setUserFormData({ ...userFormData, email: e.target.value })}
+                              placeholder="john@example.com"
+                              className="w-full pl-12 pr-4 py-2.5 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl text-sm font-bold outline-none"
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Access Key</label>
+                          <div className="relative">
+                            <ShieldCheck className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
+                            <input
+                              required={!editingUser}
+                              type="password"
+                              value={userFormData.password}
+                              onChange={(e) => setUserFormData({ ...userFormData, password: e.target.value })}
+                              placeholder={editingUser ? "Leave empty" : "Min 6 chars"}
+                              minLength={6}
+                              className="w-full pl-12 pr-4 py-2.5 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl text-sm font-bold outline-none"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-6">
+                      <h4 className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.3em] ml-1">Assignment</h4>
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Target Organization</label>
+                        <div className="relative">
+                          <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
+                          <select
+                            required
+                            disabled={!!editingUser}
+                            value={userFormData.tenantId}
+                            onChange={(e) => setUserFormData({ ...userFormData, tenantId: e.target.value })}
+                            className="w-full pl-12 pr-4 py-2.5 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl text-sm font-bold outline-none appearance-none cursor-pointer"
+                          >
+                            <option value="">Select Organization</option>
+                            {companies.map(c => (
+                              <option key={c._id} value={c._id}>{c.name}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+            </div>
+          </form>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -684,12 +1076,14 @@ const CompaniesList = () => {
                 setEditingTenant(null);
                 setProvisionEntity('organization');
                 setFormData({ name: '', domain: '', adminEmail: '', password: '', plan: 'Premium', planId: '', industry: '', initialManagers: [], initialEmployees: [] });
-                setShowModal(true);
+                setShowForm(true);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
               } else {
                 setEditingUser(null);
                 setProvisionEntity(globalActiveTab);
                 setUserFormData({ name: '', email: '', password: '', role: globalActiveTab, tenantId: '' });
-                setShowModal(true);
+                setShowForm(true);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
               }
             }}
             variant="primary"
@@ -701,380 +1095,6 @@ const CompaniesList = () => {
         )}
       </div>
 
-      {/* Provisioning Modal */}
-      {showModal && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 overflow-hidden">
-          <div
-            className="fixed inset-0 bg-gray-950/60 backdrop-blur-xl animate-in fade-in duration-300"
-            onClick={() => {
-              if (!isProvisioning && !success) {
-                setShowModal(false);
-                setEditingTenant(null);
-                setFormData({ name: '', domain: '', adminEmail: '', password: '', plan: 'Premium', industry: '', initialManagers: [], initialEmployees: [] });
-              }
-            }}
-          ></div>
-          <div className="bg-white dark:bg-gray-900 w-full max-w-lg rounded-[3rem] shadow-2xl relative z-10 overflow-hidden animate-in zoom-in-95 duration-300 border border-gray-100 dark:border-gray-800">
-            {success ? (
-              <div className="p-12 text-center space-y-4">
-                <div className="w-20 h-20 bg-emerald-100 dark:bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto text-emerald-600">
-                  <CheckCircle2 size={40} strokeWidth={3} />
-                </div>
-                <h3 className="text-2xl font-black text-gray-900 dark:text-white">Tenant Provisioned!</h3>
-                <p className="text-gray-500 font-medium italic">Welcome to the platform. Infrastructure is ready.</p>
-              </div>
-            ) : (
-              <form onSubmit={provisionEntity === 'organization' ? handleProvision : handleSaveUser}>
-                <div className="p-8 border-b border-gray-50 dark:border-gray-800 space-y-6 bg-gray-50/50 dark:bg-gray-800/20">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <h3 className="text-xl font-black text-gray-900 dark:text-white">
-                        {editingTenant || editingUser ? 'Update' : 'Provision'} {provisionEntity === 'organization' ? 'Organization' : provisionEntity}
-                      </h3>
-                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-0.5">
-                        {provisionEntity === 'organization' ? 'Infrastructure Workflow' : 'Direct Entity Provisioning'}
-                      </p>
-                    </div>
-                    <button type="button" onClick={() => { setShowModal(false); setEditingTenant(null); setEditingUser(null); }} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl text-gray-400 transition-colors">
-                      <X size={20} />
-                    </button>
-                  </div>
-
-                  {/* Role Selector Dashboard */}
-                  {!editingTenant && !editingUser && (
-                    <div className="flex bg-white dark:bg-gray-900 p-1.5 rounded-2xl border border-gray-100 dark:border-gray-700/50 shadow-inner">
-                      {[
-                        { id: 'organization', label: 'Organization', icon: Building2 },
-                        { id: 'manager', label: 'Manager', icon: ShieldCheck },
-                        { id: 'employee', label: 'Employee', icon: Users }
-                      ].map((role) => (
-                        <button
-                          key={role.id}
-                          type="button"
-                          onClick={() => {
-                            setProvisionEntity(role.id);
-                            if (role.id !== 'organization') {
-                              setUserFormData(prev => ({ ...prev, role: role.id }));
-                            }
-                          }}
-                          className={`flex-1 flex items-center justify-center space-x-2 py-2.5 rounded-xl transition-all duration-300 ${provisionEntity === role.id
-                            ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200 dark:shadow-none'
-                            : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'
-                            }`}
-                        >
-                          <role.icon size={14} />
-                          <span className="text-[10px] font-black uppercase tracking-wider">{role.label}</span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <div className="p-8 space-y-6 max-h-[60vh] overflow-y-auto bg-white dark:bg-gray-900">
-                  {provisionEntity === 'organization' ? (
-                    <div className="space-y-6 transform transition-all animate-in fade-in slide-in-from-bottom-4 duration-500">
-                      <div className="space-y-1.5">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">Company Name</label>
-                        <div className="relative">
-                          <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
-                          <input
-                            required
-                            value={formData.name}
-                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                            placeholder="e.g. Acme Corp Logistics"
-                            className="w-full pl-12 pr-4 py-4 bg-gray-50 dark:bg-gray-800/50 border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-indigo-500/10 outline-none"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-1.5">
-                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Primary Domain</label>
-                          <div className="relative">
-                            <Globe className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
-                            <input
-                              required
-                              value={formData.domain}
-                              onChange={(e) => setFormData({ ...formData, domain: e.target.value })}
-                              placeholder="acme.com"
-                              className="w-full pl-12 pr-4 py-4 bg-gray-50 dark:bg-gray-800/50 border-none rounded-2xl text-sm font-bold outline-none"
-                            />
-                          </div>
-                        </div>
-                        <div className="space-y-1.5">
-                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Industry</label>
-                          <select
-                            value={formData.industry}
-                            onChange={(e) => setFormData({ ...formData, industry: e.target.value })}
-                            className="w-full px-4 py-4 bg-gray-50 dark:bg-gray-800/50 border-none rounded-2xl text-sm font-bold outline-none appearance-none cursor-pointer"
-                          >
-                            <option value="">Select Industry</option>
-                            <option value="Technology">Technology</option>
-                            <option value="Logistics">Logistics</option>
-                            <option value="Supply Chain">Supply Chain</option>
-                            <option value="E-commerce">E-commerce</option>
-                            <option value="Healthcare">Healthcare</option>
-                            <option value="Finance">Finance</option>
-                            <option value="Manufacturing">Manufacturing</option>
-                            <option value="Retail">Retail</option>
-                          </select>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-1.5">
-                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Admin Email</label>
-                          <div className="relative">
-                            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
-                            <input
-                              required
-                              type="email"
-                              value={formData.adminEmail}
-                              onChange={(e) => setFormData({ ...formData, adminEmail: e.target.value })}
-                              placeholder="admin@acme.com"
-                              className="w-full pl-12 pr-4 py-4 bg-gray-50 dark:bg-gray-800/50 border-none rounded-2xl text-sm font-bold outline-none"
-                            />
-                          </div>
-                        </div>
-                        <div className="space-y-1.5">
-                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Admin Password</label>
-                          <div className="relative">
-                            <ShieldCheck className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
-                            <input
-                              required={!editingTenant}
-                              type="password"
-                              value={formData.password}
-                              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                              placeholder={editingTenant ? "Leave empty to keep current" : "Min 6 characters"}
-                              minLength={editingTenant ? 0 : 6}
-                              className="w-full pl-12 pr-4 py-4 bg-gray-50 dark:bg-gray-800/50 border-none rounded-2xl text-sm font-bold outline-none"
-                            />
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Subscription Plan</label>
-                        <div className="grid grid-cols-3 gap-2">
-                          {subscriptions.map(sub => (
-                            <button
-                              key={sub._id}
-                              type="button"
-                              onClick={() => setFormData({ ...formData, plan: sub.name, planId: sub._id })}
-                              className={`py-3 px-2 rounded-xl border text-[10px] font-black uppercase tracking-widest transition-all ${formData.planId === sub._id || (formData.plan === sub.name && !formData.planId) ? 'bg-indigo-600 text-white border-indigo-600 shadow-lg' : 'bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-800 text-gray-400'
-                                }`}
-                            >
-                              {sub.name}
-                              <span className="block text-[9px] font-bold mt-0.5 opacity-60">
-                                {sub.employeeLimit?.toLocaleString()} users
-                              </span>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Initial Staffing Sections */}
-                      {!editingTenant && (
-                        <div className="space-y-8 pt-6 border-t border-gray-100 dark:border-gray-800">
-                          <div>
-                            <div className="flex justify-between items-center mb-4">
-                              <div>
-                                <h4 className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-widest">Initial Management</h4>
-                                <p className="text-[10px] text-gray-400 font-bold mt-0.5">Managers who will oversee operations</p>
-                              </div>
-                              <button
-                                type="button"
-                                onClick={() => setFormData({ ...formData, initialManagers: [...formData.initialManagers, { name: '', email: '', password: '' }] })}
-                                className="p-2 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 rounded-xl hover:bg-indigo-100 transition-colors"
-                              >
-                                <Plus size={16} />
-                              </button>
-                            </div>
-                            <div className="space-y-3">
-                              {formData.initialManagers?.map((mgr, idx) => (
-                                <div key={idx} className="bg-gray-50/50 dark:bg-gray-800/40 p-4 rounded-2xl relative border border-gray-100 dark:border-gray-700/50 animate-in slide-in-from-right-4 duration-200">
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      const newMgrs = [...formData.initialManagers];
-                                      newMgrs.splice(idx, 1);
-                                      setFormData({ ...formData, initialManagers: newMgrs });
-                                    }}
-                                    className="absolute top-2 right-2 p-1 text-gray-300 hover:text-rose-500 transition-colors"
-                                  >
-                                    <X size={14} />
-                                  </button>
-                                  <div className="space-y-3">
-                                    <input required value={mgr.name} onChange={e => {
-                                      const newMgrs = [...formData.initialManagers];
-                                      newMgrs[idx].name = e.target.value;
-                                      setFormData({ ...formData, initialManagers: newMgrs });
-                                    }} placeholder="Manager Name" className="w-full bg-white dark:bg-gray-900 border-none rounded-xl px-4 py-3 text-xs font-bold outline-none shadow-sm" />
-                                    <div className="grid grid-cols-2 gap-3">
-                                      <input required type="email" value={mgr.email} onChange={e => {
-                                        const newMgrs = [...formData.initialManagers];
-                                        newMgrs[idx].email = e.target.value;
-                                        setFormData({ ...formData, initialManagers: newMgrs });
-                                      }} placeholder="Email" className="w-full bg-white dark:bg-gray-900 border-none rounded-xl px-4 py-3 text-xs font-bold outline-none shadow-sm" />
-                                      <input required type="password" value={mgr.password} onChange={e => {
-                                        const newMgrs = [...formData.initialManagers];
-                                        newMgrs[idx].password = e.target.value;
-                                        setFormData({ ...formData, initialManagers: newMgrs });
-                                      }} placeholder="Password" className="w-full bg-white dark:bg-gray-900 border-none rounded-xl px-4 py-3 text-xs font-bold outline-none shadow-sm" />
-                                    </div>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-
-                          <div className="pt-4">
-                            <div className="flex justify-between items-center mb-4">
-                              <div>
-                                <h4 className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-widest">Field Force</h4>
-                                <p className="text-[10px] text-gray-400 font-bold mt-0.5">Add initial agents and employees</p>
-                              </div>
-                              <button
-                                type="button"
-                                onClick={() => setFormData({ ...formData, initialEmployees: [...formData.initialEmployees, { name: '', email: '', password: '' }] })}
-                                className="p-2 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 rounded-xl hover:bg-emerald-100 transition-colors"
-                              >
-                                <Plus size={16} />
-                              </button>
-                            </div>
-                            <div className="space-y-3">
-                              {formData.initialEmployees?.map((emp, idx) => (
-                                <div key={idx} className="bg-gray-50/50 dark:bg-gray-800/40 p-4 rounded-2xl relative border border-gray-100 dark:border-gray-700/50 animate-in slide-in-from-right-4 duration-200">
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      const newEmps = [...formData.initialEmployees];
-                                      newEmps.splice(idx, 1);
-                                      setFormData({ ...formData, initialEmployees: newEmps });
-                                    }}
-                                    className="absolute top-2 right-2 p-1 text-gray-300 hover:text-rose-500 transition-colors"
-                                  >
-                                    <X size={14} />
-                                  </button>
-                                  <div className="space-y-3">
-                                    <input required value={emp.name} onChange={e => {
-                                      const newEmps = [...formData.initialEmployees];
-                                      newEmps[idx].name = e.target.value;
-                                      setFormData({ ...formData, initialEmployees: newEmps });
-                                    }} placeholder="Employee Name" className="w-full bg-white dark:bg-gray-900 border-none rounded-xl px-4 py-3 text-xs font-bold outline-none shadow-sm" />
-                                    <div className="grid grid-cols-2 gap-3">
-                                      <input required type="email" value={emp.email} onChange={e => {
-                                        const newEmps = [...formData.initialEmployees];
-                                        newEmps[idx].email = e.target.value;
-                                        setFormData({ ...formData, initialEmployees: newEmps });
-                                      }} placeholder="Email" className="w-full bg-white dark:bg-gray-900 border-none rounded-xl px-4 py-3 text-xs font-bold outline-none shadow-sm" />
-                                      <input required type="password" value={emp.password} onChange={e => {
-                                        const newEmps = [...formData.initialEmployees];
-                                        newEmps[idx].password = e.target.value;
-                                        setFormData({ ...formData, initialEmployees: newEmps });
-                                      }} placeholder="Password" className="w-full bg-white dark:bg-gray-900 border-none rounded-xl px-4 py-3 text-xs font-bold outline-none shadow-sm" />
-                                    </div>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="space-y-6 transform transition-all animate-in fade-in slide-in-from-bottom-4 duration-500">
-                      <div className="space-y-1.5">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Full Name</label>
-                        <div className="relative">
-                          <Users className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
-                          <input
-                            required
-                            value={userFormData.name}
-                            onChange={(e) => setUserFormData({ ...userFormData, name: e.target.value })}
-                            placeholder="John Doe"
-                            className="w-full pl-12 pr-4 py-4 bg-gray-50 dark:bg-gray-800/50 border-none rounded-2xl text-sm font-bold outline-none"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-1.5">
-                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Account Email</label>
-                          <div className="relative">
-                            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
-                            <input
-                              required
-                              type="email"
-                              value={userFormData.email}
-                              onChange={(e) => setUserFormData({ ...userFormData, email: e.target.value })}
-                              placeholder="john@example.com"
-                              className="w-full pl-12 pr-4 py-4 bg-gray-50 dark:bg-gray-800/50 border-none rounded-2xl text-sm font-bold outline-none"
-                            />
-                          </div>
-                        </div>
-                        <div className="space-y-1.5">
-                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Password</label>
-                          <div className="relative">
-                            <ShieldCheck className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
-                            <input
-                              required={!editingUser}
-                              type="password"
-                              value={userFormData.password}
-                              onChange={(e) => setUserFormData({ ...userFormData, password: e.target.value })}
-                              placeholder={editingUser ? "Leave empty" : "Min 6 chars"}
-                              minLength={6}
-                              className="w-full pl-12 pr-4 py-4 bg-gray-50 dark:bg-gray-800/50 border-none rounded-2xl text-sm font-bold outline-none"
-                            />
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Target Organization</label>
-                        <div className="relative">
-                          <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
-                          <select
-                            required
-                            disabled={!!editingUser}
-                            value={userFormData.tenantId}
-                            onChange={(e) => setUserFormData({ ...userFormData, tenantId: e.target.value })}
-                            className="w-full pl-12 pr-4 py-4 bg-gray-50 dark:bg-gray-800/50 border-none rounded-2xl text-sm font-bold outline-none appearance-none cursor-pointer"
-                          >
-                            <option value="">Select an Organization</option>
-                            {companies.map(c => (
-                              <option key={c._id} value={c._id}>{c.name}</option>
-                            ))}
-                          </select>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <div className="p-8 bg-gray-50/50 dark:bg-gray-800/20 flex gap-3 border-t border-gray-50 dark:border-gray-800">
-                  <Button type="button" onClick={() => { setShowModal(false); setEditingTenant(null); setEditingUser(null); }} variant="outline" className="flex-1 py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest border-gray-200">
-                    Cancel
-                  </Button>
-                  <Button disabled={isProvisioning} variant="primary" className="flex-1 py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl shadow-indigo-100 dark:shadow-none">
-                    {isProvisioning ? (
-                      <div className="flex items-center space-x-2">
-                        <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        <span>Working...</span>
-                      </div>
-                    ) : (
-                      <div className="flex items-center justify-center space-x-2">
-                        <ArrowRight size={14} />
-                        <span>{editingTenant || editingUser ? 'Save Changes' : `Add ${provisionEntity}`}</span>
-                      </div>
-                    )}
-                  </Button>
-                </div>
-              </form>
-            )}
-          </div>
-        </div>
-      )}
 
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
@@ -1591,7 +1611,7 @@ const CompaniesList = () => {
                       <div className="flex-1 flex flex-col animate-in fade-in duration-300">
                         <div className="flex justify-between items-center mb-6">
                           <h3 className="text-lg font-black text-gray-900 dark:text-white capitalize">{activeModalTab === 'tenant' ? 'Tenant Admins' : activeModalTab + 's'}</h3>
-                          <button onClick={() => { setEditingUser(null); setUserFormData({ name: '', email: '', password: '', role: activeModalTab, tenantId: selectedTenant._id }); setProvisionEntity(activeModalTab); setShowModal(true); }} className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-xl font-bold flex items-center space-x-2 text-sm shadow-sm transition-colors">
+                          <button onClick={() => { setSelectedTenant(null); setEditingUser(null); setUserFormData({ name: '', email: '', password: '', role: activeModalTab, tenantId: selectedTenant._id }); setProvisionEntity(activeModalTab); setShowForm(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-xl font-bold flex items-center space-x-2 text-sm shadow-sm transition-colors">
                             <UserPlus size={16} /> <span className="capitalize">Add {activeModalTab}</span>
                           </button>
                         </div>
@@ -1647,7 +1667,7 @@ const CompaniesList = () => {
                                         </td>
                                         <td className="px-6 py-4 text-right">
                                           <div className="flex items-center justify-end space-x-1">
-                                            <button onClick={() => { setEditingUser(user); setUserFormData({ name: user.name, email: user.email, password: '', role: user.role, tenantId: selectedTenant._id }); setProvisionEntity(user.role); setShowModal(true); }} className="p-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-gray-400 hover:text-blue-500 rounded-xl transition-colors"><Edit size={16} /></button>
+                                            <button onClick={() => { setSelectedTenant(null); setEditingUser(user); setUserFormData({ name: user.name, email: user.email, password: '', role: user.role, tenantId: selectedTenant._id }); setProvisionEntity(user.role); setShowForm(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="p-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-gray-400 hover:text-blue-500 rounded-xl transition-colors"><Edit size={16} /></button>
                                             <button onClick={() => handleDeleteUser(user._id)} className="p-2 hover:bg-rose-50 dark:hover:bg-rose-900/20 text-gray-400 hover:text-rose-500 rounded-xl transition-colors"><Trash2 size={16} /></button>
                                           </div>
                                         </td>

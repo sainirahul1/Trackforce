@@ -433,8 +433,8 @@ const Settings = () => {
                         <RefreshCw size={20} className="animate-spin-slow" />
                       </div>
                       <div className="flex-1">
-                        <p className="text-sm font-black text-indigo-900 dark:text-indigo-200 uppercase tracking-widest mb-1 italic">API Sync Status: Active</p>
-                        <p className="text-[11px] text-indigo-600/70 dark:text-indigo-400/70 font-medium">Last automated sync attempt: 12 minutes ago. All background processes are responding correctly.</p>
+                        <p className="text-sm font-black text-indigo-900 dark:text-indigo-200 uppercase tracking-widest mb-1 italic">API Sync Status: Operational</p>
+                        <p className="text-[11px] text-indigo-600/70 dark:text-indigo-400/70 font-medium">Background services are responding correctly. Real-time synchronization is active.</p>
                       </div>
                     </div>
                   </div>

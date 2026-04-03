@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { CreditCard, Check, Zap, Shield, Crown, RefreshCw, AlertCircle, Sparkles } from 'lucide-react';
+import { CreditCard, Check, Zap, Shield, Crown, RefreshCw, AlertCircle, Sparkles, X } from 'lucide-react';
 import { useOutletContext } from 'react-router-dom';
 import { getSubscription, updateSubscription, getAvailablePlans } from '../../services/core/tenantService';
 
@@ -31,6 +31,9 @@ const Subscription = () => {
   const [error, setError] = useState('');
   const [upgrading, setUpgrading] = useState(null);
   const [successMsg, setSuccessMsg] = useState('');
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [newCard, setNewCard] = useState({ brand: 'VISA', last4: '' });
+  const [isUpdatingPayment, setIsUpdatingPayment] = useState(false);
 
   const fetchData = async () => {
     try {
@@ -53,6 +56,34 @@ const Subscription = () => {
   useEffect(() => {
     fetchData();
   }, []);
+
+  const handleUpdatePayment = async (e) => {
+    e.preventDefault();
+    if (!newCard.last4 || newCard.last4.length !== 4) {
+       setError('Please enter a valid 4-digit card ending.');
+       setTimeout(() => setError(''), 4000);
+       return;
+    }
+    
+    try {
+      setIsUpdatingPayment(true);
+      await updateSubscription({
+         paymentMethod: {
+           brand: newCard.brand,
+           last4: newCard.last4
+         }
+      });
+      await fetchData();
+      setSuccessMsg('✅ Payment method updated successfully!');
+      setTimeout(() => setSuccessMsg(''), 4000);
+      setShowPaymentModal(false);
+    } catch (err) {
+      setError(err?.response?.data?.message || 'Failed to update payment method.');
+      setTimeout(() => setError(''), 4000);
+    } finally {
+      setIsUpdatingPayment(false);
+    }
+  };
 
   const handleSelectPlan = async (plan) => {
     const planName = plan.name;
@@ -232,7 +263,7 @@ const Subscription = () => {
                     : 'No card on file'}
                 </p>
               </div>
-              <button className="text-xs font-bold text-indigo-600 hover:underline">Edit</button>
+              <button onClick={() => setShowPaymentModal(true)} className="text-xs font-bold text-indigo-600 hover:underline">Edit</button>
             </div>
           </div>
 
@@ -330,6 +361,62 @@ const Subscription = () => {
           })}
         </div>
       </div>
+
+      {/* Payment Method Modal */}
+      {showPaymentModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-white dark:bg-gray-900 rounded-3xl p-6 w-full max-w-md shadow-2xl border border-gray-100 dark:border-gray-800 animate-in zoom-in-95">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-black text-gray-900 dark:text-white">Update Payment Method</h3>
+              <button onClick={() => setShowPaymentModal(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+                <X size={20} />
+              </button>
+            </div>
+            
+            <form onSubmit={handleUpdatePayment} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Card Brand</label>
+                <select 
+                  value={newCard.brand} 
+                  onChange={(e) => setNewCard({...newCard, brand: e.target.value})}
+                  className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 text-sm font-bold text-gray-900 dark:text-white outline-none focus:border-indigo-500"
+                >
+                  <option value="VISA">VISA</option>
+                  <option value="Mastercard">Mastercard</option>
+                  <option value="Amex">Amex</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Last 4 Digits</label>
+                <input 
+                  type="text" 
+                  maxLength={4}
+                  placeholder="1234"
+                  value={newCard.last4}
+                  onChange={(e) => setNewCard({...newCard, last4: e.target.value.replace(/\D/g, '')})}
+                  className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 text-sm font-bold text-gray-900 dark:text-white outline-none focus:border-indigo-500"
+                />
+              </div>
+              <div className="pt-4 flex gap-3 flex-col sm:flex-row">
+                <button 
+                  type="button" 
+                  onClick={() => setShowPaymentModal(false)} 
+                  className="w-full py-3 rounded-xl font-bold text-sm text-gray-600 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  disabled={isUpdatingPayment}
+                  className="w-full py-3 rounded-xl font-bold text-sm text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 transition-colors flex justify-center items-center gap-2"
+                >
+                  {isUpdatingPayment ? 'Updating...' : 'Save Changes'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
