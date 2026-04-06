@@ -109,14 +109,54 @@ process.on('uncaughtException', (err) => {
   console.error('Uncaught Exception:', err);
 });
 
-// Database Connection
-mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => {
-    console.log('MongoDB Connected');
-    server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-  })
-  .catch((err) => {
-    console.error('MongoDB Connection Error:', err);
-    process.exit(1);
-  });
+// -----------------------------------------------------------------------------
+// Database Connection (Hardened with Resilience & Monitoring)
+// -----------------------------------------------------------------------------
+let isConnecting = false;
+let isStarted = false;
+
+const connectDB = async () => {
+  if (isConnecting) return;
+  isConnecting = true;
+
+  const options = {
+    serverSelectionTimeoutMS: 10000,
+    socketTimeoutMS: 45000,
+    heartbeatFrequencyMS: 10000,
+    retryWrites: true,
+  };
+
+  try {
+    const conn = await mongoose.connect(process.env.MONGO_URI, options);
+    console.log(`[DATABASE] MongoDB Connected: ${conn.connection.host}`);
+    isConnecting = false;
+    
+    // Start server if not already started
+    if (!isStarted) {
+      server.listen(PORT, () => {
+        console.log(`[SERVER] Protocol: HTTP/Socket.io | Port: ${PORT}`);
+        console.log(`[SERVER] Environment: ${process.env.NODE_ENV || 'production'}`);
+      });
+      isStarted = true;
+    }
+    return conn;
+  } catch (err) {
+    console.error(`[DATABASE ERROR] Connection failed: ${err.message}`);
+    isConnecting = false;
+    // Retry connection after 5 seconds
+    setTimeout(connectDB, 5000);
+  }
+};
+
+// Monitor Connection Events
+mongoose.connection.on('disconnected', () => {
+  console.warn('[DATABASE WARNING] MongoDB disconnected. Attempting to reconnect...');
+  connectDB().catch(() => {});
+});
+
+mongoose.connection.on('error', (err) => {
+  console.error(`[DATABASE ERROR] Mongoose error: ${err.message}`);
+});
+
+// Kick off the connection loop
+connectDB();

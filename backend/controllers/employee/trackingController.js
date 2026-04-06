@@ -56,7 +56,6 @@ exports.startTracking = async (req, res) => {
         type: 'start_tracking',
         details: 'Started shift / On Duty'
       });
-      console.log(`[DATABASE] Created new tracking session for ${user.name}`);
     }
 
     res.status(200).json({ message: 'Tracking started', session: existingSession });
@@ -127,7 +126,6 @@ exports.stopTracking = async (req, res) => {
         employeeName: user.name,
         timestamp: new Date()
       });
-      console.log(`[SOCKET] Emitted tracking:stop for ${user.name}`);
     }
 
     res.json({ message: 'Tracking stopped', result });

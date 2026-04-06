@@ -4,7 +4,6 @@ const { logActivity } = require('../../utils/activityLogger');
 
 exports.getTasks = async (req, res) => {
   try {
-    console.log(`[DEBUG] Fetching lean tasks for tenant: ${req.tenantId}`);
     const query = { tenant: req.tenantId };
     
     // If the user is an employee, only show their own tasks
@@ -18,7 +17,6 @@ exports.getTasks = async (req, res) => {
     .sort({ date: -1 })
     .lean();
     
-    console.log(`[DEBUG] Found ${tasks.length} lean tasks for tenant: ${req.tenantId}`);
     
     res.json(tasks);
   } catch (error) {
@@ -108,6 +106,11 @@ exports.updateTask = async (req, res) => {
       return res.status(404).json({ message: 'Task not found' });
     }
 
+    // Terminal State Protection: Do not allow further updates to finalized tasks
+    if (['completed', 'rejected', 'cancelled'].includes(task.status)) {
+      return res.status(400).json({ message: `Mission is already in a terminal state (${task.status}) and cannot be modified.` });
+    }
+
     // Update the task first
     const updatedTask = await Task.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
 
@@ -150,8 +153,6 @@ exports.updateTask = async (req, res) => {
         checklist: updatedTask.checklist,
         timestamp: new Date()
       });
-
-      console.log(`[WORKFLOW] Created StoreVisit (${visitStatus}) for task: ${updatedTask.title}`);
 
     // Mark the original task as completed because the visit attempt was finalized
     await Task.findByIdAndUpdate(updatedTask._id, { status: 'completed' });
