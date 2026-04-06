@@ -10,14 +10,14 @@ const getBaseUrl = () => {
 const BASE_URL = getBaseUrl();
 const API_URL = `${BASE_URL}/visits`;
 
-export const getVisits = async () => {
+export const getVisits = async (force = false) => {
   return fetchDataWithCache('visits', async () => {
     const response = await fetch(API_URL, {
       headers: getAuthHeader()
     });
     if (!response.ok) throw new Error('Failed to fetch visits');
     return response.json();
-  });
+  }, force);
 };
 
 export const getVisitById = async (id) => {

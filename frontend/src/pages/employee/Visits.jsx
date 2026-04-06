@@ -48,7 +48,7 @@ const EmployeeVisits = () => {
   const fetchVisits = async (isBackground = false) => {
     try {
       if (!isBackground) setLoading(true);
-      const data = await getVisits();
+      const data = await getVisits(isBackground); // Pass true to 'force' if it is a background update
       setVisits(transformVisits(data));
     } catch (err) {
       console.error('Error fetching visits:', err);
@@ -314,6 +314,17 @@ const EmployeeVisits = () => {
             </h3>
 
             <div className="space-y-3">
+              {/* Total Visits Card */}
+              <div className="flex gap-4 p-3 sm:p-4 rounded-2xl bg-indigo-50/50 dark:bg-indigo-500/5 group border border-indigo-100/50 dark:border-indigo-500/10">
+                <div className="flex w-full justify-between items-center">
+                  <div className="flex items-center gap-3">
+                    <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
+                    <span className="text-sm text-indigo-700 dark:text-indigo-300 font-black uppercase tracking-widest">Total Visits</span>
+                  </div>
+                  <span className="font-black text-indigo-700 dark:text-indigo-400 text-lg">{visits.length}</span>
+                </div>
+              </div>
+
               <div className="flex gap-4 p-3 sm:p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/50 transition-colors duration-300 group border border-transparent hover:border-emerald-100 dark:hover:border-emerald-500/20">
                 <div className="flex w-full justify-between items-center">
                   <div className="flex items-center gap-3">
@@ -334,13 +345,13 @@ const EmployeeVisits = () => {
                 </div>
               </div>
 
-              <div className="flex gap-4 p-3 sm:p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/50 transition-colors duration-300 group border border-transparent hover:border-red-100 dark:hover:border-red-500/20">
+              <div className="flex gap-4 p-3 sm:p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/50 transition-colors duration-300 group border border-transparent hover:border-rose-100 dark:hover:border-rose-500/20">
                 <div className="flex w-full justify-between items-center">
                   <div className="flex items-center gap-3">
-                    <X size={16} className="text-red-500 shrink-0" />
-                    <span className="text-sm text-gray-600 dark:text-gray-300 font-bold">Not Visit</span>
+                    <X size={16} className="text-rose-500 shrink-0" />
+                    <span className="text-sm text-gray-600 dark:text-gray-300 font-bold">Rejected</span>
                   </div>
-                  <span className="font-black text-red-600 dark:text-red-400 text-base">{statusCounts['Not Visit']}</span>
+                  <span className="font-black text-rose-600 dark:text-rose-400 text-base">{statusCounts['Rejected']}</span>
                 </div>
               </div>
 

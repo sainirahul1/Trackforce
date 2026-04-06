@@ -480,9 +480,9 @@ const EmployeeDashboard = () => {
       if (!isBackground) setLoading(true);
       
       const [stats, logs, allTasks] = await Promise.all([
-        getDashboardStats(),
+        getDashboardStats(isBackground),
         getActivities(),
-        getTasks()
+        getTasks(isBackground)
       ]);
       setStatsData(stats);
       setActivities(logs.map(log => {
@@ -595,7 +595,7 @@ const EmployeeDashboard = () => {
     }
   };
 
-  // --- Mock Data ---
+  // --- Header Stats ---
   const stats = [
     { label: "Visits", value: loading ? '...' : statsData?.visitsToday?.toString() || "0", color: 'from-blue-500 to-cyan-400', link: '/employee/visits' },
     { label: "Duty", value: isOnDuty ? 'ON' : 'OFF', color: 'from-emerald-500 to-teal-400' },
