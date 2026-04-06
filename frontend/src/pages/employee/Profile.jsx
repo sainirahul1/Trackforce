@@ -76,7 +76,7 @@ const ShareProfileModal = ({ isOpen, onClose, employee }) => {
           url: profileUrl,
         });
       } catch (err) {
-        console.log('Share failed:', err);
+        // Share failed or cancelled
       }
     }
   };

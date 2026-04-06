@@ -101,7 +101,7 @@ const EmployeeOrders = () => {
       const data = await getOrders();
       setOrders(transformOrders(data));
     } catch (err) {
-      console.error("Error fetching orders:", err);
+      // Error handling for orders fetch
     } finally {
       setLoading(false);
       if (setPageLoading) setPageLoading(false);
@@ -224,14 +224,11 @@ const EmployeeOrders = () => {
 
   // Function to update an existing order
   const updateOrder = async () => {
-    console.log('updateOrder called', editingOrder);
-
     // Reset any previous validation errors
     setValidationError(false);
 
     // Validate that all required fields are filled (only check fields that are actually in form)
     if (!editingOrder.store || !editingOrder.items || !editingOrder.value || !editingOrder.paymentMethod) {
-      console.log('Validation failed');
       setValidationError("Please fill in all required fields");
       setTimeout(() => setValidationError(false), 3000);
       return;
@@ -242,7 +239,6 @@ const EmployeeOrders = () => {
     const valueNum = Number(editingOrder.value);
 
     if (isNaN(itemsNum) || isNaN(valueNum) || itemsNum <= 0 || valueNum <= 0) {
-      console.log('Invalid numbers');
       setValidationError("Please enter valid numbers for items and value");
       setTimeout(() => setValidationError(false), 3000);
       return;
@@ -261,8 +257,6 @@ const EmployeeOrders = () => {
       };
 
       const updated = await updateOrderAPI(editingOrder.id, apiUpdateData);
-      console.log('API responded with updated order:', updated);
-
       const orderDate = new Date(updated.timestamp || updated.createdAt);
 
       // Update order object with all fields
@@ -279,7 +273,6 @@ const EmployeeOrders = () => {
         status: updated.status ? updated.status.charAt(0).toUpperCase() + updated.status.slice(1) : "Pending"
       };
 
-      console.log('Updating order local state:', updatedOrder);
       // Update order in orders array
       setOrders(prevOrders =>
         prevOrders.map(o => o.id === editingOrder.id ? updatedOrder : o)
@@ -299,20 +292,16 @@ const EmployeeOrders = () => {
       }, 3000);
 
     } catch (error) {
-      console.error("Failed to update order:", error);
       setValidationError("Failed to update order on server");
       setTimeout(() => setValidationError(false), 3000);
     }
   };
   const createOrder = async () => {
-    console.log('createOrder called', newOrder);
-
     // Reset any previous validation errors
     setValidationError(false);
 
     // Validate that all required fields are filled (only check fields that are actually in form)
     if (!newOrder.store || !newOrder.items || !newOrder.value || !newOrder.paymentMethod) {
-      console.log('Validation failed');
       setValidationError("Please fill in all required fields");
       setTimeout(() => setValidationError(false), 3000);
       return;
@@ -323,7 +312,6 @@ const EmployeeOrders = () => {
     const valueNum = Number(newOrder.value);
 
     if (isNaN(itemsNum) || isNaN(valueNum) || itemsNum <= 0 || valueNum <= 0) {
-      console.log('Invalid numbers');
       setValidationError("Please enter valid numbers for items and value");
       setTimeout(() => setValidationError(false), 3000);
       return;
@@ -342,8 +330,6 @@ const EmployeeOrders = () => {
       };
 
       const createdOrder = await createOrderAPI(apiOrderData);
-      console.log('API responded with created order:', createdOrder);
-
       const orderDate = new Date(createdOrder.timestamp || createdOrder.createdAt);
       
       const order = {
@@ -397,7 +383,6 @@ const EmployeeOrders = () => {
     }, 3000);
 
     } catch (error) {
-      console.error("Failed to create order:", error);
       setValidationError("Failed to create order on server");
       setTimeout(() => setValidationError(false), 3000);
     }

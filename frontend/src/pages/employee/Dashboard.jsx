@@ -1,4 +1,3 @@
-// hjsdgfjhdsgfj
 import React, { useState, useEffect } from 'react';
 import { Link, useOutletContext } from 'react-router-dom';
 import {
@@ -20,7 +19,7 @@ ChartJS.register(
 );
 
 // =============================================================================
-// STYLE TOKENS & CONSTANTSAB
+// STYLE TOKENS & CONSTANTS
 // Shared styling strings to ensure consistency and easier maintenance.
 // =============================================================================
 
