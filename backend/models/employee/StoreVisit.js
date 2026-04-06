@@ -11,6 +11,11 @@ const storeVisitSchema = new mongoose.Schema({
     ref: 'Tenant',
     required: true,
   },
+  taskId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Task',
+    default: null,
+  },
   storeName: {
     type: String,
     required: true,
@@ -32,8 +37,12 @@ const storeVisitSchema = new mongoose.Schema({
   },
   reviewStatus: {
     type: String,
-    enum: ['Pending Review', 'Approved', 'Rejected'],
-    default: 'Pending Review',
+    enum: ['pending', 'accepted', 'rejected'],
+    default: 'pending',
+  },
+  reviewedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
   },
   rejectionReason: String,
   address: String,
@@ -45,16 +54,6 @@ const storeVisitSchema = new mongoose.Schema({
   },
   photos: [String], // URLs or Data URLs
   notes: String,
-  reviewStatus: {
-    type: String,
-    enum: ['pending', 'accepted', 'rejected'],
-    default: 'pending',
-  },
-  reviewedBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-  },
-  rejectionReason: String,
   taskTitle: String,
   taskType: String,
   checklist: [{

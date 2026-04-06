@@ -47,7 +47,7 @@ import {
 } from 'lucide-react';
 import { useOutletContext } from 'react-router-dom';
 import Button from '../../components/ui/Button';
-import { getSyncCachedData } from '../../utils/cacheHelper';
+import { useDialog } from '../../context/DialogContext';
 
 // --- Sub-components (Consolidated & Styled) ---
 
@@ -160,44 +160,7 @@ const StatCard = ({ icon: Icon, label, value, trend, trendType, color, bg, spark
   );
 };
 
-// const PerformanceStatsOverview = () => {
-//   const stats = [
-//     {
-//       label: 'Visits Completed',
-//       value: '08',
-//       trend: '+15%',
-//       trendType: 'up',
-//       color: 'text-blue-500',
-//       bg: 'bg-blue-50 dark:bg-blue-950/30',
-//       icon: MapPin,
-//       sparklinePath: "M0 30 Q 20 15, 40 25 T 80 10 T 100 20 V 40 H 0 Z"
-//     },
-//     {
-//       label: 'Distance Covered',
-//       value: '42 km',
-//       trend: '+8%',
-//       trendType: 'up',
-//       color: 'text-indigo-500',
-//       bg: 'bg-indigo-50 dark:bg-indigo-950/30',
-//       icon: Zap,
-//       sparklinePath: "M0 25 Q 15 35, 30 20 T 60 25 T 100 15 V 40 H 0 Z"
-//     },
-//     {
-//       label: 'Orders Processed',
-//       value: '05',
-//       trend: '+2%',
-//       trendType: 'up',
-//       color: 'text-pink-500',
-//       bg: 'bg-pink-50 dark:bg-pink-950/30',
-//       icon: ShoppingBag,
-//       sparklinePath: "M0 35 Q 25 30, 50 35 T 100 25 V 40 H 0 Z"
-//     },
-//     {
-//       label: 'Daily Revenue',
-//       value: '₹42K',
-//       trend: '+12%',
-//       trendType: 'up',
-//       color: 'text-amber-500',
+
 //       bg: 'bg-amber-50 dark:bg-amber-950/30',
 //       icon: TrendingUpIcon,
 //       sparklinePath: "M0 35 Q 30 20, 60 30 T 100 10 V 40 H 0 Z"
@@ -535,14 +498,14 @@ const TaskDetailOverlay = ({ task, onClose, onUpdateOperationalData, onStartTask
                     }, true /* terminal */);
                     onClose();
                   }}
-                  className={`w-full py-4 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl transition-all hover:scale-[1.02] active:scale-95 ${localMissionStatus === 'Complete' 
-                    ? 'bg-emerald-600 shadow-emerald-100 dark:shadow-none' 
+                  className={`w-full py-4 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl transition-all hover:scale-[1.02] active:scale-95 ${localMissionStatus === 'Complete'
+                    ? 'bg-emerald-600 shadow-emerald-100 dark:shadow-none'
                     : 'bg-indigo-600 shadow-indigo-100 dark:shadow-none'}`}
                 >
-                  {localMissionStatus === 'Complete' 
-                    ? 'Complete Mission' 
-                    : (['Follow Up', 'Rejected'].includes(localMissionStatus) 
-                      ? 'Submit & Reschedule' 
+                  {localMissionStatus === 'Complete'
+                    ? 'Complete Mission'
+                    : (['Follow Up', 'Rejected'].includes(localMissionStatus)
+                      ? 'Submit & Reschedule'
                       : 'Update & Save')}
                 </button>
               </div>
@@ -679,6 +642,7 @@ const CreateTaskOverlay = ({ onClose, onCreate }) => {
 // --- Main Component ---
 const EmployeeTasks = () => {
   const { setPageLoading } = useOutletContext();
+  const { showAlert } = useDialog();
   const [view, setView] = useState('grid');
   const [activeTab, setActiveTab] = useState('hub');
   const [searchQuery, setSearchQuery] = useState('');
@@ -702,384 +666,7 @@ const EmployeeTasks = () => {
   // Mock User Data
   const user = { name: 'Abhiram', role: 'Senior Field Executive' };
 
-  const handleSetView = (newView) => {
-    setView(newView);
-    if (newView === 'map') {
-      setActiveTab('map');
-    } else {
-      setActiveTab('hub');
-    }
-  };
-
-  const initialTasks = [
-    {
-      id: 1,
-      title: 'Store Inventory Audit',
-      store: 'Big Bazaar Central',
-      companyName: 'Future Group Retail',
-      companyContact: 'Rajesh Kumar',
-      companyEmail: 'ops@futuregroup.in',
-      companyInsight: 'Premium Partner • 12 Months',
-      companyDescription: 'Flagship hypermarket location with high daily footfall. Focus intensely on premium product placement and end-cap visibility tracking.',
-      address: 'MG Road, Bengaluru',
-      distance: '1.2 km',
-      distanceVal: 1.2,
-      eta: '20 mins',
-      priority: 'high',
-      status: 'pending',
-      visitStatus: 'Reached Client',
-      missionStatus: 'Pending',
-      isTaskStarted: false,
-      dueDate: 'Today, 05:00 PM',
-      date: new Date(), // Today
-      type: 'Audit',
-      incentive: '₹250',
-      incentiveVal: 250,
-      difficulty: 'Medium',
-      coords: { x: 45, y: 30 },
-      evidence: { storeFront: null, selfie: null, productDisplay: null, officialDoc: null },
-      checklist: [
-        { id: 1, text: 'Verify store check-in with GPS verification', completed: false },
-        { id: 2, text: 'Upload 4 photos of main aisle displays', completed: false },
-        { id: 3, text: 'Log stock count for Tier 1 SKUs', completed: false },
-        { id: 4, text: 'Collect manager digital signature', completed: false }
-      ]
-    },
-    {
-      id: 2,
-      title: 'Merchandise Display',
-      store: 'Reliance Fresh',
-      companyName: 'Reliance Retail Ltd',
-      companyContact: 'Anjali Sharma',
-      companyEmail: 'store.support@reliance.com',
-      companyInsight: 'Top Tier Client • High Volume',
-      companyDescription: 'Core retail partner for daily essentials. Ensure correct pricing tags and promotional banners are prominently displayed and unblocked.',
-      address: 'Indiranagar, Bengaluru',
-      distance: '3.4 km',
-      distanceVal: 3.4,
-      eta: '25 mins',
-      priority: 'medium',
-      status: 'in-progress',
-      visitStatus: 'Discussing',
-      missionStatus: 'In Progress',
-      isTaskStarted: true,
-      dueDate: 'Today, 07:00 PM',
-      date: new Date(), // Today
-      type: 'Retail',
-      incentive: '₹150',
-      incentiveVal: 150,
-      difficulty: 'Hard',
-      coords: { x: 70, y: 50 },
-      evidence: { storeFront: 'mock-file.jpg', selfie: null, productDisplay: null, officialDoc: null },
-      checklist: [
-        { id: 1, text: 'Clean primary display shelf', completed: true },
-        { id: 2, text: 'Arrange promotional banners', completed: false },
-        { id: 3, text: 'Verify price tag accuracy', completed: false }
-      ]
-    },
-    {
-      id: 3,
-      title: 'Payment Collection',
-      store: 'More Megamart',
-      companyName: 'Aditya Birla Fashion',
-      companyContact: 'Suresh Raina',
-      companyEmail: 'finance@adityabirla.com',
-      companyInsight: 'Enterprise Account • Active',
-      companyDescription: 'A major enterprise account requiring strict compliance with our latest merchandising guidelines and payment collection protocols.',
-      address: 'Koramangala, Bengaluru',
-      distance: '0.8 km',
-      distanceVal: 0.8,
-      eta: '10 mins',
-      priority: 'low',
-      status: 'delayed',
-      visitStatus: 'Delayed',
-      missionStatus: 'Pending',
-      isTaskStarted: false,
-      dueDate: 'Yesterday',
-      date: new Date(Date.now() - 86400000), // Yesterday
-      type: 'Finance',
-      incentive: '₹100',
-      incentiveVal: 100,
-      difficulty: 'Easy',
-      coords: { x: 30, y: 80 },
-      evidence: { storeFront: null, selfie: null, productDisplay: null, officialDoc: null },
-      checklist: [
-        { id: 1, text: 'Collect signed invoice copy', completed: false },
-        { id: 2, text: 'Verify payment mode (Cheque/NEFT)', completed: false }
-      ]
-    },
-    // --- Additional Yesterday Tasks ---
-    {
-      id: 11,
-      title: 'Store Inspection Audit',
-      store: 'Reliance Digital',
-      companyName: 'Reliance Retail Ltd',
-      companyContact: 'Kavita Reddy',
-      companyEmail: 'kavita@reliance.com',
-      companyInsight: 'Key Electronics Partner',
-      address: 'Jayanagar, Bengaluru',
-      distance: '4.2 km',
-      distanceVal: 4.2,
-      eta: '30 mins',
-      priority: 'high',
-      status: 'pending',
-      visitStatus: 'Delayed',
-      missionStatus: 'Pending',
-      isTaskStarted: false,
-      dueDate: 'Yesterday, 02:00 PM',
-      date: new Date(Date.now() - 86400000), // Yesterday
-      type: 'Audit',
-      incentive: '₹200',
-      incentiveVal: 200,
-      difficulty: 'Medium',
-      coords: { x: 35, y: 45 },
-      evidence: { storeFront: null, selfie: null, productDisplay: null, officialDoc: null },
-      checklist: [
-        { id: 1, text: 'Check electronic displays for defects', completed: false },
-        { id: 2, text: 'Verify staff uniform compliance', completed: false }
-      ]
-    },
-    {
-      id: 12,
-      title: 'Hardware Maintenance',
-      store: 'Star Bazaar',
-      companyName: 'Trent Hypermarket',
-      companyContact: 'Anil Kumar',
-      companyEmail: 'anil@trent.in',
-      companyInsight: 'Standard Account',
-      address: 'Hebbal, Bengaluru',
-      distance: '9.5 km',
-      distanceVal: 9.5,
-      eta: '45 mins',
-      priority: 'medium',
-      status: 'delayed',
-      visitStatus: 'Missed',
-      missionStatus: 'Overdue',
-      isTaskStarted: false,
-      dueDate: 'Yesterday, 11:30 AM',
-      date: new Date(Date.now() - 86400000), // Yesterday
-      type: 'Retail',
-      incentive: '₹150',
-      incentiveVal: 150,
-      difficulty: 'Hard',
-      coords: { x: 45, y: 75 },
-      evidence: { storeFront: null, selfie: null, productDisplay: null, officialDoc: null },
-      checklist: [
-        { id: 1, text: 'Fix POS barcode scanner', completed: false },
-        { id: 2, text: 'Update firmware on backend terminal', completed: false }
-      ]
-    },
-    {
-      id: 4,
-      title: 'Feedback Survey',
-      store: 'Spar Hyper',
-      companyName: 'Spar International',
-      companyContact: 'Vikram Singh',
-      companyEmail: 'quality@spar.com',
-      companyInsight: 'New Client • Pilot Phase',
-      address: 'Bannerghatta, Bengaluru',
-      distance: '5.6 km',
-      distanceVal: 5.6,
-      eta: '45 mins',
-      priority: 'medium',
-      status: 'pending',
-      visitStatus: 'Reached Client',
-      missionStatus: 'Pending',
-      isTaskStarted: false,
-      dueDate: 'Today, 10:00 AM',
-      date: new Date(), // Today
-      type: 'Survey',
-      incentive: '₹50',
-      incentiveVal: 50,
-      difficulty: 'Easy',
-      coords: { x: 20, y: 40 },
-      evidence: { storeFront: null, selfie: null, productDisplay: null, officialDoc: null },
-      checklist: [
-        { id: 1, text: 'Interview 5 random customers', completed: false },
-        { id: 2, text: 'Score customer service level', completed: false },
-        { id: 3, text: 'Submit final report draft', completed: false }
-      ]
-    },
-    // --- This Week Tasks ---
-    {
-      id: 5,
-      title: 'Display Unit Setup',
-      store: 'Nike Factory Store',
-      companyName: 'Nike India',
-      companyContact: 'Rahul Dravid',
-      companyEmail: 'rahul@nike.com',
-      companyInsight: 'Premium Partner',
-      address: 'Whitefield, Bengaluru',
-      distance: '8.2 km',
-      distanceVal: 8.2,
-      eta: '50 mins',
-      priority: 'high',
-      status: 'pending',
-      visitStatus: 'Reached Client',
-      missionStatus: 'Pending',
-      isTaskStarted: false,
-      dueDate: 'This Week',
-      date: new Date(Date.now() + 3 * 86400000),
-      type: 'Retail',
-      incentive: '₹300',
-      incentiveVal: 300,
-      difficulty: 'Hard',
-      coords: { x: 85, y: 20 },
-      evidence: { storeFront: null, selfie: null, productDisplay: null, officialDoc: null },
-      checklist: []
-    },
-    {
-      id: 7,
-      title: 'Market Competitor Analysis',
-      store: 'D-Mart Sarjapur',
-      companyName: 'Avenue Supermarts',
-      companyContact: 'Priya Patel',
-      companyEmail: 'priya@dmart.in',
-      companyInsight: 'Tier 1 Account • High Frequency',
-      address: 'Sarjapur Road, Bengaluru',
-      distance: '6.1 km',
-      distanceVal: 6.1,
-      eta: '35 mins',
-      priority: 'medium',
-      status: 'pending',
-      visitStatus: 'Reached Client',
-      missionStatus: 'Pending',
-      isTaskStarted: false,
-      dueDate: 'This Week',
-      date: new Date(Date.now() + 2 * 86400000),
-      type: 'Survey',
-      incentive: '₹180',
-      incentiveVal: 180,
-      difficulty: 'Medium',
-      coords: { x: 55, y: 65 },
-      evidence: { storeFront: null, selfie: null, productDisplay: null, officialDoc: null },
-      checklist: [
-        { id: 1, text: 'Visit 3 competitor outlets', completed: false },
-        { id: 2, text: 'Record pricing data for key SKUs', completed: false },
-        { id: 3, text: 'Photograph competitor display setups', completed: false },
-      ]
-    },
-    {
-      id: 8,
-      title: 'Promotional Campaign Setup',
-      store: 'Lifestyle Store',
-      companyName: 'Landmark Group',
-      companyContact: 'Sumanth Rao',
-      companyEmail: 's.rao@landmark.in',
-      companyInsight: 'Premium Partner • Event Client',
-      address: 'Orion Mall, Bengaluru',
-      distance: '10.3 km',
-      distanceVal: 10.3,
-      eta: '55 mins',
-      priority: 'high',
-      status: 'pending',
-      visitStatus: 'Reached Client',
-      missionStatus: 'Pending',
-      isTaskStarted: false,
-      dueDate: 'This Week',
-      date: new Date(Date.now() + 4 * 86400000),
-      type: 'Retail',
-      incentive: '₹350',
-      incentiveVal: 350,
-      difficulty: 'Hard',
-      coords: { x: 25, y: 70 },
-      evidence: { storeFront: null, selfie: null, productDisplay: null, officialDoc: null },
-      checklist: [
-        { id: 1, text: 'Set up 2 promotional kiosks', completed: false },
-        { id: 2, text: 'Brief store staff on campaign rules', completed: false },
-      ]
-    },
-    // --- This Month Tasks ---
-    {
-      id: 6,
-      title: 'Audit Report Filing',
-      store: 'Zudio Indiranagar',
-      companyName: 'Tata Retail',
-      companyContact: 'Mahesh Babu',
-      companyEmail: 'mahesh@tata.com',
-      companyInsight: 'Key Account',
-      address: 'Indiranagar, Bengaluru',
-      distance: '2.8 km',
-      distanceVal: 2.8,
-      eta: '15 mins',
-      priority: 'low',
-      status: 'pending',
-      visitStatus: 'Reached Client',
-      missionStatus: 'Pending',
-      isTaskStarted: false,
-      dueDate: 'This Month',
-      date: new Date(Date.now() + 20 * 86400000),
-      type: 'Audit',
-      incentive: '₹120',
-      incentiveVal: 120,
-      difficulty: 'Easy',
-      coords: { x: 65, y: 45 },
-      evidence: { storeFront: null, selfie: null, productDisplay: null, officialDoc: null },
-      checklist: []
-    },
-    {
-      id: 9,
-      title: 'Annual Stock Reconciliation',
-      store: 'Croma Electronics',
-      companyName: 'Infiniti Retail',
-      companyContact: 'Deepak Menon',
-      companyEmail: 'deepak@croma.com',
-      companyInsight: 'Enterprise Account • 3 Years',
-      address: 'Phoenix Marketcity, Bengaluru',
-      distance: '7.5 km',
-      distanceVal: 7.5,
-      eta: '40 mins',
-      priority: 'high',
-      status: 'pending',
-      visitStatus: 'Reached Client',
-      missionStatus: 'Pending',
-      isTaskStarted: false,
-      dueDate: 'This Month',
-      date: new Date(Date.now() + 12 * 86400000),
-      type: 'Finance',
-      incentive: '₹400',
-      incentiveVal: 400,
-      difficulty: 'Hard',
-      coords: { x: 40, y: 55 },
-      evidence: { storeFront: null, selfie: null, productDisplay: null, officialDoc: null },
-      checklist: [
-        { id: 1, text: 'Cross-check invoices with physical stock', completed: false },
-        { id: 2, text: 'Flag discrepancies in ERP system', completed: false },
-        { id: 3, text: 'Submit signed reconciliation sheet', completed: false },
-      ]
-    },
-    {
-      id: 10,
-      title: 'Customer Loyalty Drive',
-      store: 'Shoppers Stop',
-      companyName: 'K Raheja Corp',
-      companyContact: 'Meena Iyer',
-      companyEmail: 'm.iyer@shoppersstop.com',
-      companyInsight: 'Long-term Partner • High Footfall',
-      address: 'Koramangala, Bengaluru',
-      distance: '3.9 km',
-      distanceVal: 3.9,
-      eta: '25 mins',
-      priority: 'medium',
-      status: 'pending',
-      visitStatus: 'Reached Client',
-      missionStatus: 'Pending',
-      isTaskStarted: false,
-      dueDate: 'This Month',
-      date: new Date(Date.now() + 18 * 86400000),
-      type: 'Survey',
-      incentive: '₹200',
-      incentiveVal: 200,
-      difficulty: 'Medium',
-      coords: { x: 60, y: 30 },
-      evidence: { storeFront: null, selfie: null, productDisplay: null, officialDoc: null },
-      checklist: [
-        { id: 1, text: 'Enrol 20 customers in loyalty programme', completed: false },
-        { id: 2, text: 'Distribute welcome kit packs', completed: false },
-      ]
-    }
-  ];
-
+  // Task State Management
   const [taskList, setTaskList] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -1087,7 +674,7 @@ const EmployeeTasks = () => {
   const fetchTasks = async (isBackground = false) => {
     try {
       if (!isBackground) setIsLoading(true);
-      const data = await taskService.getTasks();
+      const data = await taskService.getTasks(isBackground); // Pass true to 'force' if it is a background update
       console.log('[DEBUG] Fetched Tasks from API:', data);
       setTaskList(data);
       setError(null);
@@ -1133,7 +720,7 @@ const EmployeeTasks = () => {
   const updateTaskOperationalData = async (taskId, data, isTerminal = false) => {
     try {
       const updatedTask = await taskService.updateTask(taskId, data);
-      
+
       // Only remove from list when caller explicitly marks this as a terminal action
       if (isTerminal) {
         setTaskList(prev => prev.filter(t => t._id !== taskId));
@@ -1155,12 +742,12 @@ const EmployeeTasks = () => {
     try {
       setIsTaskLoading(true);
       setSelectedTask(task); // Show overlay immediately with partial data
-      
+
       const fullTask = await taskService.getTaskById(task._id || task.id);
-      
+
       // Update the selected task with full details
       setSelectedTask(fullTask);
-      
+
       // Also update the task in the list if it exists
       setTaskList(prev => prev.map(t => (t._id || t.id) === (fullTask._id || fullTask.id) ? fullTask : t));
     } catch (err) {
@@ -1224,7 +811,7 @@ const EmployeeTasks = () => {
     if (file) {
       // 10MB soft limit to ensure it fits in a 16MB MongoDB document after Base64 encoding
       if (file.size > 10 * 1024 * 1024) {
-        alert('File is too large! Please upload images smaller than 10MB to ensure mission synchronization.');
+        showAlert('Warning', 'File is too large! Please upload images smaller than 10MB to ensure mission synchronization.', 'warning');
         return;
       }
 
@@ -1241,13 +828,13 @@ const EmployeeTasks = () => {
           await updateTaskOperationalData(taskId, { evidence: newEvidence });
         } catch (err) {
           console.error('Upload failed:', err);
-          alert('Failed to synchronize mission evidence. Please try a smaller file.');
+          showAlert('Error', 'Failed to synchronize mission evidence. Please try a smaller file.', 'error');
         } finally {
           setIsTaskLoading(false);
         }
       };
       reader.onerror = () => {
-        alert('Failed to read file. Please try a different image format.');
+        showAlert('Error', 'Failed to read file. Please try a different image format.', 'error');
         setIsTaskLoading(false);
       };
       reader.readAsDataURL(file);
@@ -1256,15 +843,15 @@ const EmployeeTasks = () => {
 
   const toggleChecklistItem = (taskId, itemId) => {
     setTaskList(prev => prev.map(t =>
-      t.id === taskId
-        ? { ...t, checklist: t.checklist.map(item => item.id === itemId ? { ...item, completed: !item.completed } : item) }
+      (t._id || t.id) === taskId
+        ? { ...t, checklist: t.checklist.map(item => (item.id === itemId || item._id === itemId) ? { ...item, completed: !item.completed } : item) }
         : t
     ));
     // Update selectedTask as well
-    if (selectedTask && selectedTask.id === taskId) {
+    if (selectedTask && (selectedTask._id || selectedTask.id) === taskId) {
       setSelectedTask(prev => ({
         ...prev,
-        checklist: prev.checklist.map(item => item.id === itemId ? { ...item, completed: !item.completed } : item)
+        checklist: prev.checklist.map(item => (item.id === itemId || item._id === itemId) ? { ...item, completed: !item.completed } : item)
       }));
     }
   };
@@ -1547,12 +1134,12 @@ const EmployeeTasks = () => {
                 <div className="absolute inset-0 opacity-20 pointer-events-none" style={{ backgroundImage: 'radial-gradient(#6366F1 1.5px, transparent 1.5px)', backgroundSize: '40px 40px' }} />
 
                 {taskList.map((task) => (
-                  <div 
-                    key={task._id || task.id} 
-                    className="absolute transition-all hover:scale-110 cursor-pointer z-10 hover:z-[60] group/marker" 
-                    style={{ 
-                      left: `${task.coords?.x || 0}%`, 
-                      top: `${task.coords?.y || 0}%` 
+                  <div
+                    key={task._id || task.id}
+                    className="absolute transition-all hover:scale-110 cursor-pointer z-10 hover:z-[60] group/marker"
+                    style={{
+                      left: `${task.coords?.x || 0}%`,
+                      top: `${task.coords?.y || 0}%`
                     }}
                   >
                     <div className="relative">
@@ -1802,7 +1389,7 @@ const EmployeeTasks = () => {
                     </div>
                   )
                 ))}
-                
+
                 {filteredTasks.length === 0 && (
                   <div className="flex flex-col items-center justify-center py-20 bg-gray-50/50 dark:bg-gray-800/20 rounded-[3rem] border-2 border-dashed border-gray-100 dark:border-gray-800 animate-in fade-in zoom-in duration-500">
                     <div className="w-20 h-20 bg-white dark:bg-gray-800 rounded-full flex items-center justify-center mb-6 shadow-xl shadow-gray-200/50 dark:shadow-none border border-gray-50 dark:border-gray-700">

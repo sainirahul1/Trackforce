@@ -5,6 +5,7 @@ import Skeleton from '../../components/ui/Skeleton';
 import Button from '../../components/ui/Button';
 import superadminService from '../../services/superadmin/superadminService';
 import { useAuth } from '../../context/AuthContext';
+import { useDialog } from '../../context/DialogContext';
 import {
   Plus,
   Search,
@@ -32,6 +33,7 @@ import {
 const CompaniesList = () => {
   const navigate = useNavigate();
   const { login: globalLogin } = useAuth();
+  const { showAlert, showConfirm } = useDialog();
   const [impersonating, setImpersonating] = useState(null); // tenantId being impersonated
   const [companies, setCompanies] = useState([]);
   const [subscriptions, setSubscriptions] = useState([]);
@@ -175,22 +177,36 @@ const CompaniesList = () => {
     }
   };
 
-  const handleSuspend = async (id) => {
-    try {
-      await superadminService.toggleCompanySuspension(id);
-      fetchCompanies();
-    } catch (error) {
-      console.error('Error toggling suspension:', error);
+  const handleSuspend = async (row) => {
+    const action = row.onboardingStatus === 'suspended' ? 'unsuspend' : 'suspend';
+    const title = action.charAt(0).toUpperCase() + action.slice(1) + ' Organization';
+    const confirmed = await showConfirm(
+      `Are you sure you want to ${action} ${row.name}?`,
+      title,
+      'warning'
+    );
+    if (confirmed) {
+      try {
+        await superadminService.toggleCompanySuspension(row._id);
+        fetchCompanies();
+        showAlert(`Organization ${action}ed successfully.`, 'Success', 'success');
+      } catch (error) {
+        console.error('Error toggling suspension:', error);
+        showAlert(`Failed to ${action} organization.`, 'Error', 'error');
+      }
     }
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this tenant and all its users?')) {
+    const confirmed = await showConfirm('Are you sure you want to delete this tenant and all its users?', 'Delete Organization', 'danger');
+    if (confirmed) {
       try {
         await superadminService.deleteCompany(id);
         fetchCompanies();
+        showAlert('Organization deleted successfully.', 'Success', 'success');
       } catch (error) {
         console.error('Error deleting tenant:', error);
+        showAlert('Failed to delete organization.', 'Error', 'error');
       }
     }
   };
@@ -213,7 +229,7 @@ const CompaniesList = () => {
       // Navigation in current tab
       window.location.href = tenantUrl.toString();
     } catch (error) {
-      alert(error.response?.data?.message || 'Failed to impersonate tenant. Make sure the tenant has an admin user.');
+      showAlert(error.response?.data?.message || 'Failed to impersonate tenant. Make sure the tenant has an admin user.', 'Access Denied', 'error');
     } finally {
       setImpersonating(null);
     }
@@ -239,7 +255,7 @@ const CompaniesList = () => {
 
       window.location.href = tenantUrl.toString();
     } catch (error) {
-      alert(error.response?.data?.message || `Failed to impersonate ${name}.`);
+      showAlert(error.response?.data?.message || `Failed to impersonate ${name}.`, 'Access Denied', 'error');
     } finally {
       setImpersonating(null);
     }
@@ -313,22 +329,24 @@ const CompaniesList = () => {
 
       fetchCompanies(); // Sync counters globally
     } catch (error) {
-      alert(error.response?.data?.message || 'Error saving user');
+      showAlert(error.response?.data?.message || 'Error saving user', 'Operation Failed', 'error');
     }
   };
 
   const handleDeleteUser = async (userId, targetTenantId = null) => {
     const tenantId = targetTenantId || selectedTenant?._id;
-    if (!tenantId) return alert('Cannot delete user: Missing tenant mapping.');
+    if (!tenantId) return showAlert('Cannot delete user: Missing tenant mapping.', 'Mapping Error', 'error');
 
-    if (window.confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
+    const confirmed = await showConfirm('Are you sure you want to delete this user? This action cannot be undone.', 'Delete User', 'danger');
+    if (confirmed) {
       try {
         await superadminService.deleteTenantUser(tenantId, userId);
         if (selectedTenant && activeModalTab !== 'overview') fetchTenantUsers(tenantId);
         if (globalActiveTab !== 'organizations') fetchGlobalUsers(globalActiveTab);
         fetchCompanies();
+        showAlert('User deleted successfully.', 'Success', 'success');
       } catch (error) {
-        alert(error.response?.data?.message || 'Error deleting user');
+        showAlert(error.response?.data?.message || 'Error deleting user', 'Error', 'error');
       }
     }
   };
@@ -531,7 +549,7 @@ const CompaniesList = () => {
         setFormData({ name: '', domain: '', adminEmail: '', password: '', plan: 'Premium', planId: '', industry: '', initialManagers: [], initialEmployees: [] });
       }, 2000);
     } catch (error) {
-      alert('Error provisioning tenant: ' + error.message);
+      showAlert('Error provisioning tenant: ' + error.message, 'Provisioning Failed', 'error');
     } finally {
       setIsProvisioning(false);
     }
@@ -656,7 +674,7 @@ const CompaniesList = () => {
               <RotateCcw size={16} />
             </button>
             <button
-              onClick={(e) => { e.stopPropagation(); handleSuspend(row._id); }}
+              onClick={(e) => { e.stopPropagation(); handleSuspend(row); }}
               className={`p-2 rounded-xl transition-all flex items-center justify-center text-gray-400 ${row.onboardingStatus === 'suspended'
                 ? 'hover:bg-emerald-50 dark:hover:bg-emerald-900/20 hover:text-emerald-600'
                 : 'hover:bg-amber-50 dark:hover:bg-amber-900/20 hover:text-amber-600'

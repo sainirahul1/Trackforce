@@ -23,12 +23,12 @@ export const getSyncCachedData = (key) => {
   }
 };
 
-export const fetchDataWithCache = async (key, fetcher) => {
+export const fetchDataWithCache = async (key, fetcher, forceRefresh = false) => {
   const cachedData = getSyncCachedData(key);
-  // Note: We still return cached data if available, 
-  // but the services will decide whether to trigger a background update.
-  if (cachedData) return cachedData;
+  // If we have cached data and NO force refresh is requested, return cache immediately.
+  if (cachedData && !forceRefresh) return cachedData;
 
+  // Otherwise (forceRefresh is true OR no cache found), hit the server.
   const data = await fetcher();
   try {
     localStorage.setItem(`${CACHE_PREFIX}${key}`, JSON.stringify({ data, timestamp: Date.now() }));

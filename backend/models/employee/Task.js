@@ -35,7 +35,7 @@ const taskSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['pending', 'in-progress', 'delayed', 'completed', 'cancelled'],
+    enum: ['pending', 'in-progress', 'delayed', 'completed', 'cancelled', 'rejected'],
     default: 'pending',
   },
   visitStatus: String,

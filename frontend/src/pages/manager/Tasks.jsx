@@ -11,8 +11,10 @@ import {
   Layout, LayoutPanelLeft, Columns, Settings, Trello
 } from 'lucide-react';
 import { getTasks, createTask, updateTask, deleteTask } from '../../services/employee/taskService';
+import { useDialog } from '../../context/DialogContext';
 import tenantService from '../../services/core/tenantService';
 import { getSyncCachedData } from '../../utils/cacheHelper';
+import { logActivity } from '../../services/employee/activityService';
 
 const ManagerTasks = () => {
   const { setPageLoading } = useOutletContext();
@@ -25,6 +27,7 @@ const ManagerTasks = () => {
   const [openColumnMenuId, setOpenColumnMenuId] = useState(null);
   const [showNewSectionModal, setShowNewSectionModal] = useState(false);
   const [newSectionName, setNewSectionName] = useState('');
+  const { showAlert, showConfirm } = useDialog();
 
   // Filter States
   const [searchQuery, setSearchQuery] = useState('');
@@ -34,6 +37,7 @@ const ManagerTasks = () => {
   // Dynamic Categories (Sections/Columns)
   const [categories, setCategories] = useState([
     { id: 'pending', label: 'Pending', icon: ClipboardList, color: 'bg-slate-500', lightColor: 'text-slate-600', bgColor: 'bg-slate-50', theme: 'slate' },
+    { id: 'rejected', label: 'Rejected', icon: AlertCircle, color: 'bg-rose-500', lightColor: 'text-rose-600', bgColor: 'bg-rose-50', theme: 'rose' },
     { id: 'in-progress', label: 'In Progress', icon: PlayCircle, color: 'bg-blue-600', lightColor: 'text-blue-600', bgColor: 'bg-blue-50', theme: 'blue' },
     { id: 'delayed', label: 'Delayed', icon: ShieldCheck, color: 'bg-amber-600', lightColor: 'text-amber-600', bgColor: 'bg-amber-50', theme: 'amber' },
     { id: 'cancelled', label: 'Cancelled', icon: Ban, color: 'bg-rose-600', lightColor: 'text-rose-600', bgColor: 'bg-rose-50', theme: 'rose' },
@@ -61,10 +65,10 @@ const ManagerTasks = () => {
     if (!isBackground) setLoading(true);
     try {
       const [fetchedTasks, fetchedEmployees] = await Promise.all([
-        getTasks(),
+        getTasks(isBackground),
         tenantService.getEmployees()
       ]);
-      
+
       processTaskData(fetchedTasks, fetchedEmployees);
       setError(null);
     } catch (err) {
@@ -106,7 +110,7 @@ const ManagerTasks = () => {
       const titleMatch = task.title.toLowerCase().includes(searchQuery.toLowerCase());
       const idMatch = task.id.toLowerCase().includes(searchQuery.toLowerCase());
       const assigneeMatch = task.assignee.toLowerCase().includes(searchQuery.toLowerCase());
-      
+
       const matchesSearch = titleMatch || idMatch || assigneeMatch;
 
       const matchesStatus = statusFilter === 'all' || task.status === statusFilter;
@@ -168,13 +172,29 @@ const ManagerTasks = () => {
   };
 
   const handleDeleteTask = async (id) => {
-    if (window.confirm('Are you sure you want to delete this mission?')) {
+    const isConfirmed = await showConfirm(
+      "Delete Mission",
+      "Are you sure you want to delete this mission?",
+      "Delete",
+      "Cancel",
+      "danger"
+    );
+    if (isConfirmed) {
       try {
+        const task = tasks.find(t => t.id === id);
         await deleteTask(id);
         setTasks(prev => prev.filter(t => t.id !== id));
+
+        // Log task deletion
+        try {
+          logActivity('task_deleted', `Deleted mission: "${task?.title || 'Unknown'}" (ID: ${id})`);
+        } catch (e) {
+          console.error('Failed to log task deletion:', e);
+        }
+
         setOpenDropdownId(null);
       } catch (err) {
-        alert(err.message);
+        showAlert('Error', err.message, 'error');
       }
     }
   };
@@ -190,12 +210,20 @@ const ManagerTasks = () => {
         category: updated.type || 'General'
       };
       setTasks(prev => prev.map(t => t.id === taskId ? formatted : t));
+
+      // Log task reassignment
+      try {
+        logActivity('task_reassigned', `Reassigned task: "${formatted.title}" to ${formatted.assignee}`);
+      } catch (e) {
+        console.error('Failed to log task reassignment:', e);
+      }
+
       if (selectedTask && selectedTask.id === taskId) {
         setSelectedTask(formatted);
       }
       setIsReassigning(false);
     } catch (err) {
-      alert(err.message);
+      showAlert('Error', err.message, 'error');
     }
   };
 
@@ -205,7 +233,7 @@ const ManagerTasks = () => {
       setTasks(prev => prev.map(t => t.id === id ? { ...t, status: newStatus } : t));
       setOpenDropdownId(null);
     } catch (err) {
-      alert(err.message);
+      showAlert('Error', err.message, 'error');
     }
   };
 
@@ -237,8 +265,8 @@ const ManagerTasks = () => {
       if (editingTask) {
         const updated = await updateTask(editingTask.id, form);
         const employeeName = updated.employee?.name || teamMembers.find(m => m._id === updated.employee || m._id === updated.employee?._id || m._id === form.employee)?.name || 'Unassigned';
-        setTasks(prev => prev.map(t => t.id === editingTask.id ? { 
-          ...t, 
+        setTasks(prev => prev.map(t => t.id === editingTask.id ? {
+          ...t,
           ...updated,
           id: updated._id,
           assignee: employeeName,
@@ -249,8 +277,8 @@ const ManagerTasks = () => {
         const created = await createTask(form);
         const employeeName = created.employee?.name || teamMembers.find(m => m._id === created.employee || m._id === created.employee?._id || m._id === form.employee)?.name || 'Unassigned';
         setTasks(prev => [
-          { 
-            ...created, 
+          {
+            ...created,
             id: created._id,
             assignee: employeeName,
             deadline: new Date(created.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }),
@@ -258,10 +286,18 @@ const ManagerTasks = () => {
           },
           ...prev,
         ]);
+
+        // Log new task assignment
+        try {
+          const taskTitle = created.title || form.title;
+          logActivity('task_assigned', `Assigned new task: "${taskTitle}" to ${employeeName}`);
+        } catch (e) {
+          console.error('Failed to log task assignment:', e);
+        }
       }
       closeModal();
     } catch (err) {
-      alert(err.message);
+      showAlert('Error', err.message, 'error');
     }
   };
 
@@ -283,7 +319,7 @@ const ManagerTasks = () => {
     const newId = newSectionName.toLowerCase().replace(/\s+/g, '-');
     const themes = ['indigo', 'purple', 'fuchsia', 'pink', 'rose', 'orange', 'amber', 'yellow', 'lime', 'green', 'emerald', 'teal', 'cyan', 'sky', 'blue'];
     const randomTheme = themes[Math.floor(Math.random() * themes.length)];
-    
+
     setCategories(prev => [...prev, {
       id: newId,
       label: newSectionName,
@@ -293,7 +329,7 @@ const ManagerTasks = () => {
       bgColor: `bg-${randomTheme}-50`,
       theme: randomTheme
     }]);
-    
+
     setNewSectionName('');
     setShowNewSectionModal(false);
   };
@@ -301,7 +337,7 @@ const ManagerTasks = () => {
   const handleDeleteSection = (statusId) => {
     // Prevent deleting 'pending' as a safety default
     if (statusId === 'pending') return;
-    
+
     // Logic for Orphaned Tasks: Move to 'pending'
     setTasks(prev => prev.map(t => t.status === statusId ? { ...t, status: 'pending' } : t));
     setCategories(prev => prev.filter(c => c.id !== statusId));
@@ -317,16 +353,16 @@ const ManagerTasks = () => {
         <button onClick={() => handleEditTask(task)} className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold text-gray-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:text-indigo-600 transition-all text-left">
           <Edit2 size={14} /> Edit Mission
         </button>
-        
+
         <div className="group/move relative">
           <button className="w-full flex items-center justify-between gap-3 px-4 py-2.5 rounded-xl text-xs font-bold text-gray-600 dark:text-gray-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all text-left">
             <div className="flex items-center gap-3"><ArrowRightCircle size={14} /> Move to...</div>
             <ChevronRight size={12} className="text-gray-400" />
           </button>
           <div className="absolute left-full top-0 ml-1 w-48 bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-800 p-2 hidden group-hover/move:block hover:block z-[110]">
-             {categories.filter(c => c.id !== task.status).map(c => (
-               <button key={c.id} onClick={() => handleMoveTask(task.id, c.id)} className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-gray-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:text-indigo-600 transition-all text-left"><c.icon size={12} /> {c.label}</button>
-             ))}
+            {categories.filter(c => c.id !== task.status).map(c => (
+              <button key={c.id} onClick={() => handleMoveTask(task.id, c.id)} className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-gray-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:text-indigo-600 transition-all text-left"><c.icon size={12} /> {c.label}</button>
+            ))}
           </div>
         </div>
         <div className="h-px bg-gray-50 dark:bg-gray-800 my-1 mx-2"></div>
@@ -429,26 +465,26 @@ const ManagerTasks = () => {
                   {col.label}
                   <span className="text-gray-400 ml-1 font-bold">({filteredTasks.filter(t => t.status === col.id).length})</span>
                 </h3>
-                <button 
+                <button
                   className="p-1 px-2 text-gray-300 hover:text-indigo-600 transition-all rounded-md"
                   onClick={(e) => { e.stopPropagation(); setOpenColumnMenuId(openColumnMenuId === col.id ? null : col.id); }}
                 >
                   <MoreHorizontal size={18} />
                 </button>
-                
+
                 {/* Column Action Menu */}
                 {openColumnMenuId === col.id && (
                   <div className="absolute right-0 top-full mt-2 w-52 bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-800 z-[110] p-2 animate-in fade-in zoom-in-95" onClick={e => e.stopPropagation()}>
-                    <button 
+                    <button
                       onClick={() => { setForm(prev => ({ ...prev, status: col.id })); setShowModal(true); setOpenColumnMenuId(null); }}
                       className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-gray-500 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-indigo-600 transition-all text-left"
                     >
                       <Plus size={14} /> Add Mission
                     </button>
-                    
+
                     {col.id !== 'pending' && (
                       <div className="mt-1 pt-1 border-t border-gray-50 dark:border-gray-800">
-                        <button 
+                        <button
                           onClick={() => handleDeleteSection(col.id)}
                           className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-all text-left"
                         >
@@ -482,21 +518,21 @@ const ManagerTasks = () => {
               </div>
             </div>
           ))}
-          
+
           {/* Add New Section Dropzone/Button */}
           <div className="min-w-[320px] flex-shrink-0 flex items-center justify-center">
-             <button 
-               onClick={() => setShowNewSectionModal(true)}
-               className="w-full h-full min-h-[500px] rounded-[2.5rem] border-2 border-dashed border-gray-200 dark:border-gray-800 flex flex-col items-center justify-center gap-4 text-gray-300 hover:text-indigo-500 hover:border-indigo-500/30 hover:bg-indigo-50/5 transition-all group"
-             >
-                <div className="p-4 rounded-3xl bg-gray-50 dark:bg-gray-800 group-hover:bg-indigo-50 dark:group-hover:bg-indigo-900/20 transition-all">
-                  <Trello size={32} />
-                </div>
-                <div className="text-center">
-                  <p className="text-xs font-black uppercase tracking-widest">Add New Section</p>
-                  <p className="text-[10px] font-bold opacity-60 mt-1">Create custom operation flow</p>
-                </div>
-             </button>
+            <button
+              onClick={() => setShowNewSectionModal(true)}
+              className="w-full h-full min-h-[500px] rounded-[2.5rem] border-2 border-dashed border-gray-200 dark:border-gray-800 flex flex-col items-center justify-center gap-4 text-gray-300 hover:text-indigo-500 hover:border-indigo-500/30 hover:bg-indigo-50/5 transition-all group"
+            >
+              <div className="p-4 rounded-3xl bg-gray-50 dark:bg-gray-800 group-hover:bg-indigo-50 dark:group-hover:bg-indigo-900/20 transition-all">
+                <Trello size={32} />
+              </div>
+              <div className="text-center">
+                <p className="text-xs font-black uppercase tracking-widest">Add New Section</p>
+                <p className="text-[10px] font-bold opacity-60 mt-1">Create custom operation flow</p>
+              </div>
+            </button>
           </div>
         </div>
       ) : (
@@ -524,7 +560,7 @@ const ManagerTasks = () => {
                     </div>
                     {isReassigning ? (
                       <div className="relative animate-in slide-in-from-top-1 duration-300">
-                        <select 
+                        <select
                           onChange={(e) => handleReassignTask(selectedTask.id, e.target.value)}
                           className="w-full appearance-none px-4 py-3 bg-indigo-50/50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800/50 rounded-2xl text-[11px] font-bold text-indigo-600 outline-none focus:ring-2 focus:ring-indigo-500/20 cursor-pointer"
                           defaultValue=""
@@ -598,28 +634,28 @@ const ManagerTasks = () => {
           <div className="relative w-full max-w-md bg-white dark:bg-gray-900 rounded-[2.5rem] shadow-2xl border border-gray-100 dark:border-gray-800 overflow-hidden animate-in fade-in zoom-in-95 duration-300 p-10">
             <h2 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">Add New Section</h2>
             <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-2 mb-8">Define a new stage for your operation flow</p>
-            
+
             <div className="space-y-6">
               <div>
                 <label className="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2">Section Name</label>
-                <input 
-                  type="text" 
-                  value={newSectionName} 
+                <input
+                  type="text"
+                  value={newSectionName}
                   onChange={e => setNewSectionName(e.target.value)}
                   placeholder="e.g. Testing, Production, Archive..."
                   className="w-full px-5 py-3.5 bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl text-sm font-bold text-gray-800 dark:text-white placeholder-gray-300 outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
                   autoFocus
                 />
               </div>
-              
+
               <div className="flex items-center gap-3 pt-4">
-                <button 
+                <button
                   onClick={() => { setShowNewSectionModal(false); setNewSectionName(''); }}
                   className="flex-1 px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all"
                 >
                   Cancel
                 </button>
-                <button 
+                <button
                   onClick={handleAddSection}
                   className="flex-1 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-lg shadow-indigo-500/25"
                 >

@@ -5,8 +5,10 @@ import DataTable from '../../components/ui/DataTable';
 import tenantService from '../../services/core/tenantService';
 import { getVisits } from '../../services/employee/visitService';
 import { getSyncCachedData } from '../../utils/cacheHelper';
+import { logActivity } from '../../services/employee/activityService';
 import { Users, Search, Download, CheckCircle2, BarChart3, AlertTriangle, MapPin, Activity, Mail, Phone, Linkedin, Briefcase, GraduationCap, ShieldCheck, FileText, Globe, Loader2, Edit, Trash2, Ban, X, UserPlus, ArrowLeft, Calendar, Clock, Shield, User, FileSignature, HeartPulse, Building2, Flame, Droplets, Map } from 'lucide-react';
 import Button from '../../components/ui/Button';
+import { useDialog } from '../../context/DialogContext';
 
 // --- Print-Only Consolidated Layout (Team Operation Application) ---
 const TeamPrintLayout = ({ stats, members }) => (
@@ -247,6 +249,7 @@ const ManagerTeam = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
   const itemsPerPage = 7;
+  const { showAlert, showConfirm } = useDialog();
 
   // Reset page on search
   useEffect(() => {
@@ -274,18 +277,30 @@ const ManagerTeam = () => {
       const formatted = {
         id: emp._id,
         name: emp.name,
-        designation: emp.profile?.designation || 'Employee',
-        status: emp.status || 'On Duty',
-        zone: emp.profile?.zone || emp.profile?.team || 'Unassigned',
+        email: emp.email,
+        phone: emp.profile?.phone || '+1 (555) 000-0000',
+        designation: emp.profile?.designation || newEmployee.designation || 'Employee',
+        status: emp.status || newEmployee.status || 'Active',
+        zone: emp.profile?.zone || emp.profile?.team || newEmployee.zone || 'Unassigned',
         visitsToday: 0,
-        avatar: emp.profile?.avatar || `https://i.pravatar.cc/150?u=${emp._id}`
+        avatar: emp.profile?.avatar || `https://i.pravatar.cc/150?u=${emp._id}`,
+        employeeId: emp.profile?.employeeId || `EMP-${emp._id.substring(0, 6).toUpperCase()}`,
+        joinDate: new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })
       };
       setTeamMembers([formatted, ...teamMembers]);
+
+      // Log manager activity
+      try {
+        logActivity('team_member_added', `Added ${newEmployee.name} to the team (Zone: ${newEmployee.zone || 'Unassigned'})`);
+      } catch (e) {
+        console.error('Failed to log team activity:', e);
+      }
+
       setIsModalOpen(false);
       setNewEmployee({ name: '', email: '', password: '', zone: '', designation: 'Employee', status: 'Active' });
     } catch (error) {
       console.error('Failed to create employee:', error);
-      alert(error.response?.data?.message || 'Failed to create employee');
+      showAlert('Error', error.response?.data?.message || 'Failed to create employee', 'error');
     }
   };
 
@@ -298,7 +313,7 @@ const ManagerTeam = () => {
       setEditingEmployee(null);
     } catch (err) {
       console.error('Failed to edit employee:', err);
-      alert('Failed to edit employee');
+      showAlert('Error', 'Failed to edit employee', 'error');
     }
   };
 
@@ -309,12 +324,19 @@ const ManagerTeam = () => {
       setTeamMembers(teamMembers.map(emp => emp.id === id ? { ...emp, status: newStatus === 'Active' ? 'On Duty' : 'Inactive' } : emp));
     } catch (err) {
       console.error(err);
-      alert('Failed to update status');
+      showAlert('Error', 'Failed to update status', 'error');
     }
   };
 
   const handleDeleteEmployee = async (id) => {
-    if (window.confirm("Are you sure you want to remove this member?")) {
+    const isConfirmed = await showConfirm(
+      "Remove Member",
+      "Are you sure you want to remove this member?",
+      "Remove",
+      "Cancel",
+      "danger"
+    );
+    if (isConfirmed) {
       try {
         await tenantService.deleteEmployee(id);
         setTeamMembers(teamMembers.filter(emp => emp.id !== id));
@@ -443,7 +465,7 @@ const ManagerTeam = () => {
       accessor: 'status',
       render: (row) => (
         <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${row.status === 'On Duty' ? 'bg-green-100 text-green-700' :
-            row.status === 'Off Duty' ? 'bg-gray-100 text-gray-700' : 'bg-orange-100 text-orange-700'
+          row.status === 'Off Duty' ? 'bg-gray-100 text-gray-700' : 'bg-orange-100 text-orange-700'
           }`}>
           {row.status}
         </span>
@@ -884,7 +906,7 @@ const ManagerTeam = () => {
             </div>
             <div className="relative group min-w-[300px]">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-500 transition-colors" size={18} />
-               <input
+              <input
                 type="text"
                 placeholder="Search by name, zone or designation..."
                 value={searchTerm}
@@ -914,7 +936,7 @@ const ManagerTeam = () => {
           <div className="p-4">
             {(() => {
               const filteredData = teamMembers.filter(m =>
-                m.status === 'On Duty' && (
+                (m.status === 'On Duty' || m.status === 'Active') && (
                   m.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                   m.zone.toLowerCase().includes(searchTerm.toLowerCase()) ||
                   m.designation.toLowerCase().includes(searchTerm.toLowerCase())
@@ -949,8 +971,8 @@ const ManagerTeam = () => {
                             key={i + 1}
                             onClick={() => setCurrentPage(i + 1)}
                             className={`w-8 h-8 rounded-lg text-[10px] font-black transition-all ${currentPage === i + 1
-                                ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30'
-                                : 'bg-white dark:bg-gray-800 text-slate-400 hover:text-blue-500 border border-slate-200 dark:border-slate-800'
+                              ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30'
+                              : 'bg-white dark:bg-gray-800 text-slate-400 hover:text-blue-500 border border-slate-200 dark:border-slate-800'
                               }`}
                           >
                             {i + 1}
