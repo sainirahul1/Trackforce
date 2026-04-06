@@ -101,7 +101,6 @@ exports.updateVisit = async (req, res) => {
           status: 'rejected', 
           missionStatus: 'Rejected' 
         });
-        console.log(`[WORKFLOW] Visit ${visit._id} rejected. Reverting Task ${visit.taskId} to rejected.`);
       }
     }
 

@@ -48,6 +48,7 @@ import {
 import { useOutletContext } from 'react-router-dom';
 import Button from '../../components/ui/Button';
 import { useDialog } from '../../context/DialogContext';
+import { getSyncCachedData } from '../../utils/cacheHelper';
 
 // --- Sub-components (Consolidated & Styled) ---
 
@@ -674,9 +675,8 @@ const EmployeeTasks = () => {
   const fetchTasks = async (isBackground = false) => {
     try {
       if (!isBackground) setIsLoading(true);
-      const data = await taskService.getTasks(isBackground); // Pass true to 'force' if it is a background update
-      console.log('[DEBUG] Fetched Tasks from API:', data);
-      setTaskList(data);
+      const data = await taskService.getTasks(isBackground);
+      setTaskList(Array.isArray(data) ? data : []);
       setError(null);
     } catch (err) {
       console.error('Failed to fetch tasks:', err);
@@ -903,7 +903,6 @@ const EmployeeTasks = () => {
       return 0;
     });
 
-  console.log('[DEBUG] Filtered Tasks count:', filteredTasks.length);
 
   const groupTasksByDate = (tasks) => {
     const groups = {
