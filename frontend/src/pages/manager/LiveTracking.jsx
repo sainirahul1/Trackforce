@@ -100,7 +100,7 @@ const LiveTracking = () => {
     };
   }, [socket]);
 
-   // --- 0s Hydration & Background Sync ---
+  // --- 0s Hydration & Background Sync ---
   const processActiveSessions = (activeSessions) => {
     const initialMap = {};
     activeSessions.forEach(session => {
@@ -376,8 +376,8 @@ const LiveTracking = () => {
             onClick={() => fetchActiveSessionsSync(true)}
             disabled={refreshing}
             className={`flex items-center gap-3 px-5 py-3 rounded-full transition-all active:scale-95 shadow-xl font-black uppercase tracking-[0.15em] text-[10px] group ${refreshing
-                ? 'bg-indigo-400 cursor-wait shadow-indigo-400/20 text-white/50'
-                : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-600/20'
+              ? 'bg-indigo-400 cursor-wait shadow-indigo-400/20 text-white/50'
+              : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-600/20'
               }`}
             title="Sync Fleet Status"
           >
@@ -462,8 +462,8 @@ const LiveTracking = () => {
                       }
                     }}
                     className={`group p-4 rounded-2xl border transition-all cursor-pointer relative overflow-hidden ${selectedId === emp.id
-                        ? 'border-indigo-500 bg-indigo-50/30 dark:bg-indigo-900/10 shadow-lg shadow-indigo-500/5 translate-x-1'
-                        : 'border-gray-50 dark:border-gray-800 hover:border-indigo-500/30 hover:bg-gray-50/50 dark:hover:bg-gray-800/30'
+                      ? 'border-indigo-500 bg-indigo-50/30 dark:bg-indigo-900/10 shadow-lg shadow-indigo-500/5 translate-x-1'
+                      : 'border-gray-50 dark:border-gray-800 hover:border-indigo-500/30 hover:bg-gray-50/50 dark:hover:bg-gray-800/30'
                       }`}
                   >
                     <div className="flex items-start justify-between relative z-10">
@@ -645,8 +645,8 @@ const LiveTracking = () => {
 
                           {/* Floating Silhouette Icon */}
                           <div className={`animate-marker-float p-2 rounded-full bg-white dark:bg-gray-900 shadow-xl border-2 transition-all ${isSelected
-                              ? 'border-indigo-500 scale-110 ring-4 ring-indigo-500/20'
-                              : 'border-white dark:border-gray-800'
+                            ? 'border-indigo-500 scale-110 ring-4 ring-indigo-500/20'
+                            : 'border-white dark:border-gray-800'
                             }`}>
                             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                               <path d={getMarkerPath(emp.id)} fill={markerColor} />
@@ -791,7 +791,7 @@ const LiveTracking = () => {
             <div className="w-full h-full flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-950 relative overflow-hidden">
               {/* Map Skeleton Background */}
               <div className="absolute inset-0 bg-[radial-gradient(#e5e7eb_1.5px,transparent_1.5px)] dark:bg-[radial-gradient(#1f2937_1.5px,transparent_1.5px)] [background-size:40px_40px] opacity-40"></div>
-              
+
               <div className="z-10 flex flex-col items-center gap-6">
                 <div className="relative">
                   <div className="w-20 h-20 bg-white dark:bg-gray-900 rounded-[2rem] flex items-center justify-center text-indigo-600 shadow-2xl border border-gray-100 dark:border-gray-800">
@@ -842,8 +842,8 @@ const LiveTracking = () => {
 
           {/* Floating Global Insights - Collapsible */}
           <div className={`absolute top-10 left-10 transition-all duration-500 z-30 ${showInsights
-              ? 'p-6 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl rounded-[2rem] border border-white/50 dark:border-gray-800 shadow-2xl max-w-[280px]'
-              : 'p-3 bg-white/90 dark:bg-gray-900/90 backdrop-blur-md rounded-2xl border border-white/20 shadow-xl w-12 h-12 flex items-center justify-center cursor-pointer hover:scale-110 active:scale-95'
+            ? 'p-6 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl rounded-[2rem] border border-white/50 dark:border-gray-800 shadow-2xl max-w-[280px]'
+            : 'p-3 bg-white/90 dark:bg-gray-900/90 backdrop-blur-md rounded-2xl border border-white/20 shadow-xl w-12 h-12 flex items-center justify-center cursor-pointer hover:scale-110 active:scale-95'
             }`}
             onClick={() => !showInsights && setShowInsights(true)}
           >
