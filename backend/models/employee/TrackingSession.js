@@ -33,6 +33,11 @@ const trackingSessionSchema = new mongoose.Schema({
   managerName: String,
   currentAddress: String,
   currentCity: String,
+  destination: {
+    lat: Number,
+    lng: Number,
+    address: String
+  },
   route: [{
     lat: Number,
     lng: Number,
