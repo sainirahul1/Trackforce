@@ -17,8 +17,11 @@ const center = { lat: 17.4450, lng: 78.4200 };
 
 // --- Elite Components ---
 
-const EmployeeDetailCard = ({ employee, onClose, onToggleMission, isVisible }) => {
+const EmployeeDetailCard = ({ employee, currentPos, onClose, onToggleMission, isVisible }) => {
   if (!employee) return null;
+  const lat = employee.lat || currentPos?.lat;
+  const lng = employee.lng || currentPos?.lng;
+
   return (
     <div className="absolute bottom-[65px] left-1/2 -translate-x-1/2 w-[240px] bg-white/95 dark:bg-gray-900/95 backdrop-blur-2xl rounded-[1.8rem] shadow-[0_25px_60px_rgba(0,0,0,0.25)] border border-white/20 p-4 z-[2000] animate-in slide-in-from-bottom-2 duration-300 pointer-events-auto">
       <div className="flex items-center justify-between mb-4">
@@ -36,7 +39,17 @@ const EmployeeDetailCard = ({ employee, onClose, onToggleMission, isVisible }) =
       <div className="space-y-4 mb-5">
         <div className="flex gap-3">
            <div className="w-8 h-8 bg-blue-50 dark:bg-blue-900/20 rounded-xl flex items-center justify-center shrink-0"><MapPin size={18} className="text-[#3b82f6]" /></div>
-           <div><p className="text-[8px] font-black text-blue-500 uppercase tracking-widest mb-0.5">LOCATION</p><p className="text-[10px] font-bold text-gray-400 leading-tight">{employee.address || 'Active Tracking...'}</p></div>
+            <div>
+              <p className="text-[8px] font-black text-blue-500 uppercase tracking-widest mb-0.5">LOCATION</p>
+              <p className="text-[11px] font-black text-gray-900 dark:text-white leading-tight">
+                {employee.address || 'Resolving GPS...'}
+              </p>
+              {lat && (
+                <p className="text-[8px] font-bold text-gray-400 mt-1 uppercase tracking-tighter">
+                  LOC: {Number(lat).toFixed(4)}, {Number(lng).toFixed(4)}
+                </p>
+              )}
+            </div>
         </div>
       </div>
       <div className="grid grid-cols-3 gap-2 mb-5">
@@ -75,13 +88,27 @@ const ActiveMissionLayer = ({ missionId, employees, routes, destinations }) => {
 
   return (
     <>
+      {/* Outer Glow Path */}
+      <Polyline 
+        key={`glow-route-${activeId || 'idle'}`}
+        path={path}
+        options={{ 
+          strokeColor: '#3b82f6', 
+          strokeOpacity: activeId ? 0.2 : 0, 
+          strokeWeight: 12, 
+          lineJoin: 'round', 
+          visible: !!activeId,
+          zIndex: 99
+        }}
+      />
+      {/* Primary Optimal Path */}
       <Polyline 
         key={`hard-flush-route-${activeId || 'idle'}`}
         path={path}
         options={{ 
-          strokeColor: '#3b82f6', 
-          strokeOpacity: activeId ? 0.9 : 0, 
-          strokeWeight: 8, 
+          strokeColor: '#2563eb', 
+          strokeOpacity: activeId ? 1 : 0, 
+          strokeWeight: 5, 
           lineJoin: 'round', 
           visible: !!activeId,
           zIndex: 100 
@@ -89,13 +116,13 @@ const ActiveMissionLayer = ({ missionId, employees, routes, destinations }) => {
       />
       {activeId && employee?.start && (
         <OverlayViewF position={{ lat: Number(employee.start.lat), lng: Number(employee.start.lng) }} mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}>
-          <div className="p-2 bg-emerald-500 rounded-full shadow-lg border-2 border-white translate-x-[-50%] translate-y-[-50%] flex items-center justify-center animate-in zoom-in-50 duration-300"><Flag size={10} className="text-white fill-white" /></div>
+          <div className="p-2 bg-slate-800 rounded-full shadow-lg border-2 border-white translate-x-[-50%] translate-y-[-50%] flex items-center justify-center animate-in zoom-in-50 duration-300"><Flag size={10} className="text-white fill-white" /></div>
         </OverlayViewF>
       )}
       {activeId && dest && (
         <OverlayViewF position={{ lat: Number(dest.lat), lng: Number(dest.lng) }} mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}>
-          <div className="p-2 bg-rose-600 rounded-full shadow-2xl border-2 border-white translate-x-[-50%] translate-y-[-50%] flex items-center justify-center z-[2000] animate-in zoom-in-0 duration-500">
-            <div className="absolute inset-0 bg-rose-600 rounded-full animate-ping opacity-25" />
+          <div className="p-2 bg-blue-600 rounded-full shadow-2xl border-2 border-white translate-x-[-50%] translate-y-[-50%] flex items-center justify-center z-[2000] animate-in zoom-in-0 duration-500">
+            <div className="absolute inset-0 bg-blue-600 rounded-full animate-ping opacity-25" />
             <MapPin size={18} className="text-white fill-white relative z-10" />
           </div>
         </OverlayViewF>
@@ -122,6 +149,7 @@ const LiveTracking = () => {
   const [visibleMissionId, setVisibleMissionId] = useState(null);
   const [lastSyncTime, setLastSyncTime] = useState(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
   const animationFrameRef = useRef({});
+  const lastRouteUpdateRef = useRef({}); // Track last update time per employee ID
   const { isLoaded } = useGoogleMaps();
   const socket = useSocket();
 
@@ -133,25 +161,79 @@ const LiveTracking = () => {
     setSelectedId(null);
   }, []);
 
-  const fetchOptimalRoute = async (id, origin, destination) => {
+  const fetchOptimalRoute = async (id, origin, destination, isSilent = false) => {
     if (!isLoaded || !origin || !destination) return;
+    
+    // Throttle: Don't update more than once every 12 seconds per agent
+    const idStr = String(id);
+    const now = Date.now();
+    const lastUpdate = lastRouteUpdateRef.current[idStr] || 0;
+    if (isSilent && (now - lastUpdate < 12000)) return;
+
     try {
       const response = await fetch(`https://router.project-osrm.org/route/v1/driving/${origin.lng},${origin.lat};${destination.lng},${destination.lat}?overview=full&geometries=geojson&continue_straight=true`);
       const data = await response.json();
       if (data.code === 'Ok' && data.routes?.[0]) {
-        const path = data.routes[0].geometry.coordinates.map(coord => ({ lat: coord[1], lng: coord[0] }));
-        setRoutes(prev => ({ ...prev, [id]: path }));
+        let path = data.routes[0].geometry.coordinates.map(coord => ({ lat: coord[1], lng: coord[0] }));
+        
+        // Ensure the path starts EXACTLY at the current origin for a "live connection" feel
+        if (path.length > 0) {
+          path = [{ lat: Number(origin.lat), lng: Number(origin.lng) }, ...path];
+        }
+        
+        setRoutes(prev => ({ ...prev, [idStr]: path }));
+        lastRouteUpdateRef.current[idStr] = now;
       }
-    } catch (err) { console.error(`[ROUTING ERROR]`, err); }
+    } catch (err) { 
+      if (!isSilent) console.error(`[ROUTING ERROR]`, err); 
+    }
   };
 
   useEffect(() => {
     if (!socket) return;
+
+    socket.on('tracking:start', (data) => {
+      console.log('[SOCKET] Agent started tracking:', data.employeeName);
+      setEmployees(prev => {
+        const idStr = String(data.employeeId);
+        if (prev[idStr]) return { ...prev, [idStr]: { ...prev[idStr], isTracking: true } };
+        return { 
+          ...prev, 
+          [idStr]: { 
+            id: idStr, 
+            name: data.employeeName, 
+            isTracking: true,
+            lat: data.location?.lat,
+            lng: data.location?.lng
+          } 
+        };
+      });
+    });
+
+    socket.on('tracking:stop', (data) => {
+      console.log('[SOCKET] Agent stopped tracking:', data.employeeName);
+      setEmployees(prev => {
+        const idStr = String(data.employeeId);
+        if (!prev[idStr]) return prev;
+        return { ...prev, [idStr]: { ...prev[idStr], isTracking: false } };
+      });
+      // If this agent's mission was active, reset it
+      if (String(visibleMissionId) === String(data.employeeId)) {
+        handleResetMission();
+      }
+    });
+
     socket.on('tracking:live', (data) => {
       setEmployees(prev => {
         const idStr = String(data.employeeId);
         const existing = prev[idStr] || {};
-        const newPos = { lat: Number(data.location.lat), lng: Number(data.location.lng) };
+        
+        const rawLat = data.lat || (data.location && data.location.lat);
+        const rawLng = data.lng || (data.location && data.location.lng);
+        
+        if (!rawLat || !rawLng) return prev; // Ignore invalid pings
+
+        const newPos = { lat: Number(rawLat), lng: Number(rawLng) };
         const currentPos = animatedPositions[idStr] || { lat: existing.lat || newPos.lat, lng: existing.lng || newPos.lng };
         
         const duration = 2000;
@@ -167,11 +249,32 @@ const LiveTracking = () => {
         if (animationFrameRef.current[idStr]) cancelAnimationFrame(animationFrameRef.current[idStr]);
         animationFrameRef.current[idStr] = requestAnimationFrame(step);
 
-        return { ...prev, [idStr]: { ...existing, ...data, id: idStr, lat: newPos.lat, lng: newPos.lng, isTracking: true } };
+        // LIVE ROUTE UPDATE: If this employee's mission is active, update the route
+        if (String(visibleMissionId) === idStr && existing.destination) {
+          fetchOptimalRoute(idStr, newPos, existing.destination, true);
+        }
+
+        return { 
+          ...prev, 
+          [idStr]: { 
+            ...existing, 
+            ...data, 
+            id: idStr, 
+            lat: newPos.lat, 
+            lng: newPos.lng, 
+            address: data.address || existing.address || `Lat: ${newPos.lat.toFixed(6)}, Lng: ${newPos.lng.toFixed(6)}`,
+            isTracking: true 
+          } 
+        };
       });
     });
-    return () => socket.off('tracking:live');
-  }, [socket, animatedPositions]);
+
+    return () => {
+      socket.off('tracking:start');
+      socket.off('tracking:stop');
+      socket.off('tracking:live');
+    };
+  }, [socket, animatedPositions, visibleMissionId, handleResetMission]);
 
   const fetchActiveSessionsSync = useCallback(async (isManual = false) => {
     if (isManual) setRefreshing(true);
@@ -183,13 +286,14 @@ const LiveTracking = () => {
           const idStr = String(session.user._id);
           const lastPoint = session.route?.[session.route.length - 1];
           const startPoint = session.route?.[0] || lastPoint;
+          const existing = employees[idStr];
           initialMap[idStr] = { 
             id: idStr, 
             name: session.employeeName || session.user.name, 
-            lat: lastPoint?.lat, 
-            lng: lastPoint?.lng, 
+            lat: lastPoint?.lat || existing?.lat, 
+            lng: lastPoint?.lng || existing?.lng, 
             start: startPoint, 
-            address: session.currentAddress,
+            address: session.currentAddress || existing?.address,
             destination: session.destination, // PULL FORM DATABASE
             isTracking: !!session.user.isTracking
           };
@@ -264,9 +368,44 @@ const LiveTracking = () => {
              <div className="flex items-center gap-2 mb-8 pr-2"><div className="relative flex-1"><Search className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-400" size={18} /><input type="text" placeholder="SEARCH AGENT..." value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }} className="w-full pl-14 pr-4 py-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl text-[10px] font-black outline-none tracking-widest uppercase focus:ring-1 focus:ring-blue-500" /></div></div>
             <div className="space-y-4 overflow-y-auto flex-1 custom-scrollbar pr-1">
               {currentItems.map((emp) => (
-                <div key={`side-${emp.id}`} onClick={() => handleToggleMission(emp.id)} className={`p-5 rounded-2xl border-2 transition-all cursor-pointer ${selectedId === emp.id ? 'border-blue-500 bg-blue-500/5 shadow-xl' : 'border-transparent hover:bg-gray-50 dark:hover:bg-gray-800'}`}>
-                   <div className="flex justify-between items-center"><h4 className="font-black text-xs dark:text-white uppercase tracking-tight">{emp.name}</h4><div className={`w-2 h-2 rounded-full ${emp.isTracking ? 'bg-emerald-500 shadow-[0_0_8px_#10b981]' : 'bg-gray-300'}`} /></div>
-                   <div className="mt-1.5 text-[8px] font-bold text-gray-400 uppercase tracking-widest">MISSION READY</div>
+                <div key={`side-${emp.id}`} className={`p-4 rounded-2xl border-2 transition-all ${selectedId === emp.id ? 'border-blue-500 bg-blue-500/5 shadow-xl' : 'border-transparent bg-gray-50/50 dark:bg-gray-800/30'}`}>
+                   <div className="flex justify-between items-start mb-3">
+                     <div className="flex flex-col gap-1.5 flex-1 min-w-0">
+                       <h4 className="font-black text-[11px] dark:text-white uppercase tracking-tight leading-none truncate">{emp.name}</h4>
+                       <div className="flex flex-col gap-0.5">
+                         <span className="text-[7px] font-black text-gray-400 uppercase tracking-widest">{emp.isTracking ? 'AGENT DISPATCHED' : 'OFFLINE'}</span>
+                          {emp.isTracking && (
+                            <div className="flex flex-col gap-0.5 max-w-[140px]">
+                              <span className="text-[9px] font-black text-blue-600 dark:text-blue-400 tracking-tight leading-tight italic line-clamp-2">
+                                {emp.address || 'Resolving GPS...'}
+                              </span>
+                              {(emp.lat || animatedPositions[emp.id]?.lat) && (
+                                <span className="text-[7px] font-bold text-gray-400/60 uppercase tracking-tighter">
+                                  {Number(emp.lat || animatedPositions[emp.id]?.lat).toFixed(4)}, {Number(emp.lng || animatedPositions[emp.id]?.lng).toFixed(4)}
+                                </span>
+                              )}
+                            </div>
+                          )}
+                       </div>
+                     </div>
+                     <div className={`w-2 h-2 rounded-full shrink-0 ${emp.isTracking ? 'bg-emerald-500 shadow-[0_0_8px_#10b981]' : 'bg-gray-300'}`} />
+                   </div>
+                   <div className="grid grid-cols-2 gap-2">
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); handleAvatarClick(emp.id); }}
+                        className="flex items-center justify-center gap-1.5 py-1.5 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl text-[8px] font-black text-gray-900 dark:text-gray-200 uppercase tracking-widest hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors shadow-sm"
+                      >
+                        <MapPin size={10} className="text-blue-500" />
+                        LIVE
+                      </button>
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); handleToggleMission(emp.id); }}
+                        className={`flex items-center justify-center gap-1.5 py-1.5 rounded-xl text-[8px] font-black uppercase tracking-widest transition-all shadow-sm ${String(visibleMissionId) === String(emp.id) ? 'bg-rose-600 text-white' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
+                      >
+                        <Navigation size={10} />
+                        ROUTE
+                      </button>
+                   </div>
                 </div>
               ))}
               {filtered.length === 0 && <div className="text-center py-10 opacity-40"><p className="text-[10px] font-black uppercase tracking-widest text-gray-400">No Mission Intel</p></div>}
@@ -301,7 +440,7 @@ const LiveTracking = () => {
                 return (
                   <OverlayViewF key={`agent-v-p-${empIdStr}`} position={pos} mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET} zIndex={isSelectedForMission ? 1050 : 1000}>
                     <div style={{ transform: 'translate(-50%, -100%)' }} className="cursor-pointer relative transform transition-transform duration-300 hover:scale-110">
-                      {String(detailEmpId) === empIdStr && <EmployeeDetailCard employee={emp} onClose={() => setDetailEmpId(null)} onToggleMission={() => handleToggleMission(empIdStr)} isVisible={isSelectedForMission} />}
+                      {String(detailEmpId) === empIdStr && <EmployeeDetailCard employee={emp} currentPos={pos} onClose={() => setDetailEmpId(null)} onToggleMission={() => handleToggleMission(empIdStr)} isVisible={isSelectedForMission} />}
                       <EmployeeAvatar onClick={() => handleAvatarClick(empIdStr)} />
                       <div className={`mt-2 bg-slate-900 border border-white/20 text-white px-3 py-1 rounded-xl shadow-2xl text-[8px] font-black text-center uppercase tracking-widest transition-all ${isSelectedForMission ? 'ring-2 ring-blue-500 scale-110' : ''}`}>{emp.name.split(' ')[0]}</div>
                     </div>

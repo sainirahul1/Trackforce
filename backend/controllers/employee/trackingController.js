@@ -58,6 +58,17 @@ exports.startTracking = async (req, res) => {
         details: 'Employee is now On Duty and tracking has started.',
         status: 'success'
       });
+      // Notify managers immediately that this employee is now On Duty
+      const io = req.app.get('io');
+      if (io) {
+        io.to(`tenant:${req.tenantId.toString()}`).emit('tracking:start', {
+          employeeId: user._id,
+          employeeName: user.name,
+          managerId: user.manager,
+          tenantId: req.tenantId,
+          timestamp: new Date()
+        });
+      }
     }
 
     res.status(200).json({ message: 'Tracking started', session: existingSession });
@@ -74,7 +85,7 @@ exports.getActiveSessions = async (req, res) => {
       status: 'active'
     }).populate({
       path: 'user',
-      match: { role: 'employee', isTracking: true },
+      match: { isTracking: true }, // Removed role filter to include managers/tenants who start tracking
       select: 'name role isTracking'
     }).lean();
 
@@ -123,7 +134,7 @@ exports.stopTracking = async (req, res) => {
     // Notify managers globally that this employee is now Off Duty
     const io = req.app.get('io');
     if (io) {
-      io.to(req.tenantId.toString()).emit('tracking:stop', {
+      io.to(`tenant:${req.tenantId.toString()}`).emit('tracking:stop', {
         employeeId: user._id,
         employeeName: user.name,
         timestamp: new Date()

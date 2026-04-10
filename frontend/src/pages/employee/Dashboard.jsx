@@ -413,13 +413,9 @@ const EmployeeDashboard = () => {
 
   // --- Start Geo Tracking ---
   const startGeoTracking = React.useCallback(() => {
-    // RESTRICTION: Only allow employees to emit GPS
+    // UPDATED: Allow all roles that reach this dashboard to emit GPS (for testing/multi-role users)
     const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
-    if (currentUser.role !== 'employee') {
-      console.warn('[GEOLOCATION] Tracking is disabled for your role:', currentUser.role);
-      return;
-    }
-
+    
     if (!navigator.geolocation) {
       showAlert('Error', 'Geolocation is not supported by your browser', 'error');
       return;
@@ -462,7 +458,7 @@ const EmployeeDashboard = () => {
   // Handle starting/stopping tracking when duty status changes
   useEffect(() => {
     const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
-    if (isOnDuty && socket && !watchIdRef.current && currentUser.role === 'employee') {
+    if (isOnDuty && socket && !watchIdRef.current) {
       console.log('Starting geo tracking watcher');
       startGeoTracking();
     } else if (!isOnDuty && watchIdRef.current) {
@@ -548,9 +544,9 @@ const EmployeeDashboard = () => {
     // Re-read user from localStorage to get the auto-healed manager/tenant data
     const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
 
-    // Prevent managers from tracking themselves
-    if (currentUser.role === 'manager') {
-      showAlert('Access Denied', 'Tracking is only available for Field Executives.', 'warning');
+    // Prevent non-logged in users (sanity check)
+    if (!currentUser.role) {
+      showAlert('Error', 'No user role found. Please re-login.', 'error');
       return;
     }
 

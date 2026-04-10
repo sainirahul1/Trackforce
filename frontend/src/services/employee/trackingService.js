@@ -38,7 +38,7 @@ export const getActiveTrackingSessions = async () => {
     const data = await response.json();
     if (!response.ok) throw new Error(data.message || 'Failed to fetch active sessions');
     return data;
-  });
+  }, true);
 };
 
 export const getDashboardStats = async (force = false) => {

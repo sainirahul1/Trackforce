@@ -49,7 +49,9 @@ const initSocket = (server) => {
       if (!employeeId || !location || isNaN(location.lat) || isNaN(location.lng)) {
         return;
       }
-      if (role !== 'employee') {
+      // UPDATED: Allow all roles to broadcast (for testing/multi-role users)
+      if (!['employee', 'manager', 'tenant'].includes(role)) {
+        console.warn(`[SOCKET] Unauthorized tracking role attempted: ${role}`);
         return;
       }
 
@@ -67,39 +69,55 @@ const initSocket = (server) => {
 
         console.log(`[SOCKET] Validated Update: ${data.employeeName} -> Room(s): ${tenantId}, ${managerId}`);
 
-        // 3. Resolve Address via Geocoding (with fallback)
+        // 3. Resolve Initial Fallback Address (Coordinates)
+        const initialAddress = `Lat: ${Number(location.lat).toFixed(6)}, Lng: ${Number(location.lng).toFixed(6)}`;
+
+        // 4. Broadcast IMMEDIATELY to Active Listeners for < 2s reflection
+        const liveData = {
+          ...data,
+          address: data.address || session.currentAddress || initialAddress, 
+          lat: Number(location.lat),
+          lng: Number(location.lng),
+          location: { lat: Number(location.lat), lng: Number(location.lng) }
+        };
+
+        const tenantRoom = tenantId ? `tenant:${tenantId.toString()}` : null;
+        const managerRoom = managerId?.toString();
+
+        if (tenantRoom) io.to(tenantRoom).emit('tracking:live', liveData);
+        if (managerRoom && managerRoom !== tenantRoom) io.to(managerRoom).emit('tracking:live', liveData);
+
+        // 3. Resolve Address via Geocoding (with fallback) in the "background"
         let resolvedAddress = `Lat: ${Number(location.lat).toFixed(6)}, Lng: ${Number(location.lng).toFixed(6)}`;
         let resolvedCity = '';
 
         try {
           const fetch = require('node-fetch');
           const apiKey = process.env.VITE_GOOGLE_MAPS_API_KEY;
-          if (apiKey && location.lat && location.lng) {
+          
+          // Only geocode if no address exists OR if moved more than 50 meters
+          const needsGeocode = !session.currentAddress || (distanceIncrement > 0.05);
+
+          if (apiKey && location.lat && location.lng && needsGeocode) {
             const geoResponse = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${location.lat},${location.lng}&key=${apiKey}`);
             const geoData = await geoResponse.json();
             if (geoData.status === 'OK' && geoData.results?.[0]) {
               resolvedAddress = geoData.results[0].formatted_address;
               const locality = geoData.results[0].address_components.find(c => c.types.includes('locality'));
               if (locality) resolvedCity = locality.long_name;
+              
+              const enrichedData = { ...liveData, address: resolvedAddress, city: resolvedCity };
+              if (tenantRoom) io.to(tenantRoom).emit('tracking:live', enrichedData);
+              if (managerRoom && managerRoom !== tenantRoom) io.to(managerRoom).emit('tracking:live', enrichedData);
             }
+          } else {
+            // Reuse existing
+            resolvedAddress = session.currentAddress || initialAddress;
+            resolvedCity = session.currentCity || '';
           }
         } catch (geoErr) {
           console.error('[GEOCODE] Error:', geoErr);
         }
-
-        // 4. Broadcast ONLY to Active Listeners
-        const liveData = {
-          ...data,
-          address: resolvedAddress,
-          city: resolvedCity,
-          location: { lat: Number(location.lat), lng: Number(location.lng) }
-        };
-
-        const tenantRoom = tenantId?.toString();
-        const managerRoom = managerId?.toString();
-
-        if (tenantRoom) io.to(tenantRoom).emit('tracking:live', liveData);
-        if (managerRoom && managerRoom !== tenantRoom) io.to(managerRoom).emit('tracking:live', liveData);
 
         // 5. Persist to Database and Calculate Distance
         const lat = Number(location.lat);
