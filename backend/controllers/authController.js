@@ -87,12 +87,26 @@ exports.getMe = async (req, res) => {
 // @route   POST /api/auth/login
 // @access  Public
 exports.login = async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, portal } = req.body;
+  console.log('Login attempt:', { email, portal });
+  const { email, password, portal } = req.body;
 
   try {
     const user = await User.findOne({ email });
 
     if (user && (await user.matchPassword(password))) {
+      // Strict Portal Isolation Logic
+      if (portal) {
+        const normalizedPortal = portal.toLowerCase().replace('_', '');
+        const normalizedRole = user.role.toLowerCase().replace('_', '');
+
+        if (normalizedPortal !== normalizedRole) {
+          return res.status(403).json({ 
+            message: `Unauthorized: Your ${user.role} account cannot access the ${portal} portal.` 
+          });
+        }
+      }
+
       const populatedUser = await User.findById(user._id).populate('tenant');
       res.json({
         _id: user._id,
@@ -113,3 +127,4 @@ exports.login = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+

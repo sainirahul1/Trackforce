@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { ShoppingBag, TrendingUp, DollarSign, ArrowUpRight, ArrowDownRight, Package, Search, User, ChevronLeft, ChevronRight } from 'lucide-react';
-import { getOrders, getOrderStats } from '../../employee/services/orderService';
+import { getOrders, getOrderStats } from '../services/orderService';
 
 const Orders = () => {
   const { setPageLoading } = useOutletContext();

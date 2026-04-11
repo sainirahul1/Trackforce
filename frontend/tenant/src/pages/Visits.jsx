@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { Camera, MapPin, Calendar, CheckCircle, Clock, ChevronRight, User } from 'lucide-react';
-import { getVisits } from '../../employee/services/visitService';
+import { getVisits } from '../services/visitService';
 
 const Visits = () => {
   const { setPageLoading } = useOutletContext();

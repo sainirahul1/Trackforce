@@ -58,7 +58,7 @@ apiClient.interceptors.response.use(
     const status = error.response?.status;
     const code = error.response?.data?.code;
 
-    if (status === 401) {
+    if (status === 401 && !error.config.url.includes('/login')) {
       // Token expired or invalid — force logout
       console.error('[API CLIENT] 401 Unauthorized — session expired or invalid token.');
       
@@ -96,3 +96,4 @@ apiClient.interceptors.response.use(
 export const getApiBaseUrl = getBaseUrl;
 
 export default apiClient;
+

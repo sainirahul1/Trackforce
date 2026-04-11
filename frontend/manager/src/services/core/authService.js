@@ -6,7 +6,7 @@ export const login = async (email, password, portal) => {
   const response = await apiClient.post(`${API_URL}/login`, {
     email,
     password,
-    portal, // MUST pass portal to enforce strict backend validation
+    portal
   });
 
   const data = response.data;
@@ -92,3 +92,5 @@ export const updateSuperadminCredentials = async (credentialsData) => {
   const response = await apiClient.put('/reatchall/superadmin/update-credentials', credentialsData);
   return response.data;
 };
+
+

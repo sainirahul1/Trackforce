@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import * as authService from '../services/core/authService';
-import { logActivity } from '../../employee/services/activityService';
+import { logActivity } from '../services/activityService';
 
 const AuthContext = createContext();
 

@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { login as authServiceLogin } from '../../services/core/authService';
 import { ShieldCheck, Lock, Mail, ChevronRight, Loader2, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import Dialog from '../../components/ui/Dialog';
 import Button from '../../components/ui/Button';
 import ThemeToggle from '../../components/ui/ThemeToggle';
 
@@ -11,6 +12,7 @@ const LoginPage = ({ portal = '' }) => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false);
   const navigate = useNavigate();
   const { login: globalLogin } = useAuth();
   
@@ -20,7 +22,7 @@ const LoginPage = ({ portal = '' }) => {
     setError('');
     try {
       // Pass null portal - backend will resolve based on user's default role
-      const u = await authServiceLogin(email, password, null);
+      const u = await authServiceLogin(email, password, 'EMPLOYEE');
       
       // Synchronize with global AuthContext
       globalLogin(u);
@@ -54,7 +56,10 @@ const LoginPage = ({ portal = '' }) => {
       }
       
     } catch (err) {
-      setError(err.message);
+      const message = err.response?.data?.message || err.message || 'Invalid email or password';
+      setError(message);
+      setShowErrorModal(true);
+      
     } finally {
       setLoading(false);
     }
@@ -167,8 +172,24 @@ const LoginPage = ({ portal = '' }) => {
           </p>
         </form>
       </div>
+
+      {showErrorModal && (
+        <Dialog 
+          title="Access Denied"
+          message={error}
+          type="error"
+          onConfirm={() => setShowErrorModal(false)}
+          onClose={() => setShowErrorModal(false)}
+        />
+      )}
     </div>
   );
 };
 
 export default LoginPage;
+
+
+
+
+
+

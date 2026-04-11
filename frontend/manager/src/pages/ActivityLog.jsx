@@ -7,7 +7,7 @@ import {
   Mail, MessageSquare, X, ArrowLeft, LogOut, Plus, UserPlus
 } from 'lucide-react';
 import { useOutletContext } from 'react-router-dom';
-import { getExecutives, getLogsByUser, getActivities } from '../../employee/services/activityService';
+import { getExecutives, getLogsByUser, getActivities } from '../services/activityService';
 
 const ManagerActivityLog = () => {
   const { setPageLoading } = useOutletContext();

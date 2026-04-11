@@ -20,10 +20,10 @@ import {
   Check, X, MessageSquare, MoreHorizontal, Mail, Phone, ArrowLeft,
   ChevronDown, History, Radio, Activity, Navigation, Users, ArrowUpRight
 } from 'lucide-react';
-import { getVisits, getVisitById, updateVisit } from '../../employee/services/visitService';
-import { getActiveTrackingSessions } from '../../employee/services/trackingService';
+import { getVisits, getVisitById, updateVisit } from '../services/visitService';
+import { getActiveTrackingSessions } from '../services/trackingService';
 import { useDialog } from '../context/DialogContext';
-import { logActivity } from '../../employee/services/activityService';
+import { logActivity } from '../services/activityService';
 
 /**
  * VisitRow Component

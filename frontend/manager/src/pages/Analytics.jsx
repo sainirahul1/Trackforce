@@ -12,8 +12,8 @@ import {
 } from 'chart.js';
 import { Line, Bar } from 'react-chartjs-2';
 import tenantService from '../services/core/tenantService';
-import { getVisitById, updateVisit } from '../../employee/services/visitService';
-import { getTasks, getTaskById } from '../../employee/services/taskService';
+import { getVisitById, updateVisit } from '../services/visitService';
+import { getTasks, getTaskById } from '../services/taskService';
 import { useDialog } from '../context/DialogContext';
 import { getSyncCachedData } from '../utils/cacheHelper';
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Filler, Tooltip);
