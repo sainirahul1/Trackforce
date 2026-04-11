@@ -17,16 +17,9 @@ import {
 } from 'lucide-react';
 import Button from '../components/ui/Button';
 import Skeleton from '../components/ui/Skeleton';
+import { getApiBaseUrl } from '../services/apiClient';
 
-// Base API URL - point to the backend server
-const getBaseUrl = () => {
-  let url = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
-  url = url.replace(/\/$/, '');
-  if (!url.endsWith('/api')) url += '/api';
-  return url;
-};
-const BASE_URL = getBaseUrl();
-const API_BASE_URL = `${BASE_URL}/superadmin/manage`;
+const API_BASE_URL = `${getApiBaseUrl()}/api/superadmin/manage`;
 
 const RolesPermissions = () => {
   const [activeTab, setActiveTab] = useState('Roles');

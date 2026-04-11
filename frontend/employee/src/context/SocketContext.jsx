@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { io } from 'socket.io-client';
 import { useAuth } from './AuthContext';
+import { getApiBaseUrl } from '../services/apiClient';
 
 const SocketContext = createContext();
 
@@ -18,9 +19,7 @@ export const SocketProvider = ({ children }) => {
 
   useEffect(() => {
     if (user && user.token) {
-      const socketUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
-      // Normalize URL
-      const baseUrl = socketUrl.replace(/\/api$/, '').replace(/\/$/, '');
+      const baseUrl = getApiBaseUrl();
       
       const newSocket = io(baseUrl, {
         auth: {

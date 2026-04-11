@@ -28,6 +28,7 @@ import CreateIssueModal from '../components/issues/CreateIssueModal';
 import { getIssues, createIssue, updateIssue, deleteIssue, getIssueById } from '../services/core/issueService';
 import { useSocket } from '../context/SocketContext';
 import { useAuth } from '../context/AuthContext';
+import { getApiBaseUrl } from '../services/apiClient';
 
 const ImageModal = memo(({ src, onClose }) => {
   if (!src) return null;
@@ -71,10 +72,8 @@ const IssueCard = memo(({ issue, onClick }) => {
     if (issue.from && typeof issue.from === 'object' && issue.from.profile && issue.from.profile.profileImage) {
       const dp = issue.from.profile.profileImage;
       if (dp.startsWith('data:') || dp.startsWith('http')) return dp;
-      let url = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
-      url = url.replace(/\/$/, '');
-      if (!url.endsWith('/api')) url += '/api';
-      return `${url.replace('/api', '')}${dp}`;
+      const base = getApiBaseUrl();
+      return `${base}${dp.startsWith('/') ? '' : '/'}${dp}`;
     }
     return `https://i.pravatar.cc/150?u=${issue.id || issue._id || 'default'}`;
   };

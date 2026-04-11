@@ -4,6 +4,7 @@ import { User, Mail, Phone, MapPin, Building, ShieldCheck, Camera, Edit3, Key, B
 import { getMe, updateProfile as updateAuthProfile, uploadProfileImage as uploadAuthImage } from '../services/core/authService';
 import { useAuth } from '../context/AuthContext';
 import { useDialog } from '../context/DialogContext';
+import { getApiBaseUrl } from '../services/apiClient';
 import { Loader2 } from 'lucide-react';
 
 const Profile = () => {
@@ -160,10 +161,8 @@ const Profile = () => {
                   <>
                     {avatarPreview ? (
                       <img src={avatarPreview.startsWith('data:') ? avatarPreview : (() => {
-                        let url = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
-                        url = url.replace(/\/$/, '');
-                        if (!url.endsWith('/api')) url += '/api';
-                        return `${url.replace('/api', '')}${avatarPreview}`;
+                        const base = getApiBaseUrl();
+                        return `${base}${avatarPreview.startsWith('/') ? '' : '/'}${avatarPreview}`;
                       })()} alt="Profile Avatar" className="w-full h-full object-cover" />
                     ) : (
                       <User size={64} strokeWidth={1.5} />

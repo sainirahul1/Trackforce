@@ -9,6 +9,7 @@ import { uploadProfileImage } from '../services/core/authService';
 import { getMyProfile, getMyAvatar, updateMyProfile, changePassword } from '../services/profileService';
 import { fetchDocuments, uploadDocument, updateDocumentService, deleteDocumentService } from '../services/documentService';
 import { getSyncCachedData } from '../utils/cacheHelper';
+import { getApiBaseUrl } from '../services/apiClient';
 
 const ScrollStyles = () => (
   <style>{`
@@ -1456,14 +1457,8 @@ const DocumentPreviewModal = ({ isOpen, onClose, document: docRecord }) => {
             {docRecord?.fileUrl && (
               <button
                 onClick={() => {
-                  const getBaseUrl = () => {
-                    let url = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
-                    url = url.replace(/\/$/, '');
-                    if (!url.endsWith('/api')) url += '/api';
-                    return url;
-                  };
-                  const base = getBaseUrl().replace('/api', '');
-                  window.open(`${base}${docRecord.fileUrl}`, '_blank');
+                  const base = getApiBaseUrl();
+                  window.open(`${base}${docRecord.fileUrl.startsWith('/') ? '' : '/'}${docRecord.fileUrl}`, '_blank');
                 }}
                 className="hidden sm:flex p-3 rounded-2xl bg-indigo-500 hover:bg-indigo-600 transition-all items-center gap-2 font-bold text-sm text-white border-none"
               >
@@ -1857,10 +1852,8 @@ const EditProfileModal = ({ isOpen, onClose, employee, onSaveProfile }) => {
                 <img
                   src={avatarUrl?.startsWith('data:') ? avatarUrl : (() => {
                     if (!avatarUrl) return "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix";
-                    let url = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
-                    url = url.replace(/\/$/, '');
-                    if (!url.endsWith('/api')) url += '/api';
-                    return `${url.replace('/api', '')}${avatarUrl}`;
+                    const base = getApiBaseUrl();
+                    return `${base}${avatarUrl.startsWith('/') ? '' : '/'}${avatarUrl}`;
                   })()}
                   alt="Profile"
                   className="h-16 w-16 rounded-2xl object-cover border border-gray-200 dark:border-gray-800"
@@ -2559,15 +2552,9 @@ const EmployeeProfile = () => {
     try {
       const userInfo = JSON.parse(localStorage.getItem('user'));
       if (userInfo && userInfo.token) {
-        const getBaseUrl = () => {
-          let url = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
-          url = url.replace(/\/$/, '');
-          if (!url.endsWith('/api')) url += '/api';
-          return url;
-        };
-        const BASE_URL = getBaseUrl();
+        const base = getApiBaseUrl();
         const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
-        await axios.put(`${BASE_URL}/auth/profile`, updates, config);
+        await axios.put(`${base}/api/auth/profile`, updates, config);
       }
       setEmployee(prev => ({ ...prev, ...updates }));
     } catch (err) {

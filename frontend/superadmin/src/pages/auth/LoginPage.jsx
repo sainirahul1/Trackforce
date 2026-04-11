@@ -15,7 +15,7 @@ const LoginPage = ({ portal = '' }) => {
   const [showErrorModal, setShowErrorModal] = useState(false);
   const navigate = useNavigate();
   const { login: globalLogin } = useAuth();
-  
+
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -23,7 +23,7 @@ const LoginPage = ({ portal = '' }) => {
     try {
       // Pass null portal - backend will resolve based on user's default role
       const u = await authServiceLogin(email, password, 'SUPER_ADMIN');
-      
+
       // Synchronize with global AuthContext
       globalLogin(u);
 
@@ -38,28 +38,30 @@ const LoginPage = ({ portal = '' }) => {
         // Same portal - smooth SPA navigation
         navigate(`/${normalizedTargetRole}/dashboard`, { replace: true });
       } else {
-        // Cross-portal jump with Localhost Port Awareness
-        const isLocal = window.location.hostname === 'localhost';
+        // Cross-portal jump: Handle local vs production environments
+        const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
         if (isLocal) {
-            const portalPorts = {
-                employee: 5173,
-                manager: 5174,
-                tenant: 5175,
-                superadmin: 5176
-            };
-            const targetPort = portalPorts[normalizedTargetRole] || 5173;
-            window.location.href = `http://localhost:${targetPort}/${normalizedTargetRole}/dashboard`;
+          // Local development: map roles to their specific Vite ports
+          const portalPorts = {
+            employee: 5173,
+            manager: 5174,
+            tenant: 5175,
+            superadmin: 5176
+          };
+          const targetPort = portalPorts[normalizedTargetRole] || window.location.port;
+          window.location.href = `http://${window.location.hostname}:${targetPort}/${normalizedTargetRole}/dashboard`;
         } else {
-            // In production: use absolute path (same domain)
-            window.location.href = `/${normalizedTargetRole}/dashboard`;
+          // In production: use absolute path (assumes same domain hosting or proxy)
+          window.location.href = `/${normalizedTargetRole}/dashboard`;
         }
       }
-      
+
     } catch (err) {
       const message = err.response?.data?.message || err.message || 'Invalid email or password';
       setError(message);
       setShowErrorModal(true);
-      
+
     } finally {
       setLoading(false);
     }
@@ -174,7 +176,7 @@ const LoginPage = ({ portal = '' }) => {
       </div>
 
       {showErrorModal && (
-        <Dialog 
+        <Dialog
           title="Access Denied"
           message={error}
           type="error"

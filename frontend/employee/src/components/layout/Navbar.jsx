@@ -4,6 +4,7 @@ import { useNotifications } from '../../context/NotificationContext';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { getApiBaseUrl } from '../../services/apiClient';
 
 const getNotificationIcon = (type) => {
   switch (type) {
@@ -197,10 +198,8 @@ const Navbar = ({ user }) => {
               {user?.profile?.profileImage ? (
                 <img 
                   src={user.profile.profileImage.startsWith('data:') ? user.profile.profileImage : (() => {
-                    let url = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
-                    url = url.replace(/\/$/, '');
-                    if (!url.endsWith('/api')) url += '/api';
-                    return `${url.replace('/api', '')}${user.profile.profileImage}`;
+                    const base = getApiBaseUrl();
+                    return `${base}${user.profile.profileImage.startsWith('/') ? '' : '/'}${user.profile.profileImage}`;
                   })()} 
                   alt="Avatar" 
                   className="w-full h-full object-cover" 
@@ -218,10 +217,8 @@ const Navbar = ({ user }) => {
                   {user?.profile?.profileImage ? (
                     <img 
                       src={user.profile.profileImage.startsWith('data:') ? user.profile.profileImage : (() => {
-                        let url = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
-                        url = url.replace(/\/$/, '');
-                        if (!url.endsWith('/api')) url += '/api';
-                        return `${url.replace('/api', '')}${user.profile.profileImage}`;
+                        const base = getApiBaseUrl();
+                        return `${base}${user.profile.profileImage.startsWith('/') ? '' : '/'}${user.profile.profileImage}`;
                       })()} 
                       alt="Profile Avatar" 
                       className="w-full h-full object-cover" 

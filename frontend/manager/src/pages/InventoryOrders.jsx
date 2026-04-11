@@ -14,6 +14,7 @@ import { Bar } from 'react-chartjs-2';
 import { useNavigate } from 'react-router-dom';
 import { getManagerStats, getRevenueChartData, getRecentOrders } from '../services/managerOrderService';
 import { useDialog } from '../context/DialogContext';
+import { getApiBaseUrl } from '../services/apiClient';
 
 ChartJS.register(...registerables);
 
@@ -129,7 +130,8 @@ const InventoryOrders = () => {
   const handleExport = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://127.0.0.1:5001/api/manager/inventory-orders/export`, {
+      const base = getApiBaseUrl();
+      const response = await fetch(`${base}/api/manager/inventory-orders/export`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 

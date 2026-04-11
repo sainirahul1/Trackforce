@@ -4,6 +4,7 @@ import Skeleton from '../components/ui/Skeleton';
 import { getMe, updateProfile as updateAuthProfile, uploadProfileImage as uploadAuthImage, updateSuperadminCredentials } from '../services/core/authService';
 import { useAuth } from '../context/AuthContext';
 import { useDialog } from '../context/DialogContext';
+import { getApiBaseUrl } from '../services/apiClient';
 
 const Profile = () => {
   const { showAlert } = useDialog();
@@ -192,7 +193,14 @@ const Profile = () => {
               ) : (
                 <div className="w-full h-full rounded-[2rem] bg-gray-50 dark:bg-gray-800/50 flex items-center justify-center text-gray-400 overflow-hidden">
                   {avatarPreview ? (
-                    <img src={avatarPreview.startsWith('data:') ? avatarPreview : `http://localhost:5001${avatarPreview}`} alt="Profile Avatar" className="w-full h-full object-cover" />
+                    <img 
+                      src={avatarPreview.startsWith('data:') ? avatarPreview : (() => {
+                        const base = getApiBaseUrl();
+                        return `${base}${avatarPreview.startsWith('/') ? '' : '/'}${avatarPreview}`;
+                      })()} 
+                      alt="Profile Avatar" 
+                      className="w-full h-full object-cover" 
+                    />
                   ) : (
                     <User size={64} strokeWidth={1.5} />
                   )}

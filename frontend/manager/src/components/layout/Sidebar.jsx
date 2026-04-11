@@ -3,6 +3,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, Users, Building2, ClipboardList, Map, Settings, LogOut, ShieldCheck, Bell, ShoppingBag, Camera, Clock, AlertCircle, ChevronLeft, ChevronRight, Menu, Activity, User, Lock, CreditCard } from 'lucide-react';
 import ThemeToggle from '../ui/ThemeToggle';
 import { useAuth } from '../../context/AuthContext';
+import { getApiBaseUrl } from '../../services/apiClient';
 
 const Sidebar = ({ role, user, isCollapsed, onToggle }) => {
   const navigate = useNavigate();
@@ -116,10 +117,8 @@ const Sidebar = ({ role, user, isCollapsed, onToggle }) => {
               {user?.profile?.profileImage ? (
                 <img 
                   src={user.profile.profileImage.startsWith('data:') ? user.profile.profileImage : (() => {
-                    let url = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
-                    url = url.replace(/\/$/, '');
-                    if (!url.endsWith('/api')) url += '/api';
-                    return `${url.replace('/api', '')}${user.profile.profileImage}`;
+                    const base = getApiBaseUrl();
+                    return `${base}${user.profile.profileImage.startsWith('/') ? '' : '/'}${user.profile.profileImage}`;
                   })()} 
                   alt="DP" 
                   className="w-full h-full object-cover" 

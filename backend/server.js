@@ -41,7 +41,11 @@ const corsOptions = {
     // Allow if no origin (mobile, curl, etc.)
     if (!origin) return callback(null, true);
 
-    const allowedOrigins = [
+    const envOrigins = process.env.ALLOWED_ORIGINS 
+      ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim()) 
+      : [];
+
+    const localhostOrigins = [
       'http://localhost:5173',
       'http://localhost:3000',
       'http://localhost:5000',
@@ -49,15 +53,16 @@ const corsOptions = {
       'http://127.0.0.1:5173',
     ];
 
-    const isAllowedOrigin = allowedOrigins.includes(origin);
+    const isEnvAllowed = envOrigins.some(ao => origin.startsWith(ao));
+    const isLocalhost = localhostOrigins.includes(origin) || origin.includes('localhost') || origin.includes('127.0.0.1');
     const isVercel = origin.endsWith('.vercel.app');
-    const isLocalhost = origin.includes('localhost') || origin.includes('127.0.0.1');
     const isProdFrontend = process.env.FRONTEND_URL && origin.startsWith(process.env.FRONTEND_URL.replace(/\/$/, ''));
 
-    if (isAllowedOrigin || isVercel || isLocalhost || isProdFrontend) {
+    if (isEnvAllowed || isLocalhost || isVercel || isProdFrontend) {
       callback(null, true);
     } else {
-      callback(null, false);
+      console.warn(`[CORS] Origin ${origin} blocked`);
+      callback(new Error('Not allowed by CORS'));
     }
   },
   credentials: true,

@@ -10,6 +10,7 @@ import {
 import { updateProfile as updateAuthProfile, getMe, uploadProfileImage as uploadAuthImage, updatePassword } from '../services/core/authService';
 import { useAuth } from '../context/AuthContext';
 import { useDialog } from '../context/DialogContext';
+import { getApiBaseUrl } from '../services/apiClient';
 import { Loader2 } from 'lucide-react';
 
 /**
@@ -655,10 +656,8 @@ const ManagerProfile = () => {
                     {(managerData.profileImage || profileImage) ? (
                       <img 
                         src={(managerData.profileImage || profileImage).startsWith('data:') ? (managerData.profileImage || profileImage) : (() => {
-                          let url = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
-                          url = url.replace(/\/$/, '');
-                          if (!url.endsWith('/api')) url += '/api';
-                          return `${url.replace('/api', '')}${(managerData.profileImage || profileImage)}`;
+                          const base = getApiBaseUrl();
+                          return `${base}${(managerData.profileImage || profileImage).startsWith('/') ? '' : '/'}${(managerData.profileImage || profileImage)}`;
                         })()} 
                         alt="Profile" 
                         className="w-full h-full object-cover" 

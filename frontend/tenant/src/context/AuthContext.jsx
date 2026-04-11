@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import * as authService from '../services/core/authService';
 import { logActivity } from '../services/activityService';
+import { getApiBaseUrl } from '../services/apiClient';
 
 const AuthContext = createContext();
 
@@ -81,8 +82,7 @@ export const AuthProvider = ({ children }) => {
       const avatarPath = user.profile?.profileImage || user.avatar;
       if (avatarPath && !avatarPath.startsWith('data:')) {
         const imageUrl = (() => {
-          let url = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
-          const base = url.replace(/\/api\/?$/, '');
+          const base = getApiBaseUrl();
           return `${base}${avatarPath.startsWith('/') ? '' : '/'}${avatarPath}`;
         })();
         const img = new Image();

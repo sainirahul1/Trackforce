@@ -17,10 +17,8 @@ import axios from 'axios';
 
 // ─── Base URL Configuration ──────────────────────────────────────────────────
 const getBaseUrl = () => {
-  let url = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
-  url = url.replace(/\/api\/?$/, ''); // Strip /api suffix — we use /reatchall/* now
-  url = url.replace(/\/$/, '');       // Remove trailing slash
-  return url;
+  const url = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+  return url.replace(/\/api\/?$/, '').replace(/\/$/, '');
 };
 
 const apiClient = axios.create({
