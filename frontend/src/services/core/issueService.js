@@ -1,85 +1,34 @@
-import { getAuthHeader } from './authService';
+import apiClient from '../apiClient';
 import { fetchDataWithCache, clearCache } from '../../utils/cacheHelper';
 
-const getBaseUrl = () => {
-  let url = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
-  url = url.replace(/\/$/, ''); // Remove trailing slash
-  if (!url.endsWith('/api')) {
-    url += '/api';
-  }
-  return url;
-};
-
-const API_URL = `${getBaseUrl()}/issues`;
+const API_URL = '/reatchall/issues';
 
 export const createIssue = async (issueData) => {
-  const response = await fetch(`${API_URL}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...getAuthHeader(),
-    },
-    body: JSON.stringify(issueData),
-  });
-
-  const data = await response.json();
-  if (!response.ok) throw new Error(data.message || 'Failed to create issue');
+  const response = await apiClient.post(API_URL, issueData);
   clearCache(); // Invalidate cache on mutations
-  return data;
+  return response.data;
 };
 
 export const getIssues = async () => {
   return fetchDataWithCache('issues', async () => {
-    const response = await fetch(`${API_URL}`, {
-      headers: {
-        ...getAuthHeader(),
-      },
-    });
-
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.message || 'Failed to fetch issues');
-    return data;
+    const response = await apiClient.get(API_URL);
+    return response.data;
   });
 };
 
 export const getIssueById = async (id) => {
-  const response = await fetch(`${API_URL}/${id}`, {
-    headers: {
-      ...getAuthHeader(),
-    },
-  });
-
-  const data = await response.json();
-  if (!response.ok) throw new Error(data.message || 'Failed to fetch issue details');
-  return data;
+  const response = await apiClient.get(`${API_URL}/${id}`);
+  return response.data;
 };
 
 export const updateIssue = async (id, updateData) => {
-  const response = await fetch(`${API_URL}/${id}`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      ...getAuthHeader(),
-    },
-    body: JSON.stringify(updateData),
-  });
-
-  const data = await response.json();
-  if (!response.ok) throw new Error(data.message || 'Failed to update issue');
+  const response = await apiClient.put(`${API_URL}/${id}`, updateData);
   clearCache(); // Invalidate cache on mutations
-  return data;
+  return response.data;
 };
 
 export const deleteIssue = async (id) => {
-  const response = await fetch(`${API_URL}/${id}`, {
-    method: 'DELETE',
-    headers: {
-      ...getAuthHeader(),
-    },
-  });
-
-  const data = await response.json();
-  if (!response.ok) throw new Error(data.message || 'Failed to delete issue');
+  const response = await apiClient.delete(`${API_URL}/${id}`);
   clearCache(); // Invalidate cache on mutations
-  return data;
+  return response.data;
 };

@@ -1,68 +1,30 @@
-import { getAuthHeader } from '../core/authService';
+import apiClient from '../apiClient';
 import { fetchDataWithCache, clearCache } from '../../utils/cacheHelper';
 
-const getBaseUrl = () => {
-  let url = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
-  url = url.replace(/\/$/, '');
-  if (!url.endsWith('/api')) url += '/api';
-  return url;
-};
-const BASE_URL = getBaseUrl();
-const API_URL = `${BASE_URL}/employee/profile`;
+const API_URL = '/reatchall/employee/profile';
 
 export const getMyProfile = async () => {
   return fetchDataWithCache('employee_profile', async () => {
-    const response = await fetch(`${API_URL}/me`, {
-      headers: {
-        ...getAuthHeader(),
-      },
-    });
-
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.message || 'Failed to fetch profile');
-    return data;
+    const response = await apiClient.get(`${API_URL}/me`);
+    return response.data;
   });
 };
 
 // Fetch ONLY the avatar — lightweight, independently cacheable.
 // Called in the background; result is persisted to localStorage.
 export const getMyAvatar = async () => {
-  const response = await fetch(`${API_URL}/avatar`, {
-    headers: { ...getAuthHeader() },
-  });
-  const data = await response.json();
-  if (!response.ok) throw new Error(data.message || 'Failed to fetch avatar');
-  return data.avatar || '';
+  const response = await apiClient.get(`${API_URL}/avatar`);
+  return response.data.avatar || '';
 };
 
 export const updateMyProfile = async (updates) => {
-  const response = await fetch(`${API_URL}/me`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      ...getAuthHeader(),
-    },
-    body: JSON.stringify(updates),
-  });
-
-  const data = await response.json();
-  if (!response.ok) throw new Error(data.message || 'Failed to update profile');
+  const response = await apiClient.put(`${API_URL}/me`, updates);
   clearCache(); // Invalidate cache on mutations
-  return data;
+  return response.data;
 };
 
 export const changePassword = async (passwords) => {
-  const response = await fetch(`${API_URL}/password`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      ...getAuthHeader(),
-    },
-    body: JSON.stringify(passwords),
-  });
-
-  const data = await response.json();
-  if (!response.ok) throw new Error(data.message || 'Failed to update password');
+  const response = await apiClient.put(`${API_URL}/password`, passwords);
   clearCache(); // Invalidate cache on mutations
-  return data;
+  return response.data;
 };

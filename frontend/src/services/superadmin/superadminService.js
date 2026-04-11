@@ -1,139 +1,125 @@
-import axios from 'axios';
+import apiClient from '../apiClient';
 
-const getBaseUrl = () => {
-  let url = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
-  url = url.replace(/\/$/, '');
-  if (!url.endsWith('/api')) url += '/api';
-  return url;
-};
-const BASE_URL = getBaseUrl();
-const API_URL = `${BASE_URL}/superadmin`;
-
-const getAuthHeader = () => {
-  const token = sessionStorage.getItem('token') || localStorage.getItem('token');
-  if (token) {
-    return { Authorization: `Bearer ${token}` };
-  }
-  return {};
-};
+const API_URL = '/reatchall/superadmin';
 
 const superadminService = {
   // Companies / Tenants
   getCompanies: async () => {
-    const response = await axios.get(`${API_URL}/companies`, { headers: getAuthHeader() });
+    const response = await apiClient.get(`${API_URL}/companies`);
     return response.data;
   },
   provisionTenant: async (tenantData) => {
-    const response = await axios.post(`${API_URL}/companies`, tenantData, { headers: getAuthHeader() });
+    const response = await apiClient.post(`${API_URL}/companies`, tenantData);
     return response.data;
   },
   updateCompanyStatus: async (id, status) => {
-    const response = await axios.patch(`${API_URL}/companies/${id}/status`, { status }, { headers: getAuthHeader() });
+    const response = await apiClient.patch(`${API_URL}/companies/${id}/status`, { status });
     return response.data;
   },
   updateCompany: async (id, companyData) => {
-    const response = await axios.put(`${API_URL}/companies/${id}`, companyData, { headers: getAuthHeader() });
+    const response = await apiClient.put(`${API_URL}/companies/${id}`, companyData);
     return response.data;
   },
   toggleCompanySuspension: async (id) => {
-    const response = await axios.patch(`${API_URL}/companies/${id}/suspend`, {}, { headers: getAuthHeader() });
+    const response = await apiClient.patch(`${API_URL}/companies/${id}/suspend`);
     return response.data;
   },
   deleteCompany: async (id) => {
-    const response = await axios.delete(`${API_URL}/companies/${id}`, { headers: getAuthHeader() });
+    const response = await apiClient.delete(`${API_URL}/companies/${id}`);
     return response.data;
   },
 
   // Tenant Users Management
   getTenantUsers: async (tenantId) => {
-    const response = await axios.get(`${API_URL}/companies/${tenantId}/users`, { headers: getAuthHeader() });
+    const response = await apiClient.get(`${API_URL}/companies/${tenantId}/users`);
     return response.data;
   },
   createTenantUser: async (tenantId, userData) => {
-    const response = await axios.post(`${API_URL}/companies/${tenantId}/users`, userData, { headers: getAuthHeader() });
+    const response = await apiClient.post(`${API_URL}/companies/${tenantId}/users`, userData);
     return response.data;
   },
   updateTenantUser: async (tenantId, userId, userData) => {
-    const response = await axios.put(`${API_URL}/companies/${tenantId}/users/${userId}`, userData, { headers: getAuthHeader() });
+    const response = await apiClient.put(`${API_URL}/companies/${tenantId}/users/${userId}`, userData);
     return response.data;
   },
   deleteTenantUser: async (tenantId, userId) => {
-    const response = await axios.delete(`${API_URL}/companies/${tenantId}/users/${userId}`, { headers: getAuthHeader() });
+    const response = await apiClient.delete(`${API_URL}/companies/${tenantId}/users/${userId}`);
     return response.data;
   },
   impersonateTenant: async (tenantId) => {
-    const response = await axios.post(`${API_URL}/companies/${tenantId}/impersonate`, {}, { headers: getAuthHeader() });
+    const response = await apiClient.post(`${API_URL}/companies/${tenantId}/impersonate`);
     return response.data;
   },
   
   // Global User Management
   getGlobalUsersByRole: async (role) => {
-    const response = await axios.get(`${API_URL}/manage/users/${role}`, { headers: getAuthHeader() });
+    const response = await apiClient.get(`${API_URL}/manage/users/${role}`);
     return response.data;
   },
   impersonateGlobalUser: async (userId) => {
-    const response = await axios.post(`${API_URL}/manage/users/${userId}/impersonate`, {}, { headers: getAuthHeader() });
+    const response = await apiClient.post(`${API_URL}/manage/users/${userId}/impersonate`);
     return response.data;
   },
 
   // Subscriptions
   getSubscriptions: async () => {
-    const response = await axios.get(`${API_URL}/subscriptions`, { headers: getAuthHeader() });
+    const response = await apiClient.get(`${API_URL}/subscriptions`);
     return response.data;
   },
   createSubscription: async (subData) => {
-    const response = await axios.post(`${API_URL}/subscriptions`, subData, { headers: getAuthHeader() });
+    const response = await apiClient.post(`${API_URL}/subscriptions`, subData);
     return response.data;
   },
   updateSubscription: async (id, subData) => {
-    const response = await axios.put(`${API_URL}/subscriptions/${id}`, subData, { headers: getAuthHeader() });
+    const response = await apiClient.put(`${API_URL}/subscriptions/${id}`, subData);
     return response.data;
   },
   deleteSubscription: async (id) => {
-    const response = await axios.delete(`${API_URL}/subscriptions/${id}`, { headers: getAuthHeader() });
+    const response = await apiClient.delete(`${API_URL}/subscriptions/${id}`);
     return response.data;
   },
 
   // Analytics
   getAnalyticsStats: async () => {
-    const response = await axios.get(`${API_URL}/analytics/stats`, { headers: getAuthHeader() });
+    const response = await apiClient.get(`${API_URL}/analytics/stats`);
     return response.data;
   },
   getGrowthData: async () => {
-    const response = await axios.get(`${API_URL}/analytics/growth`, { headers: getAuthHeader() });
+    const response = await apiClient.get(`${API_URL}/analytics/growth`);
     return response.data;
   },
 
   // Notifications
   getNotifications: async () => {
-    const response = await axios.get(`${API_URL}/notifications`, { headers: getAuthHeader() });
+    const response = await apiClient.get(`${API_URL}/notifications`);
     return response.data;
   },
   broadcastNotification: async (notifData) => {
-    const response = await axios.post(`${API_URL}/notifications/broadcast`, notifData, { headers: getAuthHeader() });
+    const response = await apiClient.post(`${API_URL}/notifications/broadcast`, notifData);
     return response.data;
   },
 
   // System Settings
   getSettings: async () => {
-    const response = await axios.get(`${API_URL}/settings`, { headers: getAuthHeader() });
+    const response = await apiClient.get(`${API_URL}/settings`);
     return response.data;
   },
   updateSettings: async (settingsData) => {
-    const response = await axios.put(`${API_URL}/settings`, settingsData, { headers: getAuthHeader() });
+    const response = await apiClient.put(`${API_URL}/settings`, settingsData);
     return response.data;
   },
   getDatabaseAnalytics: async () => {
-    const response = await axios.get(`${API_URL}/settings/analytics`, { headers: getAuthHeader() });
+    const response = await apiClient.get(`${API_URL}/settings/analytics`);
     return response.data;
   },
   getDuplicates: async (field = 'email', customPath = '') => {
-    const url = `${API_URL}/settings/duplicates?field=${field}${customPath ? `&customPath=${customPath}` : ''}`;
-    const response = await axios.get(url, { headers: getAuthHeader() });
+    const response = await apiClient.get(`${API_URL}/settings/duplicates`, {
+      params: { field, ...(customPath ? { customPath } : {}) }
+    });
     return response.data;
   },
   cleanupDuplicates: async (recordIds, collectionName = 'Users') => {
-    const response = await axios.post(`${API_URL}/settings/cleanup`, { recordIds, collectionName }, { headers: getAuthHeader() });
+    const response = await apiClient.post(`${API_URL}/settings/cleanup`, { recordIds, collectionName });
     return response.data;
   }
 };

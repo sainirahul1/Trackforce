@@ -40,13 +40,13 @@ const EmployeeDetailCard = ({ employee, currentPos, onClose, onToggleMission, is
         <div className="flex gap-3">
            <div className="w-8 h-8 bg-blue-50 dark:bg-blue-900/20 rounded-xl flex items-center justify-center shrink-0"><MapPin size={18} className="text-[#3b82f6]" /></div>
             <div>
-              <p className="text-[8px] font-black text-blue-500 uppercase tracking-widest mb-0.5">LOCATION</p>
-              <p className="text-[11px] font-black text-gray-900 dark:text-white leading-tight">
-                {employee.address || 'Resolving GPS...'}
+              <p className="text-[8px] font-black text-blue-500 uppercase tracking-widest mb-0.5">EXACT LIVE COORDINATES</p>
+              <p className="text-[12px] font-black text-gray-900 dark:text-white leading-none">
+                {lat ? `${Number(lat).toFixed(6)}, ${Number(lng).toFixed(6)}` : 'Resolving GPS...'}
               </p>
-              {lat && (
-                <p className="text-[8px] font-bold text-gray-400 mt-1 uppercase tracking-tighter">
-                  LOC: {Number(lat).toFixed(4)}, {Number(lng).toFixed(4)}
+              {employee.address && (
+                <p className="text-[9px] font-bold text-gray-400 mt-1 uppercase tracking-tight line-clamp-1">
+                  {employee.address}
                 </p>
               )}
             </div>
@@ -376,14 +376,10 @@ const LiveTracking = () => {
                          <span className="text-[7px] font-black text-gray-400 uppercase tracking-widest">{emp.isTracking ? 'AGENT DISPATCHED' : 'OFFLINE'}</span>
                           {emp.isTracking && (
                             <div className="flex flex-col gap-0.5 max-w-[140px]">
-                              <span className="text-[9px] font-black text-blue-600 dark:text-blue-400 tracking-tight leading-tight italic line-clamp-2">
-                                {emp.address || 'Resolving GPS...'}
+                              <span className="text-[9px] font-black text-blue-600 dark:text-blue-400 tracking-tight leading-none italic">
+                                { (emp.lat || animatedPositions[emp.id]?.lat) ? `${Number(emp.lat || animatedPositions[emp.id]?.lat).toFixed(6)}, ${Number(emp.lng || animatedPositions[emp.id]?.lng).toFixed(6)}` : 'Resolving GPS...'}
                               </span>
-                              {(emp.lat || animatedPositions[emp.id]?.lat) && (
-                                <span className="text-[7px] font-bold text-gray-400/60 uppercase tracking-tighter">
-                                  {Number(emp.lat || animatedPositions[emp.id]?.lat).toFixed(4)}, {Number(emp.lng || animatedPositions[emp.id]?.lng).toFixed(4)}
-                                </span>
-                              )}
+                              {emp.address && <span className="text-[7px] font-bold text-gray-500 line-clamp-1 truncate uppercase tracking-tighter">{emp.address}</span>}
                             </div>
                           )}
                        </div>

@@ -1,6 +1,12 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import DashboardLayout from '../layouts/DashboardLayout';
+import ProtectedRoute from '../utils/ProtectedRoute';
+
+import SuperAdminLayout from '../layouts/SuperAdminLayout';
+import TenantLayout from '../layouts/TenantLayout';
+import ManagerLayout from '../layouts/ManagerLayout';
+import EmployeeLayout from '../layouts/EmployeeLayout';
+
 import LoginPage from '../pages/auth/LoginPage';
 import SignupPage from '../pages/auth/SignupPage';
 import Home from '../pages/home/Home';
@@ -12,9 +18,22 @@ import Subscriptions from '../pages/superadmin/Subscriptions';
 import RolesPermissions from '../pages/superadmin/RolesPermissions';
 import NotificationsSuperAdmin from '../pages/superadmin/Notifications';
 import SettingsSuperAdmin from '../pages/superadmin/Settings';
+import SuperAdminIssues from '../pages/superadmin/Issues';
+import SuperAdminProfile from '../pages/superadmin/Profile';
+
 import TenantDashboard from '../pages/tenant/Dashboard';
 import TenantEmployees from '../pages/tenant/Employees';
 import ManagerDetails from '../pages/tenant/ManagerDetails';
+import LiveTrackingTenant from '../pages/tenant/LiveTracking';
+import VisitsTenant from '../pages/tenant/Visits';
+import OrdersTenant from '../pages/tenant/Orders';
+import SubscriptionTenant from '../pages/tenant/Subscription';
+import AnalyticsTenant from '../pages/tenant/Analytics';
+import ActivityTenant from '../pages/tenant/Activity';
+import SettingsTenant from '../pages/tenant/Settings';
+import NotificationsTenant from '../pages/tenant/Notifications';
+import TenantIssues from '../pages/tenant/Issues';
+import TenantProfile from '../pages/tenant/Profile';
 
 import ManagerTeam from '../pages/manager/Team';
 import EmployeeDetails from '../pages/manager/EmployeeDetails';
@@ -26,20 +45,7 @@ import ManagerAnalytics from '../pages/manager/Analytics';
 import ManagerActivityLog from '../pages/manager/ActivityLog';
 import ManagerProfile from '../pages/manager/Profile';
 import ManagerIssues from '../pages/manager/Issues';
-import TenantIssues from '../pages/tenant/Issues';
-import LiveTrackingTenant from '../pages/tenant/LiveTracking';
-import VisitsTenant from '../pages/tenant/Visits';
-import OrdersTenant from '../pages/tenant/Orders';
-import SubscriptionTenant from '../pages/tenant/Subscription';
-import AnalyticsTenant from '../pages/tenant/Analytics';
-import ActivityTenant from '../pages/tenant/Activity';
-import SettingsTenant from '../pages/tenant/Settings';
-import NotificationsTenant from '../pages/tenant/Notifications';
-import TenantProfile from '../pages/tenant/Profile';
-import SuperAdminIssues from '../pages/superadmin/Issues';
-import SuperAdminProfile from '../pages/superadmin/Profile';
 
-// Employee Portal
 import EmployeeDashboard from '../pages/employee/Dashboard';
 import EmployeeProfile from '../pages/employee/Profile';
 import EmployeeVisits from '../pages/employee/Visits';
@@ -56,16 +62,26 @@ const AppRouter = () => (
     {/* Public Landing Page */}
     <Route path="/" element={<Home />} />
 
-    {/* Auth Routes */}
-    <Route path="/employee/login" element={<LoginPage portal="EMPLOYEE" />} />
-    <Route path="/manager/login" element={<LoginPage portal="MANAGER" />} />
-    <Route path="/tenant/login" element={<LoginPage portal="TENANT" />} />
-    <Route path="/superadmin/login" element={<LoginPage portal="SUPER_ADMIN" />} />
-    <Route path="/login" element={<Navigate to="/employee/login" replace />} />
+    {/* Auth Routes - Consolidated as per user request */}
+    <Route path="/login" element={<LoginPage />} />
     <Route path="/signup" element={<SignupPage />} />
+    
+    {/* Redirect old specific routes to generic login */}
+    <Route path="/employee/login" element={<Navigate to="/login" replace />} />
+    <Route path="/manager/login" element={<Navigate to="/login" replace />} />
+    <Route path="/tenant/login" element={<Navigate to="/login" replace />} />
+    <Route path="/superadmin/login" element={<Navigate to="/login" replace />} />
+
 
     {/* Super Admin Routes */}
-    <Route path="/superadmin" element={<DashboardLayout allowedRole="superadmin" />}>
+    <Route 
+      path="/superadmin/*" 
+      element={
+        <ProtectedRoute role="superadmin">
+          <SuperAdminLayout />
+        </ProtectedRoute>
+      }
+    >
       <Route path="dashboard" element={<SuperAdminDashboard />} />
       <Route path="companies" element={<CompaniesList />} />
       <Route path="subscriptions" element={<Subscriptions />} />
@@ -78,7 +94,14 @@ const AppRouter = () => (
     </Route>
 
     {/* Tenant Routes */}
-    <Route path="/tenant" element={<DashboardLayout allowedRole="tenant" />}>
+    <Route 
+      path="/tenant/*" 
+      element={
+        <ProtectedRoute role="tenant">
+          <TenantLayout />
+        </ProtectedRoute>
+      }
+    >
       <Route path="dashboard" element={<TenantDashboard />} />
       <Route path="employees" element={<TenantEmployees />} />
       <Route path="employees/:id" element={<ManagerDetails />} />
@@ -96,7 +119,14 @@ const AppRouter = () => (
     </Route>
 
     {/* Manager Routes */}
-    <Route path="/manager" element={<DashboardLayout allowedRole="manager" />}>
+    <Route 
+      path="/manager/*" 
+      element={
+        <ProtectedRoute role="manager">
+          <ManagerLayout />
+        </ProtectedRoute>
+      }
+    >
       <Route path="dashboard" element={<Navigate to="/manager/analytics" replace />} />
       <Route path="team" element={<ManagerTeam />} />
       <Route path="team/:id" element={<EmployeeDetails />} />
@@ -113,7 +143,14 @@ const AppRouter = () => (
     </Route>
 
     {/* Employee Routes */}
-    <Route path="/employee" element={<DashboardLayout allowedRole="employee" />}>
+    <Route 
+      path="/employee/*" 
+      element={
+        <ProtectedRoute role="employee">
+          <EmployeeLayout />
+        </ProtectedRoute>
+      }
+    >
       <Route path="dashboard" element={<EmployeeDashboard />} />
       <Route path="profile" element={<EmployeeProfile />} />
       <Route path="visits" element={<EmployeeVisits />} />

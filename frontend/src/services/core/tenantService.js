@@ -1,19 +1,6 @@
-import axios from 'axios';
+import apiClient from '../apiClient';
 
-const getBaseUrl = () => {
-  let url = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
-  url = url.replace(/\/$/, '');
-  if (!url.endsWith('/api')) url += '/api';
-  return url;
-};
-const BASE_URL = getBaseUrl();
-const API_URL = `${BASE_URL}/tenant`;
-
-// Helper to get auth header
-const getAuthHeader = () => {
-  const token = sessionStorage.getItem('token') || localStorage.getItem('token');
-  return token ? { Authorization: `Bearer ${token}` } : {};
-};
+const API_URL = '/reatchall/tenant';
 
 // Persistent Caching Logic (localStorage)
 const CACHE_PREFIX = 'tf_cache_';
@@ -57,36 +44,28 @@ const fetchDataWithCache = async (key, fetcher) => {
 // Get all managers
 export const getManagers = async () => {
   return fetchDataWithCache('managers', async () => {
-    const response = await axios.get(`${API_URL}/managers`, {
-      headers: getAuthHeader(),
-    });
+    const response = await apiClient.get(`${API_URL}/managers`);
     return response.data;
   });
 };
 
 // Create a manager
 export const createManager = async (managerData) => {
-  const response = await axios.post(`${API_URL}/managers`, managerData, {
-    headers: getAuthHeader(),
-  });
+  const response = await apiClient.post(`${API_URL}/managers`, managerData);
   clearCache(); // Invalidate cache on mutations
   return response;
 };
 
 // Update a manager
 export const updateManager = async (id, managerData) => {
-  const response = await axios.put(`${API_URL}/managers/${id}`, managerData, {
-    headers: getAuthHeader(),
-  });
+  const response = await apiClient.put(`${API_URL}/managers/${id}`, managerData);
   clearCache();
   return response;
 };
 
 // Delete a manager
 export const deleteManager = async (id) => {
-  const response = await axios.delete(`${API_URL}/managers/${id}`, {
-    headers: getAuthHeader(),
-  });
+  const response = await apiClient.delete(`${API_URL}/managers/${id}`);
   clearCache();
   return response;
 };
@@ -94,42 +73,32 @@ export const deleteManager = async (id) => {
 // Get all employees
 export const getEmployees = async () => {
   return fetchDataWithCache('employees', async () => {
-    const response = await axios.get(`${API_URL}/employees`, {
-      headers: getAuthHeader(),
-    });
+    const response = await apiClient.get(`${API_URL}/employees`);
     return response.data;
   });
 };
 
 // Get an employee by ID
 export const getEmployeeById = async (id) => {
-  const response = await axios.get(`${API_URL}/employees/${id}`, {
-    headers: getAuthHeader(),
-  });
+  const response = await apiClient.get(`${API_URL}/employees/${id}`);
   return response.data;
 };
 
 // Create an employee
 export const createEmployee = async (employeeData) => {
-  const response = await axios.post(`${API_URL}/employees`, employeeData, {
-    headers: getAuthHeader(),
-  });
+  const response = await apiClient.post(`${API_URL}/employees`, employeeData);
   return response;
 };
 
 // Update an employee
 export const updateEmployee = async (id, employeeData) => {
-  const response = await axios.put(`${API_URL}/employees/${id}`, employeeData, {
-    headers: getAuthHeader(),
-  });
+  const response = await apiClient.put(`${API_URL}/employees/${id}`, employeeData);
   return response;
 };
 
 // Delete an employee
 export const deleteEmployee = async (id) => {
-  const response = await axios.delete(`${API_URL}/employees/${id}`, {
-    headers: getAuthHeader(),
-  });
+  const response = await apiClient.delete(`${API_URL}/employees/${id}`);
   return response;
 };
 
@@ -137,65 +106,50 @@ export const deleteEmployee = async (id) => {
 // Get tenant settings
 export const getSettings = async () => {
   return fetchDataWithCache('tenant_settings', async () => {
-    const response = await axios.get(`${API_URL}/settings`, {
-      headers: getAuthHeader(),
-    });
+    const response = await apiClient.get(`${API_URL}/settings`);
     return response.data;
   });
 };
 
 // Get subscription details (Tenant only)
 export const getSubscription = async () => {
-  const response = await axios.get(`${API_URL}/subscription`, {
-    headers: getAuthHeader(),
-  });
+  const response = await apiClient.get(`${API_URL}/subscription`);
   return response.data;
 };
 
 // Update General Info
 export const updateGeneralInfo = async (generalData) => {
-  const response = await axios.put(`${API_URL}/settings/general`, generalData, {
-    headers: getAuthHeader(),
-  });
+  const response = await apiClient.put(`${API_URL}/settings/general`, generalData);
   return response.data;
 };
 
 // Update subscription details (Tenant only)
 export const updateSubscription = async (subscriptionData) => {
-  const response = await axios.put(`${API_URL}/subscription`, subscriptionData, {
-    headers: getAuthHeader(),
-  });
+  const response = await apiClient.put(`${API_URL}/subscription`, subscriptionData);
   return response.data;
 };
 
 // Update Password
 export const updatePassword = async (passwordData) => {
-  const response = await axios.put(`${API_URL}/settings/password`, passwordData, {
-    headers: getAuthHeader(),
-  });
+  const response = await apiClient.put(`${API_URL}/settings/password`, passwordData);
   return response.data;
 };
 
 // Update Localization
 export const updateLocalization = async (localizationData) => {
-  const response = await axios.put(`${API_URL}/settings/localization`, localizationData, {
-    headers: getAuthHeader(),
-  });
+  const response = await apiClient.put(`${API_URL}/settings/localization`, localizationData);
   return response.data;
 };
 
 // Update Account Preferences
 export const updateAccountPreferences = async (accountData) => {
-  const response = await axios.put(`${API_URL}/settings/account`, accountData, {
-    headers: getAuthHeader(),
-  });
+  const response = await apiClient.put(`${API_URL}/settings/account`, accountData);
   return response.data;
 };
 
 // Request Data Export
 export const requestDataExport = async () => {
-  const response = await axios.get(`${API_URL}/settings/export`, {
-    headers: getAuthHeader(),
+  const response = await apiClient.get(`${API_URL}/settings/export`, {
     responseType: 'blob',
   });
   return response.data;
@@ -203,26 +157,20 @@ export const requestDataExport = async () => {
 
 // Sign out all managers
 export const signOutAllManagers = async () => {
-  const response = await axios.post(`${API_URL}/settings/signout-managers`, {}, {
-    headers: getAuthHeader(),
-  });
+  const response = await apiClient.post(`${API_URL}/settings/signout-managers`);
   return response.data;
 };
 
 // Get available plans (Tenant only)
 export const getAvailablePlans = async () => {
-  const response = await axios.get(`${API_URL}/available-plans`, {
-    headers: getAuthHeader(),
-  });
+  const response = await apiClient.get(`${API_URL}/available-plans`);
   return response.data;
 };
 
 // Dashboard methods
 export const getDashboardStats = async () => {
   return fetchDataWithCache('dashboard_stats', async () => {
-    const response = await axios.get(`${API_URL}/dashboard-stats`, {
-      headers: getAuthHeader(),
-    });
+    const response = await apiClient.get(`${API_URL}/dashboard-stats`);
     return response.data;
   });
 };
@@ -230,8 +178,8 @@ export const getDashboardStats = async () => {
 export const getDashboardManagers = async (page = 1, limit = 5, search = '') => {
   const cacheKey = `dashboard_managers_${page}_${limit}_${search}`;
   return fetchDataWithCache(cacheKey, async () => {
-    const response = await axios.get(`${API_URL}/dashboard-managers?page=${page}&limit=${limit}&search=${search}`, {
-      headers: getAuthHeader(),
+    const response = await apiClient.get(`${API_URL}/dashboard-managers`, {
+      params: { page, limit, search }
     });
     return response.data;
   });

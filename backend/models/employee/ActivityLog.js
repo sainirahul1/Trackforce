@@ -14,6 +14,7 @@ const activityLogSchema = new mongoose.Schema({
   type: {
     type: String,
     enum: [
+      'login', 'logout',
       'start_tracking', 'stop_tracking', 
       'shift_start', 'shift_end',
       'visit_start', 'visit_end', 'visit_missed', 'visit_delayed',

@@ -1,0 +1,27 @@
+# Render.com Service Definition
+# https://render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: trackforce-api
+    runtime: node
+    plan: free
+    region: oregon
+    buildCommand: npm install
+    startCommand: node server.js
+    healthCheckPath: /
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5001
+      - key: JWT_SECRET
+        sync: false  # Must be set manually in Render dashboard
+      - key: MONGO_URI
+        sync: false  # Must be set manually in Render dashboard
+      - key: FRONTEND_URL
+        sync: false  # Set to your Vercel deployment URL
+      - key: RATE_LIMIT_MAX
+        value: 200
+      - key: AUTH_RATE_LIMIT_MAX
+        value: 10

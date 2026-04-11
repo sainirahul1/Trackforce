@@ -1,57 +1,28 @@
-import { getAuthHeader } from '../core/authService';
-import { fetchDataWithCache, setCachedData, clearCache } from '../../utils/cacheHelper';
+import apiClient from '../apiClient';
+import { fetchDataWithCache, clearCache } from '../../utils/cacheHelper';
 
-const getBaseUrl = () => {
-  let url = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
-  url = url.replace(/\/$/, '');
-  if (!url.endsWith('/api')) url += '/api';
-  return url;
-};
-const BASE_URL = getBaseUrl();
-const API_URL = `${BASE_URL}/visits`;
+const API_URL = '/reatchall/employee/visits';
 
 export const getVisits = async (force = false) => {
   return fetchDataWithCache('visits', async () => {
-    const response = await fetch(API_URL, {
-      headers: getAuthHeader()
-    });
-    if (!response.ok) throw new Error('Failed to fetch visits');
-    return response.json();
+    const response = await apiClient.get(API_URL);
+    return response.data;
   }, force);
 };
 
 export const getVisitById = async (id) => {
-  const response = await fetch(`${API_URL}/${id}`, {
-    headers: getAuthHeader()
-  });
-  if (!response.ok) throw new Error('Failed to fetch visit details');
-  return response.json();
+  const response = await apiClient.get(`${API_URL}/${id}`);
+  return response.data;
 };
 
 export const createVisit = async (visitData) => {
-  const response = await fetch(API_URL, {
-    method: 'POST',
-    headers: {
-      ...getAuthHeader(),
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(visitData)
-  });
-  if (!response.ok) throw new Error('Failed to create visit');
+  const response = await apiClient.post(API_URL, visitData);
   clearCache(); // Invalidate cache on mutations
-  return response.json();
+  return response.data;
 };
 
 export const updateVisit = async (id, visitData) => {
-  const response = await fetch(`${API_URL}/${id}`, {
-    method: 'PATCH',
-    headers: {
-      ...getAuthHeader(),
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(visitData)
-  });
-  if (!response.ok) throw new Error('Failed to review visit');
+  const response = await apiClient.patch(`${API_URL}/${id}`, visitData);
   clearCache(); // Invalidate cache on mutations
-  return response.json();
+  return response.data;
 };

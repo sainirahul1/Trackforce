@@ -90,11 +90,22 @@ const DashboardLayout = ({ allowedRole }) => {
     return <Navigate to="/login" replace />;
   }
 
+  // PORTAL ISOLATION: Validate both role AND stored portal
+  const storedPortal = sessionStorage.getItem('portal') || localStorage.getItem('portal');
+
   if (allowedRole && storedRole !== allowedRole) {
     // User IS logged in but trying to access a DIFFERENT portal
     // → Redirect them BACK to their own portal (do NOT logout)
     console.warn(`[SECURITY] Cross-Portal Blocked: Role '${storedRole}' tried to access '${allowedRole}' portal. Redirecting to /${storedRole}/dashboard.`);
     return <Navigate to={`/${storedRole}/dashboard`} replace />;
+  }
+
+  // Double-check: stored portal must also match the allowed role
+  if (allowedRole && storedPortal && storedPortal.toLowerCase() !== allowedRole.toLowerCase()) {
+    console.warn(`[SECURITY] Portal Mismatch: Stored portal '${storedPortal}' does not match allowed '${allowedRole}'. Forcing re-auth.`);
+    // Force re-authentication — this prevents localStorage tampering
+    authService.logout();
+    return <Navigate to={`/${allowedRole}/login`} replace />;
   }
 
   // Superadmins impersonating other roles bypass maintenance mode

@@ -6,6 +6,12 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
+      '/reatchall': {
+        target: 'http://localhost:5001',
+        changeOrigin: true,
+        secure: false,
+      },
+      // Legacy route compatibility during migration
       '/api': {
         target: 'http://localhost:5001',
         changeOrigin: true,

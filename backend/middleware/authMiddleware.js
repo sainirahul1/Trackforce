@@ -26,7 +26,8 @@ const protect = async (req, res, next) => {
           role: decoded.role,
           name: decoded.name || null,
           email: decoded.email || null,
-          tenant: decoded.tenant || null // Handle users without tenants (SuperAdmins)
+          tenant: decoded.tenant || null, // Handle users without tenants (SuperAdmins)
+          portal: decoded.portal || decoded.role // PORTAL ISOLATION: extract portal claim
         };
         // Skip DB lookup & session invalidation for maximum performance
         return next();

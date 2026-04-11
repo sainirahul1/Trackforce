@@ -415,7 +415,7 @@ const EmployeeDashboard = () => {
   const startGeoTracking = React.useCallback(() => {
     // UPDATED: Allow all roles that reach this dashboard to emit GPS (for testing/multi-role users)
     const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
-    
+
     if (!navigator.geolocation) {
       showAlert('Error', 'Geolocation is not supported by your browser', 'error');
       return;
@@ -473,7 +473,7 @@ const EmployeeDashboard = () => {
   const fetchData = async (isBackground = false) => {
     try {
       if (!isBackground) setLoading(true);
-      
+
       const [stats, logs, allTasks] = await Promise.all([
         getDashboardStats(isBackground),
         getActivities(),
@@ -529,7 +529,7 @@ const EmployeeDashboard = () => {
     const cachedStats = getSyncCachedData('tenant_dashboard_stats');
     const cachedLogs = getSyncCachedData('activities'); // Check key in activityService
     // Note: getActivities uses fetchDataWithCache('activities', ...)
-    
+
     if (cachedStats) {
       setStatsData(cachedStats);
       setLoading(false);
@@ -640,7 +640,7 @@ const EmployeeDashboard = () => {
                       {stat.trend && !loading && (
                         <span className="text-[9px] font-black text-indigo-300 uppercase tracking-wider opacity-80">{stat.trend}</span>
                       )}
-                      
+
                       {stat.label === "Duty" && (
                         <div className="mt-4 flex flex-col items-center space-y-3 pt-4 border-t border-white/10 w-full animate-in fade-in slide-in-from-top-2 duration-500">
                           <div className="flex flex-col items-center">
@@ -864,3 +864,4 @@ const EmployeeDashboard = () => {
 };
 
 export default EmployeeDashboard;
+// shdjzxfgxjdh

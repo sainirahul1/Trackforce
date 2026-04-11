@@ -1,35 +1,21 @@
-const getBaseUrl = () => {
-  let url = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
-  url = url.replace(/\/$/, ''); // Remove trailing slash
-  if (!url.endsWith('/api')) {
-    url += '/api';
-  }
-  return url;
-};
+import apiClient from '../apiClient';
 
-const BASE_URL = getBaseUrl();
-const API_URL = `${BASE_URL}/auth`;
-
+const API_URL = '/reatchall/auth';
 
 export const login = async (email, password, portal) => {
-  const response = await fetch(`${API_URL}/login`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ email, password, portal }), // MUST pass portal to enforce strict backend validation
+  const response = await apiClient.post(`${API_URL}/login`, {
+    email,
+    password,
+    portal, // MUST pass portal to enforce strict backend validation
   });
 
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.message || 'Login failed');
-  }
+  const data = response.data;
 
   if (data.token) {
     localStorage.setItem('token', data.token);
     localStorage.setItem('role', data.role);
-    if (portal) localStorage.setItem('portal', portal); // Save exactly which portal was logged into
+    if (data.portal) localStorage.setItem('portal', data.portal); // Save resolved portal
+    else if (portal) localStorage.setItem('portal', portal); // Fallback to input portal
     localStorage.setItem('user', JSON.stringify(data));
   }
 
@@ -51,23 +37,13 @@ export const logout = () => {
 };
 
 export const register = async (userData) => {
-  const response = await fetch(`${API_URL}/register`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(userData),
-  });
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.message || 'Registration failed');
-  }
+  const response = await apiClient.post(`${API_URL}/register`, userData);
+  const data = response.data;
 
   if (data.token) {
     localStorage.setItem('token', data.token);
     localStorage.setItem('role', data.role);
+    localStorage.setItem('portal', data.role); // Portal = role on registration
     localStorage.setItem('user', JSON.stringify(data));
   }
 
@@ -75,14 +51,8 @@ export const register = async (userData) => {
 };
 
 export const getMe = async () => {
-  const response = await fetch(`${API_URL}/me`, {
-    headers: {
-      ...getAuthHeader(),
-    },
-  });
-
-  const data = await response.json();
-  if (!response.ok) throw new Error(data.message);
+  const response = await apiClient.get(`${API_URL}/me`);
+  const data = response.data;
 
   // Update the correct storage with fresh user data
   const isImpersonating = !!sessionStorage.getItem('token');
@@ -95,32 +65,17 @@ export const getMe = async () => {
 };
 
 export const updateProfile = async (userData) => {
-  const response = await fetch(`${API_URL}/profile`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      ...getAuthHeader(),
-    },
-    body: JSON.stringify(userData),
-  });
-
-  const data = await response.json();
-  if (!response.ok) throw new Error(data.message || 'Failed to update profile');
-  return data;
+  const response = await apiClient.put(`${API_URL}/profile`, userData);
+  return response.data;
 };
 
 export const uploadProfileImage = async (formData) => {
-  const response = await fetch(`${API_URL}/profile-image`, {
-    method: 'PUT',
+  const response = await apiClient.put(`${API_URL}/profile-image`, formData, {
     headers: {
-      ...getAuthHeader(),
+      'Content-Type': 'multipart/form-data',
     },
-    body: formData,
   });
-
-  const data = await response.json();
-  if (!response.ok) throw new Error(data.message || 'Failed to upload profile image');
-  return data;
+  return response.data;
 };
 
 export const getAuthHeader = () => {
@@ -129,31 +84,11 @@ export const getAuthHeader = () => {
 };
 
 export const updatePassword = async (passwordData) => {
-  const response = await fetch(`${API_URL}/update-password`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      ...getAuthHeader(),
-    },
-    body: JSON.stringify(passwordData),
-  });
-
-  const data = await response.json();
-  if (!response.ok) throw new Error(data.message || 'Failed to update password');
-  return data;
+  const response = await apiClient.put(`${API_URL}/update-password`, passwordData);
+  return response.data;
 };
 
 export const updateSuperadminCredentials = async (credentialsData) => {
-  const response = await fetch(`${BASE_URL}/superadmin/update-credentials`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      ...getAuthHeader(),
-    },
-    body: JSON.stringify(credentialsData),
-  });
-
-  const data = await response.json();
-  if (!response.ok) throw new Error(data.message || 'Failed to update credentials');
-  return data;
+  const response = await apiClient.put('/reatchall/superadmin/update-credentials', credentialsData);
+  return response.data;
 };

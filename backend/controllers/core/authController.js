@@ -3,8 +3,9 @@ const jwt = require('jsonwebtoken');
 const { logActivity } = require('../../utils/activityLogger');
 
 // Generate JWT with metadata to reduce middleware DB hits
-const generateToken = (id, role, tenant, name, email) => {
-  return jwt.sign({ id, role, tenant, name, email }, process.env.JWT_SECRET, {
+// PORTAL ISOLATION: `portal` claim is baked into the token at login time
+const generateToken = (id, role, tenant, name, email, portal) => {
+  return jwt.sign({ id, role, tenant, name, email, portal: portal || role }, process.env.JWT_SECRET, {
     expiresIn: '30d',
   });
 };
@@ -53,7 +54,7 @@ exports.register = async (req, res) => {
         tenantStatus: populatedUser.tenant?.onboardingStatus || 'active',
         isDeactivated: user.isDeactivated,
         profile: user.profile || {},
-        token: generateToken(user._id, user.role, user.tenant, user.name, user.email),
+        token: generateToken(user._id, user.role, user.tenant, user.name, user.email, user.role),
       });
     } else {
       res.status(400).json({ message: 'Invalid user data' });
@@ -144,17 +145,27 @@ exports.login = async (req, res) => {
       }
     }
 
+    // Derive portal from the login request or fall back to user's role
+    const portalToRoleMap = {
+      'EMPLOYEE': 'employee',
+      'MANAGER': 'manager',
+      'TENANT': 'tenant',
+      'SUPER_ADMIN': 'superadmin',
+    };
+    const resolvedPortal = portal ? (portalToRoleMap[portal] || user.role) : user.role;
+
     res.json({
       _id: user._id,
       name: user.name,
       email: user.email,
       company: user.company,
       role: user.role,
+      portal: resolvedPortal,
       tenant: user.tenant,
       tenantStatus: user.tenant?.onboardingStatus || 'active',
       isDeactivated: user.isDeactivated,
       profile: user.profile || {},
-      token: generateToken(user._id, user.role, user.tenant?._id || user.tenant, user.name, user.email),
+      token: generateToken(user._id, user.role, user.tenant?._id || user.tenant, user.name, user.email, resolvedPortal),
     });
   } catch (error) {
     res.status(500).json({ message: error.message });

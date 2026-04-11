@@ -1,59 +1,30 @@
-import { getAuthHeader } from '../core/authService';
+import apiClient from '../apiClient';
 import { fetchDataWithCache, clearCache } from '../../utils/cacheHelper';
 
-const getBaseUrl = () => {
-  let url = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
-  url = url.replace(/\/$/, '');
-  if (!url.endsWith('/api')) url += '/api';
-  return url;
-};
-const BASE_URL = getBaseUrl();
-const API_URL = `${BASE_URL}/orders`;
+const API_URL = '/reatchall/employee/orders';
 
 export const getOrders = async () => {
   return fetchDataWithCache('employee_orders', async () => {
-    const response = await fetch(API_URL, {
-      headers: getAuthHeader()
-    });
-    if (!response.ok) throw new Error('Failed to fetch orders');
-    return response.json();
+    const response = await apiClient.get(API_URL);
+    return response.data;
   });
 };
 
 export const getOrderStats = async () => {
   return fetchDataWithCache('employee_order_stats', async () => {
-    const response = await fetch(`${API_URL}/stats`, {
-      headers: getAuthHeader()
-    });
-    if (!response.ok) throw new Error('Failed to fetch order stats');
-    return response.json();
+    const response = await apiClient.get(`${API_URL}/stats`);
+    return response.data;
   });
 };
 
 export const createOrderAPI = async (orderData) => {
-  const response = await fetch(API_URL, {
-    method: 'POST',
-    headers: {
-      ...getAuthHeader(),
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(orderData)
-  });
-  if (!response.ok) throw new Error('Failed to create order');
+  const response = await apiClient.post(API_URL, orderData);
   clearCache(); // Invalidate cache on mutations
-  return response.json();
+  return response.data;
 };
 
 export const updateOrderAPI = async (id, orderData) => {
-  const response = await fetch(`${API_URL}/${id}`, {
-    method: 'PUT',
-    headers: {
-      ...getAuthHeader(),
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(orderData)
-  });
-  if (!response.ok) throw new Error('Failed to update order');
+  const response = await apiClient.put(`${API_URL}/${id}`, orderData);
   clearCache(); // Invalidate cache on mutations
-  return response.json();
+  return response.data;
 };

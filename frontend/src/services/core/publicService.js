@@ -1,13 +1,7 @@
 // publicService.js
+import apiClient from '../apiClient';
 
-const getBaseUrl = () => {
-  let url = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
-  url = url.replace(/\/$/, '');
-  if (!url.endsWith('/api')) url += '/api';
-  return url;
-};
-const BASE_URL = getBaseUrl();
-const API_URL = `${BASE_URL}/public`;
+const API_URL = '/reatchall/public';
 
 /**
  * Fetch global public settings without authentication
@@ -15,12 +9,8 @@ const API_URL = `${BASE_URL}/public`;
  */
 export const getPublicSettings = async () => {
   try {
-    const res = await fetch(`${API_URL}/settings`);
-    if (!res.ok) {
-      throw new Error('Failed to fetch public settings');
-    }
-    const data = await res.json();
-    return data;
+    const response = await apiClient.get(`${API_URL}/settings`);
+    return response.data;
   } catch (error) {
     console.error('Error in getPublicSettings:', error);
     // Return safe defaults

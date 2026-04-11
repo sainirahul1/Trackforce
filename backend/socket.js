@@ -87,6 +87,24 @@ const initSocket = (server) => {
         if (tenantRoom) io.to(tenantRoom).emit('tracking:live', liveData);
         if (managerRoom && managerRoom !== tenantRoom) io.to(managerRoom).emit('tracking:live', liveData);
 
+        // 5. Calculate Distance BEFORE geocoding usage
+        const lat = Number(location.lat);
+        const lng = Number(location.lng);
+
+        let distanceIncrement = 0;
+        if (session.route && session.route.length > 0) {
+          const lastPoint = session.route[session.route.length - 1];
+          // Haversine formula
+          const R = 6371; // km
+          const dLat = (lat - lastPoint.lat) * Math.PI / 180;
+          const dLng = (lng - lastPoint.lng) * Math.PI / 180;
+          const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lastPoint.lat * Math.PI / 180) * Math.cos(lat * Math.PI / 180) *
+            Math.sin(dLng / 2) * Math.sin(dLng / 2);
+          const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+          distanceIncrement = R * c;
+        }
+
         // 3. Resolve Address via Geocoding (with fallback) in the "background"
         let resolvedAddress = `Lat: ${Number(location.lat).toFixed(6)}, Lng: ${Number(location.lng).toFixed(6)}`;
         let resolvedCity = '';
@@ -119,24 +137,6 @@ const initSocket = (server) => {
           console.error('[GEOCODE] Error:', geoErr);
         }
 
-        // 5. Persist to Database and Calculate Distance
-        const lat = Number(location.lat);
-        const lng = Number(location.lng);
-
-        let distanceIncrement = 0;
-        if (session.route && session.route.length > 0) {
-          const lastPoint = session.route[session.route.length - 1];
-          // Haversine formula
-          const R = 6371; // km
-          const dLat = (lat - lastPoint.lat) * Math.PI / 180;
-          const dLng = (lng - lastPoint.lng) * Math.PI / 180;
-          const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-            Math.cos(lastPoint.lat * Math.PI / 180) * Math.cos(lat * Math.PI / 180) *
-            Math.sin(dLng / 2) * Math.sin(dLng / 2);
-          const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-          distanceIncrement = R * c;
-        }
-
         const updatedSession = await TrackingSession.findByIdAndUpdate(
           session._id,
           {
@@ -158,7 +158,7 @@ const initSocket = (server) => {
               distanceTravelled: isNaN(distanceIncrement) ? 0 : distanceIncrement
             }
           },
-          { new: true }
+          { returnDocument: 'after' }
         );
 
         // Emitting back distance update

@@ -15,6 +15,7 @@ export const AuthProvider = ({ children }) => {
         if (data?.token) {
           sessionStorage.setItem('token', data.token);
           sessionStorage.setItem('role', data.role);
+          sessionStorage.setItem('portal', data.portal || data.role);
           sessionStorage.setItem('user', JSON.stringify(data));
 
           return data;
@@ -98,14 +99,24 @@ export const AuthProvider = ({ children }) => {
       const storedUser = storage.getItem('user');
 
       if (token && storedUser) {
-        // [SUPER ADMIN BUG FIX] Validate role vs expected URL portal
+        // [PORTAL ISOLATION] Validate BOTH role AND portal vs expected URL portal
         const parsedUser = JSON.parse(storedUser);
         const currentPath = window.location.pathname;
         const urlPortalMatch = currentPath.match(/^\/(employee|manager|tenant|superadmin)/i);
         const urlPortal = urlPortalMatch ? urlPortalMatch[1].toLowerCase() : null;
         
+        // Check role matches URL portal
         if (urlPortal && parsedUser.role !== urlPortal) {
           console.warn(`[SECURITY] Invalid portal context! Stored Role '${parsedUser.role}' is not matching URL portal '${urlPortal}'. Purging tokens.`);
+          authService.logout();
+          setIsLoading(false);
+          return;
+        }
+
+        // Check stored portal matches URL portal
+        const storedPortal = storage.getItem('portal');
+        if (urlPortal && storedPortal && storedPortal.toLowerCase() !== urlPortal) {
+          console.warn(`[SECURITY] Portal mismatch! Stored portal '${storedPortal}' does not match URL portal '${urlPortal}'. Forcing re-authentication.`);
           authService.logout();
           setIsLoading(false);
           return;

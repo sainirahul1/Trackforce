@@ -6,7 +6,7 @@ import { useAuth } from '../../context/AuthContext';
 import Button from '../../components/ui/Button';
 import ThemeToggle from '../../components/ui/ThemeToggle';
 // test
-const LoginPage = ({ portal = '' }) => {
+const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -14,22 +14,24 @@ const LoginPage = ({ portal = '' }) => {
   const navigate = useNavigate();
   const { login: globalLogin } = useAuth();
   
-  // Visual portal formatting
-  const formattedPortalName = portal ? portal.replace('_', ' ') : 'Unified Setup';
-
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
     try {
-      // Pass the STRICT portal context directly into the backend via the service
-      const u = await authServiceLogin(email, password, portal);
+      // Pass empty portal - backend will resolve based on user's default role
+      const u = await authServiceLogin(email, password, null);
       
       // Synchronize with global AuthContext before navigation
       globalLogin(u);
 
-      // Routing strictly depends on the returned validated role
-      navigate(`/${u.role}/dashboard`);
+      // Unified Application Routing
+      if (u.role === 'superadmin') navigate('/superadmin/dashboard', { replace: true });
+      else if (u.role === 'tenant') navigate('/tenant/dashboard', { replace: true });
+      else if (u.role === 'manager') navigate('/manager/dashboard', { replace: true });
+      else if (u.role === 'employee') navigate('/employee/dashboard', { replace: true });
+      else navigate('/', { replace: true }); // Fallback
+      
     } catch (err) {
       setError(err.message);
     } finally {
@@ -76,7 +78,7 @@ const LoginPage = ({ portal = '' }) => {
             </div>
             <h2 className="text-3xl font-black tracking-tight text-gray-900 dark:text-white">TrackForce</h2>
           </Link>
-          <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mt-2">{formattedPortalName} Portal</p>
+          <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mt-2">Central Login</p>
         </div>
 
         {/* Quick Login Dropdown */}
