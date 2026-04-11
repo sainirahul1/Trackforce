@@ -1,13 +1,13 @@
 const express = require('express');
-const { 
-  getEmployees, 
+const {
+  getEmployees,
   getEmployeeById,
   createEmployee,
   updateEmployee,
   deleteEmployee,
-  getManagers, 
-  createManager, 
-  updateManager, 
+  getManagers,
+  createManager,
+  updateManager,
   deleteManager,
   getTenantSettings,
   updateGeneralInfo,
@@ -20,9 +20,9 @@ const {
   updateSubscription,
   getAvailablePlans,
 } = require('../../controllers/tenant/tenantController');
-const { 
-  getDashboardStats, 
-  getDashboardManagers 
+const {
+  getDashboardStats,
+  getDashboardManagers
 } = require('../../controllers/tenant/dashboardController');
 const { protect } = require('../../middleware/authMiddleware');
 const tenantMiddleware = require('../../middleware/tenantMiddleware');

@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const { 
-  getSettings, 
-  updateSettings, 
+const {
+  getSettings,
+  updateSettings,
   getDatabaseAnalytics,
   getDuplicates,
   cleanupDuplicates

@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const { 
-  getManagerActivities, 
-  createManagerActivity 
+const {
+  getManagerActivities,
+  createManagerActivity
 } = require('../../controllers/manager/activityController');
 const { protect } = require('../../middleware/authMiddleware');
 const tenantMiddleware = require('../../middleware/tenantMiddleware');

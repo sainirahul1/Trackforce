@@ -11,13 +11,13 @@ const BASE_URL = getBaseUrl();
 const API_URL = `${BASE_URL}/auth`;
 
 
-export const login = async (email, password) => {
+export const login = async (email, password, portal) => {
   const response = await fetch(`${API_URL}/login`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({ email, password, portal }), // MUST pass portal to enforce strict backend validation
   });
 
   const data = await response.json();
@@ -29,6 +29,7 @@ export const login = async (email, password) => {
   if (data.token) {
     localStorage.setItem('token', data.token);
     localStorage.setItem('role', data.role);
+    if (portal) localStorage.setItem('portal', portal); // Save exactly which portal was logged into
     localStorage.setItem('user', JSON.stringify(data));
   }
 
@@ -40,11 +41,13 @@ export const logout = () => {
   sessionStorage.removeItem('token');
   sessionStorage.removeItem('role');
   sessionStorage.removeItem('user');
+  sessionStorage.removeItem('portal');
 
   // Also clear persistent session
   localStorage.removeItem('token');
   localStorage.removeItem('role');
   localStorage.removeItem('user');
+  localStorage.removeItem('portal');
 };
 
 export const register = async (userData) => {
@@ -84,7 +87,7 @@ export const getMe = async () => {
   // Update the correct storage with fresh user data
   const isImpersonating = !!sessionStorage.getItem('token');
   const storage = isImpersonating ? sessionStorage : localStorage;
-  
+
   const storedUser = JSON.parse(storage.getItem('user') || '{}');
   storage.setItem('user', JSON.stringify({ ...storedUser, ...data }));
 

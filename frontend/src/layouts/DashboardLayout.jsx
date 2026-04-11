@@ -84,8 +84,17 @@ const DashboardLayout = ({ allowedRole }) => {
   };
 
 
-  if (!storedRole || (allowedRole && storedRole !== allowedRole)) {
+  // MANDATORY SECURITY RULE: Block cross-portal navigation
+  if (!storedRole) {
+    // No session at all → send to login
     return <Navigate to="/login" replace />;
+  }
+
+  if (allowedRole && storedRole !== allowedRole) {
+    // User IS logged in but trying to access a DIFFERENT portal
+    // → Redirect them BACK to their own portal (do NOT logout)
+    console.warn(`[SECURITY] Cross-Portal Blocked: Role '${storedRole}' tried to access '${allowedRole}' portal. Redirecting to /${storedRole}/dashboard.`);
+    return <Navigate to={`/${storedRole}/dashboard`} replace />;
   }
 
   // Superadmins impersonating other roles bypass maintenance mode
@@ -113,9 +122,9 @@ const DashboardLayout = ({ allowedRole }) => {
         </div>
         <main className="flex-1 p-4 sm:p-6 overflow-y-auto text-gray-900 dark:text-gray-100 print:p-0">
           <div className="max-w-7xl mx-auto print:max-w-none print:m-0">
-          <div className="content-ready">
-            <Outlet context={{ workStatus, setWorkStatus, setPageLoading }} />
-          </div>
+            <div className="content-ready">
+              <Outlet context={{ workStatus, setWorkStatus, setPageLoading }} />
+            </div>
             {isPageLoading && (
               <div className="animate-in fade-in duration-300">
                 {location.pathname.startsWith('/tenant') ? (

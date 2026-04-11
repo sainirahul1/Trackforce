@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const { 
-  getTeams, 
-  createTeam, 
-  updateTeam, 
-  deleteTeam 
+const {
+  getTeams,
+  createTeam,
+  updateTeam,
+  deleteTeam
 } = require('../../controllers/manager/teamController');
 const { protect } = require('../../middleware/authMiddleware');
 const tenantMiddleware = require('../../middleware/tenantMiddleware');

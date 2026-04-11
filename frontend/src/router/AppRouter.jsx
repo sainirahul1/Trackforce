@@ -57,7 +57,11 @@ const AppRouter = () => (
     <Route path="/" element={<Home />} />
 
     {/* Auth Routes */}
-    <Route path="/login" element={<LoginPage />} />
+    <Route path="/employee/login" element={<LoginPage portal="EMPLOYEE" />} />
+    <Route path="/manager/login" element={<LoginPage portal="MANAGER" />} />
+    <Route path="/tenant/login" element={<LoginPage portal="TENANT" />} />
+    <Route path="/superadmin/login" element={<LoginPage portal="SUPER_ADMIN" />} />
+    <Route path="/login" element={<Navigate to="/employee/login" replace />} />
     <Route path="/signup" element={<SignupPage />} />
 
     {/* Super Admin Routes */}

@@ -1,12 +1,4 @@
-const Order = require('../../models/employee/Order');
-const ManagerOrder = require('../../models/manager/ManagerOrder');
-const User = require('../../models/tenant/User');
-const mongoose = require('mongoose');
-
-const getTeamEmployeeIds = async (managerId, tenantId) => {
-  const employees = await User.find({ manager: managerId, tenant: tenantId }, '_id').lean();
-  return employees.map(emp => emp._id);
-};
+const inventoryOrderService = require('../../services/inventoryOrderService');
 
 /**
  * @desc    Get inventory and order dashboard statistics
@@ -15,82 +7,8 @@ const getTeamEmployeeIds = async (managerId, tenantId) => {
  */
 exports.getDashboardStats = async (req, res) => {
   try {
-    const tenantId = req.user.tenant;
-    const managerId = req.user._id;
-    const teamEmployeeIds = await getTeamEmployeeIds(managerId, tenantId);
-
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    const fourteenDaysAgo = new Date();
-    fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
-
-    // Current Stats
-    const stats = await Order.aggregate([
-      {
-        $match: {
-          tenant: new mongoose.Types.ObjectId(tenantId),
-          employee: { $in: teamEmployeeIds },
-          timestamp: { $gte: sevenDaysAgo }
-        }
-      },
-      {
-        $group: {
-          _id: null,
-          weeklyRevenue: { $sum: '$totalAmount' },
-          ordersCollected: { $count: {} },
-          avgTicketSize: { $avg: '$totalAmount' }
-        }
-      }
-    ]);
-
-    // Previous Stats for Trend
-    const prevStats = await Order.aggregate([
-      {
-        $match: {
-          tenant: new mongoose.Types.ObjectId(tenantId),
-          employee: { $in: teamEmployeeIds },
-          timestamp: { $gte: fourteenDaysAgo, $lt: sevenDaysAgo }
-        }
-      },
-      {
-        $group: {
-          _id: null,
-          weeklyRevenue: { $sum: '$totalAmount' },
-          ordersCollected: { $count: {} },
-          avgTicketSize: { $avg: '$totalAmount' }
-        }
-      }
-    ]);
-
-    const result = stats.length > 0 ? stats[0] : { weeklyRevenue: 0, ordersCollected: 0, avgTicketSize: 0 };
-    const prevResult = prevStats.length > 0 ? prevStats[0] : { weeklyRevenue: 0, ordersCollected: 0, avgTicketSize: 0 };
-
-    // Previous Avg Ticket Size (need to calculate explicitly if not in prevStats aggregation)
-    // Actually, I should add it to prevStats aggregation
-    const pendingApprovalCount = await Order.countDocuments({
-      tenant: tenantId,
-      employee: { $in: teamEmployeeIds },
-      status: 'pending'
-    });
-
-    const calculateTrend = (curr, prev) => {
-      if (prev === 0) return '+0%';
-      const percent = ((curr - prev) / prev) * 100;
-      return `${percent >= 0 ? '+' : ''}${percent.toFixed(1)}%`;
-    };
-
-    res.status(200).json({
-      success: true,
-      data: {
-        weeklyRevenue: result.weeklyRevenue || 0,
-        ordersCollected: result.ordersCollected || 0,
-        avgTicketSize: Math.round(result.avgTicketSize || 0),
-        pendingApproval: pendingApprovalCount,
-        revenueTrend: calculateTrend(result.weeklyRevenue || 0, prevResult.weeklyRevenue || 0),
-        ordersTrend: calculateTrend(result.ordersCollected || 0, prevResult.ordersCollected || 0),
-        ticketTrend: calculateTrend(result.avgTicketSize || 0, prevResult.avgTicketSize || 0),
-      }
-    });
+    const result = await inventoryOrderService.getDashboardStats(req.tenantId, req.user._id);
+    res.status(200).json(result);
   } catch (error) {
     console.error('getDashboardStats Error:', error);
     res.status(500).json({ success: false, message: error.message });
@@ -104,51 +22,8 @@ exports.getDashboardStats = async (req, res) => {
  */
 exports.getRevenueChartData = async (req, res) => {
   try {
-    const tenantId = req.user.tenant;
-    const managerId = req.user._id;
-    const teamEmployeeIds = await getTeamEmployeeIds(managerId, tenantId);
-
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
-    sevenDaysAgo.setHours(0, 0, 0, 0);
-
-    const chartData = await Order.aggregate([
-      {
-        $match: {
-          tenant: new mongoose.Types.ObjectId(tenantId),
-          employee: { $in: teamEmployeeIds },
-          timestamp: { $gte: sevenDaysAgo }
-        }
-      },
-      {
-        $group: {
-          _id: { $dateToString: { format: "%Y-%m-%d", date: "$timestamp" } },
-          revenue: { $sum: "$totalAmount" }
-        }
-      },
-      { $sort: { "_id": 1 } }
-    ]);
-
-    // Ensure we have 7 days including zeros
-    const labels = [];
-    const data = [];
-    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-
-    for (let i = 0; i < 7; i++) {
-      const d = new Date();
-      d.setDate(d.getDate() - (6 - i));
-      const dateStr = d.toISOString().split('T')[0];
-      const dayName = days[d.getDay()];
-
-      const found = chartData.find(item => item._id === dateStr);
-      labels.push(dayName);
-      data.push(found ? found.revenue : 0);
-    }
-
-    res.status(200).json({
-      success: true,
-      data: { labels, data }
-    });
+    const result = await inventoryOrderService.getRevenueChartData(req.tenantId, req.user._id);
+    res.status(200).json(result);
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -161,62 +36,9 @@ exports.getRevenueChartData = async (req, res) => {
  */
 exports.getRecentOrders = async (req, res) => {
   try {
-    const tenantId = new mongoose.Types.ObjectId(req.user.tenant);
-    const managerId = new mongoose.Types.ObjectId(req.user._id);
-    const teamEmployeeIds = [managerId, ...(await getTeamEmployeeIds(managerId, tenantId))];
     const { search, page = 1, limit = 5 } = req.query;
-
-    const pageNum = parseInt(page);
-    const limitNum = parseInt(limit);
-    const skip = (pageNum - 1) * limitNum;
-
-    let query = { 
-      tenant: tenantId, 
-      employee: { $in: teamEmployeeIds }
-    };
-
-    if (search) {
-      const matchingEmployees = await User.find({
-        _id: { $in: teamEmployeeIds },
-        name: { $regex: search, $options: 'i' }
-      }, '_id').lean();
-      const matchingEmployeeIds = matchingEmployees.map(e => e._id);
-
-      query.$or = [
-        { storeName: { $regex: search, $options: 'i' } },
-        { status: { $regex: search, $options: 'i' } },
-        { employee: { $in: matchingEmployeeIds } }
-      ];
-    }
-
-    const totalOrders = await Order.countDocuments(query);
-    const orders = await Order.find(query)
-      .populate('employee', 'name')
-      .sort({ timestamp: -1 })
-      .skip(skip)
-      .limit(limitNum)
-      .lean();
-
-    const formattedOrders = orders.map(order => ({
-      id: `ORD-${order._id.toString().slice(-4).toUpperCase()}`,
-      store: order.storeName,
-      executive: order.employee ? order.employee.name : 'Unknown',
-      items: order.items,
-      amount: '₹' + order.totalAmount.toLocaleString(),
-      status: order.status.charAt(0).toUpperCase() + order.status.slice(1),
-      date: order.timestamp
-    }));
-
-    res.status(200).json({ 
-      success: true, 
-      data: formattedOrders,
-      pagination: {
-        totalOrders,
-        totalPages: Math.ceil(totalOrders / limitNum),
-        currentPage: pageNum,
-        limit: limitNum
-      }
-    });
+    const result = await inventoryOrderService.getRecentOrders(req.tenantId, req.user._id, search, page, limit);
+    res.status(200).json(result);
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -228,28 +50,11 @@ exports.getRecentOrders = async (req, res) => {
  */
 exports.exportLedger = async (req, res) => {
   try {
-    const tenantId = req.user.tenant;
-    const managerId = req.user._id;
-    const teamEmployeeIds = await getTeamEmployeeIds(managerId, tenantId);
-
-    const orders = await Order.find({
-      tenant: tenantId,
-      employee: { $in: teamEmployeeIds }
-    }).populate('employee', 'name');
-
-    if (orders.length === 0) {
+    const csv = await inventoryOrderService.getExportLedgerData(req.tenantId, req.user._id);
+    if (!csv) {
       return res.status(404).json({ success: false, message: 'No orders found for export' });
     }
 
-    // Generate CSV Header
-    let csv = 'Order ID,Store Name,Executive,Items,Amount,Status,Date,Payment Method\n';
-
-    // Generate CSV Rows
-    orders.forEach(order => {
-      csv += `${order._id},"${order.storeName}","${order.employee ? order.employee.name : 'N/A'}",${order.items},${order.totalAmount},${order.status},${order.timestamp.toISOString().split('T')[0]},${order.paymentMethod}\n`;
-    });
-
-    // Set Response Headers for Download
     res.setHeader('Content-Type', 'text/csv');
     res.setHeader('Content-Disposition', 'attachment; filename=ledger_export.csv');
     res.status(200).send(csv);
@@ -265,9 +70,8 @@ exports.exportLedger = async (req, res) => {
  */
 exports.getInventory = async (req, res) => {
   try {
-    const tenantId = req.user.tenant;
-    const inventory = await ManagerOrder.find({ tenant: tenantId }).lean();
-    res.status(200).json({ success: true, data: inventory });
+    const result = await inventoryOrderService.getInventory(req.tenantId);
+    res.status(200).json(result);
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -279,9 +83,8 @@ exports.getInventory = async (req, res) => {
  */
 exports.createInventory = async (req, res) => {
   try {
-    const tenantId = req.user.tenant;
-    const item = await ManagerOrder.create({ ...req.body, tenant: tenantId });
-    res.status(201).json({ success: true, data: item });
+    const result = await inventoryOrderService.createInventory(req.tenantId, req.body);
+    res.status(201).json(result);
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });
   }
@@ -293,10 +96,12 @@ exports.createInventory = async (req, res) => {
  */
 exports.updateInventory = async (req, res) => {
   try {
-    const item = await ManagerOrder.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
-    if (!item) return res.status(404).json({ success: false, message: 'Item not found' });
-    res.status(200).json({ success: true, data: item });
+    const result = await inventoryOrderService.updateInventory(req.tenantId, req.params.id, req.body);
+    res.status(200).json(result);
   } catch (error) {
+    if (error.message === 'Item not found') {
+      return res.status(404).json({ success: false, message: error.message });
+    }
     res.status(400).json({ success: false, message: error.message });
   }
 };
@@ -307,10 +112,12 @@ exports.updateInventory = async (req, res) => {
  */
 exports.deleteInventory = async (req, res) => {
   try {
-    const item = await ManagerOrder.findByIdAndDelete(req.params.id);
-    if (!item) return res.status(404).json({ success: false, message: 'Item not found' });
-    res.status(200).json({ success: true, message: 'Item deleted' });
+    const result = await inventoryOrderService.deleteInventory(req.tenantId, req.params.id);
+    res.status(200).json(result);
   } catch (error) {
+    if (error.message === 'Item not found') {
+      return res.status(404).json({ success: false, message: error.message });
+    }
     res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -321,9 +128,8 @@ exports.deleteInventory = async (req, res) => {
  */
 exports.createOrder = async (req, res) => {
   try {
-    const tenantId = req.user.tenant;
-    const order = await Order.create({ ...req.body, tenant: tenantId });
-    res.status(201).json({ success: true, data: order });
+    const result = await inventoryOrderService.createOrder(req.tenantId, req.body);
+    res.status(201).json(result);
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });
   }
@@ -335,10 +141,12 @@ exports.createOrder = async (req, res) => {
  */
 exports.updateOrder = async (req, res) => {
   try {
-    const order = await Order.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
-    if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
-    res.status(200).json({ success: true, data: order });
+    const result = await inventoryOrderService.updateOrder(req.tenantId, req.params.id, req.body);
+    res.status(200).json(result);
   } catch (error) {
+    if (error.message === 'Order not found') {
+      return res.status(404).json({ success: false, message: error.message });
+    }
     res.status(400).json({ success: false, message: error.message });
   }
 };
@@ -349,10 +157,12 @@ exports.updateOrder = async (req, res) => {
  */
 exports.deleteOrder = async (req, res) => {
   try {
-    const order = await Order.findByIdAndDelete(req.params.id);
-    if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
-    res.status(200).json({ success: true, message: 'Order deleted' });
+    const result = await inventoryOrderService.deleteOrder(req.tenantId, req.params.id);
+    res.status(200).json(result);
   } catch (error) {
+    if (error.message === 'Order not found') {
+      return res.status(404).json({ success: false, message: error.message });
+    }
     res.status(500).json({ success: false, message: error.message });
   }
 };

@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const { 
-  getAllSubscriptions, 
-  createSubscription, 
-  updateSubscription, 
-  deleteSubscription 
+const {
+  getAllSubscriptions,
+  createSubscription,
+  updateSubscription,
+  deleteSubscription
 } = require('../../controllers/superadmin/subscriptionController');
 const { protect, admin } = require('../../middleware/authMiddleware');
 

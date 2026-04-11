@@ -5,19 +5,19 @@ const { logActivity } = require('../../utils/activityLogger');
 exports.getTasks = async (req, res) => {
   try {
     const query = { tenant: req.tenantId };
-    
+
     // If the user is an employee, only show their own tasks
     if (req.user && req.user.role === 'employee') {
       query.employee = req.user._id;
     }
 
     const tasks = await Task.find(query)
-    .select('-checklist')
-    .populate('employee', 'name email')
-    .sort({ date: -1 })
-    .lean();
-    
-    
+      .select('-checklist')
+      .populate('employee', 'name email')
+      .sort({ date: -1 })
+      .lean();
+
+
     res.json(tasks);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -30,7 +30,7 @@ exports.getTasks = async (req, res) => {
 exports.getTaskById = async (req, res) => {
   try {
     const task = await Task.findOne({ _id: req.params.id, tenant: req.tenantId });
-    
+
     if (!task) {
       return res.status(404).json({ message: 'Task not found' });
     }
@@ -47,7 +47,7 @@ exports.getTaskById = async (req, res) => {
 exports.getTaskDetail = async (req, res) => {
   try {
     const task = await Task.findOne({ _id: req.params.id, tenant: req.tenantId });
-    
+
     if (!task) {
       return res.status(404).json({ message: 'Task not found' });
     }
@@ -64,7 +64,7 @@ exports.getTaskDetail = async (req, res) => {
 exports.createTask = async (req, res) => {
   try {
     const isManager = req.user && (req.user.role === 'manager' || req.user.role === 'superadmin');
-    
+
     const taskData = {
       ...req.body,
       // If manager/superadmin, use provided employee; otherwise, use current user
@@ -121,7 +121,7 @@ exports.updateTask = async (req, res) => {
     // Workflow Extension: Only trigger for employees or when a task is explicitly "finished"
     const isEmployee = req.user && req.user.role === 'employee';
     const isFinishing = (req.body.status === 'completed' || ['Complete', 'Follow Up', 'Rejected'].includes(req.body.missionStatus));
-    
+
     if (isEmployee && isFinishing) {
       const photos = [];
       if (updatedTask.evidence) {
@@ -154,56 +154,56 @@ exports.updateTask = async (req, res) => {
         timestamp: new Date()
       });
 
-    // Mark the original task as completed because the visit attempt was finalized
-    await Task.findByIdAndUpdate(updatedTask._id, { status: 'completed' });
+      // Mark the original task as completed because the visit attempt was finalized
+      await Task.findByIdAndUpdate(updatedTask._id, { status: 'completed' });
 
-    // NEW: Log Activity for completion/terminal states
-    let activityType = 'task_completed';
-    let activityStatus = 'success';
-    let activityTitle = 'Mission Finalized';
-    
-    if (req.body.missionStatus === 'Follow Up') {
-      activityType = 'task_followup';
-      activityStatus = 'info';
-      activityTitle = 'Follow-up Scheduled';
-    } else if (req.body.missionStatus === 'Rejected') {
-      activityType = 'task_rejected';
-      activityStatus = 'warning';
-      activityTitle = 'Mission Rejected';
+      // NEW: Log Activity for completion/terminal states
+      let activityType = 'task_completed';
+      let activityStatus = 'success';
+      let activityTitle = 'Mission Finalized';
+
+      if (req.body.missionStatus === 'Follow Up') {
+        activityType = 'task_followup';
+        activityStatus = 'info';
+        activityTitle = 'Follow-up Scheduled';
+      } else if (req.body.missionStatus === 'Rejected') {
+        activityType = 'task_rejected';
+        activityStatus = 'warning';
+        activityTitle = 'Mission Rejected';
+      }
+
+      await logActivity({
+        userId: req.user._id,
+        tenantId: req.tenantId,
+        type: activityType,
+        title: activityTitle,
+        details: `Employee finalized mission "${updatedTask.title}" at ${updatedTask.store} with status: ${req.body.missionStatus}.`,
+        status: activityStatus,
+        metadata: { taskId: updatedTask._id, missionStatus: req.body.missionStatus }
+      });
+    } else if (req.body.isTaskStarted && !task.isTaskStarted) {
+      // NEW: Log task start
+      await logActivity({
+        userId: req.user._id,
+        tenantId: req.tenantId,
+        type: 'task_started',
+        title: 'Mission Started',
+        details: `Employee started mission "${updatedTask.title}" at ${updatedTask.store}.`,
+        status: 'success',
+        metadata: { taskId: updatedTask._id }
+      });
+    } else if (req.body.status === 'delayed' && task.status !== 'delayed') {
+      // NEW: Log delay
+      await logActivity({
+        userId: req.user._id,
+        tenantId: req.tenantId,
+        type: 'task_delayed',
+        title: 'Mission Delayed',
+        details: `Mission "${updatedTask.title}" at ${updatedTask.store} has been marked as delayed.`,
+        status: 'warning',
+        metadata: { taskId: updatedTask._id }
+      });
     }
-
-    await logActivity({
-      userId: req.user._id,
-      tenantId: req.tenantId,
-      type: activityType,
-      title: activityTitle,
-      details: `Employee finalized mission "${updatedTask.title}" at ${updatedTask.store} with status: ${req.body.missionStatus}.`,
-      status: activityStatus,
-      metadata: { taskId: updatedTask._id, missionStatus: req.body.missionStatus }
-    });
-  } else if (req.body.isTaskStarted && !task.isTaskStarted) {
-    // NEW: Log task start
-    await logActivity({
-      userId: req.user._id,
-      tenantId: req.tenantId,
-      type: 'task_started',
-      title: 'Mission Started',
-      details: `Employee started mission "${updatedTask.title}" at ${updatedTask.store}.`,
-      status: 'success',
-      metadata: { taskId: updatedTask._id }
-    });
-  } else if (req.body.status === 'delayed' && task.status !== 'delayed') {
-    // NEW: Log delay
-    await logActivity({
-      userId: req.user._id,
-      tenantId: req.tenantId,
-      type: 'task_delayed',
-      title: 'Mission Delayed',
-      details: `Mission "${updatedTask.title}" at ${updatedTask.store} has been marked as delayed.`,
-      status: 'warning',
-      metadata: { taskId: updatedTask._id }
-    });
-  }
 
     // Return the updated task with populated employee name
     const populatedTask = await Task.findById(updatedTask._id).populate('employee', 'name email');
@@ -218,9 +218,9 @@ exports.updateTask = async (req, res) => {
 // @access  Private
 exports.deleteTask = async (req, res) => {
   try {
-    const task = await Task.findOneAndDelete({ 
-      _id: req.params.id, 
-      tenant: req.tenantId 
+    const task = await Task.findOneAndDelete({
+      _id: req.params.id,
+      tenant: req.tenantId
     });
 
     if (!task) {

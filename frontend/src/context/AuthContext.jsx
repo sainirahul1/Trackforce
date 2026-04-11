@@ -43,14 +43,14 @@ export const AuthProvider = ({ children }) => {
         // PERF: Maintain the existing token when updating user metadata
         const isImpersonating = !!sessionStorage.getItem('token');
         const storage = isImpersonating ? sessionStorage : localStorage;
-        
+
         const storedUserRaw = storage.getItem('user');
         const currentUser = JSON.parse(storedUserRaw || '{}');
         const token = currentUser.token || storage.getItem('token');
 
-        const updatedUser = { 
-          ...currentUser, 
-          ...freshUser, 
+        const updatedUser = {
+          ...currentUser,
+          ...freshUser,
           token,
           // Ensure these are explicitly updated for immediate shell hydration
           name: freshUser.name || currentUser.name,
@@ -98,13 +98,36 @@ export const AuthProvider = ({ children }) => {
       const storedUser = storage.getItem('user');
 
       if (token && storedUser) {
+        // [SUPER ADMIN BUG FIX] Validate role vs expected URL portal
+        const parsedUser = JSON.parse(storedUser);
+        const currentPath = window.location.pathname;
+        const urlPortalMatch = currentPath.match(/^\/(employee|manager|tenant|superadmin)/i);
+        const urlPortal = urlPortalMatch ? urlPortalMatch[1].toLowerCase() : null;
+        
+        if (urlPortal && parsedUser.role !== urlPortal) {
+          console.warn(`[SECURITY] Invalid portal context! Stored Role '${parsedUser.role}' is not matching URL portal '${urlPortal}'. Purging tokens.`);
+          authService.logout();
+          setIsLoading(false);
+          return;
+        }
+
         // PERF: Optimistic UI – allow the shell to render with local data
         setIsLoading(false);
         // Sync in background silently
         refreshUser();
       } else if (token) {
         // Fallback if user object missing – must wait for refresh
-        await refreshUser();
+        const freshUser = await refreshUser();
+        
+        const currentPath = window.location.pathname;
+        const urlPortalMatch = currentPath.match(/^\/(employee|manager|tenant|superadmin)/i);
+        const urlPortal = urlPortalMatch ? urlPortalMatch[1].toLowerCase() : null;
+
+        if (freshUser && urlPortal && freshUser.role !== urlPortal) {
+          authService.logout();
+          setUser(null);
+        }
+
         setIsLoading(false);
       } else {
         // No auth context
@@ -123,7 +146,7 @@ export const AuthProvider = ({ children }) => {
         console.error('URL cleanup failed:', e);
       }
     };
-    
+
     initAuth();
   }, [refreshUser]);
 

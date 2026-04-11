@@ -6,24 +6,29 @@ import { useAuth } from '../../context/AuthContext';
 import Button from '../../components/ui/Button';
 import ThemeToggle from '../../components/ui/ThemeToggle';
 // test
-const LoginPage = () => {
+const LoginPage = ({ portal = '' }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { login: globalLogin } = useAuth();
+  
+  // Visual portal formatting
+  const formattedPortalName = portal ? portal.replace('_', ' ') : 'Unified Setup';
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
     try {
-      const u = await authServiceLogin(email, password);
+      // Pass the STRICT portal context directly into the backend via the service
+      const u = await authServiceLogin(email, password, portal);
+      
       // Synchronize with global AuthContext before navigation
       globalLogin(u);
 
-      // u.role will determine where we go
+      // Routing strictly depends on the returned validated role
       navigate(`/${u.role}/dashboard`);
     } catch (err) {
       setError(err.message);
@@ -71,7 +76,7 @@ const LoginPage = () => {
             </div>
             <h2 className="text-3xl font-black tracking-tight text-gray-900 dark:text-white">TrackForce</h2>
           </Link>
-          <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mt-2">Unified Access Portal</p>
+          <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mt-2">{formattedPortalName} Portal</p>
         </div>
 
         {/* Quick Login Dropdown */}

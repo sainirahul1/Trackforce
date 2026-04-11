@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const { 
-  getAllTenants, 
-  provisionTenant, 
+const {
+  getAllTenants,
+  provisionTenant,
   updateTenantStatus,
   updateTenant,
   toggleTenantSuspension,

@@ -94,7 +94,7 @@ exports.getMe = async (req, res) => {
 // @route   POST /api/auth/login
 // @access  Public
 exports.login = async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, portal } = req.body;
   const normalizedEmail = email.toLowerCase();
 
   try {
@@ -103,38 +103,59 @@ exports.login = async (req, res) => {
       .select('-profile.profileImage')
       .populate('tenant');
 
-    if (user && (await user.matchPassword(password))) {
-      // NEW: Log Activity (Backend-only source)
-      if (user.role === 'employee') {
-        try {
-          await logActivity({
-            userId: user._id,
-            tenantId: user.tenant?._id || user.tenant,
-            type: 'login',
-            title: 'Portal Access',
-            details: 'Employee logged into the system.',
-            status: 'success'
-          });
-        } catch (logErr) {
-          console.error('[LOGIN LOG ERROR]', logErr.message);
-        }
-      }
-
-      res.json({
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        company: user.company,
-        role: user.role,
-        tenant: user.tenant,
-        tenantStatus: user.tenant?.onboardingStatus || 'active',
-        isDeactivated: user.isDeactivated,
-        profile: user.profile || {},
-        token: generateToken(user._id, user.role, user.tenant?._id || user.tenant, user.name, user.email),
-      });
-    } else {
-      res.status(401).json({ message: 'Invalid email or password' });
+    if (!user || !(await user.matchPassword(password))) {
+      return res.status(401).json({ message: 'Invalid email or password' });
     }
+
+    // ──────────────────────────────────────────────────────────
+    // STRICT PORTAL VALIDATION (NON-NEGOTIABLE)
+    // Map the portal identifier from the frontend to the DB role
+    // ──────────────────────────────────────────────────────────
+    if (portal) {
+      const portalToRoleMap = {
+        'EMPLOYEE': 'employee',
+        'MANAGER': 'manager',
+        'TENANT': 'tenant',
+        'SUPER_ADMIN': 'superadmin',
+      };
+      const expectedRole = portalToRoleMap[portal];
+
+      if (expectedRole && user.role !== expectedRole) {
+        console.warn(`[SECURITY] Portal mismatch: User '${user.email}' (role: ${user.role}) tried to login via '${portal}' portal.`);
+        return res.status(403).json({ 
+          message: `Access denied. You do not have permission to access the ${portal.replace('_', ' ')} portal.` 
+        });
+      }
+    }
+
+    // Log Activity (Backend-only source)
+    if (user.role === 'employee') {
+      try {
+        await logActivity({
+          userId: user._id,
+          tenantId: user.tenant?._id || user.tenant,
+          type: 'login',
+          title: 'Portal Access',
+          details: 'Employee logged into the system.',
+          status: 'success'
+        });
+      } catch (logErr) {
+        console.error('[LOGIN LOG ERROR]', logErr.message);
+      }
+    }
+
+    res.json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      company: user.company,
+      role: user.role,
+      tenant: user.tenant,
+      tenantStatus: user.tenant?.onboardingStatus || 'active',
+      isDeactivated: user.isDeactivated,
+      profile: user.profile || {},
+      token: generateToken(user._id, user.role, user.tenant?._id || user.tenant, user.name, user.email),
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
