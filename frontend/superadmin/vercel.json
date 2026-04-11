@@ -1,0 +1,19 @@
+{
+  "rewrites": [
+    { "source": "/employee/(.*)", "destination": "/employee/index.html" },
+    { "source": "/manager/(.*)", "destination": "/manager/index.html" },
+    { "source": "/tenant/(.*)", "destination": "/tenant/index.html" },
+    { "source": "/superadmin/(.*)", "destination": "/superadmin/index.html" },
+    { "source": "/(.*)", "destination": "/employee/index.html" } // Fallback for root route
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" }
+      ]
+    }
+  ]
+}
