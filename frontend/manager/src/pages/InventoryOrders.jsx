@@ -12,6 +12,7 @@ import { getSyncCachedData } from '../utils/cacheHelper';
 import { Chart as ChartJS, registerables } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
 import { useNavigate } from 'react-router-dom';
+import storage from '../utils/storage';
 import { getManagerStats, getRevenueChartData, getRecentOrders } from '../services/managerOrderService';
 import { useDialog } from '../context/DialogContext';
 import { getApiBaseUrl } from '../services/apiClient';
@@ -129,7 +130,7 @@ const InventoryOrders = () => {
 
   const handleExport = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = storage.getToken();
       const base = getApiBaseUrl();
       const response = await fetch(`${base}/api/manager/inventory-orders/export`, {
         headers: { Authorization: `Bearer ${token}` }

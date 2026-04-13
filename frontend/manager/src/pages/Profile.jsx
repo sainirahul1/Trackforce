@@ -11,6 +11,7 @@ import { updateProfile as updateAuthProfile, getMe, uploadProfileImage as upload
 import { useAuth } from '../context/AuthContext';
 import { useDialog } from '../context/DialogContext';
 import { getApiBaseUrl } from '../services/apiClient';
+import storage from '../utils/storage';
 import { Loader2 } from 'lucide-react';
 
 /**
@@ -49,12 +50,12 @@ const ManagerProfile = () => {
 
   // PERSISTENT CACHE INITIALIZATION (0s Loading)
   const getInitialManagerData = () => {
-    const stored = localStorage.getItem('user') || sessionStorage.getItem('user');
+    const stored = storage.getUser();
     if (!stored) return {
       name: 'Manager', role: 'Regional Manager', email: '', phone: '', company: '', location: '', nationality: '', gender: '', dob: '', department: '', emergencyContact: '', address: '', timezone: 'IST (UTC +5:30)', joinDate: 'Jan 2024', avatar: 'MG'
     };
     try {
-      const data = JSON.parse(stored);
+      const data = stored;
       return {
         name: data.name || '',
         role: data.profile?.designation || (data.role === 'manager' ? 'Regional Manager' : data.role),
@@ -80,7 +81,7 @@ const ManagerProfile = () => {
 
   // Manager Data State
   const [managerData, setManagerData] = useState(getInitialManagerData);
-  const [profileLoading, setProfileLoading] = useState(!localStorage.getItem('user') && !sessionStorage.getItem('user'));
+  const [profileLoading, setProfileLoading] = useState(!storage.getUser());
 
   useEffect(() => {
     const fetchProfile = async () => {

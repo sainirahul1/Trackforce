@@ -69,10 +69,10 @@ const LoginPage = ({ portal = '' }) => {
 
   const allQuickLogins = [
     { label: 'Select Test Account', email: '', password: '', role: 'ALL' },
-    { label: 'Employee', email: 'employee2@gmail.com', password: 'employee2@gmail.com', role: 'EMPLOYEE' },
+    { label: 'Manager', email: 'manager@gmail.com', password: 'manager@gmail.com', role: 'MANAGER' },
   ];
 
-  // Unified Access Portal always shows all test accounts
+  // Isolated to Manager test accounts
   const quickLogins = allQuickLogins;
 
   const handleQuickLogin = (e) => {

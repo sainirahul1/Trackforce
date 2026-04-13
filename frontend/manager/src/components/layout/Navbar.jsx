@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { getApiBaseUrl } from '../../services/apiClient';
+import storage from '../../utils/storage';
 
 const getNotificationIcon = (type) => {
   switch (type) {
@@ -26,7 +27,7 @@ const Navbar = ({ user }) => {
   const navigate = useNavigate();
   const { logout } = useAuth();
 
-  const role = user?.role || localStorage.getItem('role') || 'employee';
+  const role = user?.role || storage.getRole() || 'employee';
 
   const getPortalConfig = () => {
     switch (role) {
