@@ -69,10 +69,7 @@ const LoginPage = ({ portal = '' }) => {
 
   const allQuickLogins = [
     { label: 'Select Test Account', email: '', password: '', role: 'ALL' },
-    { label: 'Super Admin', email: 'superadmin@trackforce.com', password: 'admin123', role: 'SUPER_ADMIN' },
-    { label: 'RA Tenant', email: 'tenant@reatchall.com', password: 'password123', role: 'TENANT' },
-    { label: 'RA Manager', email: 'manager1@reatchall.com', password: 'password123', role: 'MANAGER' },
-    { label: 'RA Employee', email: 'employee1@reatchall.com', password: 'password123', role: 'EMPLOYEE' },
+    { label: 'Employee', email: 'employee2@gmail.com', password: 'employee2@gmail.com', role: 'EMPLOYEE' },
   ];
 
   // Unified Access Portal always shows all test accounts

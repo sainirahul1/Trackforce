@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams, useNavigate, useOutletContext } from 'react-router-dom';
 import { ArrowLeft, LayoutDashboard, User, Briefcase, FileText, Activity, Mail, Phone, MapPin, MoreVertical, ShieldCheck, TrendingUp, ShoppingBag, Map as MapIcon, Clock, HeartPulse, Building, Shield, UserCheck, Calendar, CheckCircle, Download, ExternalLink, Navigation, Store, LogIn, Linkedin, GraduationCap } from 'lucide-react';
 import { mockEmployees } from '../utils/mockData';

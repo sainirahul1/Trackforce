@@ -1,5 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useOutletContext } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { useDialog } from '../context/DialogContext';
+import { useSocket } from '../context/SocketContext';
+import apiClient from '../services/apiClient';
+import storage from '../utils/storage';
+import { getDashboardStats, startTracking, stopTracking } from '../services/trackingService';
+import { getActivities } from '../services/activityService';
+import { getTasks } from '../services/taskService';
 import {
   MapPin, Calendar, TrendingUp, Clock, ClipboardList,
   Map as MapIcon, ShoppingBag, ShoppingBasket, ChevronRight, Activity,
@@ -365,9 +373,7 @@ const ActivityItem = ({ activity, isLast }) => (
 // MAIN COMPONENT: EmployeeDashboard
 // =============================================================================
 
-import { useSocket } from '../context/SocketContext';
-import apiClient from '../services/apiClient';
-import storage from '../utils/storage';
+
 const EmployeeDashboard = () => {
   // --- Auth Context ---
   const { user } = useAuth();
@@ -422,6 +428,8 @@ const EmployeeDashboard = () => {
 
     const id = navigator.geolocation.watchPosition(
       (position) => {
+        const { latitude, longitude } = position.coords;
+        const currentSocket = socketRef.current;
         const currentUser = storage.getUser() || {};
 
         if (currentSocket && currentSocket.connected) {

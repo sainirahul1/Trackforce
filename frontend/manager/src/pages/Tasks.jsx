@@ -1,6 +1,6 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import ReactDOM from 'react-dom';
+import { createPortal } from 'react-dom';
 import {
   Plus, Search, Filter, MoreHorizontal, Clock, CheckCircle2,
   AlertCircle, Calendar, UserPlus, X, ChevronDown,
@@ -543,7 +543,7 @@ const ManagerTasks = () => {
       )}
 
       {/* ── MISSION DETAIL MODAL ── */}
-      {selectedTask && ReactDOM.createPortal(
+      {selectedTask && createPortal(
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-[8px]" onClick={(e) => { if (e.target === e.currentTarget) setSelectedTask(null); }}>
           <div className="relative w-full max-w-2xl bg-white dark:bg-gray-900 rounded-[2.5rem] shadow-2xl border border-gray-100 dark:border-gray-800 overflow-hidden animate-in fade-in zoom-in-95 duration-400 flex flex-col md:flex-row">
             <div className="md:w-24 py-8 flex md:flex-col items-center justify-start gap-8 bg-slate-700 dark:bg-slate-700 border-r border-white/5"><div className="bg-white/5 p-4 rounded-[1.5rem] border border-white/10 shadow-inner">{React.createElement(categories.find(c => c.id === selectedTask.status)?.icon || Info, { size: 24, className: "text-indigo-400" })}</div><div className="hidden md:flex flex-col items-center gap-6 py-2"><div className="h-16 w-px bg-gradient-to-b from-white/0 via-white/10 to-white/0"></div><div className="text-white/30 text-[8px] font-black uppercase tracking-[0.4em] [writing-mode:vertical-lr] rotate-180 text-center">MISSION LOG • {selectedTask.id.slice(-6)}</div><div className="h-16 w-px bg-gradient-to-b from-white/0 via-white/10 to-white/0"></div></div></div>
@@ -608,7 +608,7 @@ const ManagerTasks = () => {
       )}
 
       {/* ── CREATE/EDIT TASK MODAL ── */}
-      {showModal && ReactDOM.createPortal(
+      {showModal && createPortal(
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-[10px]" onClick={(e) => { if (e.target === e.currentTarget) closeModal(); }}>
           <div className="relative w-full max-w-2xl bg-white dark:bg-gray-900 rounded-[2.5rem] shadow-2xl border border-gray-100 dark:border-gray-800 overflow-hidden animate-in fade-in zoom-in-95 duration-300">
             <div className="flex items-center justify-between px-10 pt-10 pb-6 border-b border-gray-100 dark:border-gray-800"><div><h2 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">{editingTask ? 'Edit Mission' : 'Create New Task'}</h2><p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Fill in the mission details below</p></div><button onClick={closeModal} className="p-2.5 rounded-2xl bg-gray-100 dark:bg-gray-800 text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-gray-700 transition-all"><X size={20} /></button></div>
@@ -629,7 +629,7 @@ const ManagerTasks = () => {
       )}
 
       {/* ── NEW SECTION MODAL ── */}
-      {showNewSectionModal && ReactDOM.createPortal(
+      {showNewSectionModal && createPortal(
         <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-[10px]" onClick={(e) => { if (e.target === e.currentTarget) setShowNewSectionModal(false); }}>
           <div className="relative w-full max-w-md bg-white dark:bg-gray-900 rounded-[2.5rem] shadow-2xl border border-gray-100 dark:border-gray-800 overflow-hidden animate-in fade-in zoom-in-95 duration-300 p-10">
             <h2 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">Add New Section</h2>

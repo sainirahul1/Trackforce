@@ -5,7 +5,7 @@
  * and a React Portal-based Lightbox for 100% viewport coverage.
  */
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
@@ -126,6 +126,14 @@ const getMarkerColor = (employeeId) => {
 
 
 
+const categoryContent = {
+  'General Overview': "The store inventory was mostly organized, however, some discrepancies were noted in the inward goods section. Client was cooperative and provided all necessary documentation for the audit trail. No major issues faced during the field protocol execution.",
+  'Inventory Compliance': "Stock levels for premium SKUs are maintained at 85%. End-cap displays are correctly positioned as per the planogram. Inward goods documentation is complete and verified.",
+  'Staff Performance': "Executive demonstrated excellent product knowledge and client engagement. Store manager noted the promptness and professionalism of the field officer during the audit.",
+  'Client Feedback': "Client expressed satisfaction with the real-time reporting capabilities. Requested a follow-up on the promotional display efficacy by next week's visit.",
+  'Protocol Variance': "Minor variance noted in the geo-tagging at the entrance. Site-path protocols were strictly followed otherwise, with all checkpoints covered accurately."
+};
+
 /**
  * ManagerVisits Main Component
  */
@@ -149,9 +157,9 @@ const ManagerVisits = () => {
   const [map, setMap] = React.useState(null);
   const onLoad = React.useCallback(map => setMap(map), []);
 
-  const [visits, setVisits] = React.useState([]);
-  const [loading, setLoading] = React.useState(true);
-  const hasFetched = React.useRef(false);
+  const [visits, setVisits] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const hasFetched = useRef(false);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
   const [selectedVisitLoading, setSelectedVisitLoading] = useState(false);

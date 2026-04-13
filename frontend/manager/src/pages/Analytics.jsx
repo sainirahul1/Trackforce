@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate, useOutletContext } from 'react-router-dom';
 import {
@@ -18,32 +18,15 @@ import { useDialog } from '../context/DialogContext';
 import { getSyncCachedData } from '../utils/cacheHelper';
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Filler, Tooltip);
 
-const IntelligenceSuite = () => {
-  const { showAlert } = useDialog();
-  const navigate = useNavigate();
-  const { setPageLoading } = useOutletContext();
-  const [view, setView] = useState('list');
-  const [statusFilter, setStatusFilter] = useState('All');
-  const [timeFilter, setTimeFilter] = useState('Daily');
-  const [selectedEmployee, setSelectedEmployee] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [selectedVisit, setSelectedVisit] = useState(null);
-  const [selectedVisitLoading, setSelectedVisitLoading] = useState(false);
-  const [activePhoto, setActivePhoto] = useState(null);
-  const [observationCategory, setObservationCategory] = useState('General Overview');
-  const [isRejecting, setIsRejecting] = useState(false);
-  const [rejectionReasonInput, setRejectionReasonInput] = useState('');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 6;
+const categoryContent = {
+  'General Overview': "The store inventory was mostly organized, however, some discrepancies were noted in the inward goods section. Client was cooperative and provided all necessary documentation for the audit trail. No major issues faced during the field protocol execution.",
+  'Inventory Compliance': "Stock levels for premium SKUs are maintained at 85%. End-cap displays are correctly positioned as per the planogram. Inward goods documentation is complete and verified.",
+  'Staff Performance': "Executive demonstrated excellent product knowledge and client engagement. Store manager noted the promptness and professionalism of the field officer during the audit.",
+  'Client Feedback': "Client expressed satisfaction with the real-time reporting capabilities. Requested a follow-up on the promotional display efficacy by next week's visit.",
+  'Protocol Variance': "Minor variance noted in the geo-tagging at the entrance. Site-path protocols were strictly followed otherwise, with all checkpoints covered accurately."
+};
 
-  const categoryContent = {
-    'General Overview': "The store inventory was mostly organized, however, some discrepancies were noted in the inward goods section. Client was cooperative and provided all necessary documentation for the audit trail. No major issues faced during the field protocol execution.",
-    'Inventory Compliance': "Stock levels for premium SKUs are maintained at 85%. End-cap displays are correctly positioned as per the planogram. Inward goods documentation is complete and verified.",
-    'Staff Performance': "Executive demonstrated excellent product knowledge and client engagement. Store manager noted the promptness and professionalism of the field officer during the audit.",
-    'Client Feedback': "Client expressed satisfaction with the real-time reporting capabilities. Requested a follow-up on the promotional display efficacy by next week's visit.",
-    'Protocol Variance': "Minor variance noted in the geo-tagging at the entrance. Site-path protocols were strictly followed otherwise, with all checkpoints covered accurately."
-  };
+const IntelligenceSuite = () => {
 
   const [employees, setEmployees] = useState([]);
   const [taskLogs, setTaskLogs] = useState([]);
