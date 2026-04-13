@@ -1,4 +1,5 @@
 import apiClient from '../apiClient';
+import storage from '../../utils/storage';
 
 const API_URL = '/reatchall/auth';
 
@@ -12,28 +13,18 @@ export const login = async (email, password, portal) => {
   const data = response.data;
 
   if (data.token) {
-    localStorage.setItem('token', data.token);
-    localStorage.setItem('role', data.role);
-    if (data.portal) localStorage.setItem('portal', data.portal); // Save resolved portal
-    else if (portal) localStorage.setItem('portal', portal); // Fallback to input portal
-    localStorage.setItem('user', JSON.stringify(data));
+    storage.setItem('token', data.token);
+    storage.setItem('role', data.role);
+    if (data.portal) storage.setItem('portal', data.portal); // Save resolved portal
+    else if (portal) storage.setItem('portal', portal); // Fallback to input portal
+    storage.setItem('user', JSON.stringify(data));
   }
 
   return data;
 };
 
 export const logout = () => {
-  // Clear impersonation session if it exists
-  sessionStorage.removeItem('token');
-  sessionStorage.removeItem('role');
-  sessionStorage.removeItem('user');
-  sessionStorage.removeItem('portal');
-
-  // Also clear persistent session
-  localStorage.removeItem('token');
-  localStorage.removeItem('role');
-  localStorage.removeItem('user');
-  localStorage.removeItem('portal');
+  storage.clear();
 };
 
 export const register = async (userData) => {
@@ -41,10 +32,10 @@ export const register = async (userData) => {
   const data = response.data;
 
   if (data.token) {
-    localStorage.setItem('token', data.token);
-    localStorage.setItem('role', data.role);
-    localStorage.setItem('portal', data.role); // Portal = role on registration
-    localStorage.setItem('user', JSON.stringify(data));
+    storage.setItem('token', data.token);
+    storage.setItem('role', data.role);
+    storage.setItem('portal', data.role); // Portal = role on registration
+    storage.setItem('user', JSON.stringify(data));
   }
 
   return data;
@@ -55,10 +46,7 @@ export const getMe = async () => {
   const data = response.data;
 
   // Update the correct storage with fresh user data
-  const isImpersonating = !!sessionStorage.getItem('token');
-  const storage = isImpersonating ? sessionStorage : localStorage;
-
-  const storedUser = JSON.parse(storage.getItem('user') || '{}');
+  const storedUser = storage.getUser() || {};
   storage.setItem('user', JSON.stringify({ ...storedUser, ...data }));
 
   return data;

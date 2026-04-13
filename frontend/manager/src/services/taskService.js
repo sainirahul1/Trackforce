@@ -1,4 +1,5 @@
 import apiClient from './apiClient';
+import storage from '../utils/storage';
 import { fetchDataWithCache, setCachedData, clearCache } from '../utils/cacheHelper';
 
 const API_URL = '/reatchall/employee/tasks';
@@ -7,7 +8,7 @@ export const getTasks = async (force = false) => {
   // Use cache key 'tasks'
   return fetchDataWithCache('tasks', async () => {
     const response = await apiClient.get(API_URL);
-    return response.data;
+    return response.data || [];
   }, force);
 };
 

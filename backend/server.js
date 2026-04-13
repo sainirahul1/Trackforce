@@ -102,11 +102,11 @@ app.use('/reatchall/public', publicLimiter, require('./routes/core/publicRoutes'
 app.use('/reatchall/auth', authLimiter, require('./routes/core/authRoutes'));
 
 // ─── Employee Portal ─────────────────────────────────────────────────────────
-// Middleware stack: auth → role(employee) → portal(employee) → tenant scoping
+// Middleware stack: auth → role(employee or manager) → portal isolation → tenant scoping
 const employeeRouter = express.Router();
 employeeRouter.use(protect);
-employeeRouter.use(validateRole('employee'));
-employeeRouter.use(validatePortal('employee'));
+employeeRouter.use(validateRole('employee', 'manager', 'tenant'));
+employeeRouter.use(validatePortal('employee', 'manager', 'tenant'));
 employeeRouter.use(tenantMiddleware);
 employeeRouter.use(apiLimiter);
 
@@ -141,8 +141,8 @@ app.use('/reatchall/manager', managerRouter);
 // Middleware stack: auth → role(tenant) → portal(tenant) → tenant scoping
 const tenantRouter = express.Router();
 tenantRouter.use(protect);
-tenantRouter.use(validateRole('tenant'));
-tenantRouter.use(validatePortal('tenant'));
+tenantRouter.use(validateRole('tenant', 'manager', 'employee'));
+tenantRouter.use(validatePortal('tenant', 'manager', 'employee'));
 tenantRouter.use(tenantMiddleware);
 tenantRouter.use(apiLimiter);
 

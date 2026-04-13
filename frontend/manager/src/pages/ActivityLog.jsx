@@ -35,7 +35,7 @@ const ManagerActivityLog = () => {
         setExecutives(data.map(exec => ({
           ...exec,
           id: exec._id,
-          avatar: exec.name.split(' ').map(n => n[0]).join('').toUpperCase(),
+          avatar: exec.name ? exec.name.split(' ').filter(Boolean).map(n => n[0]).join('').toUpperCase() : 'NA',
           statusColor: exec.isTracking ? 'bg-emerald-500' : 'bg-gray-400',
           status: exec.isTracking ? 'Active' : 'Offline',
           location: exec.profile?.location || 'Unknown'

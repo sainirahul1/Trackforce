@@ -1,4 +1,5 @@
 import apiClient from '../apiClient';
+import storage from '../../utils/storage';
 
 const API_URL = '/reatchall/tenant/notifications';
 

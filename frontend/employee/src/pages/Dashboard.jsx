@@ -365,15 +365,9 @@ const ActivityItem = ({ activity, isLast }) => (
 // MAIN COMPONENT: EmployeeDashboard
 // =============================================================================
 
-import { useAuth } from '../context/AuthContext';
-import { useDialog } from '../context/DialogContext';
-import { getDashboardStats, startTracking, stopTracking } from '../services/trackingService';
-// import { getActivities } from '../services/activityService';
-// import { getDashboardStats, startTracking, stopTracking } from '../services/trackingService';
-import { getActivities } from '../services/activityService';
-import { getTasks } from '../services/taskService';
-
 import { useSocket } from '../context/SocketContext';
+import apiClient from '../services/apiClient';
+import storage from '../utils/storage';
 const EmployeeDashboard = () => {
   // --- Auth Context ---
   const { user } = useAuth();
@@ -428,9 +422,7 @@ const EmployeeDashboard = () => {
 
     const id = navigator.geolocation.watchPosition(
       (position) => {
-        const { latitude, longitude } = position.coords;
-        const currentSocket = socketRef.current;
-        const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+        const currentUser = storage.getUser() || {};
 
         if (currentSocket && currentSocket.connected) {
           const updateData = {
@@ -496,22 +488,20 @@ const EmployeeDashboard = () => {
       setNextTask(pendingTask);
 
       // Sync user data and tracking status from server
-      const statusResponse = await fetch(`${import.meta.env.VITE_API_URL}/tracking/status`, {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-      });
-      const trackingStatus = await statusResponse.json();
+      const statusResponse = await apiClient.get('/reatchall/employee/tracking/status');
+      const trackingStatus = statusResponse.data;
 
       const trackingActive = trackingStatus.isTracking || false;
       setIsOnDuty(trackingActive);
 
       // Auto-heal local user object
-      const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+      const currentUser = storage.getUser() || {};
       const updatedUser = {
         ...currentUser,
         ...trackingStatus.user,
         isTracking: trackingActive
       };
-      localStorage.setItem('user', JSON.stringify(updatedUser));
+      storage.setItem('user', JSON.stringify(updatedUser));
 
       if (trackingActive) {
         startGeoTracking();

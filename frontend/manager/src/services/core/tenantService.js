@@ -1,4 +1,5 @@
 import apiClient from '../apiClient';
+import storage from '../../utils/storage';
 
 const API_URL = '/reatchall/tenant';
 
@@ -7,6 +8,7 @@ const CACHE_PREFIX = 'tf_cache_';
 const CACHE_DURATION = 300000; // 5 minutes (increased for better refresh experience)
 
 export const clearCache = () => {
+  // Clear only cache items, not user data
   Object.keys(localStorage).forEach(key => {
     if (key.startsWith(CACHE_PREFIX)) {
       localStorage.removeItem(key);

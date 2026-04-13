@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import * as authService from '../services/core/authService';
 import { logActivity } from '../services/activityService';
 import { getApiBaseUrl } from '../services/apiClient';
+import storage from '../utils/storage';
 
 const AuthContext = createContext();
 
@@ -27,13 +28,7 @@ export const AuthProvider = ({ children }) => {
     }
 
     // 2. Default fallback
-    const storedUser = sessionStorage.getItem('user') || localStorage.getItem('user');
-    try {
-      return storedUser ? JSON.parse(storedUser) : null;
-    } catch (e) {
-      console.error('Failed to parse user from storage', e);
-      return null;
-    }
+    return storage.getUser();
   });
 
   const [isLoading, setIsLoading] = useState(true);
@@ -43,12 +38,8 @@ export const AuthProvider = ({ children }) => {
       const freshUser = await authService.getMe();
       if (freshUser) {
         // PERF: Maintain the existing token when updating user metadata
-        const isImpersonating = !!sessionStorage.getItem('token');
-        const storage = isImpersonating ? sessionStorage : localStorage;
-
-        const storedUserRaw = storage.getItem('user');
-        const currentUser = JSON.parse(storedUserRaw || '{}');
-        const token = currentUser.token || storage.getItem('token');
+        const currentUser = storage.getUser() || {};
+        const token = currentUser.token || storage.getToken();
 
         const updatedUser = {
           ...currentUser,
@@ -74,8 +65,6 @@ export const AuthProvider = ({ children }) => {
   // Sync storage and PRELOAD AVATAR when state changes
   useEffect(() => {
     if (user) {
-      const isImpersonating = !!sessionStorage.getItem('token');
-      const storage = isImpersonating ? sessionStorage : localStorage;
       storage.setItem('user', JSON.stringify(user));
 
       // 0s-Load Optimization: Background Preheat for Avatar
@@ -93,14 +82,12 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const initAuth = async () => {
-      const isImpersonating = !!sessionStorage.getItem('token');
-      const storage = isImpersonating ? sessionStorage : localStorage;
-      const token = storage.getItem('token');
-      const storedUser = storage.getItem('user');
+      const token = storage.getToken();
+      const userRaw = storage.getItem('user');
 
-      if (token && storedUser) {
+      if (token && userRaw) {
         // [PORTAL ISOLATION] Validate BOTH role AND portal vs expected URL portal
-        const parsedUser = JSON.parse(storedUser);
+        const parsedUser = JSON.parse(userRaw);
         const currentPath = window.location.pathname;
         const urlPortalMatch = currentPath.match(/^\/(employee|manager|tenant|superadmin)/i);
         const urlPortal = urlPortalMatch ? urlPortalMatch[1].toLowerCase() : null;
@@ -114,7 +101,7 @@ export const AuthProvider = ({ children }) => {
         }
 
         // Check stored portal matches URL portal
-        const storedPortal = storage.getItem('portal');
+        const storedPortal = storage.getPortal();
         if (urlPortal && storedPortal && storedPortal.toLowerCase() !== urlPortal) {
           console.warn(`[SECURITY] Portal mismatch! Stored portal '${storedPortal}' does not match URL portal '${urlPortal}'. Forcing re-authentication.`);
           authService.logout();

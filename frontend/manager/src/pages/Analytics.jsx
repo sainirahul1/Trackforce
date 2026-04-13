@@ -217,7 +217,7 @@ const IntelligenceSuite = () => {
       });
 
       const empSuccess = empTasks.length > 0 ? Math.round((empCompleted / empTasks.length) * 100) : 0;
-      const initial = emp.name ? emp.name.match(/\b(\w)/g)?.join('').substring(0, 2).toUpperCase() : 'NA';
+      const initial = emp.name ? (emp.name.match(/\b(\w)/g) || []).join('').substring(0, 2).toUpperCase() : 'NA';
       const role = emp.profile?.designation || emp.role || 'Employee';
       const zone = emp.profile?.team || 'General';
 

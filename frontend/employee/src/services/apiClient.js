@@ -14,6 +14,7 @@
  */
 
 import axios from 'axios';
+import storage from '../utils/storage';
 
 // ─── Base URL Configuration ──────────────────────────────────────────────────
 const getBaseUrl = () => {
@@ -33,13 +34,13 @@ const apiClient = axios.create({
 apiClient.interceptors.request.use(
   (config) => {
     // Get token from session (impersonation) or local storage
-    const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+    const token = storage.getToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
 
     // Inject portal context header for backend validation
-    const portal = sessionStorage.getItem('portal') || localStorage.getItem('portal');
+    const portal = storage.getPortal();
     if (portal) {
       config.headers['X-Portal'] = portal;
     }
@@ -61,14 +62,7 @@ apiClient.interceptors.response.use(
       console.error('[API CLIENT] 401 Unauthorized — session expired or invalid token.');
       
       // Clear all session data
-      sessionStorage.removeItem('token');
-      sessionStorage.removeItem('role');
-      sessionStorage.removeItem('user');
-      sessionStorage.removeItem('portal');
-      localStorage.removeItem('token');
-      localStorage.removeItem('role');
-      localStorage.removeItem('user');
-      localStorage.removeItem('portal');
+      storage.clear();
 
       // Determine which portal to redirect to
       const currentPath = window.location.pathname;
