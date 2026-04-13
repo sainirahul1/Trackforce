@@ -69,7 +69,7 @@ const LoginPage = ({ portal = '' }) => {
 
   const allQuickLogins = [
     { label: 'Select Test Account', email: '', password: '', role: 'ALL' },
-    { label: 'Tenant Admin', email: 'tenant@reatchall.com', password: 'tenant@reatchall.com', role: 'TENANT' },
+    { label: 'Tenant Admin', email: 'tm@gmail.com', password: 'tm@gmail.com', role: 'TENANT' },
   ];
 
   // Isolated to Tenant test accounts

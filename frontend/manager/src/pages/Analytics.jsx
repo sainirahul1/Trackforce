@@ -27,6 +27,7 @@ const categoryContent = {
 };
 
 const IntelligenceSuite = () => {
+  const { setPageLoading } = useOutletContext() || {};
 
   const [employees, setEmployees] = useState([]);
   const [taskLogs, setTaskLogs] = useState([]);
