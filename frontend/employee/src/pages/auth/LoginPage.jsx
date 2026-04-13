@@ -69,7 +69,7 @@ const LoginPage = ({ portal = '' }) => {
 
   const allQuickLogins = [
     { label: 'Select Test Account', email: '', password: '', role: 'ALL' },
-    { label: 'Employee', email: 'mahi@gmail.com', password: 'mahi@gmail.com', role: 'EMPLOYEE' },
+    { label: 'Employee', email: 'employee2@gmail.com', password: 'employee2@gmail.com', role: 'EMPLOYEE' },
   ];
 
   // Isolated to Employee test accounts
