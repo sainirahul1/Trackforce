@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import apiClient from '../services/apiClient';
 import {
   Shield,
   Lock,
@@ -17,9 +17,8 @@ import {
 } from 'lucide-react';
 import Button from '../components/ui/Button';
 import Skeleton from '../components/ui/Skeleton';
-import { getApiBaseUrl } from '../services/apiClient';
 
-const API_BASE_URL = `${getApiBaseUrl()}/api/superadmin/manage`;
+const API_BASE = '/reatchall/superadmin/manage';
 
 const RolesPermissions = () => {
   const [activeTab, setActiveTab] = useState('Roles');
@@ -45,9 +44,9 @@ const RolesPermissions = () => {
       try {
         setLoading(true);
         const [countsRes, permsRes, logsRes] = await Promise.all([
-          axios.get(`${API_BASE_URL}/counts`),
-          axios.get(`${API_BASE_URL}/permissions`),
-          axios.get(`${API_BASE_URL}/audit-logs`)
+          axios.get(`${API_BASE}/counts`),
+          axios.get(`${API_BASE}/permissions`),
+          axios.get(`${API_BASE}/audit-logs`)
         ]);
 
         setRoleCounts(countsRes.data);
@@ -80,7 +79,7 @@ const RolesPermissions = () => {
 
       setIsLoadingPeople(true);
       try {
-        const res = await axios.get(`${API_BASE_URL}/users/${currentRole.name}`);
+        const res = await apiClient.get(`${API_BASE}/users/${currentRole.name}`);
         setRolePeople(res.data);
       } catch (err) {
         console.error('Error fetching role users:', err);
@@ -140,9 +139,9 @@ const RolesPermissions = () => {
 
       for (const p of permissions) {
         await Promise.all([
-          axios.put(`${API_BASE_URL}/permissions`, { module: p.module, roleKey: 'tenant', allowed: p.tenant }),
-          axios.put(`${API_BASE_URL}/permissions`, { module: p.module, roleKey: 'manager', allowed: p.manager }),
-          axios.put(`${API_BASE_URL}/permissions`, { module: p.module, roleKey: 'employee', allowed: p.employee })
+          apiClient.put(`${API_BASE}/permissions`, { module: p.module, roleKey: 'tenant', allowed: p.tenant }),
+          apiClient.put(`${API_BASE}/permissions`, { module: p.module, roleKey: 'manager', allowed: p.manager }),
+          apiClient.put(`${API_BASE}/permissions`, { module: p.module, roleKey: 'employee', allowed: p.employee })
         ]);
       }
 
@@ -156,7 +155,7 @@ const RolesPermissions = () => {
         status: 'Success'
       };
 
-      const logRes = await axios.post(`${API_BASE_URL}/audit-logs`, auditPayload);
+      const logRes = await apiClient.post(`${API_BASE}/audit-logs`, auditPayload);
       
       const newEntry = {
         ...logRes.data,

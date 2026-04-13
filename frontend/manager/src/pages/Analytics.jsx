@@ -58,6 +58,13 @@ const IntelligenceSuite = () => {
   const [selectedVisitLoading, setSelectedVisitLoading] = useState(false);
   const [isRejecting, setIsRejecting] = useState(false);
   const [rejectionReasonInput, setRejectionReasonInput] = useState('');
+  const [view, setView] = useState('list');
+  const [selectedEmployee, setSelectedEmployee] = useState(null);
+  const [statusFilter, setStatusFilter] = useState('All');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
+  const [activePhoto, setActivePhoto] = useState(null);
+  const [observationCategory, setObservationCategory] = useState('General Overview');
 
   const handleViewVisit = async (log) => {
     try {
