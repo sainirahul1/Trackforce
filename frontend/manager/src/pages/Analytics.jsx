@@ -51,6 +51,7 @@ const IntelligenceSuite = () => {
       performance: { val: '0%', data: [85, 86, 87, 86, 88, 89, 88] }
     }
   });
+  const [searchTerm, setSearchTerm] = useState('');
 
   const handleViewVisit = async (log) => {
     try {
