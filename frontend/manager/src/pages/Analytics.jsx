@@ -52,6 +52,12 @@ const IntelligenceSuite = () => {
     }
   });
   const [searchTerm, setSearchTerm] = useState('');
+  const [timeFilter, setTimeFilter] = useState('Daily');
+  const [loading, setLoading] = useState(true);
+  const [selectedVisit, setSelectedVisit] = useState(null);
+  const [selectedVisitLoading, setSelectedVisitLoading] = useState(false);
+  const [isRejecting, setIsRejecting] = useState(false);
+  const [rejectionReasonInput, setRejectionReasonInput] = useState('');
 
   const handleViewVisit = async (log) => {
     try {
