@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 import notificationService from '../services/core/notificationService';
 import { useSocket } from './SocketContext';
+import storage from '../utils/storage';
 
 const NotificationContext = createContext();
 
@@ -40,7 +41,7 @@ export const NotificationProvider = ({ children }) => {
     const socket = useSocket();
 
     const fetchNotifications = useCallback(async () => {
-        const token = localStorage.getItem('token');
+        const token = storage.getToken();
         if (!token) return; // Not logged in
 
         try {
