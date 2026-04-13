@@ -1,6 +1,7 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import storage from '../utils/storage';
 
 const ProtectedRoute = ({ children, role }) => {
   const { user, isLoading } = useAuth();
@@ -14,14 +15,8 @@ const ProtectedRoute = ({ children, role }) => {
     );
   }
 
-  // Fallback to localStorage exactly like the prompt requested
-  const storedUserRaw = localStorage.getItem('user') || sessionStorage.getItem('user');
-  let storedUser = null;
-  try {
-    storedUser = storedUserRaw ? JSON.parse(storedUserRaw) : null;
-  } catch (e) {
-    console.error('Failed to parse user from storage');
-  }
+  // Fallback to storage utility
+  const storedUser = storage.getUser();
 
   const activeUser = user || storedUser;
 

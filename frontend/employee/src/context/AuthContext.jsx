@@ -87,7 +87,7 @@ export const AuthProvider = ({ children }) => {
 
       if (token && userRaw) {
         // [PORTAL ISOLATION] Validate BOTH role AND portal vs expected URL portal
-        const parsedUser = JSON.parse(storedUser);
+        const parsedUser = JSON.parse(userRaw);
         const currentPath = window.location.pathname;
         const urlPortalMatch = currentPath.match(/^\/(employee|manager|tenant|superadmin)/i);
         const urlPortal = urlPortalMatch ? urlPortalMatch[1].toLowerCase() : null;
