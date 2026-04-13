@@ -1,4 +1,5 @@
 import apiClient from './apiClient';
+import storage from '../utils/storage';
 import { fetchDataWithCache, setCachedData, clearCache } from '../utils/cacheHelper';
 
 const EMPLOYEE_ACTIVITY_URL = '/reatchall/employee/activity';
@@ -19,7 +20,7 @@ export const getLogsByUser = async (userId) => {
 };
 
 export const getActivities = async () => {
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const user = storage.getUser() || {};
   // Managers use a dedicated collection, Employees use the general one
   const path = user.role === 'manager' ? MANAGER_ACTIVITY_URL : EMPLOYEE_ACTIVITY_URL;
   
@@ -28,7 +29,7 @@ export const getActivities = async () => {
 };
 
 export const logActivity = async (type, details) => {
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const user = storage.getUser() || {};
   // Managers log to a dedicated collection
   const path = user.role === 'manager' ? MANAGER_ACTIVITY_URL : EMPLOYEE_ACTIVITY_URL;
 

@@ -5,7 +5,7 @@ import { useDialog } from '../context/DialogContext';
 import { useSocket } from '../context/SocketContext';
 import apiClient from '../services/apiClient';
 import storage from '../utils/storage';
-import { getDashboardStats, startTracking, stopTracking } from '../services/trackingService';
+import { getDashboardStats, startTracking, stopTracking, getTrackingStatus } from '../services/trackingService';
 import { getActivities } from '../services/activityService';
 import { getTasks } from '../services/taskService';
 import {
@@ -414,7 +414,7 @@ const EmployeeDashboard = () => {
   // --- Start Geo Tracking ---
   const startGeoTracking = React.useCallback(() => {
     // UPDATED: Allow all roles that reach this dashboard to emit GPS (for testing/multi-role users)
-    const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+    const currentUser = storage.getUser() || {};
 
     if (!navigator.geolocation) {
       showAlert('Error', 'Geolocation is not supported by your browser', 'error');
@@ -457,7 +457,7 @@ const EmployeeDashboard = () => {
 
   // Handle starting/stopping tracking when duty status changes
   useEffect(() => {
-    const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+    const currentUser = storage.getUser() || {};
     if (isOnDuty && socket && !watchIdRef.current) {
       console.log('Starting geo tracking watcher');
       startGeoTracking();
@@ -496,17 +496,22 @@ const EmployeeDashboard = () => {
       setNextTask(pendingTask);
 
       // Sync user data and tracking status from server
-      const statusResponse = await apiClient.get('/reatchall/employee/tracking/status');
-      const trackingStatus = statusResponse.data;
+      let trackingStatus;
+      try {
+        trackingStatus = await getTrackingStatus();
+      } catch (statusErr) {
+        console.warn('[DASHBOARD] Could not fetch tracking status - using existing session:', statusErr.message);
+        // Fallback or handle appropriately
+      }
 
-      const trackingActive = trackingStatus.isTracking || false;
+      const trackingActive = trackingStatus?.isTracking || false;
       setIsOnDuty(trackingActive);
 
-      // Auto-heal local user object
+      // Auto-heal local user object with server-side identity data (critical for managerId/tenantId consistency)
       const currentUser = storage.getUser() || {};
       const updatedUser = {
         ...currentUser,
-        ...trackingStatus.user,
+        ...(trackingStatus?.user || {}),
         isTracking: trackingActive
       };
       storage.setItem('user', JSON.stringify(updatedUser));
@@ -540,7 +545,7 @@ const EmployeeDashboard = () => {
 
   const handleToggleShift = async () => {
     // Re-read user from localStorage to get the auto-healed manager/tenant data
-    const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+    const currentUser = storage.getUser() || {};
 
     // Prevent non-logged in users (sanity check)
     if (!currentUser.role) {
@@ -581,7 +586,7 @@ const EmployeeDashboard = () => {
 
       // Update local user object tracking status
       const updatedUser = { ...currentUser, isTracking: !isOnDuty };
-      localStorage.setItem('user', JSON.stringify(updatedUser));
+      storage.setItem('user', JSON.stringify(updatedUser));
     } catch (err) {
       console.error('Error toggling tracking:', err);
       showAlert('Error', `Failed to update tracking status: ${err.message}`, 'error');

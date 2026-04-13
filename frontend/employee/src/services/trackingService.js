@@ -27,3 +27,8 @@ export const getDashboardStats = async (force = false) => {
     return response.data;
   }, force);
 };
+
+export const getTrackingStatus = async () => {
+  const response = await apiClient.get(`${API_URL}/tracking/status`);
+  return response.data;
+};
