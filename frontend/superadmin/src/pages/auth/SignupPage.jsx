@@ -1,9 +1,17 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { register } from '../../services/core/authService';
+import axios from 'axios';
 import { ShieldCheck, Lock, Mail, User, Building2, ChevronRight, Loader2, CheckCircle2, ArrowLeft } from 'lucide-react';
 import Button from '../../components/ui/Button';
 import ThemeToggle from '../../components/ui/ThemeToggle';
+
+// Public axios instance — no auth/portal interceptors — for unauthenticated endpoints
+const publicAxios = axios.create({
+  baseURL: (import.meta.env.VITE_API_URL || 'http://localhost:5001/api')
+    .replace(/\/api\/?$/, '')
+    .replace(/\/$/, ''),
+  headers: { 'Content-Type': 'application/json' },
+});
 
 const SignupPage = () => {
   const [form, setForm] = useState({ name: '', company: '', email: '', password: '', confirm: '' });
@@ -30,13 +38,21 @@ const SignupPage = () => {
     setLoading(true);
     try {
       const { confirm, ...signupData } = form; // Remove confirm from data sent to server
-      await register(signupData);
+      const response = await publicAxios.post('/reatchall/auth/register', signupData);
+      const data = response.data;
+      // Persist token if returned (auto-login after registration)
+      if (data.token) {
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('role', data.role);
+        localStorage.setItem('portal', data.role);
+        localStorage.setItem('user', JSON.stringify(data));
+      }
       setLoading(false);
       setSuccess(true);
-      setTimeout(() => navigate('/login'), 2000);
+      setTimeout(() => navigate('/superadmin/login'), 2000);
     } catch (err) {
       setLoading(false);
-      setError(err.message || 'Registration failed');
+      setError(err.response?.data?.message || err.message || 'Registration failed');
     }
   };
 

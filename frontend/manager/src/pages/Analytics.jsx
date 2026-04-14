@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { useNavigate, useOutletContext } from 'react-router-dom';
+import { useOutletContext } from 'react-router-dom';
 import {
   AlertCircle, ArrowLeft, Activity, Eye, MapPin, Briefcase, Store,
   ClipboardList, CheckCircle2, ShoppingBag, ArrowRight, Shield, Clock, Zap, Ban, TrendingUp,
@@ -12,8 +12,8 @@ import {
 } from 'chart.js';
 import { Line, Bar } from 'react-chartjs-2';
 import tenantService from '../services/core/tenantService';
-import { getVisitById, updateVisit } from '../services/visitService';
-import { getTasks, getTaskById } from '../services/taskService';
+import { updateVisit } from '../services/visitService';
+import { getTasks } from '../services/taskService';
 import { useDialog } from '../context/DialogContext';
 import { getSyncCachedData } from '../utils/cacheHelper';
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Filler, Tooltip);
@@ -28,6 +28,7 @@ const categoryContent = {
 
 const IntelligenceSuite = () => {
   const { setPageLoading } = useOutletContext() || {};
+  const { showAlert } = useDialog();
 
   const [employees, setEmployees] = useState([]);
   const [taskLogs, setTaskLogs] = useState([]);
@@ -66,61 +67,17 @@ const IntelligenceSuite = () => {
   const [activePhoto, setActivePhoto] = useState(null);
   const [observationCategory, setObservationCategory] = useState('General Overview');
 
-  const handleViewVisit = async (log) => {
-    try {
-      setSelectedVisitLoading(true);
-      setSelectedVisit(log);
-
-      let detailData = null;
-      try {
-        detailData = await getVisitById(log.id);
-      } catch (e) {
-        // Fallback to task if visit not found
-        console.log("Visit not found, trying task fallback...");
-        detailData = await getTaskById(log.id);
-      }
-
-      const visitDate = new Date(detailData.timestamp || detailData.createdAt || detailData.date);
-      const isValidDate = !isNaN(visitDate.getTime());
-      const empName = detailData.employee?.name || log.executive;
-      const initials = (empName || 'Unknown').split(' ').filter(Boolean).map(n => n[0]).join('').toUpperCase();
-
-      // Extract photos from either StoreVisit (photos) or Task (evidence)
-      let photos = [];
-      if (detailData.photos) {
-        photos = detailData.photos;
-      } else if (detailData.evidence) {
-        if (detailData.evidence.storeFront) photos.push(detailData.evidence.storeFront);
-        if (detailData.evidence.selfie) photos.push(detailData.evidence.selfie);
-        if (detailData.evidence.productDisplay) photos.push(detailData.evidence.productDisplay);
-        if (detailData.evidence.officialDoc) photos.push(detailData.evidence.officialDoc);
-      }
-
-      setSelectedVisit({
-        ...log,
-        ...detailData,
-        id: detailData._id,
-        store: detailData.storeName || detailData.store,
-        executive: empName,
-        avatar: initials,
-        time: isValidDate ? visitDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : log.time,
-        location: (detailData.gps?.lat || detailData.coords?.x) ? `Verified (GPS: ${(detailData.gps?.lat || detailData.coords?.x).toFixed(4)}, ${(detailData.gps?.lng || detailData.coords?.y).toFixed(4)})` : 'Location data not available',
-        photosCount: photos.length,
-        proofs: photos.map((url, idx) => ({
-          id: idx + 1,
-          title: `Evidence ${idx + 1}`,
-          img: url,
-        })),
-        notes: detailData.notes || detailData.visitNotes,
-        checklist: detailData.checklist || [],
-        reviewStatus: detailData.reviewStatus || log.reviewStatus || 'pending',
-        rejectionReason: detailData.rejectionReason || null,
-      });
-    } catch (err) {
-      console.error('Error fetching visit details:', err);
-    } finally {
-      setSelectedVisitLoading(false);
-    }
+  const handleViewVisit = (log) => {
+    // All Analytics logs are task-sourced — use already-loaded log data directly,
+    // avoiding erroneous getVisitById calls that always 404 for task IDs.
+    setSelectedVisit({
+      ...log,
+      photosCount: log.proofs?.length || 0,
+      notes: log.brief,
+      checklist: [],
+      reviewStatus: log.reviewStatus || 'pending',
+      rejectionReason: log.rejectionReason || null,
+    });
   };
 
   const handleAction = async (id, newReviewStatus, reason = null) => {
