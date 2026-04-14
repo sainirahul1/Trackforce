@@ -50,16 +50,38 @@ exports.getVisitById = async (req, res) => {
 // @route   POST /api/visits
 // @access  Private (Employee)
 exports.createVisit = async (req, res) => {
-  const { storeName, status, gps, notes } = req.body;
+  const { storeName, status, visitType, gps, notes, address, photos, taskId, taskTitle, taskType, checklist, ...rest } = req.body;
 
   try {
+    // Map internal status to lowercase if needed for enum compatibility
+    // Resiliency: check 'outcome' as fallback for 'status'
+    const rawStatus = status || rest.outcome || rest.status;
+    let visitStatus = 'completed';
+
+    if (rawStatus) {
+      const lowerStatus = rawStatus.toLowerCase();
+      if (lowerStatus.includes('interested') && !lowerStatus.includes('not')) visitStatus = 'completed';
+      else if (lowerStatus.includes('not_interested') || lowerStatus.includes('not interested')) visitStatus = 'not_interested';
+      else if (lowerStatus.includes('follow') || lowerStatus.includes('schedule')) visitStatus = 'follow_up';
+      else if (lowerStatus.includes('negotiation') || lowerStatus.includes('audit')) visitStatus = 'partially_completed';
+      else visitStatus = lowerStatus.replace(/ /g, '_');
+    }
+
     const visit = await StoreVisit.create({
       employee: req.user._id,
       tenant: req.tenantId,
-      storeName,
-      status,
-      gps,
-      notes,
+      taskId: taskId || null,
+      storeName: storeName || rest.supplierName || rest.partnerName || 'Unknown Store',
+      visitType: visitType || 'store',
+      status: visitStatus,
+      gps: gps || { lat: rest.latitude, lng: rest.longitude },
+      notes: notes || rest.feedback || rest.notes || '',
+      address: address || rest.location || '',
+      photos: photos || [],
+      taskTitle: taskTitle || '',
+      taskType: taskType || '',
+      checklist: checklist || [],
+      visitForm: rest // Store all extra form-specific data here
     });
 
     // NEW: Log Activity
@@ -67,14 +89,15 @@ exports.createVisit = async (req, res) => {
       userId: req.user._id,
       tenantId: req.tenantId,
       type: 'visit_end',
-      title: 'Store Visit Finished',
-      details: `Employee finished a visit at ${storeName} with status: ${status}.`,
-      status: status === 'completed' ? 'success' : 'info',
-      metadata: { visitId: visit._id, store: storeName }
+      title: 'Field Visit Logged',
+      details: `Employee logged a ${visitStatus} visit for ${visit.storeName}.`,
+      status: visitStatus === 'completed' ? 'success' : 'info',
+      metadata: { visitId: visit._id, store: visit.storeName }
     });
 
     res.status(201).json(visit);
   } catch (error) {
+    console.error('Error creating visit:', error);
     res.status(500).json({ message: error.message });
   }
 };

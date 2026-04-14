@@ -44,9 +44,9 @@ const RolesPermissions = () => {
       try {
         setLoading(true);
         const [countsRes, permsRes, logsRes] = await Promise.all([
-          axios.get(`${API_BASE}/counts`),
-          axios.get(`${API_BASE}/permissions`),
-          axios.get(`${API_BASE}/audit-logs`)
+          apiClient.get(`${API_BASE}/counts`),
+          apiClient.get(`${API_BASE}/permissions`),
+          apiClient.get(`${API_BASE}/audit-logs`)
         ]);
 
         setRoleCounts(countsRes.data);

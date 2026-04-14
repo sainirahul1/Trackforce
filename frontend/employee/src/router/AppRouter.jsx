@@ -15,6 +15,7 @@ import EmployeeActivity from '../pages/Activity';
 import EmployeeTasks from '../pages/Tasks';
 import EmployeeIssues from '../pages/Issues';
 import NotificationsPage from '../pages/shared/NotificationsPage';
+import LogVisit from '../pages/LogVisit';
 
 const AppRouter = () => (
   <Routes>
@@ -33,8 +34,10 @@ const AppRouter = () => (
     >
       <Route path="dashboard" element={<EmployeeDashboard />} />
       <Route path="profile" element={<EmployeeProfile />} />
-      <Route path="visits" element={<EmployeeVisits />} />
+      <Route path="visits" element={<EmployeeVisits key="history" defaultFilter="All" pageTitle="Visit History" />} />
+      <Route path="visits/log" element={<LogVisit />} />
       <Route path="orders" element={<EmployeeOrders />} />
+      <Route path="follow-ups" element={<EmployeeVisits key="followups" defaultFilter="Follow Up" pageTitle="Follow-ups Pipeline" />} />
       <Route path="activity" element={<EmployeeActivity />} />
       <Route path="tasks" element={<EmployeeTasks />} />
       <Route path="issues" element={<EmployeeIssues />} />

@@ -64,6 +64,30 @@ const VisitRow = ({ visit, onReview, isLive }) => (
             </span>
           ) : visit.store}
         </span>
+        
+        {/* Mission Type Badge */}
+        <div className="flex items-center gap-2">
+          {visit.visitType === 'supplier' && (
+            <span className="px-2 py-0.5 rounded bg-sky-50 dark:bg-sky-500/10 text-sky-600 border border-sky-100 dark:border-sky-500/20 text-[7px] font-black uppercase tracking-tighter flex items-center gap-1">
+              <Building2 size={8} /> Supplier
+            </span>
+          )}
+          {visit.visitType === 'collab' && (
+            <span className="px-2 py-0.5 rounded bg-violet-50 dark:bg-violet-500/10 text-violet-600 border border-violet-100 dark:border-violet-500/20 text-[7px] font-black uppercase tracking-tighter flex items-center gap-1">
+              <History size={8} /> Collab
+            </span>
+          )}
+          {visit.visitType === 'app' && (
+            <span className="px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 border border-emerald-100 dark:border-emerald-500/20 text-[7px] font-black uppercase tracking-tighter flex items-center gap-1">
+              <ShieldCheck size={8} /> App Install
+            </span>
+          )}
+          {(!visit.visitType || visit.visitType === 'store') && (
+            <span className="px-2 py-0.5 rounded bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 border border-indigo-100 dark:border-indigo-500/20 text-[7px] font-black uppercase tracking-tighter flex items-center gap-1">
+              <Store size={8} /> Store Visit
+            </span>
+          )}
+        </div>
       </div>
 
       <div className="hidden xl:flex items-center gap-5">
@@ -197,6 +221,7 @@ const ManagerVisits = () => {
       case 'partially_completed': return 'Partial';
       case 'not_interested': return 'No Interest';
       case 'follow_up': return 'Follow-up';
+      case 'rejected': return 'Rejected';
       default: return 'Pending';
     }
   };
@@ -222,6 +247,9 @@ const ManagerVisits = () => {
         photos: v.photos?.length || 0,
         avatar: initials,
         employeeId: v.employee?._id || '---',
+        visitType: v.visitType || 'store',
+        rejectionIntelligence: v.visitForm?.notInterestedReason || null,
+        nextFollowUp: v.visitForm?.followUpDate || null,
         proofs: (v.photos || []).map((url, idx) => ({
           id: idx + 1,
           title: `Photo ${idx + 1}`,
@@ -318,6 +346,9 @@ const ManagerVisits = () => {
         })),
         notes: fullVisit.notes,
         checklist: fullVisit.checklist || [],
+        visitType: fullVisit.visitType || visit.visitType,
+        rejectionIntelligence: fullVisit.visitForm?.notInterestedReason || null,
+        nextFollowUp: fullVisit.visitForm?.followUpDate || null,
         reviewStatus: fullVisit.reviewStatus || visit.reviewStatus,
         rejectionReason: fullVisit.rejectionReason || visit.rejectionReason,
       });
@@ -741,6 +772,42 @@ const ManagerVisits = () => {
                       </div>
                     </div>
                   </div>
+
+                  {/* Rejection Intelligence (SUB-DETAILS) */}
+                  {selectedVisit.rejectionIntelligence && (
+                    <div className="mt-8 animate-in slide-in-from-top-4 duration-500">
+                      <div className="bg-rose-50 dark:bg-rose-500/5 p-6 rounded-[2rem] border border-rose-100 dark:border-rose-500/20 shadow-sm relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:rotate-12 transition-transform">
+                          <AlertCircle size={48} className="text-rose-500" />
+                        </div>
+                        <h5 className="text-[10px] font-black text-rose-500 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                          <AlertCircle size={14} /> Rejection Intelligence (Field Report)
+                        </h5>
+                        <p className="text-[15px] font-bold text-rose-700 dark:text-rose-400 leading-relaxed italic border-l-4 border-rose-300 dark:border-rose-500/40 pl-6">
+                          "{selectedVisit.rejectionIntelligence}"
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Follow-up Scheduling Intelligence */}
+                  {selectedVisit.nextFollowUp && (
+                    <div className="mt-8 animate-in slide-in-from-top-4 duration-500">
+                      <div className="bg-amber-50 dark:bg-amber-500/5 p-6 rounded-[2rem] border border-amber-100 dark:border-amber-500/20 shadow-sm relative group">
+                        <h5 className="text-[10px] font-black text-amber-600 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                          <Clock size={14} /> Target Follow-up Scheduled
+                        </h5>
+                        <div className="flex items-center gap-4">
+                          <div className="px-6 py-3 bg-white dark:bg-gray-950 rounded-2xl border border-amber-200 dark:border-amber-500/30 text-lg font-black text-amber-600 shadow-sm">
+                            {new Date(selectedVisit.nextFollowUp).toLocaleDateString([], { day: '2-digit', month: 'long', year: 'numeric' })}
+                          </div>
+                          <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                            Scheduled by {selectedVisit.executive}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   <div className="mt-8 pt-8 border-t border-gray-100 dark:border-gray-800">
                     <h5 className="text-[11px] font-black text-gray-400 uppercase tracking-[0.3em] mb-6">Review Protocol</h5>

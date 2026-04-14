@@ -17,9 +17,10 @@ import {
   History,
   X,
   Plus,
-  Paperclip
+  Loader2,
 } from 'lucide-react';
-import CreateIssueModal from '../components/issues/CreateIssueModal';
+
+
 import { getIssues, createIssue, updateIssue, deleteIssue, getIssueById } from '../services/core/issueService';
 import { useSocket } from '../context/SocketContext';
 import { useAuth } from '../context/AuthContext';
@@ -330,7 +331,9 @@ const Issues = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [issuesList, setIssuesList] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [createFormData, setCreateFormData] = useState({ subject: '', priority: 'Medium', description: '' });
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [showToast, setShowToast] = useState({ show: false, message: '', type: 'success' });
   const [selectedIssue, setSelectedIssue] = useState(null);
 
@@ -417,21 +420,26 @@ const Issues = () => {
     }
   }, [selectedIssue]);
 
-  const handleCreateIssue = useCallback(async (newData) => {
+  const handleCreateIssue = useCallback(async (e) => {
+    e.preventDefault();
+    if (!createFormData.subject || !createFormData.description) return;
+    setIsSubmitting(true);
     try {
       const created = await createIssue({
-        ...newData,
-        to: 'superadmin' // Super admin creating notes/issues to super admin queue
+        ...createFormData,
+        to: 'superadmin'
       });
-      
       setIssuesList(prev => [created, ...prev]);
-      setShowCreateModal(false);
+      setShowCreateForm(false);
+      setCreateFormData({ subject: '', priority: 'Medium', description: '' });
       triggerToast('System issue logged successfully');
       fetchIssues(false);
     } catch (err) {
       triggerToast(err.message, 'error');
+    } finally {
+      setIsSubmitting(false);
     }
-  }, []);
+  }, [createFormData]);
 
   const handleIssueSelect = async (issue) => {
     if (!issue.description) {
@@ -475,21 +483,101 @@ const Issues = () => {
               </h1>
             </div>
             <button
-              onClick={() => setShowCreateModal(true)}
-              className="flex items-center gap-3 px-8 py-4 bg-indigo-600 text-white rounded-[2rem] font-black uppercase tracking-widest text-[10px] shadow-2xl shadow-indigo-500/40 hover:bg-indigo-700 hover:-translate-y-1 transition-all active:scale-95 group"
+              onClick={() => setShowCreateForm(v => !v)}
+              className={`flex items-center gap-3 px-8 py-4 rounded-[2rem] font-black uppercase tracking-widest text-[10px] shadow-2xl transition-all active:scale-95 group ${
+                showCreateForm
+                  ? 'bg-gray-100 dark:bg-gray-800 text-gray-500 hover:bg-gray-200 shadow-none'
+                  : 'bg-indigo-600 text-white shadow-indigo-500/40 hover:bg-indigo-700 hover:-translate-y-1'
+              }`}
             >
-              <div className="p-1.5 bg-white/20 rounded-xl group-hover:rotate-90 transition-transform duration-500">
+              <div className={`p-1.5 rounded-xl transition-transform duration-500 ${
+                showCreateForm ? 'bg-gray-200 dark:bg-gray-700 rotate-45' : 'bg-white/20 group-hover:rotate-90'
+              }`}>
                 <Plus size={16} />
               </div>
-              Log System Issue
+              {showCreateForm ? 'Cancel' : 'Log System Issue'}
             </button>
           </div>
 
-          {showCreateModal && (
-            <CreateIssueModal
-              onClose={() => setShowCreateModal(false)}
-              onCreate={handleCreateIssue}
-            />
+          {/* ── Inline Create Form ── */}
+          {showCreateForm && (
+            <div className="animate-in slide-in-from-top-4 fade-in duration-500">
+              <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-[2.5rem] p-10 shadow-2xl shadow-indigo-500/5 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/5 blur-3xl rounded-full -mr-32 -mt-32 pointer-events-none" />
+
+                <div className="flex items-center gap-4 mb-8">
+                  <div className="w-12 h-12 bg-indigo-600 rounded-[1.5rem] flex items-center justify-center text-white shadow-lg shadow-indigo-500/20">
+                    <Plus size={24} />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">Raise Issue</h3>
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">Submit a new support ticket</p>
+                  </div>
+                </div>
+
+                <form onSubmit={handleCreateIssue} className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-2">Issue Subject</label>
+                      <input
+                        required
+                        type="text"
+                        placeholder="e.g. Device synchronization error"
+                        className="w-full px-6 py-4 bg-gray-50 dark:bg-gray-800 border-2 border-transparent focus:border-indigo-500 rounded-3xl outline-none transition-all font-bold text-gray-900 dark:text-white"
+                        value={createFormData.subject}
+                        onChange={e => setCreateFormData(f => ({ ...f, subject: e.target.value }))}
+                        disabled={isSubmitting}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-2">Urgency Level</label>
+                      <select
+                        className="w-full px-6 py-4 bg-gray-50 dark:bg-gray-800 border-2 border-transparent focus:border-indigo-500 rounded-3xl outline-none transition-all font-black uppercase text-[10px] tracking-widest text-indigo-600 appearance-none cursor-pointer"
+                        value={createFormData.priority}
+                        onChange={e => setCreateFormData(f => ({ ...f, priority: e.target.value }))}
+                        disabled={isSubmitting}
+                      >
+                        <option value="Low">Low Priority</option>
+                        <option value="Medium">Medium Priority</option>
+                        <option value="High">High Priority</option>
+                        <option value="Critical">Critical Issue</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-2">Detailed Description</label>
+                    <textarea
+                      required
+                      rows={4}
+                      placeholder="Describe the problem in detail..."
+                      className="w-full px-6 py-4 bg-gray-50 dark:bg-gray-800 border-2 border-transparent focus:border-indigo-500 rounded-[2rem] outline-none transition-all font-medium text-gray-600 dark:text-gray-300 resize-none"
+                      value={createFormData.description}
+                      onChange={e => setCreateFormData(f => ({ ...f, description: e.target.value }))}
+                      disabled={isSubmitting}
+                    />
+                  </div>
+
+                  <div className="flex gap-4 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => { setShowCreateForm(false); setCreateFormData({ subject: '', priority: 'Medium', description: '' }); }}
+                      disabled={isSubmitting}
+                      className="flex-1 py-4 bg-gray-50 dark:bg-gray-800 text-gray-500 font-black uppercase tracking-widest rounded-3xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-all disabled:opacity-50 text-xs"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="flex-[2] flex items-center justify-center gap-2 py-4 bg-indigo-600 text-white font-black uppercase tracking-widest rounded-3xl hover:bg-indigo-700 shadow-xl shadow-indigo-500/30 transition-all active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed text-xs"
+                    >
+                      {isSubmitting ? <><Loader2 size={18} className="animate-spin" /> Submitting...</> : 'Submit Ticket'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
           )}
 
           <IssueStats issues={issuesList.filter(i => i.to === 'superadmin')} />

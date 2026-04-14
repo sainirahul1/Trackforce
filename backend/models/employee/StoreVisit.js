@@ -20,6 +20,11 @@ const storeVisitSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  visitType: {
+    type: String,
+    enum: ['store', 'supplier', 'collab', 'app'],
+    default: 'store',
+  },
   status: {
     type: String,
     enum: ['pending', 'completed', 'partially_completed', 'not_interested', 'follow_up', 'incomplete', 'rejected'],

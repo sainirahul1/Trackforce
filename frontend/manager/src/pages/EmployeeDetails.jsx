@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams, useNavigate, useOutletContext } from 'react-router-dom';
-import { ArrowLeft, LayoutDashboard, User, Briefcase, FileText, Activity, Mail, Phone, MapPin, MoreVertical, ShieldCheck, TrendingUp, ShoppingBag, Map as MapIcon, Clock, HeartPulse, Building, Shield, UserCheck, Calendar, CheckCircle, Download, ExternalLink, Navigation, Store, LogIn, Linkedin, GraduationCap } from 'lucide-react';
-import { mockEmployees } from '../utils/mockData';
+import { ArrowLeft, LayoutDashboard, User, Briefcase, FileText, Activity, Mail, Phone, MapPin, MoreVertical, ShieldCheck, TrendingUp, ShoppingBag, Map as MapIcon, Clock, HeartPulse, Building, Shield, UserCheck, Calendar, CheckCircle, Download, ExternalLink, Navigation, Store, LogIn, Linkedin, GraduationCap, Loader2 } from 'lucide-react';
+import tenantService from '../services/core/tenantService';
 import Button from '../components/ui/Button';
 
 // --- Internal Section Components (Manager View) ---
@@ -357,17 +357,61 @@ const EmployeeDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
+  const [employeeRaw, setEmployeeRaw] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (setPageLoading) setPageLoading(false);
-  }, [setPageLoading]);
+    let isMounted = true;
+    const fetchEmployee = async () => {
+      try {
+        setLoading(true);
+        if (setPageLoading) setPageLoading(true);
+        const data = await tenantService.getEmployeeById(id);
+        if (isMounted) setEmployeeRaw(data);
+      } catch (error) {
+        console.error("Failed to fetch employee details", error);
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+          if (setPageLoading) setPageLoading(false);
+        }
+      }
+    };
+    fetchEmployee();
+    return () => { isMounted = false; };
+  }, [id, setPageLoading]);
 
   const handleGeneratePDF = () => {
     window.print();
   };
 
-  // Find employee from mock data
-  const employee = mockEmployees.find(emp => emp.id === parseInt(id)) || mockEmployees[0];
+  if (loading) {
+    return (
+      <div className="flex-1 min-h-[60vh] flex flex-col items-center justify-center p-8 bg-gray-50 dark:bg-[#0b0d11]">
+        <Loader2 size={48} className="text-blue-500 animate-spin mb-4" />
+        <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest animate-pulse">Fetching Executive Profile...</p>
+      </div>
+    );
+  }
+
+  if (!employeeRaw) {
+    return (
+      <div className="flex-1 min-h-[60vh] flex flex-col items-center justify-center p-8 bg-gray-50 dark:bg-[#0b0d11]">
+        <p className="text-[14px] font-black text-rose-500 uppercase tracking-widest bg-rose-50 dark:bg-rose-900/20 px-6 py-3 rounded-2xl border border-rose-100 dark:border-rose-900/30">Executive Profile Not Found</p>
+      </div>
+    );
+  }
+
+  const employee = {
+    ...employeeRaw,
+    // Use fallback properties for aesthetics in UI
+    name: employeeRaw.name || 'Unknown Executive',
+    email: employeeRaw.email || 'No email provided',
+    designation: employeeRaw.profile?.designation || employeeRaw.role || 'Field Executive',
+    team: employeeRaw.profile?.team || employeeRaw.zone || 'General Ops',
+    avatar: employeeRaw.profile?.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${employeeRaw._id || id}`,
+    id: employeeRaw._id || id
+  };
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: LayoutDashboard },

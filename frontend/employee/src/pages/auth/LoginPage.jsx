@@ -97,11 +97,11 @@ const LoginPage = ({ portal = '' }) => {
       <div className="absolute top-6 right-6">
         <ThemeToggle />
       </div>
-      <div className="max-w-md w-full bg-white dark:bg-gray-900 p-10 rounded-[2.5rem] shadow-2xl border border-gray-100 dark:border-gray-800 relative overflow-hidden">
+      <div className="max-w-md w-full mx-4 sm:mx-0 bg-white dark:bg-gray-900 p-8 sm:p-10 rounded-[2.5rem] shadow-2xl border border-gray-100 dark:border-gray-800 relative overflow-hidden">
         <div className={`absolute top-0 left-0 w-full h-2 bg-primary-main`}></div>
         <div className="text-center mb-10">
           <Link to="/" className="inline-block group transition-transform hover:scale-105 active:scale-95">
-            <div className={`bg-primary-main w-16 h-16 rounded-2xl mx-auto flex items-center justify-center text-white shadow-xl mb-6 shadow-inherit/20 group-hover:rotate-3 transition-transform duration-300`}>
+            <div className={`bg-primary-main w-16 h-16 rounded-2xl mx-auto flex items-center justify-center text-white shadow-xl mb-6 shadow-primary-main/20 group-hover:rotate-3 transition-transform duration-300`}>
               <ShieldCheck size={32} />
             </div>
             <h2 className="text-3xl font-black tracking-tight text-gray-900 dark:text-white">TrackForce</h2>

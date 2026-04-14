@@ -6,11 +6,11 @@ import Button from '../components/ui/Button';
 import { getVisits, getVisitById } from '../services/visitService';
 import { getSyncCachedData } from '../utils/cacheHelper';
 
-const EmployeeVisits = () => {
+const EmployeeVisits = ({ defaultFilter = 'All', pageTitle = 'Visit History' }) => {
   const { setPageLoading } = useOutletContext();
   const [selectedVisit, setSelectedVisit] = useState(null);
   const [selectedVisitLoading, setSelectedVisitLoading] = useState(false);
-  const [filterStatus, setFilterStatus] = useState('All');
+  const [filterStatus, setFilterStatus] = useState(defaultFilter);
   const [filterDate, setFilterDate] = useState('');
   const [visits, setVisits] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -40,7 +40,9 @@ const EmployeeVisits = () => {
         uploadedImages: v.photos || [],
         taskTitle: v.taskTitle,
         taskType: v.taskType,
-        checklist: v.checklist || []
+        checklist: v.checklist || [],
+        rejectionIntelligence: v.visitForm?.notInterestedReason || null,
+        nextFollowUp: v.visitForm?.followUpDate || null
       };
     });
   };
@@ -96,7 +98,9 @@ const EmployeeVisits = () => {
         companyDescription: 'Organization Partner',
         feedback: fullVisit.notes || 'No specific feedback recorded.',
         uploadedImages: fullVisit.photos || [],
-        checklist: fullVisit.checklist || []
+        checklist: fullVisit.checklist || [],
+        rejectionIntelligence: fullVisit.visitForm?.notInterestedReason || null,
+        nextFollowUp: fullVisit.visitForm?.followUpDate || null
       });
     } catch (err) {
       console.error('Error fetching visit details:', err);
@@ -161,7 +165,7 @@ const EmployeeVisits = () => {
       <div className="space-y-6 sm:space-y-8 animate-in duration-500">
       {/* Page Heading */}
       <div className="px-2 mb-5">
-        <h1 className="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white tracking-tight">Store Visits</h1>
+        <h1 className="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white tracking-tight">{pageTitle}</h1>
       </div>
 
       {/* Filters & Results Count Section */}
@@ -237,6 +241,28 @@ const EmployeeVisits = () => {
                     {/* Top Row: Store Info & Status */}
                     <div className="flex justify-between items-start gap-4">
                       <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          {visit.visitType === 'supplier' && (
+                            <span className="px-2 py-0.5 rounded-md bg-sky-50 dark:bg-sky-500/10 text-sky-600 dark:text-sky-400 text-[8px] font-black uppercase tracking-tighter border border-sky-100 dark:border-sky-500/20 flex items-center gap-1">
+                              <Building2 size={8} /> Supplier
+                            </span>
+                          )}
+                          {visit.visitType === 'collab' && (
+                            <span className="px-2 py-0.5 rounded-md bg-violet-50 dark:bg-violet-500/10 text-violet-600 dark:text-violet-400 text-[8px] font-black uppercase tracking-tighter border border-violet-100 dark:border-violet-500/20 flex items-center gap-1">
+                              <Briefcase size={8} /> Collab
+                            </span>
+                          )}
+                          {visit.visitType === 'app' && (
+                            <span className="px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[8px] font-black uppercase tracking-tighter border border-emerald-100 dark:border-emerald-500/20 flex items-center gap-1">
+                              <ShieldCheck size={8} /> App Install
+                            </span>
+                          )}
+                          {!visit.visitType || visit.visitType === 'store' ? (
+                            <span className="px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-[8px] font-black uppercase tracking-tighter border border-indigo-100 dark:border-indigo-500/20 flex items-center gap-1">
+                              <Store size={8} /> Store Visit
+                            </span>
+                          ) : null}
+                        </div>
                         <h3 className="font-bold text-gray-900 dark:text-white text-base sm:text-lg truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                           {idx + 1}. {visit.store}
                         </h3>
@@ -518,6 +544,34 @@ const EmployeeVisits = () => {
                       </div>
                     </div>
                   )}
+                </div>
+              )}
+
+              {/* Rejection Intelligence (Supplier/Store rejection reason) */}
+              {selectedVisit.rejectionIntelligence && (
+                <div className="bg-rose-50 dark:bg-rose-500/5 rounded-2xl p-5 border border-rose-100 dark:border-rose-500/20">
+                  <h4 className="text-[10px] font-black uppercase tracking-widest text-rose-500 mb-3 flex items-center gap-2">
+                    <AlertCircle size={14} />
+                    Rejection Intelligence
+                  </h4>
+                  <p className="text-sm text-rose-700 dark:text-rose-400 leading-relaxed font-bold italic pl-4 border-l-2 border-rose-300 dark:border-rose-500/50">
+                    "{selectedVisit.rejectionIntelligence}"
+                  </p>
+                </div>
+              )}
+
+              {/* Follow-up Intelligence */}
+              {selectedVisit.nextFollowUp && (
+                <div className="bg-amber-50 dark:bg-amber-500/5 rounded-2xl p-5 border border-amber-100 dark:border-amber-500/20">
+                  <h4 className="text-[10px] font-black uppercase tracking-widest text-amber-600 mb-3 flex items-center gap-2">
+                    <Clock size={14} />
+                    Target Follow-up Date
+                  </h4>
+                  <div className="flex items-center gap-3">
+                    <div className="px-3 py-2 bg-white dark:bg-gray-900 rounded-xl border border-amber-100 dark:border-amber-800 text-sm font-black text-amber-700 dark:text-amber-400">
+                      {new Date(selectedVisit.nextFollowUp).toLocaleDateString([], { day: '2-digit', month: 'long', year: 'numeric' })}
+                    </div>
+                  </div>
                 </div>
               )}
 

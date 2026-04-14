@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, Building2, ClipboardList, Map, Settings, LogOut, ShieldCheck, Bell, ShoppingBag, Camera, Clock, AlertCircle, ChevronLeft, ChevronRight, Menu, Activity, User, Lock, CreditCard } from 'lucide-react';
+import { LayoutDashboard, Users, Building2, ClipboardList, Map, Settings, LogOut, ShieldCheck, Bell, ShoppingBag, Camera, Clock, AlertCircle, ChevronLeft, ChevronRight, Menu, Activity, User, Lock, CreditCard, MapPin } from 'lucide-react';
 import ThemeToggle from '../ui/ThemeToggle';
 import { useAuth } from '../../context/AuthContext';
 import { getApiBaseUrl } from '../../services/apiClient';
@@ -46,12 +46,12 @@ const Sidebar = ({ role, user, isCollapsed, onToggle }) => {
     ],
     employee: [
       { name: 'Dashboard', icon: LayoutDashboard, path: '/employee/dashboard' },
-      { name: 'My Tasks', icon: ClipboardList, path: '/employee/tasks' },
-      { name: 'My Visits', icon: Map, path: '/employee/visits' },
-      { name: 'My Orders', icon: ShoppingBag, path: '/employee/orders' },
-      { name: 'Activity', icon: Clock, path: '/employee/activity' },
-      { name: 'My Profile', icon: Users, path: '/employee/profile' },
-      { name: 'Support Issues', icon: AlertCircle, path: '/employee/issues' },
+      { name: 'Log Visit', icon: MapPin, path: '/employee/visits/log' },
+      { name: 'Orders', icon: ShoppingBag, path: '/employee/orders' },
+      { name: 'Follow-ups', icon: Clock, path: '/employee/follow-ups' },
+      { name: 'Visit History', icon: ClipboardList, path: '/employee/visits' },
+      { name: 'Notifications', icon: Bell, path: '/employee/notifications' },
+      { name: 'Profile', icon: User, path: '/employee/profile' },
     ],
   };
 

@@ -24,21 +24,24 @@ exports.register = async (req, res) => {
       return res.status(400).json({ message: 'User already exists' });
     }
 
+    // FORCE SINGLE ORGANIZATION (NOT SAAS)
     let tenantId = null;
-
-    // If registering as a tenant admin, create a new Tenant/Organization
-    if (role === 'tenant') {
-      const Tenant = require('../../models/superadmin/Tenant');
-      const tenant = await Tenant.create({ name: company });
-      tenantId = tenant._id;
+    const Tenant = require('../../models/superadmin/Tenant');
+    let defaultTenant = await Tenant.findOne({ name: 'TrackForce' });
+    if (!defaultTenant) {
+      defaultTenant = await Tenant.create({ name: 'TrackForce', company: 'TrackForce' });
     }
+    tenantId = defaultTenant._id;
+
+    // Map any 'tenant' role to 'superadmin' since Tenant is deprecated in single-org mode
+    const finalRole = role === 'tenant' ? 'superadmin' : (role || 'employee');
 
     const user = await User.create({
       name,
-      company,
+      company: 'TrackForce',
       email: normalizedEmail,
       password,
-      role: role || 'employee',
+      role: finalRole,
       tenant: tenantId,
     });
 
@@ -116,7 +119,7 @@ exports.login = async (req, res) => {
       const portalToRoleMap = {
         'EMPLOYEE': 'employee',
         'MANAGER': 'manager',
-        'TENANT': 'tenant',
+        'TENANT': 'superadmin', // Deprecated: Re-routing to superadmin for single-org mode
         'SUPER_ADMIN': 'superadmin',
       };
       const expectedRole = portalToRoleMap[portal];
@@ -145,14 +148,13 @@ exports.login = async (req, res) => {
       }
     }
 
-    // Derive portal from the login request or fall back to user's role
-    const portalToRoleMap = {
+    const portalToRoleMap2 = {
       'EMPLOYEE': 'employee',
       'MANAGER': 'manager',
-      'TENANT': 'tenant',
+      'TENANT': 'superadmin',
       'SUPER_ADMIN': 'superadmin',
     };
-    const resolvedPortal = portal ? (portalToRoleMap[portal] || user.role) : user.role;
+    const resolvedPortal = portal ? (portalToRoleMap2[portal] || user.role) : user.role;
 
     res.json({
       _id: user._id,
