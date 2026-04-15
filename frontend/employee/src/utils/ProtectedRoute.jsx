@@ -5,7 +5,7 @@ import storage from '../utils/storage';
 
 const ProtectedRoute = ({ children, role }) => {
   const { user, isLoading } = useAuth();
-  
+
   // Show nothing or a loader while auth context is initializing
   if (isLoading) {
     return (

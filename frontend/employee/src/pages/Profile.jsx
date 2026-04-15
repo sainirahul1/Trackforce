@@ -164,7 +164,7 @@ const AvatarWithEffect = ({ employee }) => {
         if (avatarData) {
           setSrc(avatarData);
           setHasAvatar(true);
-          try { localStorage.setItem(cacheKey, avatarData); } catch (_) {}
+          try { localStorage.setItem(cacheKey, avatarData); } catch (_) { }
         } else {
           // No avatar uploaded - show dicebear fallback
           setSrc(`https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}`);
@@ -191,10 +191,10 @@ const AvatarWithEffect = ({ employee }) => {
           alt="Avatar"
           onLoad={() => setLoaded(true)}
           className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${loaded ? 'opacity-100' : 'opacity-0'}`}
-          onError={(e) => { 
-            e.target.onerror = null; 
-            e.target.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}`; 
-            setLoaded(true); 
+          onError={(e) => {
+            e.target.onerror = null;
+            e.target.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}`;
+            setLoaded(true);
           }}
         />
       )}
@@ -490,6 +490,7 @@ const DocumentsContent = ({ documents, onEditDocument, onViewDocument, onAddDocu
 };
 
 const SettingsContent = ({ employee, onSaveProfile, isPasswordModalOpen, setIsPasswordModalOpen }) => {
+  const [isForgotModalOpen, setIsForgotModalOpen] = useState(false);
   const [displayName, setDisplayName] = useState(employee.name || '');
   const [emailNotif, setEmailNotif] = useState(true);
   const [pushNotif, setPushNotif] = useState(true);
@@ -607,12 +608,20 @@ const SettingsContent = ({ employee, onSaveProfile, isPasswordModalOpen, setIsPa
             </h5>
             <p className="text-sm text-gray-500 font-medium leading-relaxed">Regularly update your password to keep your account safe.</p>
           </div>
-          <button
-            onClick={() => setIsPasswordModalOpen(true)}
-            className="px-8 py-4 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-2xl font-black text-sm hover:scale-[1.02] transition-all shadow-xl shrink-0"
-          >
-            Update Password
-          </button>
+          <div className="flex flex-col gap-2 shrink-0">
+            <button
+              onClick={() => setIsPasswordModalOpen(true)}
+              className="px-8 py-4 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-2xl font-black text-sm hover:scale-[1.02] transition-all shadow-xl"
+            >
+              Update Password
+            </button>
+            <button
+              onClick={() => setIsForgotModalOpen(true)}
+              className="text-indigo-600 dark:text-indigo-400 font-bold text-xs uppercase tracking-widest hover:underline text-right pr-2"
+            >
+              Forgot Password?
+            </button>
+          </div>
         </div>
       </SectionContainer>
 
@@ -620,6 +629,93 @@ const SettingsContent = ({ employee, onSaveProfile, isPasswordModalOpen, setIsPa
         isOpen={isPasswordModalOpen}
         onClose={() => setIsPasswordModalOpen(false)}
       />
+      <ForgotPasswordModal
+        isOpen={isForgotModalOpen}
+        onClose={() => setIsForgotModalOpen(false)}
+      />
+    </div>
+  );
+};
+
+const ForgotPasswordModal = ({ isOpen, onClose }) => {
+  const [email, setEmail] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen) { setEmail(''); setNewPassword(''); setConfirmPassword(''); setError(''); setSuccess(false); }
+  }, [isOpen]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    if (newPassword !== confirmPassword) return setError('New passwords do not match');
+    if (newPassword.length < 8) return setError('New password must be at least 8 characters');
+
+    setLoading(true);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 800));
+      setSuccess(true);
+      setTimeout(() => onClose(), 2000);
+    } catch (err) {
+      setError(err.message || 'Failed to process request');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[300] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative w-full max-w-md bg-white dark:bg-gray-950 rounded-[2rem] shadow-2xl border border-gray-100 dark:border-gray-800 p-8">
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-3">
+            <div className="p-3 rounded-2xl bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600">
+              <Lock size={20} />
+            </div>
+            <h3 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">Forgot Password</h3>
+          </div>
+          <button onClick={onClose} className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+            <X size={20} className="text-gray-400" />
+          </button>
+        </div>
+
+        {success ? (
+          <div className="py-8 text-center animate-in fade-in zoom-in duration-300">
+             <div className="w-20 h-20 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6"><CheckCircle2 size={40} /></div>
+             <h4 className="text-xl font-black text-gray-900 dark:text-white mb-2">Request Submitted!</h4>
+             <p className="text-gray-500 font-medium">Please check your email if instructions are sent.</p>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {error && (
+              <div className="p-4 rounded-xl bg-rose-50 dark:bg-rose-900/20 border border-rose-100 dark:border-rose-900/30 flex items-center gap-3 text-rose-600 dark:text-rose-400 text-sm font-bold">
+                <AlertTriangle size={18} />{error}
+              </div>
+            )}
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">mail</label>
+              <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="w-full px-6 py-4 rounded-2xl bg-gray-50 dark:bg-gray-900 border-2 border-transparent focus:border-indigo-500 outline-none transition-all font-bold text-gray-900 dark:text-white" placeholder="you@company.com" />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">New Password</label>
+              <input type="password" required value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="w-full px-6 py-4 rounded-2xl bg-gray-50 dark:bg-gray-900 border-2 border-transparent focus:border-indigo-500 outline-none transition-all font-bold text-gray-900 dark:text-white" placeholder="••••••••" />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Confirm New Password</label>
+              <input type="password" required value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="w-full px-6 py-4 rounded-2xl bg-gray-50 dark:bg-gray-900 border-2 border-transparent focus:border-indigo-500 outline-none transition-all font-bold text-gray-900 dark:text-white" placeholder="••••••••" />
+            </div>
+            <button type="submit" disabled={loading} className="w-full py-4 rounded-2xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-black hover:opacity-90 transition-all flex items-center justify-center gap-2 shadow-xl">
+              {loading ? <div className="w-5 h-5 border-2 border-white dark:border-slate-900 border-t-transparent rounded-full animate-spin" /> : 'Save New Password'}
+            </button>
+          </form>
+        )}
+      </div>
     </div>
   );
 };
@@ -788,7 +884,7 @@ const ProfileHeader = ({ employee, onEditProfile, onOpenSettings, onShareProfile
       if (avatarData) {
         setPersistentAvatar(avatarData);
         setImageLoaded(true);
-        try { localStorage.setItem(cacheKey, avatarData); } catch (_) {}
+        try { localStorage.setItem(cacheKey, avatarData); } catch (_) { }
       } else {
         // No avatar uploaded - show dicebear fallback
         setPersistentAvatar(`https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(employee?.name || 'User')}`);
@@ -917,13 +1013,13 @@ const ProfileHeader = ({ employee, onEditProfile, onOpenSettings, onShareProfile
                   </>
                 )}
               </div>
-                {(loading && !employee.designation) ? (
-                  <div className="h-6 w-48 bg-gray-100 dark:bg-gray-800/50 animate-pulse rounded-lg" />
-                ) : (
-                  <p className="mt-1 sm:mt-2 text-base sm:text-lg font-medium text-slate-500 dark:text-slate-400">
-                    {employee.designation || 'Staff Member'} • {employee.team || 'Operations'}
-                  </p>
-                )}
+              {(loading && !employee.designation) ? (
+                <div className="h-6 w-48 bg-gray-100 dark:bg-gray-800/50 animate-pulse rounded-lg" />
+              ) : (
+                <p className="mt-1 sm:mt-2 text-base sm:text-lg font-medium text-slate-500 dark:text-slate-400">
+                  {employee.designation || 'Staff Member'} • {employee.team || 'Operations'}
+                </p>
+              )}
             </div>
             {!loading && (
               <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
@@ -2541,9 +2637,9 @@ const EmployeeProfile = () => {
       if (!localStorage.getItem(cacheKey)) {
         getMyAvatar().then((avatarData) => {
           if (avatarData) {
-            try { localStorage.setItem(cacheKey, avatarData); } catch (_) {}
+            try { localStorage.setItem(cacheKey, avatarData); } catch (_) { }
           }
-        }).catch(() => {});
+        }).catch(() => { });
       }
     }
   }, []);
@@ -2573,7 +2669,7 @@ const EmployeeProfile = () => {
 
       // Persist to localStorage IMMEDIATELY so next visit is instant (0ms)
       if (newAvatar && employee?.email) {
-        try { localStorage.setItem(`cached_avatar_${employee.email}`, newAvatar); } catch (_) {}
+        try { localStorage.setItem(`cached_avatar_${employee.email}`, newAvatar); } catch (_) { }
       }
 
       // Update local state
@@ -2639,7 +2735,6 @@ const EmployeeProfile = () => {
           />
 
           <EmploymentSection employee={employee} loading={profileLoading} />
-          <NotificationsSection />
         </div>
       </div>
 

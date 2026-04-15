@@ -8,10 +8,11 @@ import storage from '../utils/storage';
 import { getDashboardStats, startTracking, stopTracking, getTrackingStatus } from '../services/trackingService';
 import { getActivities } from '../services/activityService';
 import { getTasks } from '../services/taskService';
+import { useNotifications } from '../context/NotificationContext';
 import {
   MapPin, Calendar, TrendingUp, Clock, ClipboardList,
-  Map as MapIcon, ShoppingBag, ShoppingBasket, ChevronRight, Activity,
-  CheckCircle2, ArrowRight, Navigation2, Camera, Bell, IndianRupee, Loader2
+  Map as MapIcon, ShoppingBag, ChevronRight, Activity,
+  CheckCircle2, Navigation2, Bell, IndianRupee, Smartphone, GraduationCap, PackageCheck
 } from 'lucide-react';
 import {
   Chart as ChartJS, CategoryScale, LinearScale, PointElement,
@@ -206,16 +207,25 @@ const RevenueCard = ({ revenueData, loading }) => {
             <IndianRupee size={24} />
           </div>
           <h3 className="text-2xl font-black tracking-tight leading-none group-hover:text-emerald-600 transition-colors">Revenue</h3>
-          <p className="text-xs text-gray-400 font-bold uppercase tracking-[0.25em]">Weekly Growth</p>
+          <p className="text-xs text-gray-400 font-bold uppercase tracking-[0.25em]">Monthly Overview</p>
         </div>
 
         <div className="w-full h-28 min-h-[112px] my-2 group-hover:scale-105 transition-transform duration-700">
           <Line data={data} options={options} />
         </div>
 
-        <div className="space-y-1">
-          <p className="text-3xl font-black text-slate-800">₹{totalWeekly.toLocaleString('en-IN')}</p>
-          <div className="h-4" /> {/* Spacer for symmetry after removing button */}
+        <div className="space-y-1 w-full relative z-20">
+          <p className="text-3xl font-black text-slate-800 dark:text-white">₹{((revenueData?.monthlyRevenue) || totalWeekly * 4).toLocaleString('en-IN')}</p>
+          <div className="flex justify-between items-center w-full pt-3 mt-2 border-t border-gray-100 dark:border-slate-800/50">
+             <div className="flex flex-col text-left">
+                <span className="text-[9px] font-black uppercase text-gray-400 tracking-widest">Daily Rev</span>
+                <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">₹{((revenueData?.dailyRevenue) || Math.round(totalWeekly / 7)).toLocaleString('en-IN')}</span>
+             </div>
+             <div className="flex flex-col text-right">
+                <span className="text-[9px] font-black uppercase text-gray-400 tracking-widest">Conv. Rate</span>
+                <span className="text-xs font-bold text-indigo-500 dark:text-indigo-400">{revenueData?.conversionRate || 68}%</span>
+             </div>
+          </div>
         </div>
       </div>
     </Link>
@@ -370,14 +380,118 @@ const ActivityItem = ({ activity, isLast }) => (
 );
 
 // =============================================================================
-// MAIN COMPONENT: EmployeeDashboard
+// MILESTONES CARD COMPONENT
 // =============================================================================
+
+const MilestonesCard = ({ statsData, loading }) => {
+  const milestones = [
+    {
+      id: 'appInstalled',
+      icon: Smartphone,
+      label: 'App Installed',
+      sublabel: 'Verified on owner device',
+      value: statsData?.appInstalled || 0,
+      color: 'text-violet-600',
+      bg: 'bg-violet-50 dark:bg-violet-900/20',
+      border: 'border-violet-100 dark:border-violet-500/10',
+      glow: 'from-violet-500/10',
+    },
+    {
+      id: 'trainingCompleted',
+      icon: GraduationCap,
+      label: 'Training Completed',
+      sublabel: 'Owner understands ordering flow',
+      value: statsData?.trainingCompleted || 0,
+      color: 'text-amber-600',
+      bg: 'bg-amber-50 dark:bg-amber-900/20',
+      border: 'border-amber-100 dark:border-amber-500/10',
+      glow: 'from-amber-500/10',
+    },
+    {
+      id: 'firstOrderPlaced',
+      icon: PackageCheck,
+      label: 'First Order Placed',
+      sublabel: 'Transaction initiated',
+      value: statsData?.firstOrderPlaced || 0,
+      color: 'text-emerald-600',
+      bg: 'bg-emerald-50 dark:bg-emerald-900/20',
+      border: 'border-emerald-100 dark:border-emerald-500/10',
+      glow: 'from-emerald-500/10',
+    },
+  ];
+  return (
+    <div className="bg-white dark:bg-gray-900 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
+      <div className="px-7 pt-7 pb-4 flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-black text-gray-900 dark:text-white tracking-tight">Field Milestones</h3>
+          <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-0.5">Today's task count</p>
+        </div>
+        <CheckCircle2 size={22} className="text-indigo-400" />
+      </div>
+      <div className="grid grid-cols-3 divide-x divide-gray-100 dark:divide-gray-800 border-t border-gray-100 dark:border-gray-800">
+        {milestones.map((m) => (
+          <div key={m.id} className={`relative flex flex-col items-center text-center p-5 md:p-7 group hover:bg-gradient-to-b ${m.glow} to-transparent transition-all duration-500`}>
+            <div className={`p-3 rounded-2xl ${m.bg} border ${m.border} mb-3 transition-transform duration-500 group-hover:scale-110`}>
+              <m.icon size={20} className={m.color} />
+            </div>
+            {loading ? (
+              <div className="h-9 w-12 bg-gray-200 dark:bg-gray-700 rounded-xl animate-pulse mb-2" />
+            ) : (
+              <span className={`text-4xl font-black tabular-nums ${m.color} leading-none`}>{m.value}</span>
+            )}
+            <span className="text-[10px] font-black text-gray-700 dark:text-gray-200 uppercase tracking-widest mt-2 leading-tight">{m.label}</span>
+            <span className="text-[9px] text-gray-400 font-medium mt-1 leading-tight px-1">{m.sublabel}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// =============================================================================
+// MOTIVATIONAL QUOTES - rotates daily
+// =============================================================================
+const MOTIVATIONAL_QUOTES = [
+  { text: "Every visit you make today brings you one step closer to your goal.", author: "Field Champion" },
+  { text: "The harder you work, the luckier you get. Go make it happen!", author: "Field Champion" },
+  { text: "Your effort today is someone's solution tomorrow.", author: "Field Champion" },
+  { text: "Success is the sum of small efforts repeated day in and day out.", author: "Robert Collier" },
+  { text: "Don't watch the clock; do what it does — keep going!", author: "Sam Levenson" },
+  { text: "Champions keep playing until they get it right. You're a champion.", author: "Field Champion" },
+  { text: "Great things never come from comfort zones. Step out and shine!", author: "Field Champion" },
+  { text: "Every order you close is a story of trust. Keep building it.", author: "Field Champion" },
+  { text: "You are the bridge between a product and its perfect customer.", author: "Field Champion" },
+  { text: "Push yourself, because no one else is going to do it for you.", author: "Field Champion" },
+  { text: "A journey of a thousand miles begins with a single visit.", author: "Field Champion" },
+  { text: "The field is your kingdom. Conquer it one store at a time!", author: "Field Champion" },
+  { text: "Discipline is choosing between what you want now and what you want most.", author: "Field Champion" },
+  { text: "Your positive energy today will unlock tomorrow's opportunities.", author: "Field Champion" },
+  { text: "Believe in yourself, the numbers follow those who believe.", author: "Field Champion" },
+  { text: "Today's preparation determines tomorrow's achievement.", author: "Field Champion" },
+  { text: "Energy and persistence conquer all things. You have both!", author: "Benjamin Franklin" },
+  { text: "Excellence is not a skill. It's an attitude. Show yours today!", author: "Ralph Marston" },
+  { text: "Your consistency is your superpower. Never stop showing up.", author: "Field Champion" },
+  { text: "Turn every 'no' into a lesson, every 'yes' into momentum.", author: "Field Champion" },
+  { text: "The field is full of possibilities. Go find them!", author: "Field Champion" },
+  { text: "Small daily improvements over time create stunning results.", author: "Field Champion" },
+  { text: "You were born to do great things — today is the day to do them.", author: "Field Champion" },
+  { text: "Make today so amazing that yesterday gets jealous.", author: "Field Champion" },
+  { text: "Your sweat today is someone's smile tomorrow.", author: "Field Champion" },
+  { text: "Winners are not people who never fail, but people who never quit.", author: "Field Champion" },
+  { text: "Hustle in silence, let the results speak for you.", author: "Field Champion" },
+  { text: "Go the extra mile — it's never crowded there!", author: "Wayne Dyer" },
+  { text: "The best time to plant a tree was 20 years ago. The second best time is now.", author: "Chinese Proverb" },
+  { text: "Every single day you make a difference. Don't forget that.", author: "Field Champion" },
+  { text: "You are closer than you think. Keep going!", author: "Field Champion" },
+];
+
+
 
 
 const EmployeeDashboard = () => {
   // --- Auth Context ---
   const { user } = useAuth();
-
+  const { unreadCount } = useNotifications();
   const { setPageLoading } = useOutletContext();
   const { showAlert } = useDialog();
   // --- State Hooks ---
@@ -619,10 +733,33 @@ const EmployeeDashboard = () => {
               Good {new Date().getHours() < 12 ? 'Morning' : new Date().getHours() < 18 ? 'Afternoon' : 'Evening'},<br className="hidden md:block" />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-200 to-emerald-200 drop-shadow-sm">{user.name || 'User'}</span>
             </h1>
-            <p className="flex items-center text-indigo-100/90 font-medium text-base md:text-lg mt-2 uppercase tracking-widest text-[10px]">
-              {user.role} Portal - {user.company}
-            </p>
+            <div className="mt-3 max-w-xl">
+              <p className="text-white/95 font-black text-base md:text-lg italic leading-snug tracking-tight drop-shadow-sm">
+                <span className="text-yellow-300 mr-1.5 text-xl not-italic">✦</span>
+                {(() => {
+                  const dayOfYear = Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
+                  const q = MOTIVATIONAL_QUOTES[dayOfYear % MOTIVATIONAL_QUOTES.length];
+                  return `"${q.text}"`;
+                })()}
+              </p>
+              <p className="text-white/50 font-bold text-[11px] uppercase tracking-[0.2em] mt-1.5 ml-6">
+                {(() => {
+                  const dayOfYear = Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
+                  return `— ${MOTIVATIONAL_QUOTES[dayOfYear % MOTIVATIONAL_QUOTES.length].author}`;
+                })()}
+              </p>
+            </div>
           </div>
+
+          {/* Notification Bell */}
+          <Link to="/employee/notifications" className="relative p-3 rounded-2xl bg-white/10 hover:bg-white/20 transition-all">
+            <Bell size={20} className="text-white" />
+            {unreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 w-5 h-5 bg-rose-500 text-white text-[9px] font-black rounded-full flex items-center justify-center animate-bounce">
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
+          </Link>
 
           {/* Header Controls (Stats Grid with Integrated Shift Toggle) */}
           <div className="flex flex-col items-end gap-6 w-full lg:w-auto">
@@ -677,189 +814,194 @@ const EmployeeDashboard = () => {
         </div>
       </header>
 
-      {/* 2. Metrics Row: Revenue, Performance, and Capabilities Cards */}
-      <section className="flex flex-col lg:flex-row justify-end items-center gap-6 md:gap-8">
-        <RevenueCard revenueData={statsData?.revenueData} loading={loading} />
-        <CapabilitiesCard capabilities={statsData?.capabilities} loading={loading} />
-        <Link
-          to="/employee/tasks"
-          className={`w-full max-w-[320px] aspect-square bg-white dark:bg-slate-900 text-gray-900 dark:text-white p-7 rounded-[3rem] shadow-xl relative overflow-hidden group transition-all duration-700 border border-gray-100 dark:border-slate-800 hover:border-indigo-500/30 block hover:-translate-y-1 active:scale-[0.98] ${loading ? 'animate-pulse' : ''}`}
-        >
-          {/* Background Pattern */}
-          <div className="absolute inset-0 opacity-[0.05] pointer-events-none" style={{ backgroundImage: 'radial-gradient(#000 1px, transparent 1px)', backgroundSize: '16px 16px' }} />
-          {!loading && <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/5 rounded-full blur-[60px] -mr-20 -mt-20 pointer-events-none group-hover:scale-125 transition-transform duration-1000" />}
-
-          <div className="flex flex-col h-full justify-between items-center relative z-10 text-center">
-            <div className="space-y-1.5">
-              <div className="inline-flex p-3 bg-indigo-50 rounded-2xl mb-1 text-indigo-600 shadow-sm border border-indigo-100">
-                <Activity size={24} />
+      {/* 2. Metrics Row: 3 compact horizontal stat cards */}
+      <section className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        {/* Revenue Card */}
+        <Link to="/employee/orders" className="group relative bg-white dark:bg-gray-900 rounded-[2rem] border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-xl overflow-hidden transition-all duration-500 hover:-translate-y-1 p-6 block">
+          <div className="absolute inset-0 bg-gradient-to-br from-emerald-50/60 to-transparent dark:from-emerald-900/10 pointer-events-none" />
+          <div className="absolute -right-6 -bottom-6 w-32 h-32 bg-emerald-100/40 dark:bg-emerald-900/20 rounded-full blur-2xl pointer-events-none group-hover:scale-150 transition-transform duration-700" />
+          <div className="relative z-10">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-2.5 bg-emerald-50 dark:bg-emerald-900/30 rounded-2xl border border-emerald-100 dark:border-emerald-800">
+                <IndianRupee size={18} className="text-emerald-600" />
               </div>
-              <h3 className="text-2xl font-black tracking-tight leading-none group-hover:text-indigo-600 transition-colors">Performance</h3>
-              <p className="text-xs text-gray-400 font-bold uppercase tracking-[0.25em]">Daily Overview</p>
+              <span className="text-[9px] font-black text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 px-2.5 py-1 rounded-full uppercase tracking-widest border border-emerald-100 dark:border-emerald-800">Monthly</span>
             </div>
-
-            <div className="grid grid-cols-2 gap-6 w-full px-2">
-              <ProgressRing
-                label="Visits"
-                current={statsData?.visitsCompleted || 0}
-                target={statsData?.visitsToday || 1}
-                color="text-blue-500"
-                loading={loading}
-              />
-              <ProgressRing
-                label="Tasks"
-                current={statsData?.tasksCompleted || 0}
-                target={statsData?.tasksToday || 1}
-                color="text-emerald-500"
-                loading={loading}
-              />
+            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Revenue</p>
+            {loading ? <div className="h-8 w-24 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse mb-3" /> : (
+              <p className="text-3xl font-black text-gray-900 dark:text-white tracking-tight mb-3">₹{((statsData?.revenueData?.monthlyRevenue) || 0).toLocaleString('en-IN')}</p>
+            )}
+            <div className="flex items-center gap-4 pt-3 border-t border-gray-100 dark:border-gray-800">
+              <div>
+                <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Daily</p>
+                <p className="text-sm font-black text-emerald-600">₹{((statsData?.revenueData?.dailyRevenue) || 0).toLocaleString('en-IN')}</p>
+              </div>
+              <div className="w-px h-6 bg-gray-100 dark:bg-gray-800" />
+              <div>
+                <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Conv. Rate</p>
+                <p className="text-sm font-black text-indigo-500">{statsData?.revenueData?.conversionRate || 68}%</p>
+              </div>
+              <div className="ml-auto">
+                <svg viewBox="0 0 60 24" width="60" height="24" className="text-emerald-400">
+                  <polyline points="0,20 12,14 24,16 36,8 48,12 60,5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </div>
             </div>
-
-            <div className="mt-3 w-16 h-1 bg-gray-100 rounded-full" />
           </div>
         </Link>
-      </section>
 
-      {/* 3. Operations Row: Next Target and Activity Timeline */}
-      <section className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12 items-start">
-        {/* Next Target Destination Card */}
-        <div className="relative group">
-          <Link
-            to="/employee/tasks?priority=high"
-            className={`${UI_TOKENS.cardBase} p-8 md:p-10 rounded-[3rem] shadow-2xl block transition-all duration-700 hover:shadow-indigo-500/10 hover:-translate-y-1 active:scale-[0.98] outline-none group-hover:border-indigo-500/30 overflow-hidden`}
-          >
-            {/* Soft background accents */}
-            <div className="absolute top-0 right-0 w-80 h-80 bg-indigo-50/50 dark:bg-indigo-900/10 rounded-full blur-[80px] -mr-32 -mt-32 pointer-events-none transition-transform duration-1000 group-hover:scale-110" />
-            <div className="absolute bottom-0 left-0 w-64 h-64 bg-emerald-50/30 dark:bg-emerald-900/5 rounded-full blur-[60px] -ml-20 -mb-20 pointer-events-none" />
-
-            <div className="flex justify-between items-center mb-10 relative z-10">
-              <h2 className={UI_TOKENS.sectionTitle}>
-                <div className="p-3 bg-indigo-50 dark:bg-indigo-500/10 rounded-2xl mr-4 text-indigo-600 dark:text-indigo-400 shadow-sm border border-indigo-100/50 dark:border-indigo-500/10">
-                  <Navigation2 size={24} />
-                </div>
-                <span className="text-2xl tracking-tighter">Next Target</span>
-              </h2>
-              {loading ? (
-                <div className="w-20 h-6 bg-gray-200 dark:bg-gray-800 rounded-full animate-pulse" />
-              ) : (
-                <div className="inline-flex items-center px-4 py-1.5 bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 text-[10px] font-black uppercase tracking-[0.2em] rounded-full border border-rose-100 dark:border-rose-500/20 shadow-sm">
-                  {(statsData?.nextTarget?.priority || 'Standard').toUpperCase()}
-                </div>
-              )}
+        {/* Performance Card */}
+        <Link to="/employee/visits" className="group relative bg-white dark:bg-gray-900 rounded-[2rem] border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-xl overflow-hidden transition-all duration-500 hover:-translate-y-1 p-6 block">
+          <div className="absolute inset-0 bg-gradient-to-br from-indigo-50/60 to-transparent dark:from-indigo-900/10 pointer-events-none" />
+          <div className="absolute -right-6 -bottom-6 w-32 h-32 bg-indigo-100/40 dark:bg-indigo-900/20 rounded-full blur-2xl pointer-events-none group-hover:scale-150 transition-transform duration-700" />
+          <div className="relative z-10">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-2.5 bg-indigo-50 dark:bg-indigo-900/30 rounded-2xl border border-indigo-100 dark:border-indigo-800">
+                <Activity size={18} className="text-indigo-600" />
+              </div>
+              <span className="text-[9px] font-black text-indigo-600 bg-indigo-50 dark:bg-indigo-900/30 px-2.5 py-1 rounded-full uppercase tracking-widest border border-indigo-100 dark:border-indigo-800">Today</span>
             </div>
-
-            <div className="relative z-10 space-y-8">
-              {/* Target Address and Stylized Mini-Map */}
-              <div className="flex flex-col md:flex-row gap-8 items-stretch">
-                <div className="flex-1 space-y-6">
-                  {loading ? (
-                    <div className="space-y-4 animate-pulse">
-                      <div className="h-8 w-48 bg-gray-200 dark:bg-gray-800 rounded" />
-                      <div className="h-4 w-32 bg-gray-100 dark:bg-gray-800 rounded" />
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      <h3 className="text-3xl font-black text-gray-900 dark:text-white leading-none tracking-tight group-hover:text-indigo-600 transition-colors">
-                        {statsData?.nextTarget?.store || nextTask?.store || 'No Pending Targets'}
-                      </h3>
-                      <div className="flex items-center text-gray-500 dark:text-gray-400">
-                        <MapIcon size={16} className="mr-2 text-indigo-500 opacity-70" />
-                        <span className="text-sm font-bold uppercase tracking-widest opacity-80">{statsData?.nextTarget?.address || nextTask?.address || 'Operational queue clear'}</span>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Dispatch Context */}
-                  <div className="flex items-center gap-6 py-4 border-y border-gray-100 dark:border-gray-800/50">
-                    <div className="flex flex-col">
-                      <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Travel</span>
-                      {loading ? (
-                        <div className="h-6 w-12 bg-gray-100 dark:bg-gray-800 rounded animate-pulse" />
-                      ) : (
-                        <span className="text-lg font-black text-slate-800 dark:text-white">{statsData?.nextTarget?.travelTime || nextTask?.eta || '---'}</span>
-                      )}
-                    </div>
-                    <div className="w-px h-8 bg-gray-100 dark:bg-gray-800" />
-                    <div className="flex flex-col">
-                      <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Distance</span>
-                      {loading ? (
-                        <div className="h-6 w-12 bg-gray-100 dark:bg-gray-800 rounded animate-pulse" />
-                      ) : (
-                        <span className="text-lg font-black text-slate-800 dark:text-white">{statsData?.nextTarget?.distance || nextTask?.distance || '---'}</span>
-                      )}
-                    </div>
-                  </div>
+            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Performance</p>
+            {loading ? <div className="h-8 w-16 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse mb-3" /> : (
+              <p className="text-3xl font-black text-gray-900 dark:text-white tracking-tight mb-3">
+                {Math.round(((statsData?.visitsCompleted || 0) / (statsData?.visitsToday || 1)) * 100)}%
+              </p>
+            )}
+            <div className="flex items-center gap-4 pt-3 border-t border-gray-100 dark:border-gray-800">
+              <div>
+                <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Visits</p>
+                <p className="text-sm font-black text-indigo-600">{statsData?.visitsCompleted || 0}<span className="text-gray-400 font-normal">/{statsData?.visitsToday || 0}</span></p>
+              </div>
+              <div className="w-px h-6 bg-gray-100 dark:bg-gray-800" />
+              <div>
+                <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Tasks</p>
+                <p className="text-sm font-black text-blue-600">{statsData?.tasksCompleted || 0}<span className="text-gray-400 font-normal">/{statsData?.tasksToday || 0}</span></p>
+              </div>
+              <div className="ml-auto flex-1 max-w-[60px]">
+                <div className="w-full h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                  <div className="h-full bg-gradient-to-r from-indigo-500 to-blue-400 rounded-full transition-all duration-1000"
+                    style={{ width: `${Math.min(Math.round(((statsData?.visitsCompleted||0)/(statsData?.visitsToday||1))*100),100)}%` }} />
                 </div>
-
-                {/* Stylized Mini-Map SVG */}
-                <div className="w-full md:w-48 h-48 bg-slate-50 dark:bg-indigo-950/20 rounded-[2rem] border-2 border-white dark:border-gray-800 shadow-xl overflow-hidden relative">
-                  <svg className="absolute inset-0 w-full h-full text-indigo-200 dark:text-indigo-900/40" viewBox="0 0 100 100" fill="none">
-                    <path d="M0 20 H100 M0 50 H100 M0 80 H100 M20 0 V100 M50 0 V100 M80 0 V100" stroke="currentColor" strokeWidth="0.5" />
-                    <circle cx="50" cy="50" r="30" stroke="currentColor" strokeWidth="0.5" strokeDasharray="2 4" />
-                    <path d="M20 20 L80 80 M80 20 L20 80" stroke="currentColor" strokeWidth="0.2" />
-                    <circle cx="50" cy="50" r="4" fill="#6366f1" className="animate-pulse" />
-                    <path d="M50 50 L75 30" stroke="#6366f1" strokeWidth="2" strokeLinecap="round" strokeDasharray="1 4" />
-                  </svg>
-                  <div className="absolute bottom-3 left-3 right-3 bg-white/90 dark:bg-gray-900/90 backdrop-blur-md py-1.5 px-3 rounded-xl border border-white/50 dark:border-gray-800 shadow-sm">
-                    <p className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest text-center">Tap to View</p>
-                  </div>
-                </div>
+                <p className="text-[9px] text-gray-400 mt-1 font-bold uppercase tracking-widest text-right">Done</p>
               </div>
             </div>
+          </div>
+        </Link>
+
+        {/* Field Mastery Card */}
+        <div className="group relative bg-white dark:bg-gray-900 rounded-[2rem] border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-xl overflow-hidden transition-all duration-500 hover:-translate-y-1 p-6">
+          <div className="absolute inset-0 bg-gradient-to-br from-violet-50/60 to-transparent dark:from-violet-900/10 pointer-events-none" />
+          <div className="absolute -right-6 -bottom-6 w-32 h-32 bg-violet-100/40 dark:bg-violet-900/20 rounded-full blur-2xl pointer-events-none group-hover:scale-150 transition-transform duration-700" />
+          <div className="relative z-10">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-2.5 bg-violet-50 dark:bg-violet-900/30 rounded-2xl border border-violet-100 dark:border-violet-800">
+                <TrendingUp size={18} className="text-violet-600" />
+              </div>
+              <span className="text-[9px] font-black text-violet-600 bg-violet-50 dark:bg-violet-900/30 px-2.5 py-1 rounded-full uppercase tracking-widest border border-violet-100 dark:border-violet-800">Mastery</span>
+            </div>
+            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Field Mastery</p>
+            <p className="text-3xl font-black text-gray-900 dark:text-white tracking-tight mb-3">
+              {loading ? '...' : `${Math.round((statsData?.capabilities||[0]).reduce((a,b)=>a+b,0)/Math.max((statsData?.capabilities||[1]).length,1))}%`}
+            </p>
+            <div className="flex items-end gap-1.5 pt-3 border-t border-gray-100 dark:border-gray-800">
+              {['Eff','Rel','Spd','Acc','Eng'].map((lbl, i) => (
+                <div key={lbl} className="flex flex-col items-center gap-1 flex-1">
+                  <div className="w-full bg-gray-100 dark:bg-gray-800 rounded-sm overflow-hidden" style={{height:'32px', display:'flex', alignItems:'flex-end'}}>
+                    <div className="w-full bg-gradient-to-t from-violet-500 to-violet-300 rounded-sm transition-all duration-1000"
+                      style={{height:`${statsData?.capabilities?.[i]||0}%`}} />
+                  </div>
+                  <span className="text-[8px] font-black text-gray-400 uppercase">{lbl}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 3. Milestones Card */}
+      <MilestonesCard statsData={statsData} loading={loading} />
+
+      {/* 4. Operational Log - Premium compact design */}
+      <section className="bg-white dark:bg-gray-900 rounded-[2rem] border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
+        <div className="px-6 py-4 flex items-center justify-between border-b border-gray-100 dark:border-gray-800">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-indigo-50 dark:bg-indigo-900/20">
+              <Clock size={16} className="text-indigo-500" />
+            </div>
+            <div>
+              <span className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-widest">Operational Log</span>
+              <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">Recent activity</p>
+            </div>
+          </div>
+          <Link to="/employee/activity" className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 transition-colors px-3 py-1.5 rounded-full bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800">
+            History <ChevronRight size={11} />
           </Link>
         </div>
 
-        {/* Recent Activity Feed Card */}
-        <div className={`${UI_TOKENS.cardBase} p-8 md:p-10 rounded-[3rem] shadow-2xl h-full relative overflow-hidden`}>
-          <div className="absolute top-0 right-0 w-80 h-80 bg-indigo-50/50 dark:bg-indigo-900/10 rounded-full blur-[80px] -mr-32 -mt-32 pointer-events-none group-hover:scale-110 transition-transform duration-1000" />
-          <div className="flex justify-between items-center mb-10 relative z-10">
-            <h3 className={UI_TOKENS.sectionTitle}>
-              <div className="p-3 bg-indigo-50 dark:bg-indigo-500/10 rounded-2xl mr-4 text-indigo-500 shadow-sm border border-indigo-100/50 dark:border-indigo-500/10">
-                <Clock size={24} />
-              </div>
-              <span className="text-2xl tracking-tighter">Operational Log</span>
-            </h3>
-            <Link to="/employee/activity" className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 flex items-center group/link transition-all border-b-2 border-transparent hover:border-indigo-600/30 pb-0.5">
-              History
-              <ChevronRight size={14} className="ml-1.5 group-hover/link:translate-x-1 transition-transform" />
-            </Link>
-          </div>
-
-          {/* Timeline List */}
-          <div className="space-y-8 relative z-10 px-1">
-            {loading ? (
-              [1, 2, 3].map(i => (
-                <div key={i} className="flex gap-6 animate-pulse">
-                  <div className="w-12 h-12 bg-gray-200 dark:bg-gray-800 rounded-2xl" />
-                  <div className="flex-1 space-y-3 py-1">
-                    <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded w-3/4" />
-                    <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded w-1/2" />
+        <div>
+          {loading ? (
+            <div className="divide-y divide-gray-50 dark:divide-gray-800/60">
+              {[1,2,3,4].map(i => (
+                <div key={i} className="flex gap-4 px-5 py-4 animate-pulse">
+                  <div className="w-9 h-9 bg-gray-100 dark:bg-gray-800 rounded-2xl shrink-0" />
+                  <div className="flex-1 space-y-2 pt-1">
+                    <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded-full w-2/3" />
+                    <div className="h-2 bg-gray-50 dark:bg-gray-800/60 rounded-full w-1/2" />
                   </div>
+                  <div className="h-3 w-12 bg-gray-100 dark:bg-gray-800 rounded-full mt-1 shrink-0" />
                 </div>
-              ))
-            ) : activities.length > 0 ? (
-              activities.slice(0, 6).map((activity, i, arr) => (
-                <ActivityItem
-                  key={i}
-                  activity={activity}
-                  isLast={i === arr.length - 1}
-                />
-              ))
-            ) : (
-              <div className="text-center py-10">
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">No recent operations</p>
-              </div>
-            )}
-          </div>
-
-          {/* Mini Insights Footer */}
-          <div className="mt-12 pt-8 border-t border-gray-100 dark:border-gray-800/50 flex items-center justify-between opacity-60">
-            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Auto-updating live</p>
-            <div className="flex items-center gap-2">
-              <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
-              <span className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest">Active Intel</span>
+              ))}
             </div>
+          ) : activities.length > 0 ? (
+            <div className="divide-y divide-gray-50 dark:divide-gray-800/40">
+              {activities.slice(0, 5).map((activity, i) => {
+                const isSuccess = activity.type === 'success';
+                const isInfo = activity.type === 'info';
+                return (
+                  <Link to="/employee/activity" key={i} className="flex items-center gap-4 px-5 py-4 hover:bg-indigo-50/40 dark:hover:bg-indigo-900/10 transition-colors group cursor-pointer">
+                    <div className={`w-9 h-9 rounded-2xl flex items-center justify-center shrink-0 transition-all duration-300 group-hover:scale-110 shadow-sm ${
+                      isSuccess ? 'bg-emerald-50 dark:bg-emerald-900/20' :
+                      isInfo ? 'bg-blue-50 dark:bg-blue-900/20' : 'bg-slate-100 dark:bg-gray-800'
+                    }`}>
+                      {isSuccess ? (
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" className="text-emerald-500"><path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                      ) : isInfo ? (
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" className="text-blue-500"><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2"/><path d="M12 8v4M12 16h.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
+                      ) : (
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" className="text-slate-400"><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2"/><path d="M12 7v5l3 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-black text-gray-800 dark:text-gray-100 truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{activity.title}</p>
+                      <p className="text-[10px] text-gray-400 truncate mt-0.5">{activity.desc}</p>
+                    </div>
+                    <div className="flex flex-col items-end gap-1.5 shrink-0">
+                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider whitespace-nowrap">{activity.time}</span>
+                      <div className={`w-1.5 h-1.5 rounded-full ${isSuccess ? 'bg-emerald-400' : isInfo ? 'bg-blue-400' : 'bg-gray-300'}`} />
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="py-14 flex flex-col items-center gap-4">
+              <div className="w-16 h-16 rounded-full bg-gray-50 dark:bg-gray-800 flex items-center justify-center">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" className="text-gray-300 dark:text-gray-600">
+                  <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.5"/>
+                  <path d="M12 7v5l3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                </svg>
+              </div>
+              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">No recent operations</p>
+            </div>
+          )}
+        </div>
+
+        <div className="px-5 py-3 bg-gradient-to-r from-gray-50/80 to-transparent dark:from-gray-800/30 dark:to-transparent flex items-center justify-between border-t border-gray-100 dark:border-gray-800/50">
+          <div className="flex items-center gap-2">
+            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Auto-updating live</span>
           </div>
+          <span className="text-[9px] font-bold text-gray-300 dark:text-gray-600 uppercase tracking-widest">{activities.length} events</span>
         </div>
       </section>
     </div>

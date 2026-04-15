@@ -725,6 +725,21 @@ const EmployeeOrders = () => {
               </div>
               <div className="col-span-2 sm:col-span-1">
                 <select
+                  value={newOrder.orderStatus}
+                  onChange={e => setNewOrder({ ...newOrder, orderStatus: e.target.value })}
+                  className={`w-full border-2 p-3.5 rounded-xl font-medium transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-blue-500/20 ${isDarkMode
+                      ? "bg-slate-800/50 border-slate-700 focus:border-blue-500 text-white"
+                      : "bg-slate-50 border-slate-200 focus:border-blue-500 focus:bg-white text-slate-800"
+                    }`}
+                >
+                  <option value="Pending">Pending</option>
+                  <option value="Processing">Processing</option>
+                  <option value="Completed">Completed</option>
+                  <option value="Cancelled">Cancelled</option>
+                </select>
+              </div>
+              <div className="col-span-2 sm:col-span-1">
+                <select
                   value={newOrder.paymentMethod}
                   onChange={e => setNewOrder({ ...newOrder, paymentMethod: e.target.value })}
                   className={`w-full border-2 p-3.5 rounded-xl font-medium transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-blue-500/20 ${isDarkMode
@@ -848,6 +863,21 @@ const EmployeeOrders = () => {
                       : "bg-slate-50 border-slate-200 focus:border-blue-500 focus:bg-white text-slate-800 placeholder-slate-400"
                     }`}
                 />
+              </div>
+              <div className="col-span-2 sm:col-span-1">
+                <select
+                  value={editingOrder.orderStatus}
+                  onChange={e => setEditingOrder({ ...editingOrder, orderStatus: e.target.value })}
+                  className={`w-full border-2 p-3.5 rounded-xl font-medium transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-blue-500/20 ${isDarkMode
+                      ? "bg-slate-800/50 border-slate-700 focus:border-blue-500 text-white"
+                      : "bg-slate-50 border-slate-200 focus:border-blue-500 focus:bg-white text-slate-800"
+                    }`}
+                >
+                  <option value="Pending">Pending</option>
+                  <option value="Processing">Processing</option>
+                  <option value="Completed">Completed</option>
+                  <option value="Cancelled">Cancelled</option>
+                </select>
               </div>
               <div className="col-span-2 sm:col-span-1">
                 <select

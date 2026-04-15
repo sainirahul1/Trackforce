@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Store, Building2, Briefcase, ShieldCheck, ChevronRight } from 'lucide-react';
+import { Store, Building2, Briefcase, ShieldCheck, Activity, Target } from 'lucide-react';
 import StoreVisitForm from './StoreVisitForm';
 import SupplierVisitForm from './SupplierVisitForm';
 import CollabVisitForm from './CollabVisitForm';
@@ -11,41 +11,37 @@ const tabs = [
     id: 'store',
     label: 'Store Visit',
     icon: Store,
-    accent: 'indigo',
-    activeBg: 'bg-indigo-600',
-    activeText: 'text-indigo-600',
-    iconBg: 'bg-indigo-50 dark:bg-indigo-500/10',
-    dot: 'bg-indigo-500',
+    gradient: 'from-indigo-600 to-violet-600',
+    shadow: 'shadow-indigo-500/20',
+    iconColor: 'text-indigo-600 dark:text-indigo-400',
+    bgColor: 'bg-indigo-50 dark:bg-indigo-500/10',
   },
   {
     id: 'supplier',
-    label: 'Supplier Visit',
+    label: 'Supplier',
     icon: Building2,
-    accent: 'blue',
-    activeBg: 'bg-blue-600',
-    activeText: 'text-blue-600',
-    iconBg: 'bg-blue-50 dark:bg-blue-500/10',
-    dot: 'bg-blue-500',
+    gradient: 'from-blue-600 to-cyan-600',
+    shadow: 'shadow-blue-500/20',
+    iconColor: 'text-blue-600 dark:text-blue-400',
+    bgColor: 'bg-blue-50 dark:bg-blue-500/10',
   },
   {
     id: 'collab',
-    label: 'Business Collab',
+    label: 'Collab',
     icon: Briefcase,
-    accent: 'violet',
-    activeBg: 'bg-violet-600',
-    activeText: 'text-violet-600',
-    iconBg: 'bg-violet-50 dark:bg-violet-500/10',
-    dot: 'bg-violet-500',
+    gradient: 'from-violet-600 to-fuchsia-600',
+    shadow: 'shadow-violet-500/20',
+    iconColor: 'text-violet-600 dark:text-violet-400',
+    bgColor: 'bg-violet-50 dark:bg-violet-500/10',
   },
   {
     id: 'app',
-    label: 'App Installs',
+    label: 'Installs',
     icon: ShieldCheck,
-    accent: 'emerald',
-    activeBg: 'bg-emerald-600',
-    activeText: 'text-emerald-600',
-    iconBg: 'bg-emerald-50 dark:bg-emerald-500/10',
-    dot: 'bg-emerald-500',
+    gradient: 'from-emerald-500 to-teal-500',
+    shadow: 'shadow-emerald-500/20',
+    iconColor: 'text-emerald-600 dark:text-emerald-400',
+    bgColor: 'bg-emerald-50 dark:bg-emerald-500/10',
   },
 ];
 
@@ -71,64 +67,65 @@ const LogVisit = () => {
   const activeTabData = tabs.find(t => t.id === activeTab);
 
   return (
-    <div className="max-w-5xl mx-auto py-6 px-4 sm:px-6 lg:px-8 min-h-screen">
-
-      {/* Header */}
-      <div className="mb-6 animate-in fade-in slide-in-from-top-4 duration-500">
-        <h1 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight leading-tight">
-          Field Activity Log
-        </h1>
-        <p className="text-xs text-gray-400 font-bold uppercase tracking-[0.2em] mt-1">
-          Select Mission Type
-        </p>
-      </div>
-
-      {/* Big Tab Navigation — High visibility segmented control */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 mb-8 p-1.5 bg-gray-50 dark:bg-gray-900/50 rounded-[2rem] border border-gray-100 dark:border-gray-800 shadow-inner">
-        {tabs.map((tab) => {
-          const isActive = activeTab === tab.id;
-          const Icon = tab.icon;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => handleTabChange(tab.id)}
-              className={`flex flex-col items-center justify-center gap-2 px-3 py-5 rounded-[1.6rem] transition-all duration-300 relative overflow-hidden group
-                ${isActive
-                  ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-xl border border-gray-100 dark:border-gray-700'
-                  : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-white/50 dark:hover:bg-gray-800/30'
-                }`}
-            >
-              <div className={`p-2.5 rounded-2xl transition-all duration-300 ${isActive ? tab.iconBg : 'bg-transparent group-hover:bg-gray-200/50 dark:group-hover:bg-gray-700/50'}`}>
-                <Icon size={24} className={isActive ? tab.activeText : 'text-gray-400'} />
-              </div>
-              <span className={`text-[11px] font-black uppercase tracking-tight text-center leading-none ${isActive ? 'text-gray-900 dark:text-white' : ''}`}>
-                {tab.label}
-              </span>
-              
-              {isActive && (
-                <div className={`absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-1 rounded-t-full ${tab.accent === 'indigo' ? 'bg-indigo-600' : tab.accent === 'blue' ? 'bg-blue-600' : tab.accent === 'violet' ? 'bg-violet-600' : 'bg-emerald-600'}`} />
-              )}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Active Selection Strip — Enhanced Readability */}
-      <div className={`flex items-center gap-4 px-6 py-5 rounded-[2rem] mb-8 border transition-all duration-500 ${activeTabData?.iconBg} border-gray-200/50 dark:border-gray-800 backdrop-blur-sm shadow-sm`}>
-        <div className={`w-2.5 h-2.5 rounded-full ${activeTabData?.dot} animate-pulse shadow-sm`} />
-        <div className="flex-1">
-          <p className={`text-xs font-bold uppercase tracking-[0.15em] mb-1 ${activeTabData?.activeText}`}>
-            Now Logging: {activeTabData?.label}
-          </p>
-          <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 leading-tight">
-            Mission focused interface for {activeTabData?.label.toLowerCase()} reports.
-          </p>
+    <div className="max-w-4xl mx-auto pb-24 animate-in fade-in duration-500">
+      
+      {/* Premium Header */}
+      <div className="relative bg-white dark:bg-gray-900 rounded-b-[2.5rem] p-8 sm:p-10 border-b border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden mb-8">
+        <div className={`absolute top-0 right-0 w-64 h-64 rounded-full blur-3xl pointer-events-none -mr-16 -mt-16 opacity-20 bg-gradient-to-br ${activeTabData?.gradient}`} />
+        
+        <div className="flex items-center gap-5 relative z-10">
+          <div className={`w-14 h-14 rounded-[1.25rem] flex items-center justify-center bg-white dark:bg-gray-800 shadow-lg ${activeTabData?.shadow}`}>
+            <Target size={28} className={activeTabData?.iconColor} />
+          </div>
+          <div>
+            <h1 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">Mission Log</h1>
+            <p className="text-gray-500 font-medium mt-1 flex items-center gap-2">
+              <Activity size={14} /> Record your field activity
+            </p>
+          </div>
         </div>
       </div>
 
-      {/* Form Container */}
-      <div key={activeTab} className="animate-in fade-in slide-in-from-bottom-2 duration-500">
-        {FORMS[activeTab]}
+      <div className="px-4 sm:px-6">
+        {/* Mission Categories */}
+        <div className="bg-white dark:bg-gray-900 rounded-[2rem] p-2 border border-gray-100 dark:border-gray-800 shadow-sm mb-8 flex flex-wrap lg:flex-nowrap gap-2">
+          {tabs.map((tab) => {
+            const isActive = activeTab === tab.id;
+            const Icon = tab.icon;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => handleTabChange(tab.id)}
+                className={`flex-1 min-w-[120px] flex items-center justify-center gap-3 py-4 sm:py-5 px-2 rounded-[1.5rem] transition-all duration-300 relative group
+                  ${isActive 
+                    ? `bg-gray-50 dark:bg-gray-800/50 shadow-inner` 
+                    : 'hover:bg-gray-50 dark:hover:bg-gray-800/30 text-gray-400'}`}
+              >
+                <div className={`p-2.5 rounded-xl transition-all duration-300 
+                  ${isActive ? `bg-white dark:bg-gray-700 shadow-md ${tab.iconColor} ${tab.shadow}` : 'bg-transparent group-hover:bg-gray-100 dark:group-hover:bg-gray-800 group-hover:text-gray-700 dark:group-hover:text-gray-300'}`}>
+                  <Icon size={20} className={isActive ? 'transform scale-110' : ''} />
+                </div>
+                <span className={`text-xs sm:text-sm font-bold uppercase tracking-wide
+                  ${isActive ? 'text-gray-900 dark:text-white' : ''}`}>
+                  {tab.label}
+                </span>
+
+                {/* Active Indicator Line */}
+                {isActive && (
+                  <div className={`absolute bottom-0 left-1/2 -translate-x-1/2 w-12 h-1 rounded-t-full bg-gradient-to-r ${tab.gradient}`} />
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Selected Form Area */}
+        <div className="relative">
+          <div className="absolute -inset-4 bg-gradient-to-b from-gray-50/50 to-transparent dark:from-gray-800/10 pointer-events-none rounded-[3rem]" />
+          <div key={activeTab} className="relative z-10 animate-in slide-in-from-right-4 fade-in duration-500">
+            {FORMS[activeTab]}
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -20,17 +20,17 @@ const EmployeeVisits = ({ defaultFilter = 'All', pageTitle = 'Visit History' }) 
     return data.map(v => {
       const visitDate = new Date(v.timestamp || v.createdAt);
       const isValidDate = !isNaN(visitDate.getTime());
-      
+
       let statusLabel = v.status ? v.status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'Unknown';
       if (v.status === 'not_interested') statusLabel = 'Rejected';
-      
+
       return {
         ...v,
         store: v.storeName,
         time: isValidDate ? visitDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '---',
         date: isValidDate ? visitDate.toISOString().split('T')[0] : '---',
         address: v.address || 'Location data not available',
-        distance: v.distance || '---', 
+        distance: v.distance || '---',
         eta: v.eta || '---',
         status: statusLabel,
         reviewStatus: v.reviewStatus || 'pending',
@@ -79,11 +79,11 @@ const EmployeeVisits = ({ defaultFilter = 'All', pageTitle = 'Visit History' }) 
       setSelectedVisit(visit); // Open modal with partial data first
       // Fetch full details with photos and checklist
       const fullVisit = await getVisitById(visit._id);
-      
+
       // Transform the data to match the UI expectation
       const visitDate = new Date(fullVisit.timestamp || fullVisit.createdAt);
       const isValidDate = !isNaN(visitDate.getTime());
-      
+
       let statusLabel = fullVisit.status ? fullVisit.status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'Unknown';
       if (fullVisit.status === 'not_interested') statusLabel = 'Rejected';
 
@@ -163,237 +163,237 @@ const EmployeeVisits = ({ defaultFilter = 'All', pageTitle = 'Visit History' }) 
   return (
     <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 h-full">
       <div className="space-y-6 sm:space-y-8 animate-in duration-500">
-      {/* Page Heading */}
-      <div className="px-2 mb-5">
-        <h1 className="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white tracking-tight">{pageTitle}</h1>
-      </div>
+        {/* Page Heading */}
+        <div className="px-2 mb-5">
+          <h1 className="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white tracking-tight">{pageTitle}</h1>
+        </div>
 
-      {/* Filters & Results Count Section */}
-      <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 bg-white dark:bg-gray-900 p-4 sm:p-5 rounded-[2rem] border border-gray-100 dark:border-gray-800 shadow-sm mb-6 sm:mb-8">
-        <div className="flex items-center gap-3 overflow-x-auto custom-scrollbar pb-2 sm:pb-0 w-full xl:w-auto pr-2 sm:pr-0">
-          {statuses.map(status => (
-            <button
-              key={status}
-              onClick={() => setFilterStatus(status)}
-              className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all duration-300 ${filterStatus === status
+        {/* Filters & Results Count Section */}
+        <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 bg-white dark:bg-gray-900 p-4 sm:p-5 rounded-[2rem] border border-gray-100 dark:border-gray-800 shadow-sm mb-6 sm:mb-8">
+          <div className="flex items-center gap-3 overflow-x-auto custom-scrollbar pb-2 sm:pb-0 w-full xl:w-auto pr-2 sm:pr-0">
+            {statuses.map(status => (
+              <button
+                key={status}
+                onClick={() => setFilterStatus(status)}
+                className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all duration-300 ${filterStatus === status
                   ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200 dark:shadow-none'
                   : 'bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-                }`}
-            >
-              {status}
-            </button>
-          ))}
+                  }`}
+              >
+                {status}
+              </button>
+            ))}
 
-          <div className="flex items-center shrink-0 ml-2 gap-2">
-            {filterDate && (
-              <div className="flex items-center gap-1.5 text-indigo-700 dark:text-indigo-400 px-3 py-2 rounded-xl text-xs font-bold bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/30 shadow-sm animate-in fade-in">
-                {filterDate.split('-').reverse().join('/')}
-                <button onClick={() => setFilterDate('')} className="hover:bg-indigo-100 dark:hover:bg-indigo-500/30 rounded-md transition-colors p-0.5 ml-1">
-                  <X size={14} />
-                </button>
-              </div>
-            )}
-            <button
-              onClick={() => dateInputRef.current?.showPicker()}
-              className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors shadow-sm border border-gray-200 dark:border-gray-700 shrink-0"
-            >
-              <Calendar size={18} />
-              <input
-                ref={dateInputRef}
-                type="date"
-                value={filterDate}
-                onChange={(e) => setFilterDate(e.target.value)}
-                className="absolute w-[1px] h-[1px] opacity-0 -z-10 pointer-events-none"
-                title="Select Date"
-              />
-            </button>
+            <div className="flex items-center shrink-0 ml-2 gap-2">
+              {filterDate && (
+                <div className="flex items-center gap-1.5 text-indigo-700 dark:text-indigo-400 px-3 py-2 rounded-xl text-xs font-bold bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/30 shadow-sm animate-in fade-in">
+                  {filterDate.split('-').reverse().join('/')}
+                  <button onClick={() => setFilterDate('')} className="hover:bg-indigo-100 dark:hover:bg-indigo-500/30 rounded-md transition-colors p-0.5 ml-1">
+                    <X size={14} />
+                  </button>
+                </div>
+              )}
+              <button
+                onClick={() => dateInputRef.current?.showPicker()}
+                className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors shadow-sm border border-gray-200 dark:border-gray-700 shrink-0"
+              >
+                <Calendar size={18} />
+                <input
+                  ref={dateInputRef}
+                  type="date"
+                  value={filterDate}
+                  onChange={(e) => setFilterDate(e.target.value)}
+                  className="absolute w-[1px] h-[1px] opacity-0 -z-10 pointer-events-none"
+                  title="Select Date"
+                />
+              </button>
+            </div>
+          </div>
+
+          {/* Results Count (Right side) */}
+          <div className="flex items-center gap-3 bg-indigo-50 dark:bg-indigo-500/10 px-4 py-2.5 rounded-xl border border-indigo-100 dark:border-indigo-500/20 shadow-sm shrink-0 ml-auto xl:ml-0">
+            <span className="relative flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-indigo-500"></span>
+            </span>
+            <span className="text-xs font-black text-indigo-700 dark:text-indigo-400 uppercase tracking-widest">{filteredVisits.length} Locations</span>
           </div>
         </div>
 
-        {/* Results Count (Right side) */}
-        <div className="flex items-center gap-3 bg-indigo-50 dark:bg-indigo-500/10 px-4 py-2.5 rounded-xl border border-indigo-100 dark:border-indigo-500/20 shadow-sm shrink-0 ml-auto xl:ml-0">
-          <span className="relative flex h-2.5 w-2.5">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-indigo-500"></span>
-          </span>
-          <span className="text-xs font-black text-indigo-700 dark:text-indigo-400 uppercase tracking-widest">{filteredVisits.length} Locations</span>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
-        {/* Visits List */}
-        <div className="lg:col-span-2 space-y-4">
-          <div className="space-y-4">
-            {loading ? (
-              <div className="flex flex-col items-center justify-center py-20 bg-white dark:bg-gray-900 rounded-[2rem] border border-gray-100 dark:border-gray-800 shadow-sm animate-pulse">
-                <div className="w-12 h-12 rounded-full border-4 border-indigo-100 dark:border-indigo-900/30 border-t-indigo-600 animate-spin mb-4" />
-                <p className="text-sm font-black text-gray-400 uppercase tracking-widest">Infiltrating Database...</p>
-              </div>
-            ) : filteredVisits.length > 0 ? filteredVisits.map((visit, idx) => {
-              const styles = getStatusStyles(visit.status);
-              return (
-                <div
-                  key={visit._id || idx}
-                  onClick={() => handleVisitClick(visit)}
-                  className={`bg-white dark:bg-gray-900 p-4 sm:p-5 rounded-[2rem] border ${styles.border} shadow-sm hover:shadow-md hover:border-indigo-200 dark:hover:border-indigo-500/30 transition-all duration-300 group relative overflow-hidden cursor-pointer`}
-                >
-                  <div className="flex flex-col gap-3">
-                    {/* Top Row: Store Info & Status */}
-                    <div className="flex justify-between items-start gap-4">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          {visit.visitType === 'supplier' && (
-                            <span className="px-2 py-0.5 rounded-md bg-sky-50 dark:bg-sky-500/10 text-sky-600 dark:text-sky-400 text-[8px] font-black uppercase tracking-tighter border border-sky-100 dark:border-sky-500/20 flex items-center gap-1">
-                              <Building2 size={8} /> Supplier
-                            </span>
-                          )}
-                          {visit.visitType === 'collab' && (
-                            <span className="px-2 py-0.5 rounded-md bg-violet-50 dark:bg-violet-500/10 text-violet-600 dark:text-violet-400 text-[8px] font-black uppercase tracking-tighter border border-violet-100 dark:border-violet-500/20 flex items-center gap-1">
-                              <Briefcase size={8} /> Collab
-                            </span>
-                          )}
-                          {visit.visitType === 'app' && (
-                            <span className="px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[8px] font-black uppercase tracking-tighter border border-emerald-100 dark:border-emerald-500/20 flex items-center gap-1">
-                              <ShieldCheck size={8} /> App Install
-                            </span>
-                          )}
-                          {!visit.visitType || visit.visitType === 'store' ? (
-                            <span className="px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-[8px] font-black uppercase tracking-tighter border border-indigo-100 dark:border-indigo-500/20 flex items-center gap-1">
-                              <Store size={8} /> Store Visit
-                            </span>
-                          ) : null}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
+          {/* Visits List */}
+          <div className="lg:col-span-2 space-y-4">
+            <div className="space-y-4">
+              {loading ? (
+                <div className="flex flex-col items-center justify-center py-20 bg-white dark:bg-gray-900 rounded-[2rem] border border-gray-100 dark:border-gray-800 shadow-sm animate-pulse">
+                  <div className="w-12 h-12 rounded-full border-4 border-indigo-100 dark:border-indigo-900/30 border-t-indigo-600 animate-spin mb-4" />
+                  <p className="text-sm font-black text-gray-400 uppercase tracking-widest">Infiltrating Database...</p>
+                </div>
+              ) : filteredVisits.length > 0 ? filteredVisits.map((visit, idx) => {
+                const styles = getStatusStyles(visit.status);
+                return (
+                  <div
+                    key={visit._id || idx}
+                    onClick={() => handleVisitClick(visit)}
+                    className={`bg-white dark:bg-gray-900 p-4 sm:p-5 rounded-[2rem] border ${styles.border} shadow-sm hover:shadow-md hover:border-indigo-200 dark:hover:border-indigo-500/30 transition-all duration-300 group relative overflow-hidden cursor-pointer`}
+                  >
+                    <div className="flex flex-col gap-3">
+                      {/* Top Row: Store Info & Status */}
+                      <div className="flex justify-between items-start gap-4">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            {visit.visitType === 'supplier' && (
+                              <span className="px-2 py-0.5 rounded-md bg-sky-50 dark:bg-sky-500/10 text-sky-600 dark:text-sky-400 text-[8px] font-black uppercase tracking-tighter border border-sky-100 dark:border-sky-500/20 flex items-center gap-1">
+                                <Building2 size={8} /> Supplier
+                              </span>
+                            )}
+                            {visit.visitType === 'collab' && (
+                              <span className="px-2 py-0.5 rounded-md bg-violet-50 dark:bg-violet-500/10 text-violet-600 dark:text-violet-400 text-[8px] font-black uppercase tracking-tighter border border-violet-100 dark:border-violet-500/20 flex items-center gap-1">
+                                <Briefcase size={8} /> Collab
+                              </span>
+                            )}
+                            {visit.visitType === 'app' && (
+                              <span className="px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[8px] font-black uppercase tracking-tighter border border-emerald-100 dark:border-emerald-500/20 flex items-center gap-1">
+                                <ShieldCheck size={8} /> App Install
+                              </span>
+                            )}
+                            {!visit.visitType || visit.visitType === 'store' ? (
+                              <span className="px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-[8px] font-black uppercase tracking-tighter border border-indigo-100 dark:border-indigo-500/20 flex items-center gap-1">
+                                <Store size={8} /> Store Visit
+                              </span>
+                            ) : null}
+                          </div>
+                          <h3 className="font-bold text-gray-900 dark:text-white text-base sm:text-lg truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                            {idx + 1}. {visit.store}
+                          </h3>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1.5 mt-1">
+                            <MapPin size={12} className="shrink-0 text-gray-400" />
+                            <span className="truncate">{visit.address}</span>
+                          </p>
                         </div>
-                        <h3 className="font-bold text-gray-900 dark:text-white text-base sm:text-lg truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-                          {idx + 1}. {visit.store}
-                        </h3>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1.5 mt-1">
-                          <MapPin size={12} className="shrink-0 text-gray-400" />
-                          <span className="truncate">{visit.address}</span>
-                        </p>
+                        <div className="flex flex-col items-end gap-2 shrink-0">
+                          <span className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg ${styles.badge} ${styles.border} border`}>
+                            {visit.status}
+                          </span>
+                          <div className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-tighter border ${visit.reviewStatus === 'accepted' ? 'text-emerald-600 bg-emerald-50 border-emerald-100 dark:bg-emerald-500/10 dark:border-emerald-500/20' :
+                            visit.reviewStatus === 'rejected' ? 'text-rose-600 bg-rose-50 border-rose-100 dark:bg-rose-500/10 dark:border-rose-500/20' :
+                              'text-amber-600 bg-amber-50 border-amber-100 dark:bg-amber-500/10 dark:border-amber-500/20'
+                            }`}>
+                            {visit.reviewStatus === 'pending' ? 'Pending Review' : visit.reviewStatus === 'accepted' ? 'Accepted' : 'Rejected'}
+                          </div>
+                        </div>
                       </div>
-                      <div className="flex flex-col items-end gap-2 shrink-0">
-                        <span className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg ${styles.badge} ${styles.border} border`}>
-                          {visit.status}
-                        </span>
-                        <div className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-tighter border ${visit.reviewStatus === 'accepted' ? 'text-emerald-600 bg-emerald-50 border-emerald-100 dark:bg-emerald-500/10 dark:border-emerald-500/20' :
-                          visit.reviewStatus === 'rejected' ? 'text-rose-600 bg-rose-50 border-rose-100 dark:bg-rose-500/10 dark:border-rose-500/20' :
-                            'text-amber-600 bg-amber-50 border-amber-100 dark:bg-amber-500/10 dark:border-amber-500/20'
-                          }`}>
-                          {visit.reviewStatus === 'pending' ? 'Pending Review' : visit.reviewStatus === 'accepted' ? 'Accepted' : 'Rejected'}
+
+                      {/* Meta stats: Assets count etc */}
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-1.5 px-2 py-1 bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-lg text-gray-400">
+                          <Camera size={11} />
+                          <span className="text-[9px] font-black uppercase tracking-widest">{(visit.photos || []).length} Proofs</span>
+                        </div>
+                      </div>
+
+                      {/* Bottom Row: Details & Actions */}
+                      <div className="flex flex-wrap items-end justify-between gap-3 mt-1">
+                        <div className="flex items-center gap-2">
+                          <span className="flex items-center gap-1.5 text-[11px] font-bold text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-800 px-2 py-1.5 rounded-lg">
+                            <Clock size={12} className="text-indigo-500" />
+                            {visit.time}
+                          </span>
+                          <span className="flex items-center gap-1.5 text-[11px] font-bold text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-800 px-2 py-1.5 rounded-lg">
+                            <Map size={12} className="text-emerald-500" />
+                            {visit.distance}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <button onClick={(e) => { e.stopPropagation(); window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(visit.address)}`, '_blank'); }} className="flex items-center gap-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-lg text-[11px] font-bold transition-colors">
+                            <Navigation size={12} /> Directions
+                          </button>
+                          <button onClick={(e) => { e.stopPropagation(); /* phone logic */ }} className="flex items-center gap-1.5 bg-green-50 hover:bg-green-100 text-green-700 px-3 py-1.5 rounded-lg text-[11px] font-bold transition-colors">
+                            <Phone size={12} /> Call Store
+                          </button>
                         </div>
                       </div>
                     </div>
+                  </div>
+                );
+              }) : (
+                <div className="text-center py-12 bg-white dark:bg-gray-900 rounded-[2rem] border border-gray-100 dark:border-gray-800 shadow-sm">
+                  <div className="p-4 bg-gray-50 dark:bg-gray-800/80 rounded-full w-max mx-auto mb-4">
+                    <Calendar size={24} className="text-gray-400" />
+                  </div>
+                  <p className="text-gray-500 font-bold mb-1">No visits found</p>
+                  <p className="text-sm text-gray-400">Try adjusting your date or status filters.</p>
+                </div>
+              )}
+            </div>
+          </div>
 
-                    {/* Meta stats: Assets count etc */}
+          {/* Sidebar */}
+          <div className="space-y-6 sm:space-y-8 mt-4 lg:mt-0">
+            <div className="bg-white dark:bg-gray-900 p-6 sm:p-8 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 shadow-sm relative overflow-hidden">
+              <h3 className="font-black text-gray-900 dark:text-white mb-6 text-xl flex items-center gap-2.5">
+                <div className="p-2 bg-indigo-50 dark:bg-indigo-500/10 rounded-xl">
+                  <MapPin className="text-indigo-500" size={20} />
+                </div>
+                Today's Summary
+              </h3>
+
+              <div className="space-y-3">
+                {/* Total Visits Card */}
+                <div className="flex gap-4 p-3 sm:p-4 rounded-2xl bg-indigo-50/50 dark:bg-indigo-500/5 group border border-indigo-100/50 dark:border-indigo-500/10">
+                  <div className="flex w-full justify-between items-center">
                     <div className="flex items-center gap-3">
-                      <div className="flex items-center gap-1.5 px-2 py-1 bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-lg text-gray-400">
-                        <Camera size={11} />
-                        <span className="text-[9px] font-black uppercase tracking-widest">{(visit.photos || []).length} Proofs</span>
-                      </div>
+                      <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
+                      <span className="text-sm text-indigo-700 dark:text-indigo-300 font-black uppercase tracking-widest">Total Visits</span>
                     </div>
+                    <span className="font-black text-indigo-700 dark:text-indigo-400 text-lg">{visits.length}</span>
+                  </div>
+                </div>
 
-                    {/* Bottom Row: Details & Actions */}
-                    <div className="flex flex-wrap items-end justify-between gap-3 mt-1">
-                      <div className="flex items-center gap-2">
-                        <span className="flex items-center gap-1.5 text-[11px] font-bold text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-800 px-2 py-1.5 rounded-lg">
-                          <Clock size={12} className="text-indigo-500" />
-                          {visit.time}
-                        </span>
-                        <span className="flex items-center gap-1.5 text-[11px] font-bold text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-800 px-2 py-1.5 rounded-lg">
-                          <Map size={12} className="text-emerald-500" />
-                          {visit.distance}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <button onClick={(e) => { e.stopPropagation(); window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(visit.address)}`, '_blank'); }} className="flex items-center gap-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-lg text-[11px] font-bold transition-colors">
-                          <Navigation size={12} /> Directions
-                        </button>
-                        <button onClick={(e) => { e.stopPropagation(); /* phone logic */ }} className="flex items-center gap-1.5 bg-green-50 hover:bg-green-100 text-green-700 px-3 py-1.5 rounded-lg text-[11px] font-bold transition-colors">
-                          <Phone size={12} /> Call Store
-                        </button>
-                      </div>
+                <div className="flex gap-4 p-3 sm:p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/50 transition-colors duration-300 group border border-transparent hover:border-emerald-100 dark:hover:border-emerald-500/20">
+                  <div className="flex w-full justify-between items-center">
+                    <div className="flex items-center gap-3">
+                      <CheckCircle2 size={16} className="text-emerald-500 shrink-0" />
+                      <span className="text-sm text-gray-600 dark:text-gray-300 font-bold">Completed</span>
                     </div>
+                    <span className="font-black text-emerald-600 dark:text-emerald-400 text-base">{statusCounts['Completed']}</span>
                   </div>
                 </div>
-              );
-            }) : (
-              <div className="text-center py-12 bg-white dark:bg-gray-900 rounded-[2rem] border border-gray-100 dark:border-gray-800 shadow-sm">
-                <div className="p-4 bg-gray-50 dark:bg-gray-800/80 rounded-full w-max mx-auto mb-4">
-                  <Calendar size={24} className="text-gray-400" />
-                </div>
-                <p className="text-gray-500 font-bold mb-1">No visits found</p>
-                <p className="text-sm text-gray-400">Try adjusting your date or status filters.</p>
-              </div>
-            )}
-          </div>
-        </div>
 
-        {/* Sidebar */}
-        <div className="space-y-6 sm:space-y-8 mt-4 lg:mt-0">
-          <div className="bg-white dark:bg-gray-900 p-6 sm:p-8 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 shadow-sm relative overflow-hidden">
-            <h3 className="font-black text-gray-900 dark:text-white mb-6 text-xl flex items-center gap-2.5">
-              <div className="p-2 bg-indigo-50 dark:bg-indigo-500/10 rounded-xl">
-                <MapPin className="text-indigo-500" size={20} />
-              </div>
-              Today's Summary
-            </h3>
-
-            <div className="space-y-3">
-              {/* Total Visits Card */}
-              <div className="flex gap-4 p-3 sm:p-4 rounded-2xl bg-indigo-50/50 dark:bg-indigo-500/5 group border border-indigo-100/50 dark:border-indigo-500/10">
-                <div className="flex w-full justify-between items-center">
-                  <div className="flex items-center gap-3">
-                    <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
-                    <span className="text-sm text-indigo-700 dark:text-indigo-300 font-black uppercase tracking-widest">Total Visits</span>
+                <div className="flex gap-4 p-3 sm:p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/50 transition-colors duration-300 group border border-transparent hover:border-blue-100 dark:hover:border-blue-500/20">
+                  <div className="flex w-full justify-between items-center">
+                    <div className="flex items-center gap-3">
+                      <Navigation size={16} className="text-blue-500 shrink-0" />
+                      <span className="text-sm text-gray-600 dark:text-gray-300 font-bold">In Progress</span>
+                    </div>
+                    <span className="font-black text-blue-600 dark:text-blue-400 text-base">{statusCounts['In Progress']}</span>
                   </div>
-                  <span className="font-black text-indigo-700 dark:text-indigo-400 text-lg">{visits.length}</span>
                 </div>
-              </div>
 
-              <div className="flex gap-4 p-3 sm:p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/50 transition-colors duration-300 group border border-transparent hover:border-emerald-100 dark:hover:border-emerald-500/20">
-                <div className="flex w-full justify-between items-center">
-                  <div className="flex items-center gap-3">
-                    <CheckCircle2 size={16} className="text-emerald-500 shrink-0" />
-                    <span className="text-sm text-gray-600 dark:text-gray-300 font-bold">Completed</span>
+                <div className="flex gap-4 p-3 sm:p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/50 transition-colors duration-300 group border border-transparent hover:border-rose-100 dark:hover:border-rose-500/20">
+                  <div className="flex w-full justify-between items-center">
+                    <div className="flex items-center gap-3">
+                      <X size={16} className="text-rose-500 shrink-0" />
+                      <span className="text-sm text-gray-600 dark:text-gray-300 font-bold">Rejected</span>
+                    </div>
+                    <span className="font-black text-rose-600 dark:text-rose-400 text-base">{statusCounts['Rejected']}</span>
                   </div>
-                  <span className="font-black text-emerald-600 dark:text-emerald-400 text-base">{statusCounts['Completed']}</span>
                 </div>
-              </div>
 
-              <div className="flex gap-4 p-3 sm:p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/50 transition-colors duration-300 group border border-transparent hover:border-blue-100 dark:hover:border-blue-500/20">
-                <div className="flex w-full justify-between items-center">
-                  <div className="flex items-center gap-3">
-                    <Navigation size={16} className="text-blue-500 shrink-0" />
-                    <span className="text-sm text-gray-600 dark:text-gray-300 font-bold">In Progress</span>
+                <div className="flex gap-4 p-3 sm:p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/50 transition-colors duration-300 group border border-transparent hover:border-amber-100 dark:hover:border-amber-500/20">
+                  <div className="flex w-full justify-between items-center">
+                    <div className="flex items-center gap-3">
+                      <AlertCircle size={16} className="text-amber-500 shrink-0" />
+                      <span className="text-sm text-gray-600 dark:text-gray-300 font-bold">Follow Up</span>
+                    </div>
+                    <span className="font-black text-amber-600 dark:text-amber-400 text-base">{statusCounts['Follow Up']}</span>
                   </div>
-                  <span className="font-black text-blue-600 dark:text-blue-400 text-base">{statusCounts['In Progress']}</span>
-                </div>
-              </div>
-
-              <div className="flex gap-4 p-3 sm:p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/50 transition-colors duration-300 group border border-transparent hover:border-rose-100 dark:hover:border-rose-500/20">
-                <div className="flex w-full justify-between items-center">
-                  <div className="flex items-center gap-3">
-                    <X size={16} className="text-rose-500 shrink-0" />
-                    <span className="text-sm text-gray-600 dark:text-gray-300 font-bold">Rejected</span>
-                  </div>
-                  <span className="font-black text-rose-600 dark:text-rose-400 text-base">{statusCounts['Rejected']}</span>
-                </div>
-              </div>
-
-              <div className="flex gap-4 p-3 sm:p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/50 transition-colors duration-300 group border border-transparent hover:border-amber-100 dark:hover:border-amber-500/20">
-                <div className="flex w-full justify-between items-center">
-                  <div className="flex items-center gap-3">
-                    <AlertCircle size={16} className="text-amber-500 shrink-0" />
-                    <span className="text-sm text-gray-600 dark:text-gray-300 font-bold">Follow Up</span>
-                  </div>
-                  <span className="font-black text-amber-600 dark:text-amber-400 text-base">{statusCounts['Follow Up']}</span>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
       </div>
 
@@ -420,7 +420,7 @@ const EmployeeVisits = ({ defaultFilter = 'All', pageTitle = 'Visit History' }) 
               </button>
 
               <div className="flex flex-col gap-4">
-                
+
                 {/* 1. Header Section: Title & Address */}
                 <div className="flex flex-col gap-1 pr-10">
                   <div className="flex flex-wrap items-center gap-3">
@@ -449,7 +449,7 @@ const EmployeeVisits = ({ defaultFilter = 'All', pageTitle = 'Visit History' }) 
 
                 {/* 2. Core Details & Actions Block */}
                 <div className="flex flex-col gap-3">
-                  
+
                   {/* Time, Distance, and Actions Row */}
                   <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-y-3 w-full">
                     {/* Left side: Time & Distance */}
@@ -514,7 +514,7 @@ const EmployeeVisits = ({ defaultFilter = 'All', pageTitle = 'Visit History' }) 
                     <FileText size={14} className="text-indigo-500" />
                     Mission Details
                   </h4>
-                  
+
                   {selectedVisit.taskTitle && (
                     <div className="flex flex-col gap-1">
                       <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Task Title</p>
@@ -586,7 +586,7 @@ const EmployeeVisits = ({ defaultFilter = 'All', pageTitle = 'Visit History' }) 
                     "{selectedVisit.feedback}"
                   </p>
                 </div>
-                
+
                 {selectedVisit.reviewStatus === 'rejected' && selectedVisit.rejectionReason && (
                   <div className="bg-rose-50 dark:bg-rose-500/5 rounded-2xl p-5 border border-rose-100 dark:border-rose-500/20">
                     <h4 className="text-[10px] font-black uppercase tracking-widest text-rose-500 mb-3 flex items-center gap-2">

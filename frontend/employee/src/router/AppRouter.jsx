@@ -14,6 +14,7 @@ import EmployeeOrders from '../pages/Orders';
 import EmployeeActivity from '../pages/Activity';
 import EmployeeTasks from '../pages/Tasks';
 import EmployeeIssues from '../pages/Issues';
+import EmployeeAnalytics from '../pages/Analytics';
 import NotificationsPage from '../pages/shared/NotificationsPage';
 import LogVisit from '../pages/LogVisit';
 
@@ -24,8 +25,8 @@ const AppRouter = () => (
     <Route path="/login" element={<LoginPage portal="EMPLOYEE" />} />
     <Route path="/signup" element={<SignupPage />} />
 
-    <Route 
-      path="/employee/*" 
+    <Route
+      path="/employee/*"
       element={
         <ProtectedRoute role="employee">
           <EmployeeLayout />
@@ -39,6 +40,7 @@ const AppRouter = () => (
       <Route path="orders" element={<EmployeeOrders />} />
       <Route path="follow-ups" element={<EmployeeVisits key="followups" defaultFilter="Follow Up" pageTitle="Follow-ups Pipeline" />} />
       <Route path="activity" element={<EmployeeActivity />} />
+      <Route path="analytics" element={<EmployeeAnalytics />} />
       <Route path="tasks" element={<EmployeeTasks />} />
       <Route path="issues" element={<EmployeeIssues />} />
       <Route path="notifications" element={<NotificationsPage />} />

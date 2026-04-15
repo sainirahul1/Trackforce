@@ -16,8 +16,8 @@ const AppInstallForm = ({ isEmbedded = false }) => {
     ownerName: '',
     phone: '',
     appInstalled: false,
-    appTrainingCompleted: false,
     firstOrderPlaced: false,
+    installedAppName: '',
     latitude: null,
     longitude: null,
   });
@@ -171,21 +171,36 @@ const AppInstallForm = ({ isEmbedded = false }) => {
               { id: 'appTrainingCompleted', label: 'Training Completed', icon: ShieldCheck, desc: 'Owner understands ordering flow', color: 'text-emerald-500' },
               { id: 'firstOrderPlaced', label: 'First Order Placed', icon: ShoppingCart, desc: 'Successfully initiated transaction', color: 'text-blue-500' },
             ].map(item => (
-              <label key={item.id} className={`flex items-center justify-between p-5 rounded-3xl border-2 transition-all cursor-pointer ${formData[item.id] ? 'bg-white dark:bg-gray-800 border-emerald-500 shadow-md' : 'border-transparent bg-gray-50 dark:bg-gray-800/50 hover:border-gray-200'}`}>
-                <div className="flex items-center gap-4">
-                  <div className={`p-3 rounded-2xl bg-white dark:bg-gray-900 shadow-sm ${item.color}`}>
-                    <item.icon size={22} />
+              <div key={item.id} className="space-y-3">
+                <label className={`flex items-center justify-between p-5 rounded-3xl border-2 transition-all cursor-pointer ${formData[item.id] ? 'bg-white dark:bg-gray-800 border-emerald-500 shadow-md' : 'border-transparent bg-gray-50 dark:bg-gray-800/50 hover:border-gray-200'}`}>
+                  <div className="flex items-center gap-4">
+                    <div className={`p-3 rounded-2xl bg-white dark:bg-gray-900 shadow-sm ${item.color}`}>
+                      <item.icon size={22} />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-gray-900 dark:text-white leading-none mb-1">{item.label}</h3>
+                      <p className="text-[10px] font-medium text-gray-400">{item.desc}</p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="font-bold text-gray-900 dark:text-white leading-none mb-1">{item.label}</h3>
-                    <p className="text-[10px] font-medium text-gray-400">{item.desc}</p>
+                  <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${formData[item.id] ? 'bg-emerald-600 border-emerald-600' : 'border-gray-200 dark:border-gray-700'}`}>
+                    {formData[item.id] && <CheckCircle2 size={14} className="text-white" />}
                   </div>
-                </div>
-                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${formData[item.id] ? 'bg-emerald-600 border-emerald-600' : 'border-gray-200 dark:border-gray-700'}`}>
-                  {formData[item.id] && <CheckCircle2 size={14} className="text-white" />}
-                </div>
-                <input type="checkbox" name={item.id} checked={formData[item.id]} onChange={handleChange} className="hidden" />
-              </label>
+                  <input type="checkbox" name={item.id} checked={formData[item.id]} onChange={handleChange} className="hidden" />
+                </label>
+                {item.id === 'appInstalled' && formData.appInstalled && (
+                  <div className="pl-4 pr-2 py-2 animate-in fade-in slide-in-from-top-2">
+                    <label className={labelCls}>Which App was Installed?</label>
+                    <input 
+                      type="text" 
+                      name="installedAppName" 
+                      value={formData.installedAppName} 
+                      onChange={handleChange} 
+                      className={inputCls} 
+                      placeholder="E.g. ReatchAll, VillagKart, etc." 
+                    />
+                  </div>
+                )}
+              </div>
             ))}
           </div>
         </section>

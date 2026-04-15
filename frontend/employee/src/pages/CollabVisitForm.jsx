@@ -54,7 +54,7 @@ const CollabVisitForm = ({ isEmbedded = false }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    
+
     if (!formData.organizationName || !formData.contactPerson) {
       showAlert('Validation Error', 'Please fill all mandatory fields.', 'error');
       setLoading(false);
@@ -89,9 +89,9 @@ const CollabVisitForm = ({ isEmbedded = false }) => {
 
   return (
     <div className={isEmbedded ? "w-full animate-in fade-in duration-500" : "max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8"}>
-      
+
       <form onSubmit={handleSubmit} className="space-y-6 sm:space-y-8 pb-20">
-        
+
         {/* SECTION 1: OPPORTUNITY IDENTITY */}
         <section className="bg-white dark:bg-gray-900 rounded-[2.5rem] p-6 sm:p-8 shadow-sm border border-gray-100 dark:border-gray-800">
           <div className="flex items-center gap-3 mb-8">
@@ -116,7 +116,7 @@ const CollabVisitForm = ({ isEmbedded = false }) => {
                 <input type="text" name="contactPerson" value={formData.contactPerson} onChange={handleChange} required className={`${inputCls} pl-11`} placeholder="Lead contact name" />
               </div>
             </div>
-            
+
             <div>
               <label className={labelCls}>Collaboration Type</label>
               <select name="collaborationType" value={formData.collaborationType} onChange={handleChange} className={inputCls}>
@@ -149,9 +149,9 @@ const CollabVisitForm = ({ isEmbedded = false }) => {
                 <p className="text-xs text-gray-500 font-medium">Verify meeting venue through GPS</p>
               </div>
             </div>
-            <button 
-              type="button" 
-              onClick={handleCaptureLocation} 
+            <button
+              type="button"
+              onClick={handleCaptureLocation}
               disabled={gpsLoading}
               className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all ${formData.latitude ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/20' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 hover:bg-gray-200'}`}
             >
