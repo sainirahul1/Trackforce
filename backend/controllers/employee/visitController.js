@@ -1,4 +1,5 @@
 const StoreVisit = require('../../models/employee/StoreVisit');
+const EmployeeLogVisit = require('../../models/employee/EmployeeLogVisit');
 const Task = require('../../models/employee/Task');
 const { logActivity } = require('../../utils/activityLogger');
 
@@ -15,9 +16,9 @@ exports.getVisits = async (req, res) => {
       query.employee = req.user._id;
     }
 
-    const visits = await StoreVisit.find(query)
+    const visits = await EmployeeLogVisit.find(query)
       .select('-checklist')
-      .populate('employee', 'name email')
+      .populate('employee', 'name email status profile')
       .sort({ timestamp: -1 })
       .lean();
     
@@ -32,8 +33,8 @@ exports.getVisits = async (req, res) => {
 // @access  Private
 exports.getVisitById = async (req, res) => {
   try {
-    const visit = await StoreVisit.findOne({ _id: req.params.id, tenant: req.tenantId })
-      .populate('employee', 'name email')
+    const visit = await EmployeeLogVisit.findOne({ _id: req.params.id, tenant: req.tenantId })
+      .populate('employee', 'name email status profile')
       .lean();
     
     if (!visit) {
@@ -50,7 +51,14 @@ exports.getVisitById = async (req, res) => {
 // @route   POST /api/visits
 // @access  Private (Employee)
 exports.createVisit = async (req, res) => {
-  const { storeName, status, visitType, gps, notes, address, photos, taskId, taskTitle, taskType, checklist, ...rest } = req.body;
+  const { 
+    storeName, ownerName, mobileNumber, 
+    status, visitType, gps, notes, 
+    address, city, state, pinCode,
+    classification, milestones,
+    photos, taskId, taskTitle, taskType, checklist, 
+    missionId, missionType, missionScore, ...rest 
+  } = req.body;
 
   try {
     // Map internal status to lowercase if needed for enum compatibility
@@ -67,22 +75,52 @@ exports.createVisit = async (req, res) => {
       else visitStatus = lowerStatus.replace(/ /g, '_');
     }
 
-    const visit = await StoreVisit.create({
+    // DATA PRUNING: Ensure no large base64 strings accidentally end up in visitForm
+    // This keeps the metadata lean and prevents BSON limit crashes.
+    const visitForm = { ...rest };
+    Object.keys(visitForm).forEach(key => {
+      if (typeof visitForm[key] === 'string' && visitForm[key].startsWith('data:image/')) {
+        delete visitForm[key];
+      }
+    });
+
+    const visit = await EmployeeLogVisit.create({
       employee: req.user._id,
       tenant: req.tenantId,
       taskId: taskId || null,
       storeName: storeName || rest.supplierName || rest.partnerName || 'Unknown Store',
-      visitType: visitType || 'store',
+      ownerName: ownerName || rest.contactPerson || '',
+      mobileNumber: mobileNumber || rest.phone || '',
+      visitType: visitType || 'mission',
       status: visitStatus,
       gps: gps || { lat: rest.latitude, lng: rest.longitude },
       notes: notes || rest.feedback || rest.notes || '',
       address: address || rest.location || '',
+      city: city || '',
+      state: state || '',
+      pinCode: pinCode || '',
+      classification: classification || '',
+      milestones: milestones || {
+        initialCheck: rest.appDownloaded || false,
+        knowledgeShared: rest.appTraining || false,
+        orderLogged: rest.orderPlaced || false,
+      },
       photos: photos || [],
-      taskTitle: taskTitle || '',
-      taskType: taskType || '',
-      checklist: checklist || [],
-      visitForm: rest // Store all extra form-specific data here
+      timestamp: new Date()
     });
+
+    // Mirror to StoreVisit legacy system for background compatibility
+    try {
+      await StoreVisit.create({
+         ...req.body,
+         employee: req.user._id,
+         tenant: req.tenantId,
+         status: visitStatus
+      });
+    } catch (mirrorError) {
+      console.warn('[MIRROR ERROR] Failed to sync with legacy StoreVisit:', mirrorError.message);
+      // We don't throw here to ensure the primary mission log (EmployeeLogVisit) is still recorded successfully
+    }
 
     // NEW: Log Activity
     await logActivity({
@@ -94,6 +132,17 @@ exports.createVisit = async (req, res) => {
       status: visitStatus === 'completed' ? 'success' : 'info',
       metadata: { visitId: visit._id, store: visit.storeName }
     });
+
+    // REAL-TIME SYNC: Notify mangers about the new visit
+    const io = req.app.get('io');
+    if (io) {
+      const populatedVisit = await EmployeeLogVisit.findById(visit._id)
+        .populate('employee', 'name email profile')
+        .lean();
+      
+      const room = `tenant:${req.tenantId}:role:manager`;
+      io.to(room).emit('visit:new', populatedVisit);
+    }
 
     res.status(201).json(visit);
   } catch (error) {

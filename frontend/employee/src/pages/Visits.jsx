@@ -1,19 +1,61 @@
 import React, { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import { MapPin, Navigation, Clock, CheckCircle2, ChevronRight, Calendar, AlertCircle, Phone, Image as ImageIcon, Camera, Map, X, Users, Store, FileText, MessageSquare } from 'lucide-react';
+import { 
+  MapPin, Navigation, Clock, CheckCircle2, ChevronRight, 
+  Calendar, AlertCircle, Phone, Image as ImageIcon, 
+  Camera, Map, X, Users, Store, FileText, MessageSquare,
+  Building2, Briefcase, ShieldCheck, Smartphone, Target
+} from 'lucide-react';
 import Button from '../components/ui/Button';
 
 import { getVisits, getVisitById } from '../services/visitService';
 import { getSyncCachedData } from '../utils/cacheHelper';
 
+// High-Fidelity Image Modal (External to main component for cleaner structure)
+const ImageModal = ({ src, onClose }) => {
+  if (!src) return null;
+  return (
+    <div 
+      className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-gray-950/90 backdrop-blur-2xl animate-in fade-in duration-300"
+      onClick={onClose}
+    >
+      <button 
+        onClick={onClose}
+        className="absolute top-8 right-8 p-4 bg-white/10 hover:bg-white/20 text-white rounded-3xl transition-all z-[310]"
+      >
+        <X size={32} />
+      </button>
+      <div className="relative max-w-5xl w-full h-full flex items-center justify-center p-4 md:p-12 animate-in zoom-in-95 duration-500">
+        <img 
+          src={src} 
+          alt="Evidence Detail" 
+          className="max-w-full max-h-full object-contain rounded-[3rem] shadow-[0_32px_128px_rgba(0,0,0,0.5)] border-4 border-white/10"
+          onClick={(e) => e.stopPropagation()} 
+        />
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 px-8 py-4 bg-white/10 backdrop-blur-3xl rounded-3xl border border-white/20 shadow-2xl flex items-center gap-4">
+          <div className="w-10 h-10 bg-indigo-600 rounded-2xl flex items-center justify-center text-white">
+            <ShieldCheck size={20} />
+          </div>
+          <div>
+            <p className="text-[10px] font-black text-white uppercase tracking-[0.3em]">Security-Encrypted Asset</p>
+            <p className="text-[8px] font-bold text-gray-300 uppercase tracking-widest mt-0.5">Verified Intelligence Proof</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const EmployeeVisits = ({ defaultFilter = 'All', pageTitle = 'Visit History' }) => {
   const { setPageLoading } = useOutletContext();
   const [selectedVisit, setSelectedVisit] = useState(null);
   const [selectedVisitLoading, setSelectedVisitLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState('Overview'); // Tab options: 'Overview', 'Evidence', 'Mission'
   const [filterStatus, setFilterStatus] = useState(defaultFilter);
   const [filterDate, setFilterDate] = useState('');
   const [visits, setVisits] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [previewImage, setPreviewImage] = useState(null);
   const dateInputRef = React.useRef(null);
 
   const transformVisits = (data) => {
@@ -27,6 +69,7 @@ const EmployeeVisits = ({ defaultFilter = 'All', pageTitle = 'Visit History' }) 
       return {
         ...v,
         store: v.storeName,
+        visitType: v.visitType || 'mission', 
         time: isValidDate ? visitDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '---',
         date: isValidDate ? visitDate.toISOString().split('T')[0] : '---',
         address: v.address || 'Location data not available',
@@ -50,7 +93,7 @@ const EmployeeVisits = ({ defaultFilter = 'All', pageTitle = 'Visit History' }) 
   const fetchVisits = async (isBackground = false) => {
     try {
       if (!isBackground) setLoading(true);
-      const data = await getVisits(isBackground); // Pass true to 'force' if it is a background update
+      const data = await getVisits(isBackground);
       setVisits(transformVisits(data));
     } catch (err) {
       console.error('Error fetching visits:', err);
@@ -61,13 +104,12 @@ const EmployeeVisits = ({ defaultFilter = 'All', pageTitle = 'Visit History' }) 
   };
 
   useEffect(() => {
-    // 1. Initial Hydration from Cache (0s Loading)
     const cachedData = getSyncCachedData('visits');
     if (cachedData) {
       setVisits(transformVisits(cachedData));
       setLoading(false);
       if (setPageLoading) setPageLoading(false);
-      fetchVisits(true); // Silent background update
+      fetchVisits(true);
     } else {
       fetchVisits();
     }
@@ -76,11 +118,8 @@ const EmployeeVisits = ({ defaultFilter = 'All', pageTitle = 'Visit History' }) 
   const handleVisitClick = async (visit) => {
     try {
       setSelectedVisitLoading(true);
-      setSelectedVisit(visit); // Open modal with partial data first
-      // Fetch full details with photos and checklist
+      setSelectedVisit(visit); 
       const fullVisit = await getVisitById(visit._id);
-
-      // Transform the data to match the UI expectation
       const visitDate = new Date(fullVisit.timestamp || fullVisit.createdAt);
       const isValidDate = !isNaN(visitDate.getTime());
 
@@ -93,536 +132,350 @@ const EmployeeVisits = ({ defaultFilter = 'All', pageTitle = 'Visit History' }) 
         time: isValidDate ? visitDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '---',
         date: isValidDate ? visitDate.toISOString().split('T')[0] : '---',
         status: statusLabel,
-        reviewStatus: fullVisit.reviewStatus || visit.reviewStatus || 'pending',
-        rejectionReason: fullVisit.rejectionReason || visit.rejectionReason,
-        companyDescription: 'Organization Partner',
+        reviewStatus: fullVisit.reviewStatus || 'pending',
+        rejectionReason: fullVisit.rejectionReason || null,
         feedback: fullVisit.notes || 'No specific feedback recorded.',
         uploadedImages: fullVisit.photos || [],
-        checklist: fullVisit.checklist || [],
         rejectionIntelligence: fullVisit.visitForm?.notInterestedReason || null,
         nextFollowUp: fullVisit.visitForm?.followUpDate || null
       });
     } catch (err) {
       console.error('Error fetching visit details:', err);
-      // Data is already set from 'visit' in the fallback
     } finally {
       setSelectedVisitLoading(false);
     }
   };
 
-  const statuses = ['All', 'Completed', 'In Progress', 'Rejected', 'Follow Up'];
-
-  const filteredVisits = visits.filter(v => {
-    const matchStatus = filterStatus === 'All' || v.status === filterStatus;
-    const matchDate = !filterDate || v.date === filterDate;
-    return matchStatus && matchDate;
+  const filteredVisits = visits.filter(visit => {
+    const matchesStatus = filterStatus === 'All' || visit.status === filterStatus;
+    const matchesDate = !filterDate || visit.date === filterDate;
+    return matchesStatus && matchesDate;
   });
 
-  const getStatusStyles = (status) => {
-    switch (status) {
-      case 'Completed':
-        return {
-          icon: 'bg-green-100 text-green-600 dark:bg-green-500/20 dark:text-green-400',
-          badge: 'text-green-700 bg-green-100 dark:text-green-400 dark:bg-green-500/20',
-          border: 'border-green-200 dark:border-green-500/30'
-        };
-      case 'In Progress':
-        return {
-          icon: 'bg-blue-100/50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400 animate-pulse',
-          badge: 'text-blue-700 bg-blue-100/50 dark:text-blue-400 dark:bg-blue-500/10',
-          border: 'border-blue-200 dark:border-blue-500/30'
-        };
-      case 'Rejected':
-        return {
-          icon: 'bg-red-100/50 text-red-600 dark:bg-red-500/10 dark:text-red-400',
-          badge: 'text-red-700 bg-red-100/50 dark:text-red-400 dark:bg-red-500/10',
-          border: 'border-red-100 dark:border-red-500/20'
-        };
-      case 'Follow Up':
-        return {
-          icon: 'bg-amber-100/50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400',
-          badge: 'text-amber-700 bg-amber-100/50 dark:text-amber-400 dark:bg-amber-500/10',
-          border: 'border-amber-100 dark:border-amber-500/20'
-        };
-      default:
-        return {
-          icon: 'bg-gray-100/50 text-gray-500 dark:bg-gray-800 dark:text-gray-400',
-          badge: 'text-gray-600 bg-gray-100/50 dark:text-gray-400 dark:bg-gray-800',
-          border: 'border-gray-100 dark:border-gray-800'
-        };
-    }
-  };
-
-  const statusCounts = {
-    'Completed': visits.filter(v => v.status === 'Completed').length,
-    'In Progress': visits.filter(v => v.status === 'In Progress').length,
-    'Rejected': visits.filter(v => v.status === 'Rejected').length,
-    'Follow Up': visits.filter(v => v.status === 'Follow Up').length,
-  };
-
   return (
-    <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 h-full">
-      <div className="space-y-6 sm:space-y-8 animate-in duration-500">
-        {/* Page Heading */}
-        <div className="px-2 mb-5">
-          <h1 className="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white tracking-tight">{pageTitle}</h1>
-        </div>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 px-4 md:px-8 pb-24 pt-10">
+      {previewImage && <ImageModal src={previewImage} onClose={() => setPreviewImage(null)} />}
 
-        {/* Filters & Results Count Section */}
-        <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 bg-white dark:bg-gray-900 p-4 sm:p-5 rounded-[2rem] border border-gray-100 dark:border-gray-800 shadow-sm mb-6 sm:mb-8">
-          <div className="flex items-center gap-3 overflow-x-auto custom-scrollbar pb-2 sm:pb-0 w-full xl:w-auto pr-2 sm:pr-0">
-            {statuses.map(status => (
-              <button
-                key={status}
-                onClick={() => setFilterStatus(status)}
-                className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all duration-300 ${filterStatus === status
-                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200 dark:shadow-none'
-                  : 'bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-                  }`}
-              >
-                {status}
-              </button>
-            ))}
-
-            <div className="flex items-center shrink-0 ml-2 gap-2">
-              {filterDate && (
-                <div className="flex items-center gap-1.5 text-indigo-700 dark:text-indigo-400 px-3 py-2 rounded-xl text-xs font-bold bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/30 shadow-sm animate-in fade-in">
-                  {filterDate.split('-').reverse().join('/')}
-                  <button onClick={() => setFilterDate('')} className="hover:bg-indigo-100 dark:hover:bg-indigo-500/30 rounded-md transition-colors p-0.5 ml-1">
-                    <X size={14} />
-                  </button>
-                </div>
-              )}
-              <button
-                onClick={() => dateInputRef.current?.showPicker()}
-                className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors shadow-sm border border-gray-200 dark:border-gray-700 shrink-0"
-              >
-                <Calendar size={18} />
-                <input
+      <div className="max-w-7xl mx-auto space-y-10">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
+              <span className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.2em]">{pageTitle}</span>
+            </div>
+            <h1 className="text-4xl font-black text-gray-950 dark:text-white tracking-tighter">Field Intelligence</h1>
+            <p className="text-xs font-bold text-gray-500 mt-2 uppercase tracking-widest">Audit Logs & Verification Archives</p>
+          </div>
+          <div className="flex items-center gap-3">
+             <button
+               onClick={() => {
+                 setFilterStatus('All');
+                 setFilterDate('');
+               }}
+               className="p-4 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl shadow-sm text-gray-400 hover:text-indigo-600 hover:border-indigo-100 transition-all active:scale-95"
+             >
+                <RotateCcw size={20} />
+             </button>
+             <div className="relative group">
+                <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-hover:text-indigo-500 transition-colors" size={18} />
+                <input 
+                  type="date" 
                   ref={dateInputRef}
-                  type="date"
                   value={filterDate}
                   onChange={(e) => setFilterDate(e.target.value)}
-                  className="absolute w-[1px] h-[1px] opacity-0 -z-10 pointer-events-none"
-                  title="Select Date"
+                  className="pl-12 pr-6 py-4 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-3xl shadow-sm text-xs font-black uppercase tracking-widest text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all" 
                 />
-              </button>
-            </div>
-          </div>
-
-          {/* Results Count (Right side) */}
-          <div className="flex items-center gap-3 bg-indigo-50 dark:bg-indigo-500/10 px-4 py-2.5 rounded-xl border border-indigo-100 dark:border-indigo-500/20 shadow-sm shrink-0 ml-auto xl:ml-0">
-            <span className="relative flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-indigo-500"></span>
-            </span>
-            <span className="text-xs font-black text-indigo-700 dark:text-indigo-400 uppercase tracking-widest">{filteredVisits.length} Locations</span>
+             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
-          {/* Visits List */}
-          <div className="lg:col-span-2 space-y-4">
-            <div className="space-y-4">
-              {loading ? (
-                <div className="flex flex-col items-center justify-center py-20 bg-white dark:bg-gray-900 rounded-[2rem] border border-gray-100 dark:border-gray-800 shadow-sm animate-pulse">
-                  <div className="w-12 h-12 rounded-full border-4 border-indigo-100 dark:border-indigo-900/30 border-t-indigo-600 animate-spin mb-4" />
-                  <p className="text-sm font-black text-gray-400 uppercase tracking-widest">Infiltrating Database...</p>
-                </div>
-              ) : filteredVisits.length > 0 ? filteredVisits.map((visit, idx) => {
-                const styles = getStatusStyles(visit.status);
-                return (
-                  <div
-                    key={visit._id || idx}
-                    onClick={() => handleVisitClick(visit)}
-                    className={`bg-white dark:bg-gray-900 p-4 sm:p-5 rounded-[2rem] border ${styles.border} shadow-sm hover:shadow-md hover:border-indigo-200 dark:hover:border-indigo-500/30 transition-all duration-300 group relative overflow-hidden cursor-pointer`}
-                  >
-                    <div className="flex flex-col gap-3">
-                      {/* Top Row: Store Info & Status */}
-                      <div className="flex justify-between items-start gap-4">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            {visit.visitType === 'supplier' && (
-                              <span className="px-2 py-0.5 rounded-md bg-sky-50 dark:bg-sky-500/10 text-sky-600 dark:text-sky-400 text-[8px] font-black uppercase tracking-tighter border border-sky-100 dark:border-sky-500/20 flex items-center gap-1">
-                                <Building2 size={8} /> Supplier
-                              </span>
-                            )}
-                            {visit.visitType === 'collab' && (
-                              <span className="px-2 py-0.5 rounded-md bg-violet-50 dark:bg-violet-500/10 text-violet-600 dark:text-violet-400 text-[8px] font-black uppercase tracking-tighter border border-violet-100 dark:border-violet-500/20 flex items-center gap-1">
-                                <Briefcase size={8} /> Collab
-                              </span>
-                            )}
-                            {visit.visitType === 'app' && (
-                              <span className="px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[8px] font-black uppercase tracking-tighter border border-emerald-100 dark:border-emerald-500/20 flex items-center gap-1">
-                                <ShieldCheck size={8} /> App Install
-                              </span>
-                            )}
-                            {!visit.visitType || visit.visitType === 'store' ? (
-                              <span className="px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-[8px] font-black uppercase tracking-tighter border border-indigo-100 dark:border-indigo-500/20 flex items-center gap-1">
-                                <Store size={8} /> Store Visit
-                              </span>
-                            ) : null}
-                          </div>
-                          <h3 className="font-bold text-gray-900 dark:text-white text-base sm:text-lg truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-                            {idx + 1}. {visit.store}
-                          </h3>
-                          <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1.5 mt-1">
-                            <MapPin size={12} className="shrink-0 text-gray-400" />
-                            <span className="truncate">{visit.address}</span>
-                          </p>
-                        </div>
-                        <div className="flex flex-col items-end gap-2 shrink-0">
-                          <span className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg ${styles.badge} ${styles.border} border`}>
-                            {visit.status}
-                          </span>
-                          <div className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-tighter border ${visit.reviewStatus === 'accepted' ? 'text-emerald-600 bg-emerald-50 border-emerald-100 dark:bg-emerald-500/10 dark:border-emerald-500/20' :
-                            visit.reviewStatus === 'rejected' ? 'text-rose-600 bg-rose-50 border-rose-100 dark:bg-rose-500/10 dark:border-rose-500/20' :
-                              'text-amber-600 bg-amber-50 border-amber-100 dark:bg-amber-500/10 dark:border-amber-500/20'
-                            }`}>
-                            {visit.reviewStatus === 'pending' ? 'Pending Review' : visit.reviewStatus === 'accepted' ? 'Accepted' : 'Rejected'}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Meta stats: Assets count etc */}
-                      <div className="flex items-center gap-3">
-                        <div className="flex items-center gap-1.5 px-2 py-1 bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-lg text-gray-400">
-                          <Camera size={11} />
-                          <span className="text-[9px] font-black uppercase tracking-widest">{(visit.photos || []).length} Proofs</span>
-                        </div>
-                      </div>
-
-                      {/* Bottom Row: Details & Actions */}
-                      <div className="flex flex-wrap items-end justify-between gap-3 mt-1">
-                        <div className="flex items-center gap-2">
-                          <span className="flex items-center gap-1.5 text-[11px] font-bold text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-800 px-2 py-1.5 rounded-lg">
-                            <Clock size={12} className="text-indigo-500" />
-                            {visit.time}
-                          </span>
-                          <span className="flex items-center gap-1.5 text-[11px] font-bold text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-800 px-2 py-1.5 rounded-lg">
-                            <Map size={12} className="text-emerald-500" />
-                            {visit.distance}
-                          </span>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          <button onClick={(e) => { e.stopPropagation(); window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(visit.address)}`, '_blank'); }} className="flex items-center gap-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-lg text-[11px] font-bold transition-colors">
-                            <Navigation size={12} /> Directions
-                          </button>
-                          <button onClick={(e) => { e.stopPropagation(); /* phone logic */ }} className="flex items-center gap-1.5 bg-green-50 hover:bg-green-100 text-green-700 px-3 py-1.5 rounded-lg text-[11px] font-bold transition-colors">
-                            <Phone size={12} /> Call Store
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              }) : (
-                <div className="text-center py-12 bg-white dark:bg-gray-900 rounded-[2rem] border border-gray-100 dark:border-gray-800 shadow-sm">
-                  <div className="p-4 bg-gray-50 dark:bg-gray-800/80 rounded-full w-max mx-auto mb-4">
-                    <Calendar size={24} className="text-gray-400" />
-                  </div>
-                  <p className="text-gray-500 font-bold mb-1">No visits found</p>
-                  <p className="text-sm text-gray-400">Try adjusting your date or status filters.</p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Sidebar */}
-          <div className="space-y-6 sm:space-y-8 mt-4 lg:mt-0">
-            <div className="bg-white dark:bg-gray-900 p-6 sm:p-8 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 shadow-sm relative overflow-hidden">
-              <h3 className="font-black text-gray-900 dark:text-white mb-6 text-xl flex items-center gap-2.5">
-                <div className="p-2 bg-indigo-50 dark:bg-indigo-500/10 rounded-xl">
-                  <MapPin className="text-indigo-500" size={20} />
-                </div>
-                Today's Summary
-              </h3>
-
-              <div className="space-y-3">
-                {/* Total Visits Card */}
-                <div className="flex gap-4 p-3 sm:p-4 rounded-2xl bg-indigo-50/50 dark:bg-indigo-500/5 group border border-indigo-100/50 dark:border-indigo-500/10">
-                  <div className="flex w-full justify-between items-center">
-                    <div className="flex items-center gap-3">
-                      <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
-                      <span className="text-sm text-indigo-700 dark:text-indigo-300 font-black uppercase tracking-widest">Total Visits</span>
-                    </div>
-                    <span className="font-black text-indigo-700 dark:text-indigo-400 text-lg">{visits.length}</span>
-                  </div>
-                </div>
-
-                <div className="flex gap-4 p-3 sm:p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/50 transition-colors duration-300 group border border-transparent hover:border-emerald-100 dark:hover:border-emerald-500/20">
-                  <div className="flex w-full justify-between items-center">
-                    <div className="flex items-center gap-3">
-                      <CheckCircle2 size={16} className="text-emerald-500 shrink-0" />
-                      <span className="text-sm text-gray-600 dark:text-gray-300 font-bold">Completed</span>
-                    </div>
-                    <span className="font-black text-emerald-600 dark:text-emerald-400 text-base">{statusCounts['Completed']}</span>
-                  </div>
-                </div>
-
-                <div className="flex gap-4 p-3 sm:p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/50 transition-colors duration-300 group border border-transparent hover:border-blue-100 dark:hover:border-blue-500/20">
-                  <div className="flex w-full justify-between items-center">
-                    <div className="flex items-center gap-3">
-                      <Navigation size={16} className="text-blue-500 shrink-0" />
-                      <span className="text-sm text-gray-600 dark:text-gray-300 font-bold">In Progress</span>
-                    </div>
-                    <span className="font-black text-blue-600 dark:text-blue-400 text-base">{statusCounts['In Progress']}</span>
-                  </div>
-                </div>
-
-                <div className="flex gap-4 p-3 sm:p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/50 transition-colors duration-300 group border border-transparent hover:border-rose-100 dark:hover:border-rose-500/20">
-                  <div className="flex w-full justify-between items-center">
-                    <div className="flex items-center gap-3">
-                      <X size={16} className="text-rose-500 shrink-0" />
-                      <span className="text-sm text-gray-600 dark:text-gray-300 font-bold">Rejected</span>
-                    </div>
-                    <span className="font-black text-rose-600 dark:text-rose-400 text-base">{statusCounts['Rejected']}</span>
-                  </div>
-                </div>
-
-                <div className="flex gap-4 p-3 sm:p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/50 transition-colors duration-300 group border border-transparent hover:border-amber-100 dark:hover:border-amber-500/20">
-                  <div className="flex w-full justify-between items-center">
-                    <div className="flex items-center gap-3">
-                      <AlertCircle size={16} className="text-amber-500 shrink-0" />
-                      <span className="text-sm text-gray-600 dark:text-gray-300 font-bold">Follow Up</span>
-                    </div>
-                    <span className="font-black text-amber-600 dark:text-amber-400 text-base">{statusCounts['Follow Up']}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+        {/* Filters */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-4 no-scrollbar">
+          {['All', 'Completed', 'Partial', 'Rejected', 'Follow-up'].map((stat) => (
+            <button
+              key={stat}
+              onClick={() => setFilterStatus(stat)}
+              className={`px-6 py-3 rounded-full text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all border-2
+                ${filterStatus === stat 
+                  ? 'bg-indigo-600 text-white border-indigo-600 shadow-lg shadow-indigo-600/30' 
+                  : 'bg-white dark:bg-gray-900 text-gray-400 border-gray-100 dark:border-gray-800 hover:border-indigo-100'}`}
+            >
+              {stat}
+            </button>
+          ))}
         </div>
 
-      </div>
-
-      {/* Floating Modal for Visit Details */}
-      {selectedVisit && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-gray-900/40 backdrop-blur-sm" onClick={() => setSelectedVisit(null)}></div>
-
-          <div className="relative w-full max-w-4xl bg-white dark:bg-gray-900 rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-300">
-            {/* Modal Detail Loading Overlay */}
-            {selectedVisitLoading && (
-              <div className="absolute inset-0 z-[210] flex flex-col items-center justify-center bg-white/60 dark:bg-gray-900/60 backdrop-blur-sm rounded-[2.5rem]">
-                <div className="w-12 h-12 rounded-full border-4 border-indigo-100 dark:border-indigo-900/30 border-t-indigo-600 animate-spin mb-4" />
-                <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest animate-pulse">Fetching Mission Evidence...</p>
-              </div>
-            )}
-            {/* Ultra-Clean Professional Header (Compact & Reordered) */}
-            <div className="relative bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 shrink-0 px-5 py-5 sm:px-6 sm:py-6">
-              <button
-                onClick={() => setSelectedVisit(null)}
-                className="absolute top-4 sm:top-5 right-4 sm:right-5 z-20 p-2 rounded-full bg-gray-50/80 dark:bg-gray-800/80 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 hover:text-gray-900 dark:hover:text-white transition-all shadow-sm backdrop-blur-sm"
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-40 animate-pulse text-gray-300">
+            <Camera size={64} className="mb-4 opacity-10" />
+            <p className="text-[10px] font-black uppercase tracking-[0.4em]">Decrypting Records...</p>
+          </div>
+        ) : filteredVisits.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in slide-in-from-bottom-8 duration-700">
+            {filteredVisits.map((visit) => (
+              <div 
+                key={visit._id}
+                onClick={() => handleVisitClick(visit)}
+                className="group bg-white dark:bg-gray-900 p-8 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-2xl hover:border-indigo-100 dark:hover:border-indigo-500/30 transition-all cursor-pointer relative overflow-hidden"
               >
-                <X size={16} />
-              </button>
-
-              <div className="flex flex-col gap-4">
-
-                {/* 1. Header Section: Title & Address */}
-                <div className="flex flex-col gap-1 pr-10">
-                  <div className="flex flex-wrap items-center gap-3">
-                    <h2 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white tracking-tight leading-tight">
-                      {selectedVisit.store}
-                    </h2>
-                    {/* Status Badge Beside Title */}
-                    <div className="flex flex-col items-start gap-1">
-                      <div className={`px-2 py-0.5 rounded text-[10px] font-bold flex items-center gap-1 uppercase tracking-wider shrink-0 ${selectedVisit.status === 'Completed' ? 'text-emerald-700 bg-emerald-50 border border-emerald-100 dark:text-emerald-400 dark:bg-emerald-500/10 dark:border-emerald-500/20' : 'text-gray-700 bg-gray-50 border border-gray-200 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300'}`}>
-                        {selectedVisit.status === 'Completed' && <CheckCircle2 size={10} className="text-emerald-600 dark:text-emerald-400" />}
-                        {selectedVisit.status}
-                      </div>
-                      <div className={`px-2 py-0.5 rounded text-[9px] font-black flex items-center gap-1 uppercase tracking-widest border ${selectedVisit.reviewStatus === 'accepted' ? 'text-emerald-600 bg-emerald-50 border-emerald-100 dark:bg-emerald-500/10 dark:border-emerald-500/20' :
-                        selectedVisit.reviewStatus === 'rejected' ? 'text-rose-600 bg-rose-50 border-rose-100 dark:bg-rose-500/10 dark:border-rose-500/20' :
-                          'text-amber-600 bg-amber-50 border-amber-100 dark:bg-amber-500/10 dark:border-amber-500/20'
-                        }`}>
-                        {selectedVisit.reviewStatus === 'pending' ? 'Audit Status: Pending' : selectedVisit.reviewStatus === 'accepted' ? 'Audit Status: Accepted' : 'Audit Status: Rejected'}
-                      </div>
-                    </div>
+                <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/[0.03] rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-700"></div>
+                
+                <div className="flex items-center justify-between mb-8">
+                  <div className={`p-4 rounded-2xl shadow-sm
+                    ${visit.status === 'Completed' ? 'bg-emerald-50 text-emerald-600' : 
+                      visit.status === 'Rejected' ? 'bg-rose-50 text-rose-600' : 'bg-amber-50 text-amber-600'}`}>
+                    {visit.status === 'Completed' ? <CheckCircle2 size={24} /> : 
+                     visit.status === 'Rejected' ? <AlertCircle size={24} /> : <Clock size={24} />}
                   </div>
-                  <p className="flex items-start gap-1.5 text-gray-500 dark:text-gray-400 text-sm font-medium">
-                    <MapPin size={16} className="text-gray-400 shrink-0 mt-0.5" />
-                    {selectedVisit.address}
-                  </p>
-                </div>
-
-                {/* 2. Core Details & Actions Block */}
-                <div className="flex flex-col gap-3">
-
-                  {/* Time, Distance, and Actions Row */}
-                  <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-y-3 w-full">
-                    {/* Left side: Time & Distance */}
-                    <div className="flex items-center gap-x-3 shrink-0">
-                      {/* Time */}
-                      <div className="flex items-center gap-1.5 text-gray-700 dark:text-gray-300">
-                        <Clock size={12} className="text-gray-400" />
-                        <span className="font-semibold text-[13px]">{selectedVisit.time}</span>
-                      </div>
-
-                      <div className="w-px h-3 bg-gray-200 dark:bg-gray-700"></div>
-
-                      {/* Distance */}
-                      <div className="flex items-center gap-1.5 text-gray-700 dark:text-gray-300">
-                        <Map size={12} className="text-gray-400" />
-                        <span className="font-semibold text-[13px]">{selectedVisit.distance}</span>
-                      </div>
-                    </div>
-
-                    {/* Right side: Actions (Far Right) */}
-                    <div className="flex flex-row gap-2 shrink-0">
-                      <button onClick={() => window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(selectedVisit.address)}`, '_blank')} className="bg-indigo-600 hover:bg-indigo-700 text-white rounded px-3 py-1.5 flex items-center justify-center gap-1.5 transition-colors font-semibold text-[11px] shadow-sm shrink-0">
-                        <Navigation size={12} className="shrink-0" />
-                        <span>Directions</span>
-                      </button>
-                      <button className="bg-white hover:bg-gray-50 text-gray-800 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-100 border border-gray-200 dark:border-gray-700 rounded px-3 py-1.5 flex items-center justify-center gap-1.5 transition-colors font-semibold text-[11px] shadow-sm shrink-0">
-                        <Phone size={12} className="shrink-0 text-gray-500" />
-                        <span>Call Store</span>
-                      </button>
-                    </div>
-                  </div>
-
-                </div>
-
-              </div>
-            </div>
-
-            <div className="p-5 sm:p-8 overflow-y-auto custom-scrollbar flex-1 flex flex-col gap-6">
-
-              {/* Company Description & Link */}
-              <div className="bg-white dark:bg-gray-900 rounded-2xl p-5 border border-gray-100 dark:border-gray-800 shadow-sm">
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400 flex items-center gap-2">
-                    <Store size={14} className="text-violet-500" />
-                    Company Description
-                  </h4>
-                  {selectedVisit.companyLink && (
-                    <a href={selectedVisit.companyLink} target="_blank" rel="noopener noreferrer" className="text-[10px] font-bold text-indigo-500 hover:text-indigo-600 flex items-center gap-1 bg-indigo-50 dark:bg-indigo-500/10 px-2 py-1 rounded-md transition-colors">
-                      Visit Website <ChevronRight size={12} />
-                    </a>
-                  )}
-                </div>
-                <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed font-medium">
-                  {selectedVisit.companyDescription}
-                </p>
-              </div>
-
-              {/* Mission Details Section */}
-              {(selectedVisit.taskTitle || (selectedVisit.checklist && selectedVisit.checklist.length > 0)) && (
-                <div className="bg-white dark:bg-gray-900 rounded-2xl p-5 border border-gray-100 dark:border-gray-800 shadow-sm space-y-4">
-                  <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400 flex items-center gap-2">
-                    <FileText size={14} className="text-indigo-500" />
-                    Mission Details
-                  </h4>
-
-                  {selectedVisit.taskTitle && (
-                    <div className="flex flex-col gap-1">
-                      <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Task Title</p>
-                      <h5 className="text-sm font-black text-gray-900 dark:text-white leading-tight">{selectedVisit.taskTitle}</h5>
-                      {selectedVisit.taskType && <p className="text-[9px] font-bold text-gray-400 uppercase">{selectedVisit.taskType} Mission</p>}
-                    </div>
-                  )}
-
-                  {selectedVisit.checklist && selectedVisit.checklist.length > 0 && (
-                    <div className="pt-3 border-t border-gray-50 dark:border-gray-800">
-                      <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-3">Goal Completion Checklist</p>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        {selectedVisit.checklist.map((item, idx) => (
-                          <div key={idx} className="flex items-center gap-2 text-xs font-medium text-gray-700 dark:text-gray-300">
-                            {item.completed ? (
-                              <div className="w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-500/20 flex items-center justify-center shrink-0">
-                                <CheckCircle2 size={12} className="text-emerald-600 dark:text-emerald-400" />
-                              </div>
-                            ) : (
-                              <div className="w-5 h-5 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center shrink-0">
-                                <Clock size={10} className="text-gray-400" />
-                              </div>
-                            )}
-                            <span className={item.completed ? 'opacity-100' : 'opacity-60'}>{item.text}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Rejection Intelligence (Supplier/Store rejection reason) */}
-              {selectedVisit.rejectionIntelligence && (
-                <div className="bg-rose-50 dark:bg-rose-500/5 rounded-2xl p-5 border border-rose-100 dark:border-rose-500/20">
-                  <h4 className="text-[10px] font-black uppercase tracking-widest text-rose-500 mb-3 flex items-center gap-2">
-                    <AlertCircle size={14} />
-                    Rejection Intelligence
-                  </h4>
-                  <p className="text-sm text-rose-700 dark:text-rose-400 leading-relaxed font-bold italic pl-4 border-l-2 border-rose-300 dark:border-rose-500/50">
-                    "{selectedVisit.rejectionIntelligence}"
-                  </p>
-                </div>
-              )}
-
-              {/* Follow-up Intelligence */}
-              {selectedVisit.nextFollowUp && (
-                <div className="bg-amber-50 dark:bg-amber-500/5 rounded-2xl p-5 border border-amber-100 dark:border-amber-500/20">
-                  <h4 className="text-[10px] font-black uppercase tracking-widest text-amber-600 mb-3 flex items-center gap-2">
-                    <Clock size={14} />
-                    Target Follow-up Date
-                  </h4>
-                  <div className="flex items-center gap-3">
-                    <div className="px-3 py-2 bg-white dark:bg-gray-900 rounded-xl border border-amber-100 dark:border-amber-800 text-sm font-black text-amber-700 dark:text-amber-400">
-                      {new Date(selectedVisit.nextFollowUp).toLocaleDateString([], { day: '2-digit', month: 'long', year: 'numeric' })}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Feedback and Notes */}
-              <div className="space-y-4">
-                <div className="bg-white dark:bg-gray-900 rounded-2xl p-5 border border-gray-100 dark:border-gray-800 shadow-sm">
-                  <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-3 flex items-center gap-2">
-                    <MessageSquare size={14} className="text-blue-500" />
-                    Task Feedback / Notes
-                  </h4>
-                  <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed italic border-l-2 border-blue-300 dark:border-blue-500/50 pl-4 font-medium">
-                    "{selectedVisit.feedback}"
-                  </p>
-                </div>
-
-                {selectedVisit.reviewStatus === 'rejected' && selectedVisit.rejectionReason && (
-                  <div className="bg-rose-50 dark:bg-rose-500/5 rounded-2xl p-5 border border-rose-100 dark:border-rose-500/20">
-                    <h4 className="text-[10px] font-black uppercase tracking-widest text-rose-500 mb-3 flex items-center gap-2">
-                      <AlertCircle size={14} />
-                      Manager Rejection Remarks
-                    </h4>
-                    <p className="text-sm text-rose-700 dark:text-rose-400 leading-relaxed font-bold italic pl-4 border-l-2 border-rose-300 dark:border-rose-500/50">
-                      "{selectedVisit.rejectionReason}"
+                  <div className="text-right">
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">{visit.time}</p>
+                    <p className={`text-[10px] font-black uppercase tracking-widest
+                      ${visit.status === 'Completed' ? 'text-emerald-500' : 
+                        visit.status === 'Rejected' ? 'text-rose-500' : 'text-amber-500'}`}>
+                      {visit.status}
                     </p>
                   </div>
-                )}
+                </div>
+
+                <h3 className="text-xl font-black text-gray-900 dark:text-white tracking-tight mb-2 uppercase italic">{visit.store}</h3>
+                <div className="flex items-center gap-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest line-clamp-1 mb-6">
+                   <MapPin size={12} className="text-indigo-400" /> {visit.address}
+                </div>
+
+                <div className="pt-6 border-t border-gray-50 dark:border-gray-800 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="flex -space-x-3">
+                      {visit.uploadedImages.slice(0, 3).map((img, i) => (
+                        <div key={i} className="w-8 h-8 rounded-lg border-2 border-white dark:border-gray-900 bg-gray-100 overflow-hidden shadow-sm hover:-translate-y-1 transition-all">
+                          <img src={img} alt="proof" className="w-full h-full object-cover" />
+                        </div>
+                      ))}
+                    </div>
+                    {visit.uploadedImages.length > 3 && (
+                      <span className="text-[9px] font-black text-gray-400 tracking-widest">+{visit.uploadedImages.length - 3} MORE</span>
+                    )}
+                  </div>
+                  <ChevronRight size={20} className="text-gray-300 group-hover:text-indigo-600 group-hover:translate-x-1 transition-all" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="py-40 text-center bg-white dark:bg-gray-900 rounded-[3rem] border-2 border-dashed border-gray-100 dark:border-gray-800">
+             <div className="mx-auto w-20 h-20 bg-gray-50 dark:bg-gray-800 rounded-full flex items-center justify-center mb-6 text-gray-200">
+                <ImageIcon size={32} />
+             </div>
+             <p className="text-sm font-black text-gray-400 uppercase tracking-widest">No matching field intelligence</p>
+          </div>
+        )}
+      </div>
+
+      {/* DETAIL DRAWER / MODAL */}
+      {selectedVisit && (
+        <div className="fixed inset-0 z-[250] flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-500">
+           <div className="absolute inset-0 bg-gray-950/80 backdrop-blur-md" onClick={() => setSelectedVisit(null)}></div>
+           
+           <div className="bg-white dark:bg-gray-900 w-full max-w-4xl h-[92vh] sm:h-auto sm:max-h-[85vh] rounded-t-[3rem] sm:rounded-[3rem] shadow-2xl relative overflow-hidden flex flex-col animate-in slide-in-from-bottom-20 duration-500">
+              
+              {selectedVisitLoading && (
+                <div className="absolute inset-0 z-50 bg-white/60 dark:bg-gray-900/60 backdrop-blur-sm flex flex-col items-center justify-center">
+                   <div className="w-12 h-12 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin mb-4" />
+                   <p className="text-[10px] font-black uppercase text-indigo-600 tracking-widest">Syncing Evidence...</p>
+                </div>
+              )}
+
+              <div className="p-8 pb-4 shrink-0 border-b border-gray-50 dark:border-gray-800 flex items-center justify-between bg-white dark:bg-gray-900">
+                 <div className="flex items-center gap-4">
+                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-white shadow-lg
+                      ${selectedVisit.status === 'Completed' ? 'bg-emerald-500' : 
+                        selectedVisit.status === 'Rejected' ? 'bg-rose-500' : 'bg-amber-500'}`}>
+                      {selectedVisit.status === 'Completed' ? <CheckCircle2 size={24} /> : 
+                       selectedVisit.status === 'Rejected' ? <AlertCircle size={24} /> : <Clock size={24} />}
+                    </div>
+                    <div>
+                       <h3 className="text-2xl font-black text-gray-950 dark:text-white tracking-tight uppercase italic">{selectedVisit.store}</h3>
+                       <div className="flex items-center gap-2 mt-1">
+                          <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{selectedVisit.date}</span>
+                          <span className="w-1 h-1 rounded-full bg-gray-300" />
+                          <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">{selectedVisit.status}</span>
+                       </div>
+                    </div>
+                 </div>
+                 <button 
+                  onClick={() => setSelectedVisit(null)}
+                  className="p-4 text-gray-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-2xl transition-all"
+                 >
+                    <X size={24} />
+                 </button>
               </div>
 
-              {/* Uploaded Images */}
-              <div className="bg-white dark:bg-gray-900 rounded-2xl p-5 border border-gray-100 dark:border-gray-800 shadow-sm">
-                <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-4 flex items-center gap-2">
-                  <ImageIcon size={14} className="text-emerald-500" />
-                  Uploaded Images
-                </h4>
-                {selectedVisit.uploadedImages && selectedVisit.uploadedImages.length > 0 ? (
-                  <div className="flex gap-4 overflow-x-auto pb-2 custom-scrollbar">
-                    {selectedVisit.uploadedImages.map((img, idx) => (
-                      <div key={idx} className="shrink-0 relative group">
-                        <img src={img} alt={`Proof ${idx + 1}`} className="w-28 h-28 object-cover rounded-2xl border-2 border-gray-50 dark:border-gray-800 shadow-md transition-transform duration-300 group-hover:scale-[1.02]" />
-                      </div>
+              <div className="flex-1 overflow-y-auto no-scrollbar">
+                <div className="p-8 space-y-10">
+                  <div className="flex border-b border-gray-100 dark:border-gray-800">
+                    {['Overview', 'Evidence', 'Mission'].map((tab) => (
+                      <button
+                        key={tab}
+                        onClick={() => setActiveTab(tab)}
+                        className={`px-8 py-4 text-[10px] font-black uppercase tracking-widest relative transition-all
+                          ${activeTab === tab ? 'text-indigo-600' : 'text-gray-400 hover:text-gray-600'}`}
+                      >
+                        {tab}
+                        {activeTab === tab && <div className="absolute bottom-0 left-0 right-0 h-1 bg-indigo-600 rounded-t-full" />}
+                      </button>
                     ))}
                   </div>
-                ) : (
-                  <div className="text-sm font-bold text-gray-400 dark:text-gray-500 bg-gray-50 dark:bg-gray-800/50 border border-dashed border-gray-200 dark:border-gray-700 rounded-2xl p-6 text-center">
-                    No images uploaded yet.
-                  </div>
-                )}
+
+                  {activeTab === 'Overview' && (
+                    <div className="space-y-8 animate-in fade-in slide-in-from-left-4 duration-500">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="p-8 bg-gray-50/50 dark:bg-white/5 rounded-[2.5rem] border border-gray-100 dark:border-white/5 group">
+                           <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-6 flex items-center gap-2">
+                             <MapPin size={14} className="text-rose-500" /> Geolocation Intel
+                           </h4>
+                           <p className="text-sm font-bold text-gray-900 dark:text-gray-100 leading-relaxed">{selectedVisit.address}</p>
+                           <div className="mt-6 flex gap-4 pt-6 border-t border-gray-100 dark:border-white/5">
+                              <button className="flex-1 flex items-center justify-center gap-2 bg-white dark:bg-white/10 text-gray-900 dark:text-white py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:shadow-lg transition-all active:scale-95">
+                                <Navigation size={14} /> Directions
+                              </button>
+                              <button className="flex-1 flex items-center justify-center gap-2 bg-gray-100 dark:bg-white/10 text-gray-900 dark:text-white py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-gray-200 dark:hover:bg-white/20 transition-all">
+                                <Phone size={14} className="text-emerald-500" /> Call
+                              </button>
+                           </div>
+                        </div>
+
+                        <div className="bg-blue-50/50 dark:bg-blue-500/5 p-8 rounded-[2.5rem] border border-blue-100 dark:border-blue-500/10 relative overflow-hidden group">
+                           <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
+                              <MessageSquare size={120} />
+                           </div>
+                           <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600 dark:text-blue-400 mb-4 flex items-center gap-2">
+                              <MessageSquare size={14} /> Reporter Remarks
+                           </h4>
+                           <p className="text-base font-bold text-gray-700 dark:text-gray-300 leading-relaxed italic relative z-10">
+                             "{selectedVisit.feedback || "The field executive has not provided any specific notes for this mission."}"
+                           </p>
+                        </div>
+                      </div>
+
+                      <div className="flex gap-4 p-6 bg-gray-50/50 dark:bg-white/5 rounded-[2rem] border border-gray-100 dark:border-white/5">
+                        <div className="flex-1 flex flex-col items-center gap-1 border-r border-gray-100 dark:border-white/10">
+                           <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Entry Time</span>
+                           <span className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-tight">{selectedVisit.time}</span>
+                        </div>
+                        <div className="flex-1 flex flex-col items-center gap-1">
+                           <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Calculated Dist</span>
+                           <span className="text-sm font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-tight">{selectedVisit.distance}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {activeTab === 'Evidence' && (
+                    <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-3">
+                          <div className="w-1.5 h-6 bg-indigo-600 rounded-full shadow-lg shadow-indigo-500/20" />
+                          <h4 className="text-[11px] font-black uppercase tracking-[0.22em] text-gray-900 dark:text-white flex items-center gap-2">
+                            <ShieldCheck size={14} className="text-indigo-600" /> Security-Encrypted Evidence Gallery
+                          </h4>
+                        </div>
+                      </div>
+                      
+                      {selectedVisit.uploadedImages && selectedVisit.uploadedImages.length > 0 ? (
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-6">
+                          {selectedVisit.uploadedImages.map((img, idx) => (
+                            <div 
+                              key={idx} 
+                              className="relative aspect-square group cursor-zoom-in"
+                              onClick={() => setPreviewImage(img)}
+                            >
+                              <div className="absolute inset-0 bg-indigo-600 translate-x-2 translate-y-2 rounded-[2.5rem] opacity-0 group-hover:opacity-10 transition-all duration-300"></div>
+                              <div className="relative h-full w-full rounded-[2.5rem] overflow-hidden border-2 border-white dark:border-gray-800 shadow-lg group-hover:shadow-2xl transition-all duration-300 group-hover:-translate-y-1">
+                                <img src={img} alt={`Proof ${idx + 1}`} className="h-full w-full object-cover transition-transform duration-[2s] group-hover:scale-110" />
+                                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-gray-950 px-6 py-6 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <span className="inline-block px-3 py-1.5 rounded-xl bg-indigo-600 text-[9px] font-black text-white uppercase tracking-widest shadow-xl">
+                                    Mission Proof {idx + 1}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center justify-center py-24 rounded-[3rem] border-4 border-dashed border-gray-100 dark:border-white/5 text-gray-300 dark:text-white/10 gap-4">
+                          <Camera size={64} className="opacity-10" />
+                          <p className="text-xs font-black uppercase tracking-[0.3em]">No Visual Evidence Recorded</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {activeTab === 'Mission' && (
+                    <div className="space-y-8 animate-in fade-in slide-in-from-left-4 duration-500">
+                       <div className="bg-indigo-600 p-8 rounded-[2.5rem] text-white shadow-xl shadow-indigo-600/20 flex items-center justify-between overflow-hidden relative group">
+                          <div className="relative z-10">
+                            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-100/60 mb-2">Authenticated Logic</p>
+                            <h3 className="text-xl font-black tracking-tight">{selectedVisit.taskTitle || "General Field Activity"}</h3>
+                            <p className="text-xs font-bold text-indigo-100 mt-1 opacity-80">{selectedVisit.taskType || "Standard"} Mission Template</p>
+                          </div>
+                          <Target size={120} className="absolute -right-8 -bottom-8 opacity-10 group-hover:scale-110 group-hover:rotate-12 transition-transform duration-700" />
+                       </div>
+
+                       {(selectedVisit.reviewStatus === 'rejected' || selectedVisit.status === 'Rejected') && (
+                        <div className="bg-rose-50/80 dark:bg-rose-500/10 p-6 rounded-[2.5rem] border border-rose-100 dark:border-rose-500/20 animate-bounce-short">
+                          <div className="flex items-center gap-3 mb-4 text-rose-600">
+                            <AlertCircle size={20} />
+                            <h4 className="text-[11px] font-black uppercase tracking-[0.2em]">Audit Denial Logic</h4>
+                          </div>
+                          <blockquote className="text-sm font-black text-rose-800 dark:text-rose-300 italic border-l-4 border-rose-300 dark:border-rose-500/40 pl-6 py-1">
+                            "{selectedVisit.rejectionReason || selectedVisit.rejectionIntelligence || "No specific denial intelligence synchronized."}"
+                          </blockquote>
+                        </div>
+                      )}
+
+                      {selectedVisit.checklist && selectedVisit.checklist.length > 0 && (
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between">
+                             <h4 className="text-[11px] font-black uppercase tracking-[0.25em] text-gray-400">Milestone Synchronization</h4>
+                             <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-100 active:scale-95 transition-all">
+                                {selectedVisit.checklist.filter(c => c.completed).length} / {selectedVisit.checklist.length} Passed
+                             </span>
+                          </div>
+                          <div className="grid grid-cols-1 gap-3">
+                            {selectedVisit.checklist.map((item, idx) => (
+                              <div key={idx} className="flex items-center justify-between p-4 bg-gray-50/50 dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/10 group hover:border-emerald-200 transition-all">
+                                <div className="flex items-center gap-4">
+                                   <div className={`w-8 h-8 rounded-xl flex items-center justify-center
+                                     ${item.completed ? 'bg-emerald-500 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-400'}`}>
+                                      <CheckCircle2 size={16} />
+                                   </div>
+                                   <span className={`text-[11px] font-black uppercase tracking-widest ${item.completed ? 'text-gray-900 dark:text-white' : 'text-gray-400'}`}>
+                                      {item.label}
+                                   </span>
+                                </div>
+                                {item.completed && <Check size={14} className="text-emerald-500" />}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
 
-            </div>
-          </div>
+              <div className="p-8 border-t border-gray-50 dark:border-gray-800 flex items-center justify-between shrink-0 bg-white dark:bg-gray-900">
+                 <div className="flex flex-col">
+                    <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Audit Engine Signature</span>
+                    <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">Protocol Version 4.2.alpha</span>
+                 </div>
+                 <button 
+                  onClick={() => setSelectedVisit(null)}
+                  className="px-8 py-4 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest rounded-3xl hover:bg-indigo-700 shadow-xl shadow-indigo-600/20 active:scale-95 transition-all"
+                 >
+                    Close Protocol
+                 </button>
+              </div>
+           </div>
         </div>
       )}
     </div>

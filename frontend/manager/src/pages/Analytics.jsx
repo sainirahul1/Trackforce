@@ -230,7 +230,9 @@ const IntelligenceSuite = () => {
         photosCount: photos.length || t.photos?.length || 0,
         proofs: photos.length > 0 ? photos.map((url, idx) => ({ id: idx + 1, title: 'Evidence', img: url })) : [],
         reviewStatus: t.reviewStatus || 'pending',
-        brief: t.visitNotes || t.description || 'Task assigned.'
+        brief: t.visitNotes || t.description || 'Task assigned.',
+        email: t.employee?.email || `${t.employee?.name?.toLowerCase().replace(/\s+/g, '.')}@trackforce.com`,
+        phone: t.employee?.profile?.phone || '+91 00000 00000'
       };
     });
     setTaskLogs(tLogs);
@@ -369,13 +371,13 @@ const IntelligenceSuite = () => {
                       <Users size={14} className="text-indigo-500" />
                       {selectedVisit.designation} • #{selectedVisit.id?.toString().slice(-6).toUpperCase()}
                     </div>
-                    <div className="flex items-center gap-2 text-xs font-bold text-gray-400 lowercase tracking-tight">
+                    <div className="flex items-center gap-2 text-xs font-bold text-gray-400">
                       <Mail size={14} className="text-emerald-500" />
-                      {selectedVisit.executive.toLowerCase().replace(' ', '.')}@trackforce.com
+                      {selectedVisit.email}
                     </div>
                     <div className="flex items-center gap-2 text-xs font-bold text-gray-400">
                       <Phone size={14} className="text-blue-500" />
-                      +91 98765 43210
+                      {selectedVisit.phone}
                     </div>
                   </div>
                 </div>

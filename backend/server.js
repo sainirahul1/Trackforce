@@ -18,8 +18,10 @@ const validateRole = require('./middleware/validateRole');
 const validatePortal = require('./middleware/validatePortal');
 const tenantMiddleware = require('./middleware/tenantMiddleware');
 const { authLimiter, apiLimiter, publicLimiter } = require('./middleware/rateLimiter');
+const { cleanupStaleSessions } = require('./services/maintenanceService');
 
 const app = express();
+
 const PORT = process.env.PORT || 5001;
 const server = http.createServer(app);
 
@@ -199,6 +201,8 @@ app.use('/api/superadmin/update-credentials', protect, require('./routes/superad
 app.use('/api/tenant', protect, tenantMiddleware, require('./routes/tenant/tenantRoutes'));
 app.use('/api/manager/inventory-orders', protect, tenantMiddleware, require('./routes/manager/inventoryOrderRoutes'));
 app.use('/api/manager/activity', protect, tenantMiddleware, require('./routes/manager/activityRoutes'));
+app.use('/api/manager/team-performance', protect, tenantMiddleware, require('./routes/manager/teamPerformanceRoutes'));
+app.use('/api/manager/teams', protect, tenantMiddleware, require('./routes/manager/teamRoutes'));
 app.use('/api/employee/tasks', protect, tenantMiddleware, require('./routes/employee/taskRoutes'));
 
 // ─── Centralized Error Handling ──────────────────────────────────────────────
@@ -247,6 +251,12 @@ const connectDB = async () => {
         console.log(`[SERVER] Protocol: HTTP/Socket.io | Port: ${PORT}`);
         console.log(`[SERVER] Environment: ${process.env.NODE_ENV || 'production'}`);
         console.log(`[SERVER] Portal Routes: /reatchall/{employee,manager,tenant,superadmin,admin}/*`);
+        
+        // --- Initialize Maintenance Tasks ---
+        // Run once on startup to clean up any sessions from previous runs
+        cleanupStaleSessions(io);
+        // Then run every 30 minutes
+        setInterval(() => cleanupStaleSessions(io), 30 * 60 * 1000);
       });
       isStarted = true;
     }

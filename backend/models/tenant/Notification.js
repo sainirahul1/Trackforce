@@ -42,6 +42,10 @@ const notificationSchema = new mongoose.Schema({
     enum: ['low', 'medium', 'high'],
     default: 'low',
   },
+  metadata: {
+    type: mongoose.Schema.Types.Mixed,
+    default: {}
+  }
 }, { timestamps: true, collection: 'tenant.notifications' });
 
 module.exports = mongoose.model('Notification', notificationSchema);

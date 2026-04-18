@@ -226,9 +226,26 @@ const IssueDetails = ({ issue, onBack, onStatusUpdate, onUpdatePriority, onDelet
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      console.log('File selected:', file.name);
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        try {
+          // SYNC TO BACKEND INSTANTLY
+          await onStatusUpdate(issue.id, null, null, reader.result);
+          triggerToast('New evidence attached successfully', 'success');
+        } catch (err) {
+          triggerToast('Failed to upload evidence', 'error');
+        }
+      };
+      reader.readAsDataURL(file);
     }
   };
+
+  // NORMALIZE IMAGES: Support both legacy single string and new array
+  const allImages = useMemo(() => {
+    if (Array.isArray(issue.images)) return issue.images;
+    if (issue.image) return [issue.image];
+    return [];
+  }, [issue.images, issue.image]);
 
   return (
     <div className="animate-in slide-in-from-right duration-700">
@@ -398,42 +415,47 @@ const IssueDetails = ({ issue, onBack, onStatusUpdate, onUpdatePriority, onDelet
                 </h4>
                 <div className="p-6 bg-gray-50/50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-800 group-hover:bg-white dark:group-hover:bg-gray-900 group-hover:shadow-xl transition-all duration-500">
                   <p className="text-gray-600 dark:text-gray-400 leading-relaxed font-semibold italic text-sm">
-                    "{issue.subject === 'Device Malfunction'
-                      ? "The employee portal app crashes immediately upon opening on Android 13 devices. We've tried clearing cache and re-installing but the issue persists. This is affecting multiple staff members during clock-in."
-                      : "I am unable to login after the latest app update. It just hangs on the splash screen. No error message is shown, it just stays stuck on the logo."}"
+                    "{issue.description || 'No detailed problem context provided.'}"
                   </p>
                 </div>
               </div>
 
+              {/* Proofs & Attachments Section */}
               <div>
                 <h4 className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.3em] mb-6 flex items-center gap-2">
                   <div className="w-6 h-[2px] bg-indigo-500"></div> Proofs & Attachments
                 </h4>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-5">
-                  {[1, 2].map(img => (
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+                  {allImages.map((img, idx) => (
                     <div
-                      key={img}
-                      onClick={() => setPreviewImage(`https://images.unsplash.com/photo-1555774698-0b77e0d5fac6?w=1000&id=${img}`)}
-                      className="group relative aspect-video rounded-3xl overflow-hidden border-2 border-white dark:border-gray-800 hover:border-indigo-500 shadow-lg hover:shadow-indigo-500/20 transition-all cursor-pointer"
+                      key={idx}
+                      onClick={() => setPreviewImage(img)}
+                      className="group relative aspect-video rounded-3xl overflow-hidden border-2 border-white dark:border-gray-800 hover:border-indigo-500 shadow-xl hover:shadow-indigo-500/20 transition-all cursor-pointer"
                     >
                       <img
-                        src={`https://images.unsplash.com/photo-1555774698-0b77e0d5fac6?w=600&id=${img}`}
-                        className="w-full h-full object-cover grayscale group-hover:grayscale-0 group-hover:scale-110 transition-all duration-700"
-                        alt="attachment proof"
+                        src={img}
+                        className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110"
+                        alt={`Proof ${idx + 1}`}
                       />
                       <div className="absolute inset-0 bg-indigo-600/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all duration-500 backdrop-blur-[2px]">
                         <div className="p-3 bg-white/20 rounded-2xl backdrop-blur-md">
                           <Maximize2 className="text-white" size={24} />
                         </div>
                       </div>
+                      <div className="absolute top-4 left-4">
+                        <span className="px-3 py-1 bg-white/90 dark:bg-gray-950/90 backdrop-blur-md rounded-full text-[8px] font-black uppercase tracking-widest text-indigo-600 border border-white/20">
+                          {idx === 0 ? 'Reporter Asset' : 'Manager Proof'}
+                        </span>
+                      </div>
                     </div>
                   ))}
+                  
                   <div
                     onClick={handleRequestProofClick}
                     className="aspect-video rounded-3xl border-2 border-dashed border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/20 flex flex-col items-center justify-center text-gray-400 hover:text-indigo-500 hover:border-indigo-500 transition-all cursor-pointer group"
                   >
-                    <Paperclip size={28} className="mb-2 group-hover:rotate-12 transition-transform" />
-                    <span className="text-[9px] font-black tracking-widest uppercase">Request More Proof</span>
+                    <Plus size={28} className="mb-2 group-hover:rotate-12 transition-transform" />
+                    <span className="text-[9px] font-black tracking-widest uppercase">Add Evidence</span>
                   </div>
                 </div>
               </div>
@@ -443,7 +465,7 @@ const IssueDetails = ({ issue, onBack, onStatusUpdate, onUpdatePriority, onDelet
 
         {/* Right Column: Controls */}
         <div className="space-y-8">
-          {/* <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-[2rem] p-6 shadow-2xl shadow-indigo-500/5 ring-1 ring-gray-100/50 dark:ring-gray-800">
+          <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-[2rem] p-6 shadow-2xl shadow-indigo-500/5 ring-1 ring-gray-100/50 dark:ring-gray-800">
             <h4 className="text-[9px] font-black text-indigo-500 uppercase tracking-[0.2em] mb-6">Management Center</h4>
             
             <div className="space-y-6">
@@ -597,19 +619,44 @@ const Issues = () => {
     }
   };
 
-  const handleStatusUpdate = useCallback(async (id, newStatus, escalatedTo = null) => {
+  const handleStatusUpdate = useCallback(async (id, newStatus, escalatedTo = null, newImage = null) => {
     // OPTIMISTIC UPDATE: Update UI immediately
-    setIssuesList(prev => prev.map(issue =>
-      issue._id === id ? { ...issue, status: newStatus, escalatedTo } : issue
-    ));
+    setIssuesList(prev => prev.map(issue => {
+      if (issue._id === id || issue.id === id) {
+        const updatedImages = [...(Array.isArray(issue.images) ? issue.images : (issue.image ? [issue.image] : []))];
+        if (newImage) updatedImages.push(newImage);
+        
+        return { 
+          ...issue, 
+          status: newStatus || issue.status, 
+          escalatedTo: escalatedTo !== null ? escalatedTo : issue.escalatedTo,
+          images: updatedImages
+        };
+      }
+      return issue;
+    }));
 
     if (selectedIssue && (selectedIssue._id === id || selectedIssue.id === id)) {
-      setSelectedIssue(prev => ({ ...prev, status: newStatus, escalatedTo }));
+      setSelectedIssue(prev => {
+        const updatedImages = [...(Array.isArray(prev.images) ? prev.images : (prev.image ? [prev.image] : []))];
+        if (newImage) updatedImages.push(newImage);
+        return { 
+          ...prev, 
+          status: newStatus || prev.status, 
+          escalatedTo: escalatedTo !== null ? escalatedTo : prev.escalatedTo,
+          images: updatedImages
+        };
+      });
     }
 
     try {
-      await updateIssue(id, { status: newStatus });
-      triggerToast('Status updated successfully');
+      const updateData = {};
+      if (newStatus) updateData.status = newStatus;
+      if (escalatedTo) updateData.escalatedTo = escalatedTo;
+      if (newImage) updateData.addImage = newImage;
+
+      await updateIssue(id, updateData);
+      if (!newImage) triggerToast('Update successfully synchronized');
     } catch (err) {
       // Background sync on failure to recover state
       fetchIssuesSync();

@@ -7,9 +7,14 @@ const { logActivity } = require('../../utils/activityLogger');
 // @access  Private (Employee, Manager, etc.)
 exports.createIssue = async (req, res) => {
   try {
-    const { subject, description, priority, to } = req.body;
+    const { subject, description, priority, to, image, images } = req.body;
     
-    // Ensure we have the user's name (might be missing from auth fast-path)
+    // Normalize images to array
+    let finalImages = [];
+    if (images && Array.isArray(images)) finalImages = images;
+    else if (image) finalImages = [image];
+
+    // Ensure we have the user's name
     let fromName = req.user.name;
     if (!fromName) {
       const user = await User.findById(req.user._id).select('name');
@@ -20,37 +25,47 @@ exports.createIssue = async (req, res) => {
       from: req.user._id,
       fromName,
       fromRole: req.user.role,
-      to: to || 'manager', // Default to manager if not specified
+      to: to || 'manager',
       tenant: req.user.tenant,
       subject,
       description,
       priority: priority || 'Medium',
+      images: finalImages
     });
 
     const populatedIssue = await Issue.findById(issue._id)
       .populate('from', 'name profile.profileImage')
       .lean();
 
-    // REAL-TIME SYNC: Notify the target role (e.g. Manager) about the new issue
+    // REAL-TIME SYNC: Notify the target role room
     const io = req.app.get('io');
     if (io && populatedIssue) {
       const room = `tenant:${req.user.tenant}:role:${populatedIssue.to}`;
       io.to(room).emit('issue:new', populatedIssue);
     }
 
-    // NEW: Log Activity & Create Formal Notification for the target role/manager
-    // This makes it "properly" reflect in the notification system
-    await logActivity({
-      userId: req.user._id, // The creator's activity log
-      tenantId: req.user.tenant,
-      type: 'alert',
-      title: 'Support Issue Raised',
-      details: `New issue: "${subject}" created by ${fromName}.`,
-      status: priority === 'High' ? 'urgent' : 'warning',
-      metadata: { issueId: issue._id },
-      notify: true, // This creates the Notification object
-      priority: priority === 'High' ? 'high' : 'medium'
-    });
+    // BROADCAST NOTIFICATIONS to all relevant recipients (Managers/Tenants)
+    const recipients = await User.find({ 
+      tenant: req.user.tenant, 
+      role: populatedIssue.to 
+    }).select('_id');
+
+    // Also notify the specific creator for their history
+    const allRecipientIds = [...new Set([...recipients.map(r => r._id.toString()), req.user._id.toString()])];
+
+    for (const recipientId of allRecipientIds) {
+      await logActivity({
+        userId: recipientId,
+        tenantId: req.user.tenant,
+        type: 'alert',
+        title: 'Support Issue Raised',
+        details: `New issue: "${subject}" created by ${fromName}.`,
+        status: priority === 'High' || priority === 'Critical' ? 'urgent' : 'warning',
+        metadata: { issueId: issue._id, image: finalImages.length > 0 },
+        notify: true,
+        priority: priority === 'High' || priority === 'Critical' ? 'high' : 'medium'
+      });
+    }
 
     res.status(201).json(populatedIssue);
   } catch (err) {

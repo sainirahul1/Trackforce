@@ -48,6 +48,9 @@ import {
 import { useOutletContext } from 'react-router-dom';
 import Button from '../components/ui/Button';
 import { useDialog } from '../context/DialogContext';
+import { useSocket } from '../context/SocketContext';
+import { useGoogleMaps } from '../context/GoogleMapsContext';
+import { GoogleMap, MarkerF } from '@react-google-maps/api';
 import { getSyncCachedData } from '../utils/cacheHelper';
 
 // --- Sub-components (Consolidated & Styled) ---
@@ -251,13 +254,20 @@ const ProgressCircle = ({ label, current, target, unit = '', color }) => {
 
 
 const TaskDetailOverlay = ({ task, onClose, onUpdateOperationalData, onStartTask, onFileUpload, isTaskLoading }) => {
+  const { isLoaded } = useGoogleMaps();
   // Local draft state — changes here don't hit the API until submit
   const [localVisitStatus, setLocalVisitStatus] = React.useState(task?.visitStatus || 'Reached Client');
   const [localMissionStatus, setLocalMissionStatus] = React.useState(task?.missionStatus || 'In Progress');
   const [localNotes, setLocalNotes] = React.useState(task?.visitNotes || '');
   if (!task) return null;
 
+  const taskCoords = task.coords ? { lat: task.coords.x, lng: task.coords.y } : null;
+
   const handleOpenMaps = () => {
+    if (taskCoords) {
+      window.open(`https://www.google.com/maps/search/?api=1&query=${taskCoords.lat},${taskCoords.lng}`, '_blank');
+      return;
+    }
     if (!task.address) return;
     const encodedAddress = encodeURIComponent(`${task.store}, ${task.address}`);
     window.open(`https://www.google.com/maps/search/?api=1&query=${encodedAddress}`, '_blank');
@@ -292,17 +302,42 @@ const TaskDetailOverlay = ({ task, onClose, onUpdateOperationalData, onStartTask
               </div>
             </div>
 
-            <div className="flex-1 bg-white/50 dark:bg-gray-800/30 backdrop-blur-sm rounded-[2rem] border border-gray-100 dark:border-gray-800/50 p-6 flex flex-col items-center justify-center text-center">
-              <div className="w-16 h-16 rounded-full bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center mb-4">
-                <Navigation className="text-indigo-600 animate-pulse" size={32} />
-              </div>
-              <p className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-tight">Navigation Active</p>
-              <p className="text-[10px] font-bold text-gray-400 mt-1 uppercase">{task.distance} Away • {task.eta} Arrival</p>
+            <div className="flex-1 bg-white/50 dark:bg-gray-800/30 backdrop-blur-sm rounded-[2rem] border border-gray-100 dark:border-gray-800/50 p-6 flex flex-col items-center justify-center text-center overflow-hidden">
+              {isLoaded && taskCoords ? (
+                <div className="w-full h-full min-h-[160px] rounded-2xl overflow-hidden mb-4 relative border border-gray-200 dark:border-gray-700">
+                  <GoogleMap
+                    mapContainerStyle={{ width: '100%', height: '100%' }}
+                    zoom={15}
+                    center={taskCoords}
+                    options={{ mapTypeControl: false, streetViewControl: false, disableDefaultUI: true }}
+                  >
+                    <MarkerF 
+                      position={taskCoords} 
+                      icon={{
+                        path: window.google.maps.SymbolPath.CIRCLE,
+                        scale: 8,
+                        fillColor: '#ef4444',
+                        fillOpacity: 1,
+                        strokeWeight: 2,
+                        strokeColor: '#fff'
+                      }}
+                    />
+                  </GoogleMap>
+                </div>
+              ) : (
+                <div className="w-16 h-16 rounded-full bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center mb-4">
+                  <Navigation className="text-indigo-600 animate-pulse" size={32} />
+                </div>
+              )}
+              <p className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-tight">Navigation Ready</p>
+              <p className="text-[10px] font-bold text-gray-400 mt-1 uppercase">
+                {taskCoords ? `Pinned: ${taskCoords.lat.toFixed(4)}, ${taskCoords.lng.toFixed(4)}` : `${task.distance} Away • ${task.eta} Arrival`}
+              </p>
               <button
                 onClick={handleOpenMaps}
-                className="mt-6 px-6 py-3 bg-indigo-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-indigo-100 dark:shadow-none hover:scale-105 transition-all"
+                className="mt-6 px-6 py-3 bg-indigo-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-indigo-100 dark:shadow-none hover:scale-105 transition-all w-full"
               >
-                Open Maps
+                Open Navigation
               </button>
             </div>
 
@@ -655,6 +690,7 @@ const EmployeeTasks = () => {
   const [isTaskLoading, setIsTaskLoading] = useState(false);
   const [collapsedCategories, setCollapsedCategories] = useState({});
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const socket = useSocket();
 
   const toggleCategory = (category) => {
     setCollapsedCategories(prev => ({ ...prev, [category]: !prev[category] }));
@@ -702,6 +738,25 @@ const EmployeeTasks = () => {
       fetchTasks();
     }
   }, []);
+
+  // Real-time task assignment listener
+  useEffect(() => {
+    if (!socket) return;
+
+    socket.on('task:assigned', (newTask) => {
+      console.log('[SOCKET] Real-time Task Received:', newTask);
+      setTaskList(prev => {
+        // Prevent duplicates
+        if (prev.find(t => t._id === newTask._id)) return prev;
+        return [newTask, ...prev];
+      });
+      showAlert('New Mission', `New mission assigned: ${newTask.title}`, 'info');
+    });
+
+    return () => {
+      socket.off('task:assigned');
+    };
+  }, [socket]);
 
   const updateTaskStatus = async (taskId, newStatus) => {
     try {

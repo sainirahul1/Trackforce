@@ -2,6 +2,10 @@ const User = require('../../models/tenant/User');
 const TenantSettings = require('../../models/tenant/Settings');
 const bcrypt = require('bcryptjs');
 const Subscription = require('../../models/superadmin/Subscription');
+const TrackingSession = require('../../models/employee/TrackingSession');
+const Task = require('../../models/employee/Task');
+const Order = require('../../models/employee/Order');
+const StoreVisit = require('../../models/employee/StoreVisit');
 
 // @desc    Get all employees for a tenant
 // @route   GET /api/tenant/employees
@@ -58,6 +62,115 @@ exports.getEmployeeById = async (req, res) => {
   }
 };
 
+// @desc    Get comprehensive analytics for an employee
+// @route   GET /api/tenant/employees/:id/analytics
+// @access  Private (Tenant/Manager)
+exports.getEmployeeAnalytics = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const tenantId = req.tenantId || req.user.tenant;
+
+    // 1. Verify user exists and belongs to tenant
+    const employee = await User.findOne({ _id: id, tenant: tenantId });
+    if (!employee) {
+      return res.status(404).json({ message: 'Employee not found' });
+    }
+
+    // 2. Performance Timeframe (MTD - Month to Date)
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const last30Days = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000));
+
+    // Parallel fetching for performance
+    const [tasks, orders, visits, recentSessions] = await Promise.all([
+      Task.find({ employee: id, tenant: tenantId, createdAt: { $gte: last30Days } }).lean(),
+      Order.find({ employee: id, tenant: tenantId, createdAt: { $gte: startOfMonth } }).lean(),
+      StoreVisit.find({ employee: id, tenant: tenantId, createdAt: { $gte: startOfMonth } }).lean(),
+      TrackingSession.find({ user: id, tenant: tenantId, createdAt: { $gte: last30Days } }).sort({ createdAt: -1 }).lean()
+    ]);
+
+    const latestSession = recentSessions.length > 0 ? recentSessions[0] : null;
+
+    // 3. Calculate Stats
+    const totalTasks = tasks.length;
+    const completedTasks = tasks.filter(t => t.status === 'completed').length;
+    const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+    
+    const revenueMTD = orders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+    
+    const daysInMonth = Math.max(1, now.getDate());
+    const avgVisitsPerDay = (visits.length / daysInMonth).toFixed(1);
+
+    // 4. Construct Activity Feed
+    const feed = [];
+    
+    tasks.slice(0, 10).forEach(t => feed.push({
+      type: 'TASK',
+      title: `Task ${t.status === 'completed' ? 'Completed' : 'Updated'}: ${t.title}`,
+      time: t.updatedAt,
+      desc: `Location: ${t.store}`,
+      status: t.status
+    }));
+
+    orders.slice(0, 5).forEach(o => feed.push({
+      type: 'ORDER',
+      title: `Order Placed: ₹${o.totalAmount}`,
+      time: o.createdAt,
+      desc: `Items: ${o.items} | Store: ${o.storeName}`,
+      amount: o.totalAmount
+    }));
+
+    visits.slice(0, 10).forEach(v => feed.push({
+      type: 'VISIT',
+      title: `Visit Recorded: ${v.storeName}`,
+      time: v.timestamp,
+      desc: `Type: ${v.visitType} | Status: ${v.status}`,
+      status: v.status
+    }));
+
+    recentSessions.slice(0, 5).forEach(s => feed.push({
+      type: 'SESSION',
+      title: `Tracking ${s.status === 'active' ? 'Started' : 'Ended'}`,
+      time: s.createdAt,
+      desc: `Duration: ${s.activitySummary?.totalTravelTime ? Math.round(s.activitySummary.totalTravelTime / 60) : 0} min`
+    }));
+
+    const sortedFeed = feed.sort((a, b) => new Date(b.time) - new Date(a.time)).slice(0, 15);
+
+    // 5. Build Telemetry Series (existing logic)
+    let timeSeriesData = [];
+    if (latestSession && latestSession.route && latestSession.route.length > 0) {
+      timeSeriesData = latestSession.route.map(pt => ({
+        timestamp: pt.timestamp,
+        timeLabel: new Date(pt.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        speed: pt.speed >= 0 ? pt.speed * 3.6 : 0,
+        battery: pt.battery >= 0 ? pt.battery : null,
+      })).filter((_, index, arr) => {
+         const step = Math.max(1, Math.floor(arr.length / 100));
+         return index % step === 0;
+      });
+    }
+
+    res.json({
+      overview: {
+        completionRate: `${completionRate}%`,
+        ordersMTD: orders.length,
+        revenueMTD: `₹${(revenueMTD / 1000).toFixed(1)}k`,
+        avgVisitsPerDay,
+        activeHours: (recentSessions.reduce((sum, s) => sum + (s.activitySummary?.totalTravelTime || 0), 0) / (3600 * 30)).toFixed(1) + 'h/d'
+      },
+      activityFeed: sortedFeed,
+      latestSession: latestSession ? {
+        id: latestSession._id,
+        activitySummary: latestSession.activitySummary,
+        distanceTravelled: latestSession.distanceTravelled
+      } : null,
+      telemetrySeries: timeSeriesData
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 
 
 
@@ -223,7 +336,13 @@ exports.createEmployee = async (req, res) => {
 exports.updateEmployee = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, team, zone, designation, status } = req.body;
+    const { 
+      name, team, zone, designation, status,
+      phone, address, dob, gender, nationality, bloodGroup, 
+      emergencyContact, allergies, department, location, 
+      employeeCode, dateOfJoin, workArea, reportingTo, securityLevel,
+      profileImage
+    } = req.body;
 
     const employee = await User.findOne({ _id: id, tenant: req.tenantId });
 
@@ -238,21 +357,68 @@ exports.updateEmployee = async (req, res) => {
       employee.profile = {};
     }
 
+    // Map profile fields if they exist in the request body
     if (team !== undefined) employee.profile.team = team;
     if (zone !== undefined) employee.profile.zone = zone;
     if (designation !== undefined) employee.profile.designation = designation;
+    if (phone !== undefined) employee.profile.phone = phone;
+    if (address !== undefined) employee.profile.address = address;
+    if (dob !== undefined) employee.profile.dob = dob;
+    if (gender !== undefined) employee.profile.gender = gender;
+    if (nationality !== undefined) employee.profile.nationality = nationality;
+    if (bloodGroup !== undefined) employee.profile.bloodGroup = bloodGroup;
+    if (emergencyContact !== undefined) employee.profile.emergencyContact = emergencyContact;
+    if (allergies !== undefined) employee.profile.allergies = allergies;
+    if (department !== undefined) employee.profile.department = department;
+    if (location !== undefined) employee.profile.location = location;
+    if (employeeCode !== undefined) employee.profile.employeeCode = employeeCode;
+    if (dateOfJoin !== undefined) employee.profile.dateOfJoin = dateOfJoin;
+    if (workArea !== undefined) employee.profile.workArea = workArea;
+    if (reportingTo !== undefined) employee.profile.reportingTo = reportingTo;
+    if (securityLevel !== undefined) employee.profile.securityLevel = securityLevel;
+    if (profileImage !== undefined) employee.profile.profileImage = profileImage;
 
     if (status !== undefined) {
       if (status === 'Inactive') employee.isDeactivated = true;
       else if (status === 'On Duty' || status === 'Active') employee.isDeactivated = false;
     }
 
+    // Use markModified for nested profile object to ensure Mongoose saves changes
+    employee.markModified('profile');
     await employee.save();
 
-    const updatedEmployee = employee.toObject();
-    delete updatedEmployee.password;
+    res.json(employee);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 
-    res.json(updatedEmployee);
+// @desc    Add/Verify document for an employee
+// @route   POST /api/tenant/employees/:id/documents
+// @access  Private (Manager/Tenant)
+exports.verifyDocument = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, url } = req.body;
+
+    const employee = await User.findOne({ _id: id, tenant: req.tenantId });
+    if (!employee) {
+      return res.status(404).json({ message: 'Employee not found' });
+    }
+
+    if (!employee.profile) employee.profile = {};
+    if (!employee.profile.verifiedDocuments) employee.profile.verifiedDocuments = [];
+
+    employee.profile.verifiedDocuments.push({
+      name,
+      url: url || '',
+      verifiedAt: new Date()
+    });
+
+    employee.markModified('profile');
+    await employee.save();
+
+    res.status(201).json(employee);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

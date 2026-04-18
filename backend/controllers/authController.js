@@ -1,9 +1,13 @@
 const User = require('../models/tenant/User');
 const jwt = require('jsonwebtoken');
 
-// Generate JWT
-const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
+// Generate JWT with full role-based claims for Fast-Path Auth
+const generateToken = (id, role, tenant) => {
+  return jwt.sign({ 
+    id, 
+    role: role || 'employee', 
+    tenant: tenant || null 
+  }, process.env.JWT_SECRET, {
     expiresIn: '30d',
   });
 };
@@ -51,7 +55,8 @@ exports.register = async (req, res) => {
         tenantStatus: populatedUser.tenant?.onboardingStatus || 'active',
         manager: user.manager,
         isTracking: user.isTracking,
-        token: generateToken(user._id),
+        isTracking: user.isTracking,
+        token: generateToken(user._id, user.role, user.tenant),
       });
     } else {
       res.status(400).json({ message: 'Invalid user data' });
@@ -89,7 +94,6 @@ exports.getMe = async (req, res) => {
 exports.login = async (req, res) => {
   const { email, password, portal } = req.body;
   console.log('Login attempt:', { email, portal });
-  const { email, password, portal } = req.body;
 
   try {
     const user = await User.findOne({ email });
@@ -118,7 +122,7 @@ exports.login = async (req, res) => {
         tenantStatus: populatedUser.tenant?.onboardingStatus || 'active',
         manager: user.manager,
         isTracking: user.isTracking,
-        token: generateToken(user._id),
+        token: generateToken(user._id, user.role, populatedUser.tenant?._id || user.tenant),
       });
     } else {
       res.status(401).json({ message: 'Invalid email or password' });

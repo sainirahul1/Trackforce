@@ -2,6 +2,7 @@ const express = require('express');
 const {
   getEmployees,
   getEmployeeById,
+  getEmployeeAnalytics,
   createEmployee,
   updateEmployee,
   deleteEmployee,
@@ -33,6 +34,7 @@ router.use(tenantMiddleware);
 
 router.get('/employees', getEmployees);
 router.get('/employees/:id', getEmployeeById);
+router.get('/employees/:id/analytics', getEmployeeAnalytics);
 router.post('/employees', createEmployee);
 router.put('/employees/:id', updateEmployee);
 router.delete('/employees/:id', deleteEmployee);

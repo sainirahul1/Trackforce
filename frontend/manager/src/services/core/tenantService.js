@@ -86,6 +86,12 @@ export const getEmployeeById = async (id) => {
   return response.data;
 };
 
+// Get employee analytics
+export const getEmployeeAnalytics = async (id) => {
+  const response = await apiClient.get(`${API_URL}/employees/${id}/analytics`);
+  return response.data;
+};
+
 // Create an employee
 export const createEmployee = async (employeeData) => {
   const response = await apiClient.post(`${API_URL}/employees`, employeeData);
@@ -102,6 +108,12 @@ export const updateEmployee = async (id, employeeData) => {
 export const deleteEmployee = async (id) => {
   const response = await apiClient.delete(`${API_URL}/employees/${id}`);
   return response;
+};
+
+// Verify/Add Document
+export const verifyDocument = async (id, docData) => {
+  const response = await apiClient.post(`${API_URL}/employees/${id}/documents`, docData);
+  return response.data;
 };
 
 
@@ -194,9 +206,11 @@ const tenantService = {
   deleteManager,
   getEmployees,
   getEmployeeById,
+  getEmployeeAnalytics,
   createEmployee,
   updateEmployee,
   deleteEmployee,
+  verifyDocument,
 
   getSettings,
   updateGeneralInfo,

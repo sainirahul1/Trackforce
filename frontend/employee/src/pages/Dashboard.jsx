@@ -525,9 +525,34 @@ const EmployeeDashboard = () => {
     };
   }, []);
 
-  // --- Start Geo Tracking ---
+  // --- Start Geo Tracking (Enhanced with full device telemetry) ---
+  const lastEmitRef = React.useRef(0);
+  const batteryRef = React.useRef(-1);
+  const deviceIdRef = React.useRef('unknown');
+
+  // Generate stable device fingerprint on mount
+  React.useEffect(() => {
+    const ua = navigator.userAgent || '';
+    let hash = 0;
+    for (let i = 0; i < ua.length; i++) {
+      const ch = ua.charCodeAt(i);
+      hash = ((hash << 5) - hash) + ch;
+      hash |= 0;
+    }
+    deviceIdRef.current = `DEV-${Math.abs(hash).toString(36).toUpperCase()}`;
+
+    // Attempt to read battery (graceful degradation for unsupported browsers)
+    if (navigator.getBattery) {
+      navigator.getBattery().then(batt => {
+        batteryRef.current = Math.round(batt.level * 100);
+        batt.addEventListener('levelchange', () => {
+          batteryRef.current = Math.round(batt.level * 100);
+        });
+      }).catch(() => { batteryRef.current = -1; });
+    }
+  }, []);
+
   const startGeoTracking = React.useCallback(() => {
-    // UPDATED: Allow all roles that reach this dashboard to emit GPS (for testing/multi-role users)
     const currentUser = storage.getUser() || {};
 
     if (!navigator.geolocation) {
@@ -542,7 +567,12 @@ const EmployeeDashboard = () => {
 
     const id = navigator.geolocation.watchPosition(
       (position) => {
-        const { latitude, longitude } = position.coords;
+        // ENFORCE 10-SECOND MINIMUM INTERVAL between emissions
+        const now = Date.now();
+        if (now - lastEmitRef.current < 10000) return;
+        lastEmitRef.current = now;
+
+        const { latitude, longitude, accuracy, speed, heading } = position.coords;
         const currentSocket = socketRef.current;
         const currentUser = storage.getUser() || {};
 
@@ -554,16 +584,22 @@ const EmployeeDashboard = () => {
             tenantId: currentUser.tenant,
             role: currentUser.role,
             location: { lat: latitude, lng: longitude },
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
+            // Device Telemetry
+            accuracy: accuracy || -1,
+            speed: speed != null ? speed : -1,        // m/s from device
+            heading: heading != null ? heading : -1,   // degrees
+            battery: batteryRef.current,
+            deviceId: deviceIdRef.current,
           };
-          console.log('Emitting location update:', updateData);
+          console.log(`[GPS] Emitting telemetry: accuracy=${accuracy?.toFixed(1)}m speed=${speed?.toFixed(1)}m/s battery=${batteryRef.current}%`);
           currentSocket.emit('tracking:update', updateData);
         } else {
           console.warn('Socket not ready for emission');
         }
       },
       (error) => console.error('Error getting location:', error),
-      { enableHighAccuracy: true }
+      { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
     );
     setWatchId(id);
     watchIdRef.current = id;
@@ -690,11 +726,27 @@ const EmployeeDashboard = () => {
           // If already active on backend, just proceed (sync issue)
           if (err.message.includes('already active')) {
             console.log('Tracking already active on backend, syncing UI...');
-          } else {
-            throw err;
           }
         }
         startGeoTracking();
+        // Emit an immediate point for zero-latency visibility on the manager side
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition((pos) => {
+            const currentSocket = socketRef.current;
+            const u = storage.getUser() || {};
+            if (currentSocket?.connected) {
+              currentSocket.emit('tracking:update', {
+                employeeId: u._id,
+                employeeName: u.name,
+                managerId: u.manager,
+                tenantId: u.tenant,
+                role: u.role,
+                location: { lat: pos.coords.latitude, lng: pos.coords.longitude },
+                timestamp: new Date().toISOString()
+              });
+            }
+          });
+        }
       }
       setIsOnDuty(!isOnDuty);
 

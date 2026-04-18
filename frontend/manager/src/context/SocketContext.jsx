@@ -25,18 +25,22 @@ export const SocketProvider = ({ children }) => {
         auth: {
           token: user.token
         },
-        transports: ['websocket', 'polling']
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 2000
       });
 
       newSocket.on('connect', () => {
         console.log('[SOCKET] Connected to server');
         
-        const tenantId = typeof user.tenant === 'object' ? user.tenant._id : user.tenant;
+        // Extract tenant ID safely (handles both string and object)
+        const tenantId = (user.tenant && typeof user.tenant === 'object') ? user.tenant._id : user.tenant;
         
         // Join rooms for fine-grained isolation
         newSocket.emit('join_user', user._id);
         
         if (tenantId) {
+          console.log(`[SOCKET] Joining tenant room: ${tenantId}`);
           newSocket.emit('join_tenant', tenantId);
           newSocket.emit('join_tenant_role', { tenantId, role: user.role });
         }

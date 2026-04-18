@@ -73,7 +73,14 @@ exports.createTask = async (req, res) => {
     };
 
     const task = await Task.create(taskData);
-    const populatedTask = await Task.findById(task._id).populate('employee', 'name email');
+    const populatedTask = await Task.findById(task._id).populate('employee', 'name email status profile');
+
+    // Emit real-time task assignment to the specific employee's room
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`user:${taskData.employee}`).emit('task:assigned', populatedTask);
+      console.log(`[SOCKET] task:assigned emitted to user:${taskData.employee}`);
+    }
 
     // NEW: Log Activity & Notify Employee
     await logActivity({
@@ -83,7 +90,12 @@ exports.createTask = async (req, res) => {
       title: 'New Mission Assigned',
       details: `Project "${taskData.title}" assigned to you at ${taskData.store}.`,
       status: taskData.priority === 'high' ? 'urgent' : 'info',
-      metadata: { taskId: task._id, store: taskData.store },
+      metadata: { 
+        taskId: task._id, 
+        store: taskData.store,
+        missionType: taskData.type, // e.g., 'store', 'supplier'
+        category: 'mission'
+      },
       notify: true,
       priority: taskData.priority === 'high' ? 'high' : 'medium'
     });
@@ -206,7 +218,7 @@ exports.updateTask = async (req, res) => {
     }
 
     // Return the updated task with populated employee name
-    const populatedTask = await Task.findById(updatedTask._id).populate('employee', 'name email');
+    const populatedTask = await Task.findById(updatedTask._id).populate('employee', 'name email status profile');
     res.json(populatedTask);
   } catch (error) {
     res.status(500).json({ message: error.message });

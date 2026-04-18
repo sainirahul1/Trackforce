@@ -1,21 +1,36 @@
 import React, { useState } from 'react';
-import { X, Plus, Loader2 } from 'lucide-react';
+import { X, Plus, Loader2, Camera, Check } from 'lucide-react';
 
 const CreateIssueModal = ({ onClose, onCreate }) => {
   const [formData, setFormData] = useState({
     subject: '',
     priority: 'Medium',
     description: '',
+    image: null,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData(prev => ({ ...prev, image: reader.result }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.subject || !formData.description) return;
+    if (!formData.subject || !formData.description || !formData.image) return;
     
     setIsSubmitting(true);
     try {
-      await onCreate(formData);
+      await onCreate({
+        ...formData,
+        images: [formData.image]
+      });
     } finally {
       // If the parent component closes the modal on success, this might unmount before reaching here,
       // which is fine, but if it errors out, we want to stop loading.
@@ -73,6 +88,58 @@ const CreateIssueModal = ({ onClose, onCreate }) => {
                 <option value="High">High Priority</option>
                 <option value="Critical">Critical Issue</option>
               </select>
+            </div>
+          </div>
+
+          {/* VISUAL EVIDENCE CAPTURE */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between ml-2">
+              <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Visual Evidence Discovery *</label>
+              {formData.image && (
+                <span className="flex items-center gap-1.5 px-3 py-1 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 rounded-full text-[8px] font-black uppercase tracking-widest border border-emerald-100 dark:border-emerald-800 animate-in zoom-in-95">
+                  <Check size={10} /> Verified Capture
+                </span>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1">
+              <div 
+                onClick={() => document.getElementById('issue-image-input').click()}
+                className={`group relative aspect-[16/6] rounded-[2.5rem] border-4 border-dashed transition-all cursor-pointer overflow-hidden flex flex-col items-center justify-center gap-3
+                  ${formData.image 
+                    ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/20 shadow-xl shadow-emerald-500/10' 
+                    : 'border-gray-100 dark:border-gray-800 hover:border-indigo-400 bg-gray-50/50 dark:bg-white/5 hover:bg-white dark:hover:bg-white/10'}`}
+              >
+                {formData.image ? (
+                  <>
+                    <img src={formData.image} alt="Evidence" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                    <div className="absolute inset-0 bg-black/40 backdrop-blur-sm flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-all">
+                      <div className="p-4 bg-white rounded-full text-indigo-600 shadow-2xl">
+                        <Camera size={24} />
+                      </div>
+                      <p className="text-white text-[10px] font-black uppercase tracking-widest mt-4">Replace Proof</p>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="p-5 bg-white dark:bg-gray-800 rounded-3xl shadow-lg text-gray-400 group-hover:text-indigo-600 transition-all group-hover:scale-110 group-hover:-rotate-3">
+                      <Camera size={32} />
+                    </div>
+                    <div>
+                      <p className="text-gray-950 dark:text-white text-xs font-black uppercase tracking-widest text-center">Capture Incident Evidence</p>
+                      <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest text-center mt-1">Proof of malfunction required</p>
+                    </div>
+                  </>
+                )}
+                <input 
+                  id="issue-image-input"
+                  type="file" 
+                  accept="image/*" 
+                  capture="environment"
+                  className="hidden" 
+                  onChange={handleFileChange} 
+                />
+              </div>
             </div>
           </div>
 

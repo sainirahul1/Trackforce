@@ -22,25 +22,61 @@ const EmployeeDetailCard = ({ employee, currentPos, onClose, onToggleMission, is
   const lat = employee.lat || currentPos?.lat;
   const lng = employee.lng || currentPos?.lng;
 
+  // Activity state styling
+  const stateConfig = {
+    moving: { label: 'MOVING', color: 'bg-emerald-500', textColor: 'text-emerald-500', icon: '🟢' },
+    idle: { label: 'IDLE', color: 'bg-amber-500', textColor: 'text-amber-500', icon: '🟡' },
+    visiting: { label: 'VISITING', color: 'bg-blue-500', textColor: 'text-blue-500', icon: '🔵' },
+  };
+  const state = stateConfig[employee.activityState] || stateConfig.idle;
+
+  // Battery color
+  const batt = employee.battery ?? -1;
+  const battColor = batt < 0 ? 'text-gray-400' : batt <= 20 ? 'text-rose-500' : batt <= 50 ? 'text-amber-500' : 'text-emerald-500';
+  const battText = batt < 0 ? 'N/A' : `${batt}%`;
+
+  // Speed
+  const speed = employee.speed ?? 0;
+
+  // Accuracy
+  const acc = employee.accuracy ?? -1;
+  const accText = acc < 0 ? 'N/A' : `${acc.toFixed(0)}m`;
+  const accColor = acc < 0 ? 'text-gray-400' : acc <= 10 ? 'text-emerald-500' : acc <= 30 ? 'text-amber-500' : 'text-rose-500';
+
+  // Distance
+  const dist = employee.distanceTravelled ?? 0;
+
+  // Activity summary helper
+  const formatTime = (secs) => {
+    if (!secs || secs <= 0) return '0m';
+    const h = Math.floor(secs / 3600);
+    const m = Math.floor((secs % 3600) / 60);
+    return h > 0 ? `${h}h ${m}m` : `${m}m`;
+  };
+  const summary = employee.activitySummary || {};
+
   return (
-    <div className="absolute bottom-[65px] left-1/2 -translate-x-1/2 w-[240px] bg-white/95 dark:bg-gray-900/95 backdrop-blur-2xl rounded-[1.8rem] shadow-[0_25px_60px_rgba(0,0,0,0.25)] border border-white/20 p-4 z-[2000] animate-in slide-in-from-bottom-2 duration-300 pointer-events-auto">
-      <div className="flex items-center justify-between mb-4">
+    <div className="absolute bottom-[65px] left-1/2 -translate-x-1/2 w-[260px] bg-white/95 dark:bg-gray-900/95 backdrop-blur-2xl rounded-[1.8rem] shadow-[0_25px_60px_rgba(0,0,0,0.25)] border border-white/20 p-4 z-[2000] animate-in slide-in-from-bottom-2 duration-300 pointer-events-auto">
+      {/* Header: Name + Activity State */}
+      <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-1.5 focus:outline-none">
            <h2 className="text-[12px] font-black text-gray-900 dark:text-white uppercase tracking-tight">{employee.name || 'AGENT'}</h2>
-           <div className={`flex items-center gap-1 px-2 py-0.5 ${employee.isTracking ? 'bg-emerald-500' : 'bg-gray-500'} rounded-full`}>
+           <div className={`flex items-center gap-1 px-2 py-0.5 ${state.color} rounded-full`}>
               {employee.isTracking && <div className="w-1 h-1 bg-white rounded-full animate-ping" />}
-              <span className="text-[7px] font-black text-white uppercase tracking-widest">{employee.isTracking ? 'LIVE' : 'GPS OFF'}</span>
+              <span className="text-[7px] font-black text-white uppercase tracking-widest">{employee.isTracking ? state.label : 'GPS OFF'}</span>
            </div>
         </div>
         <button onClick={(e) => { e.stopPropagation(); onClose(); }} className="p-1 hover:bg-rose-50 dark:hover:bg-rose-900/20 group rounded-lg transition-colors focus:outline-none">
           <X size={14} className="text-gray-400 group-hover:text-rose-500" />
         </button>
       </div>
-      <div className="space-y-4 mb-5">
+
+      {/* Coordinates & Address */}
+      <div className="space-y-3 mb-4">
         <div className="flex gap-3">
            <div className="w-8 h-8 bg-blue-50 dark:bg-blue-900/20 rounded-xl flex items-center justify-center shrink-0"><MapPin size={18} className="text-[#3b82f6]" /></div>
             <div>
-              <p className="text-[8px] font-black text-blue-500 uppercase tracking-widest mb-0.5">EXACT LIVE COORDINATES</p>
+              <p className="text-[8px] font-black text-blue-500 uppercase tracking-widest mb-0.5">LIVE COORDINATES</p>
               <p className="text-[12px] font-black text-gray-900 dark:text-white leading-none">
                 {lat ? `${Number(lat).toFixed(6)}, ${Number(lng).toFixed(6)}` : 'Resolving GPS...'}
               </p>
@@ -52,15 +88,58 @@ const EmployeeDetailCard = ({ employee, currentPos, onClose, onToggleMission, is
             </div>
         </div>
       </div>
-      <div className="grid grid-cols-3 gap-2 mb-5">
-         <div className="bg-gray-50 dark:bg-gray-800/50 p-2.5 rounded-2xl flex flex-col items-center justify-center gap-1 border border-white/50 dark:border-gray-800"><Zap size={14} className="text-gray-300 dark:text-gray-600" /><span className="text-[10px] font-black text-gray-900 dark:text-white">--</span></div>
-         <div className="bg-gray-50 dark:bg-gray-800/50 p-2.5 rounded-2xl flex flex-col items-center justify-center gap-1 border border-white/50 dark:border-gray-800"><SpeedIcon size={14} className="text-gray-300 dark:text-gray-600" /><span className="text-[10px] font-black text-gray-900 dark:text-white">0 KM/H</span></div>
-         <div className="bg-gray-50 dark:bg-gray-800/50 p-2.5 rounded-2xl flex flex-col items-center justify-center gap-1 border border-white/50 dark:border-gray-800"><Ruler size={14} className="text-gray-300 dark:text-gray-600" /><span className="text-[10px] font-black text-gray-900 dark:text-white">0.5 KM</span></div>
+
+      {/* Telemetry Grid: Speed / Battery / Accuracy */}
+      <div className="grid grid-cols-3 gap-2 mb-3">
+         <div className="bg-gray-50 dark:bg-gray-800/50 p-2 rounded-2xl flex flex-col items-center justify-center gap-0.5 border border-white/50 dark:border-gray-800">
+           <SpeedIcon size={13} className={speed > 0 ? 'text-emerald-500' : 'text-gray-300 dark:text-gray-600'} />
+           <span className="text-[10px] font-black text-gray-900 dark:text-white">{speed.toFixed(1)}</span>
+           <span className="text-[7px] font-bold text-gray-400 uppercase">KM/H</span>
+         </div>
+         <div className="bg-gray-50 dark:bg-gray-800/50 p-2 rounded-2xl flex flex-col items-center justify-center gap-0.5 border border-white/50 dark:border-gray-800">
+           <Zap size={13} className={battColor} />
+           <span className={`text-[10px] font-black ${battColor}`}>{battText}</span>
+           <span className="text-[7px] font-bold text-gray-400 uppercase">BATTERY</span>
+         </div>
+         <div className="bg-gray-50 dark:bg-gray-800/50 p-2 rounded-2xl flex flex-col items-center justify-center gap-0.5 border border-white/50 dark:border-gray-800">
+           <Navigation size={13} className={accColor} />
+           <span className={`text-[10px] font-black ${accColor}`}>{accText}</span>
+           <span className="text-[7px] font-bold text-gray-400 uppercase">GPS ACC</span>
+         </div>
       </div>
-      <button onClick={(e) => { e.stopPropagation(); onToggleMission(); }} className={`w-full py-2.5 mb-4 rounded-2xl flex items-center justify-center gap-2 text-[9px] font-black uppercase tracking-widest transition-all ${isVisible ? 'bg-rose-600 text-white shadow-lg shadow-rose-500/30' : 'bg-blue-600 text-white shadow-lg shadow-blue-500/30 hover:bg-blue-700'} active:scale-95 focus:outline-none`}>
+
+      {/* Distance + Activity Breakdown */}
+      <div className="bg-gray-50 dark:bg-gray-800/30 rounded-2xl p-3 mb-3 border border-gray-100 dark:border-gray-800">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest">SESSION ACTIVITY</span>
+          <span className="text-[10px] font-black text-blue-600">{dist.toFixed(2)} KM</span>
+        </div>
+        <div className="grid grid-cols-3 gap-1.5">
+          <div className="text-center">
+            <span className="text-[10px] font-black text-emerald-600">{formatTime(summary.totalMovingTime)}</span>
+            <p className="text-[7px] font-bold text-gray-400 uppercase">Moving</p>
+          </div>
+          <div className="text-center">
+            <span className="text-[10px] font-black text-amber-600">{formatTime(summary.totalIdleTime)}</span>
+            <p className="text-[7px] font-bold text-gray-400 uppercase">Idle</p>
+          </div>
+          <div className="text-center">
+            <span className="text-[10px] font-black text-blue-600">{formatTime(summary.totalVisitTime)}</span>
+            <p className="text-[7px] font-bold text-gray-400 uppercase">Visiting</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Route Toggle */}
+      <button onClick={(e) => { e.stopPropagation(); onToggleMission(); }} className={`w-full py-2.5 mb-3 rounded-2xl flex items-center justify-center gap-2 text-[9px] font-black uppercase tracking-widest transition-all ${isVisible ? 'bg-rose-600 text-white shadow-lg shadow-rose-500/30' : 'bg-blue-600 text-white shadow-lg shadow-blue-500/30 hover:bg-blue-700'} active:scale-95 focus:outline-none`}>
         {isVisible ? <><EyeOff size={14} /> HIDE ROUTE</> : <><Eye size={14} /> SHOW ROUTE</>}
       </button>
-      <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-800"><div className="flex items-center gap-1.5 text-gray-400 capitalize"><History size={12} /><span className="text-[8px] font-bold uppercase tracking-widest">Active Status</span></div><button className="text-[8px] font-black text-blue-500 uppercase tracking-widest">HISTORY</button></div>
+
+      {/* Footer */}
+      <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-gray-800">
+        <div className="flex items-center gap-1.5 text-gray-400 capitalize"><History size={12} /><span className="text-[8px] font-bold uppercase tracking-widest">{employee.deviceId || 'Device'}</span></div>
+        <span className={`text-[8px] font-black uppercase tracking-widest ${state.textColor}`}>{state.icon} {state.label}</span>
+      </div>
       <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-white/95 dark:bg-gray-900/95 rotate-45 border-r border-b border-white/20 dark:border-gray-800" />
     </div>
   );
@@ -294,8 +373,16 @@ const LiveTracking = () => {
             lng: lastPoint?.lng || existing?.lng, 
             start: startPoint, 
             address: session.currentAddress || existing?.address,
-            destination: session.destination, // PULL FORM DATABASE
-            isTracking: !!session.user.isTracking
+            destination: session.destination,
+            isTracking: !!session.user.isTracking,
+            // Telemetry from persisted session
+            activityState: session.activitySummary?.activityState || 'idle',
+            activitySummary: session.activitySummary || {},
+            speed: lastPoint?.speed >= 0 ? (lastPoint.speed * 3.6) : 0, // convert m/s to km/h
+            battery: session.activitySummary?.lastBattery ?? -1,
+            accuracy: session.activitySummary?.lastAccuracy ?? -1,
+            distanceTravelled: session.distanceTravelled || 0,
+            deviceId: lastPoint?.deviceId || 'unknown',
           };
           if (lastPoint && !animatedPositions[idStr]) setAnimatedPositions(prev => ({ ...prev, [idStr]: { lat: lastPoint.lat, lng: lastPoint.lng } }));
         }
@@ -306,8 +393,46 @@ const LiveTracking = () => {
   }, [isLoaded, animatedPositions, setPageLoading]);
 
   useEffect(() => {
-    if (isLoaded) { fetchActiveSessionsSync(); const intervalId = setInterval(() => fetchActiveSessionsSync(), 60000); return () => { clearInterval(intervalId); Object.values(animationFrameRef.current).forEach(cancelAnimationFrame); }; }
+    if (isLoaded) { 
+      fetchActiveSessionsSync(); 
+      const intervalId = setInterval(() => fetchActiveSessionsSync(), 60000); 
+      return () => { 
+        clearInterval(intervalId); 
+        Object.values(animationFrameRef.current).forEach(cancelAnimationFrame); 
+      }; 
+    }
   }, [isLoaded, fetchActiveSessionsSync]);
+
+  // --- Auto-Bounding Logic ---
+  // Ensure all active agents are visible on the map
+  useEffect(() => {
+    if (!map || !isLoaded) return;
+    
+    const activeAgents = Object.values(employees).filter(emp => emp.isTracking);
+    if (activeAgents.length === 0) return;
+
+    const bounds = new window.google.maps.LatLngBounds();
+    let hasValidPoints = false;
+    
+    activeAgents.forEach(agent => {
+      const pos = animatedPositions[agent.id] || { lat: agent.lat, lng: agent.lng };
+      if (pos.lat && pos.lng) {
+        bounds.extend(new window.google.maps.LatLng(pos.lat, pos.lng));
+        hasValidPoints = true;
+      }
+    });
+
+    if (hasValidPoints) {
+      // Only fit bounds if we aren't currently "locked" on a specific agent mission
+      if (!visibleMissionId) {
+        map.fitBounds(bounds);
+        // Padding if single agent
+        if (activeAgents.length === 1) {
+          map.setZoom(14);
+        }
+      }
+    }
+  }, [employees, map, isLoaded, !!visibleMissionId]);
 
   const handleAvatarClick = (id) => {
     const idStr = String(id);
@@ -371,7 +496,17 @@ const LiveTracking = () => {
                 <div key={`side-${emp.id}`} className={`p-4 rounded-2xl border-2 transition-all ${selectedId === emp.id ? 'border-blue-500 bg-blue-500/5 shadow-xl' : 'border-transparent bg-gray-50/50 dark:bg-gray-800/30'}`}>
                    <div className="flex justify-between items-start mb-3">
                      <div className="flex flex-col gap-1.5 flex-1 min-w-0">
-                       <h4 className="font-black text-[11px] dark:text-white uppercase tracking-tight leading-none truncate">{emp.name}</h4>
+                       <div className="flex items-center gap-2">
+                         <h4 className="font-black text-[11px] dark:text-white uppercase tracking-tight leading-none truncate">{emp.name}</h4>
+                         {emp.isTracking && (
+                           <span className={`text-[6px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full text-white ${
+                             emp.activityState === 'moving' ? 'bg-emerald-500' : 
+                             emp.activityState === 'visiting' ? 'bg-blue-500' : 'bg-amber-500'
+                           }`}>
+                             {emp.activityState === 'moving' ? '● MOV' : emp.activityState === 'visiting' ? '● VIS' : '● IDL'}
+                           </span>
+                         )}
+                       </div>
                        <div className="flex flex-col gap-0.5">
                          <span className="text-[7px] font-black text-gray-400 uppercase tracking-widest">{emp.isTracking ? 'AGENT DISPATCHED' : 'OFFLINE'}</span>
                           {emp.isTracking && (
@@ -380,6 +515,13 @@ const LiveTracking = () => {
                                 { (emp.lat || animatedPositions[emp.id]?.lat) ? `${Number(emp.lat || animatedPositions[emp.id]?.lat).toFixed(6)}, ${Number(emp.lng || animatedPositions[emp.id]?.lng).toFixed(6)}` : 'Resolving GPS...'}
                               </span>
                               {emp.address && <span className="text-[7px] font-bold text-gray-500 line-clamp-1 truncate uppercase tracking-tighter">{emp.address}</span>}
+                              {/* Telemetry row */}
+                              <div className="flex items-center gap-2 mt-1">
+                                <span className="text-[7px] font-black text-emerald-600">{(emp.speed ?? 0).toFixed(0)} km/h</span>
+                                {emp.battery >= 0 && (
+                                  <span className={`text-[7px] font-black ${emp.battery <= 20 ? 'text-rose-500' : emp.battery <= 50 ? 'text-amber-500' : 'text-emerald-500'}`}>🔋{emp.battery}%</span>
+                                )}
+                              </div>
                             </div>
                           )}
                        </div>

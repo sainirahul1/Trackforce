@@ -20,15 +20,16 @@ const storeVisitSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  ownerName: String,
+  mobileNumber: String,
   visitType: {
     type: String,
-    enum: ['store', 'supplier', 'collab', 'app'],
+    enum: ['store', 'supplier', 'collab', 'app', 'mission'],
     default: 'store',
   },
   status: {
     type: String,
-    enum: ['pending', 'completed', 'partially_completed', 'not_interested', 'follow_up', 'incomplete', 'rejected'],
-    required: true,
+    default: 'completed'
   },
   onTime: {
     type: String,
@@ -51,11 +52,20 @@ const storeVisitSchema = new mongoose.Schema({
   },
   rejectionReason: String,
   address: String,
+  city: String,
+  state: String,
+  pinCode: String,
   distance: String,
   eta: String,
   gps: {
     lat: Number,
     lng: Number,
+  },
+  classification: String,
+  milestones: {
+    initialCheck: { type: Boolean, default: false },
+    knowledgeShared: { type: Boolean, default: false },
+    orderLogged: { type: Boolean, default: false },
   },
   photos: [String], // URLs or Data URLs
   notes: String,

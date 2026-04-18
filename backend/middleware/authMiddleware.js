@@ -19,26 +19,30 @@ const protect = async (req, res, next) => {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       
       // PERF: Fast-path for metadata-enriched tokens
-      if (decoded.id && decoded.role) {
+      // Only use fast-path if ALL critical security claims are present
+      if (decoded.id && decoded.role && decoded.tenant) {
         req.user = {
           id: decoded.id,
           _id: decoded.id,
           role: decoded.role,
           name: decoded.name || null,
           email: decoded.email || null,
-          tenant: decoded.tenant || null, // Handle users without tenants (SuperAdmins)
-          portal: decoded.portal || decoded.role // PORTAL ISOLATION: extract portal claim
+          tenant: decoded.tenant,
+          portal: decoded.portal || decoded.role // PORTAL ISOLATION fallback
         };
-        // Skip DB lookup & session invalidation for maximum performance
         return next();
       }
 
-      // Fallback for legacy tokens or missing metadata
+      // Fallback for legacy tokens or missing metadata (e.g. missing tenant/portal)
       req.user = await User.findById(decoded.id).select('-password');
       
       if (!req.user) {
         return res.status(401).json({ message: 'Not authorized, user not found' });
       }
+
+      // Metadata enrichment for subsequent middleware
+      req.user.id = req.user._id.toString();
+      req.user.portal = decoded.portal || decoded.role || req.user.role;
 
       // Check for global logout invalidation only in the fallback path
       if (req.user.lastLogoutAt && decoded.iat * 1000 < new Date(req.user.lastLogoutAt).getTime()) {

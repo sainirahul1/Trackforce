@@ -8,6 +8,7 @@ import MaintenanceOverlay from '../components/overlays/MaintenanceOverlay';
 import * as authService from '../services/core/authService';
 import { getPublicSettings } from '../services/core/publicService';
 import { useAuth } from '../context/AuthContext';
+import apiClient from '../services/apiClient';
 
 
 
@@ -71,6 +72,55 @@ const DashboardLayout = ({ allowedRole }) => {
       setIsCheckingMaintenance(false);
     }
   }, [storedRole]);
+
+  // MANDATORY: Real-Time GPS Tracking (Requirements 8, 9)
+  useEffect(() => {
+    if (storedRole !== 'employee' || !localUser) return;
+
+    // 1. Ensure Device ID
+    let deviceId = localStorage.getItem('deviceId');
+    if (!deviceId) {
+      deviceId = 'TF-' + Math.random().toString(36).substr(2, 9).toUpperCase();
+      localStorage.setItem('deviceId', deviceId);
+    }
+
+    const sendPing = async () => {
+      // Only ping if active (can be extended to check workStatus)
+      if (workStatus === 'Offline') return;
+
+      navigator.geolocation.getCurrentPosition(async (pos) => {
+        const { latitude, longitude, accuracy } = pos.coords;
+        let battery = null;
+        try {
+          if (navigator.getBattery) {
+            const b = await navigator.getBattery();
+            battery = Math.round(b.level * 100);
+          }
+        } catch (e) {}
+
+        try {
+          await apiClient.post('/reatchall/employee/tracking/ping', {
+            latitude,
+            longitude,
+            accuracy,
+            battery,
+            deviceId,
+            timestamp: new Date().toISOString(),
+            status: workStatus
+          });
+        } catch (err) {
+          console.warn('[TRACKER] Heartbeat failed');
+        }
+      }, (err) => {
+        console.warn('[TRACKER] Location blocked');
+      }, { enableHighAccuracy: true });
+    };
+
+    // Initial ping
+    sendPing();
+    const trackerId = setInterval(sendPing, 15000); // 15s frequency
+    return () => clearInterval(trackerId);
+  }, [storedRole, localUser, workStatus]);
 
   if (authLoading || (isCheckingMaintenance && storedRole !== 'superadmin')) {
     return (

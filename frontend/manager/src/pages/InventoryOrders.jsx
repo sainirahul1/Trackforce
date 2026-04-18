@@ -197,9 +197,9 @@ const InventoryOrders = () => {
     <div className="min-h-screen bg-gray-50/50 dark:bg-black p-4 lg:p-10 font-[Inter]">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
         <div>
-          <h1 className="text-4xl font-black text-gray-900 dark:text-white tracking-tight mb-2">Inventory & Orders</h1>
+          <h1 className="text-4xl font-black text-gray-900 dark:text-white tracking-tight mb-2">Order Intelligence</h1>
           <p className="text-sm font-bold text-gray-400 dark:text-gray-500 uppercase tracking-[0.3em]">
-            {loading && !hasFetched ? 'Syncing Backend Records...' : 'Cross-team revenue tracking and inventory analysis'}
+            {loading && !hasFetched ? 'Syncing Backend Records...' : 'Cross-team revenue tracking and order collection throughput'}
           </p>
           {errorMsg && <p className="text-xs text-rose-500 font-bold mt-2 flex items-center gap-1 animate-bounce"><AlertCircle size={12} /> {errorMsg}</p>}
         </div>
@@ -210,21 +210,34 @@ const InventoryOrders = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
         {loading && !hasFetched ? Array(4).fill(0).map((_, i) => <SkeletonCard key={i} />) : [
-          { id: 'revenue', label: 'Weekly Revenue', value: `₹${(stats.weeklyRevenue || 0).toLocaleString()}`, trend: stats.revenueTrend || '+0%', isUp: (stats.revenueTrend || '').startsWith('+'), icon: IndianRupee, color: 'text-indigo-600', bg: 'bg-indigo-50' },
-          { id: 'orders', label: 'Orders Collected', value: (stats.ordersCollected || 0).toString(), trend: stats.ordersTrend || '+0%', isUp: (stats.ordersTrend || '').startsWith('+'), icon: ShoppingBag, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-          { id: 'inventory', label: 'Avg. Ticket Size', value: `₹${(stats.avgTicketSize || 0).toLocaleString()}`, trend: stats.ticketTrend || '+0%', isUp: (stats.ticketTrend || '').startsWith('+'), icon: Package, color: 'text-blue-600', bg: 'bg-blue-50' },
-          { id: 'pending', label: 'Pending Approval', value: (stats.pendingApproval || 0).toString(), trend: stats.pendingApproval > 0 ? 'Action Needed' : 'All Clear', isUp: !stats.pendingApproval, icon: Clock, color: 'text-rose-600', bg: 'bg-rose-50' },
+          { id: 'revenue', label: 'Weekly Revenue', value: `₹${(stats.weeklyRevenue || 0).toLocaleString()}`, trend: stats.revenueTrend || '+0%', isUp: (stats.revenueTrend || '').startsWith('+'), icon: IndianRupee, color: 'text-indigo-600', bg: 'bg-indigo-50', desc: 'Total Sales this week' },
+          { id: 'orders', label: 'Orders Collected', value: (stats.ordersCollected || 0).toString(), trend: stats.ordersTrend || '+0%', isUp: (stats.ordersTrend || '').startsWith('+'), icon: ShoppingBag, color: 'text-emerald-600', bg: 'bg-emerald-50', desc: 'Direct order captures' },
+          { id: 'inventory', label: 'Avg. Ticket Size', value: `₹${(stats.avgTicketSize || 0).toLocaleString()}`, trend: stats.ticketTrend || '+0%', isUp: (stats.ticketTrend || '').startsWith('+'), icon: Package, color: 'text-blue-600', bg: 'bg-blue-50', desc: 'Per order efficiency' },
+          { id: 'pending', label: 'Pending Approval', value: (stats.pendingApproval || 0).toString(), trend: stats.pendingApproval > 0 ? 'Review Needed' : 'Verified', isUp: !stats.pendingApproval, icon: ShieldCheck, color: 'text-rose-600', bg: 'bg-rose-50', desc: 'Awaiting validation' },
         ].map((stat, i) => {
           const isPending = stat.id === 'pending';
           const Component = isPending ? 'button' : 'div';
           return (
-            <Component key={i} onClick={isPending ? () => { setSearchTerm('Pending'); document.getElementById('order-collection')?.scrollIntoView({ behavior: 'smooth' }); } : undefined} className={`bg-white dark:bg-gray-900 p-7 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 shadow-sm relative overflow-hidden group text-left transition-all ${isPending ? 'hover:shadow-xl hover:border-rose-100 transform hover:-translate-y-1 active:scale-[0.98] cursor-pointer' : ''}`}>
-               <div className="flex justify-between items-start mb-6">
-                  <div className={`p-4 rounded-2xl ${stat.bg} ${stat.color} dark:bg-opacity-10 ${isPending ? 'transition-transform group-hover:scale-110' : ''}`}><stat.icon size={26} /></div>
-                  <div className={`flex items-center gap-1 text-[10px] font-black uppercase tracking-widest ${stat.isUp ? 'text-emerald-600' : 'text-rose-600'}`}>{stat.isUp ? <TrendingUp size={12} /> : <TrendingDown size={12} />}{stat.trend}</div>
+            <Component 
+              key={i} 
+              onClick={isPending ? () => { setSearchTerm('Pending'); document.getElementById('order-collection')?.scrollIntoView({ behavior: 'smooth' }); } : undefined} 
+              className={`bg-white dark:bg-gray-900 p-8 rounded-[3rem] border border-gray-100 dark:border-gray-800 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none relative overflow-hidden group text-left transition-all hover:shadow-2xl hover:border-indigo-100 dark:hover:border-indigo-500/20 transform hover:-translate-y-1 active:scale-[0.98] ${isPending ? 'cursor-pointer' : ''}`}
+            >
+               <div className="flex justify-between items-start mb-8">
+                  <div className={`p-4 rounded-2xl ${stat.bg} ${stat.color} dark:bg-opacity-10 transition-transform group-hover:scale-110 shadow-sm`}><stat.icon size={26} /></div>
+                  <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${stat.isUp ? 'text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10' : 'text-rose-600 bg-rose-50 dark:bg-rose-500/10'}`}>
+                    {stat.isUp ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
+                    {stat.trend}
+                  </div>
                </div>
-               <div><p className="text-xs font-black text-gray-400 uppercase tracking-[0.2em] mb-1">{stat.label}</p><p className="text-3xl font-black text-gray-900 dark:text-white tracking-tighter">{stat.value}</p></div>
-               <div className={`absolute bottom-0 left-0 h-1 w-full opacity-20 ${stat.isUp ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+               <div className="relative z-10">
+                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1.5">{stat.label}</p>
+                 <p className="text-4xl font-black text-gray-950 dark:text-white tracking-tighter">{stat.value}</p>
+                 <p className="text-[8px] font-bold text-gray-400 uppercase tracking-widest mt-2">{stat.desc}</p>
+               </div>
+               <div className={`absolute -right-4 -bottom-4 w-32 h-32 opacity-[0.03] group-hover:scale-125 transition-transform duration-1000`}>
+                  <stat.icon size={128} />
+               </div>
             </Component>
           );
         })}
@@ -260,15 +273,73 @@ const InventoryOrders = () => {
           <div className="overflow-x-auto">
             {loading && !hasFetched ? <div className="space-y-4">{Array(5).fill(0).map((_, i) => <div key={i} className="h-12 w-full bg-gray-50 dark:bg-gray-800/50 rounded-xl animate-pulse" />)}</div> : (
                <table className="w-full text-left">
-                 <thead><tr className="border-b border-gray-50 dark:border-gray-800"><th className="pb-4 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Order Ref</th><th className="pb-4 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Executive</th><th className="pb-4 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Items</th><th className="pb-4 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Value</th><th className="pb-4 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Status</th></tr></thead>
+                 <thead>
+                   <tr className="border-b border-gray-100 dark:border-gray-800">
+                     <th className="pb-6 text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">Order Intelligence</th>
+                     <th className="pb-6 text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">Field Executive</th>
+                     <th className="pb-6 text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">Items Captured</th>
+                     <th className="pb-6 text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">Revenue Impact</th>
+                     <th className="pb-6 text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">Operational Status</th>
+                   </tr>
+                 </thead>
                  <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
-                   {orders.length === 0 ? <tr><td colSpan="5" className="py-20 text-center"><ShoppingBag size={40} className="mx-auto text-gray-200 mb-4" /><p className="text-gray-400 font-bold uppercase tracking-widest text-xs">No orders found</p></td></tr> : orders.map((order) => (
-                      <tr key={order.id} className="group hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors">
-                        <td className="py-5"><p className="text-sm font-black text-gray-900 dark:text-white uppercase">{order.id}</p><p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest truncate max-w-[120px]">{order.store}</p></td>
-                        <td className="py-5"><div className="flex items-center gap-2"><div className="w-7 h-7 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center text-[10px] font-bold text-indigo-600">{order.executive.split(' ').map(n => n[0]).join('')}</div><span className="text-xs font-bold text-gray-700 dark:text-gray-300">{order.executive}</span></div></td>
-                        <td className="py-5 text-sm font-bold text-gray-600 dark:text-gray-400">{order.items} SKU</td>
-                        <td className="py-5 text-sm font-black text-gray-900 dark:text-white">{order.amount}</td>
-                        <td className="py-5"><span className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest ${order.status === 'Approved' || order.status === 'Completed' ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10' : order.status === 'Shipped' || order.status === 'Processing' ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10' : 'bg-orange-50 text-orange-600 dark:bg-orange-500/10'}`}>{order.status}</span></td>
+                   {orders.length === 0 ? (
+                    <tr>
+                      <td colSpan="5" className="py-24 text-center">
+                        <div className="flex flex-col items-center">
+                          <div className="w-20 h-20 bg-gray-50 dark:bg-gray-800/50 rounded-full flex items-center justify-center mb-6">
+                             <ShoppingBag size={40} className="text-gray-200 dark:text-gray-700" />
+                          </div>
+                          <p className="text-gray-400 font-black uppercase tracking-[0.3em] text-[10px]">No active orders captured</p>
+                          <p className="text-[8px] font-bold text-gray-300 uppercase tracking-widest mt-2">Team field activity will appear here in real-time</p>
+                        </div>
+                      </td>
+                    </tr>
+                   ) : orders.map((order) => (
+                      <tr key={order.id} className="group hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-all duration-300">
+                        <td className="py-6">
+                          <div className="flex items-center gap-3">
+                            <div className="w-1.5 h-10 bg-indigo-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
+                            <div>
+                              <p className="text-[12px] font-black text-gray-950 dark:text-white uppercase tracking-wider">{order.id}</p>
+                              <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest truncate max-w-[150px]">{order.store}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-6">
+                          <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-indigo-50 to-white dark:from-indigo-500/10 dark:to-transparent flex items-center justify-center text-[10px] font-black text-indigo-600 border border-indigo-100 dark:border-indigo-500/20 shadow-sm">
+                              {order.executive.split(' ').map(n => n[0]).join('')}
+                            </div>
+                            <div>
+                              <span className="text-xs font-black text-gray-900 dark:text-gray-100 block">{order.executive}</span>
+                              <span className="text-[8px] font-black text-indigo-500 uppercase tracking-widest">Field Fleet</span>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-6">
+                           <div className="flex items-center gap-2">
+                              <Package size={14} className="text-gray-300" />
+                              <span className="text-xs font-black text-gray-700 dark:text-gray-300">{order.items} <span className="text-gray-400 font-bold ml-1">SKU</span></span>
+                           </div>
+                        </td>
+                        <td className="py-6">
+                          <div className="flex flex-col">
+                            <span className="text-sm font-black text-gray-950 dark:text-white">{order.amount}</span>
+                            <span className="text-[8px] font-bold text-emerald-500 uppercase tracking-widest">Gross Value</span>
+                          </div>
+                        </td>
+                        <td className="py-6">
+                          <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border ${
+                            order.status === 'Approved' || order.status === 'Completed' || order.status === 'Delivered'
+                              ? 'bg-emerald-50 text-emerald-600 border-emerald-100 dark:bg-emerald-500/10 dark:border-emerald-500/20 shadow-sm shadow-emerald-500/10' 
+                              : order.status === 'Shipped' || order.status === 'Processing' 
+                              ? 'bg-blue-50 text-blue-600 border-blue-100 dark:bg-blue-500/10 dark:border-blue-500/20' 
+                              : 'bg-amber-50 text-amber-600 border-amber-100 dark:bg-amber-500/10 dark:border-amber-500/20 animate-pulse'
+                          }`}>
+                            {order.status}
+                          </span>
+                        </td>
                       </tr>
                     ))}
                  </tbody>

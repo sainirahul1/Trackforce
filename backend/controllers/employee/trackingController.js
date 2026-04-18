@@ -61,11 +61,18 @@ exports.startTracking = async (req, res) => {
       // Notify managers immediately that this employee is now On Duty
       const io = req.app.get('io');
       if (io) {
-        io.to(`tenant:${req.tenantId.toString()}`).emit('tracking:start', {
+        const tenantStr = req.tenantId.toString();
+        io.to(`tenant:${tenantStr}`).emit('tracking:start', {
           employeeId: user._id,
           employeeName: user.name,
           managerId: user.manager,
           tenantId: req.tenantId,
+          timestamp: new Date()
+        });
+        // Explicitly target manager role room
+        io.to(`tenant:${tenantStr}:role:manager`).emit('tracking:start', {
+          employeeId: user._id,
+          employeeName: user.name,
           timestamp: new Date()
         });
       }
@@ -134,7 +141,14 @@ exports.stopTracking = async (req, res) => {
     // Notify managers globally that this employee is now Off Duty
     const io = req.app.get('io');
     if (io) {
-      io.to(`tenant:${req.tenantId.toString()}`).emit('tracking:stop', {
+      const tenantStr = req.tenantId.toString();
+      io.to(`tenant:${tenantStr}`).emit('tracking:stop', {
+        employeeId: user._id,
+        employeeName: user.name,
+        timestamp: new Date()
+      });
+      // Explicitly target manager role room
+      io.to(`tenant:${tenantStr}:role:manager`).emit('tracking:stop', {
         employeeId: user._id,
         employeeName: user.name,
         timestamp: new Date()

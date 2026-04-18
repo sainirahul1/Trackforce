@@ -54,7 +54,8 @@ const logActivity = async ({ userId, tenantId, type, title, details, status = 'd
         type: type.includes('task') ? 'task' : (type === 'alert' ? 'alert' : 'system'),
         title: logTitle,
         desc: details,
-        priority: priority
+        priority: priority,
+        metadata: metadata
       });
 
       await newNotification.save();

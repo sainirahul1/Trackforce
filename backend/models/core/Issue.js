@@ -43,6 +43,10 @@ const issueSchema = new mongoose.Schema({
     enum: ['Open', 'In Progress', 'Resolved', 'Closed'],
     default: 'Open',
   },
+  images: {
+    type: [String],
+    default: [],
+  },
   date: {
     type: Date,
     default: Date.now,

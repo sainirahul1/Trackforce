@@ -5,7 +5,17 @@ const mongoose = require('mongoose');
 
 class InventoryOrderService {
   async getTeamEmployeeIds(managerId, tenantId) {
-    const employees = await User.find({ manager: managerId, tenant: tenantId }, '_id').lean();
+    // Ensure we work with ObjectIds
+    const mId = new mongoose.Types.ObjectId(managerId);
+    const tId = new mongoose.Types.ObjectId(tenantId);
+
+    const employees = await User.find({ 
+      $or: [
+        { manager: mId },
+        { _id: mId }
+      ], 
+      tenant: tId 
+    }, '_id').lean();
     return employees.map(emp => emp._id);
   }
 
@@ -24,7 +34,8 @@ class InventoryOrderService {
         $match: {
           tenant: new mongoose.Types.ObjectId(tenantId),
           employee: { $in: teamEmployeeIds },
-          timestamp: { $gte: sevenDaysAgo }
+          timestamp: { $gte: sevenDaysAgo },
+          status: { $ne: 'canceled' } // Only count active/valid orders
         }
       },
       {
@@ -42,7 +53,8 @@ class InventoryOrderService {
         $match: {
           tenant: new mongoose.Types.ObjectId(tenantId),
           employee: { $in: teamEmployeeIds },
-          timestamp: { $gte: fourteenDaysAgo, $lt: sevenDaysAgo }
+          timestamp: { $gte: fourteenDaysAgo, $lt: sevenDaysAgo },
+          status: { $ne: 'canceled' }
         }
       },
       {
@@ -61,11 +73,11 @@ class InventoryOrderService {
     const pendingApprovalCount = await Order.countDocuments({
       tenant: tenantId,
       employee: { $in: teamEmployeeIds },
-      status: 'pending'
+      status: { $in: ['pending', 'processing'] }
     });
 
     const calculateTrend = (curr, prev) => {
-      if (prev === 0) return '+0%';
+      if (!prev || prev === 0) return curr > 0 ? '+100%' : '+0%';
       const percent = ((curr - prev) / prev) * 100;
       return `${percent >= 0 ? '+' : ''}${percent.toFixed(1)}%`;
     };
@@ -87,7 +99,9 @@ class InventoryOrderService {
   async getRevenueChartData(tenantId, managerId) {
     if (!tenantId) throw new Error('Tenant isolation missing');
 
-    const teamEmployeeIds = await this.getTeamEmployeeIds(managerId, tenantId);
+    const tId = new mongoose.Types.ObjectId(tenantId);
+    const mId = new mongoose.Types.ObjectId(managerId);
+    const teamEmployeeIds = await this.getTeamEmployeeIds(mId, tId);
 
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
@@ -96,9 +110,10 @@ class InventoryOrderService {
     const chartData = await Order.aggregate([
       {
         $match: {
-          tenant: new mongoose.Types.ObjectId(tenantId),
+          tenant: tId,
           employee: { $in: teamEmployeeIds },
-          timestamp: { $gte: sevenDaysAgo }
+          timestamp: { $gte: sevenDaysAgo },
+          status: { $ne: 'canceled' }
         }
       },
       {
@@ -163,7 +178,7 @@ class InventoryOrderService {
 
     const totalOrders = await Order.countDocuments(query);
     const orders = await Order.find(query)
-      .populate('employee', 'name')
+      .populate('employee', 'name email status profile')
       .sort({ timestamp: -1 })
       .skip(skip)
       .limit(limitNum)

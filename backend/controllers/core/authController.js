@@ -167,7 +167,14 @@ exports.login = async (req, res) => {
       tenantStatus: user.tenant?.onboardingStatus || 'active',
       isDeactivated: user.isDeactivated,
       profile: user.profile || {},
-      token: generateToken(user._id, user.role, user.tenant?._id || user.tenant, user.name, user.email, resolvedPortal),
+      token: generateToken(
+        user._id, 
+        user.role, 
+        user.tenant?._id ? user.tenant._id.toString() : user.tenant?.toString(), 
+        user.name, 
+        user.email, 
+        resolvedPortal
+      ),
     });
   } catch (error) {
     res.status(500).json({ message: error.message });

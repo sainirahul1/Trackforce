@@ -1,5 +1,17 @@
 import React from 'react';
-import { Bell, CheckCheck, Trash2, AlertTriangle, CheckCircle2, Info, AlertCircle, User, RefreshCw, Clock } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { 
+  Bell, 
+  RefreshCw, 
+  CheckCheck, 
+  CheckCircle2, 
+  AlertTriangle, 
+  AlertCircle, 
+  User, 
+  Info, 
+  Clock, 
+  Trash2 
+} from 'lucide-react';
 import { useNotifications } from '../../context/NotificationContext';
 
 const getNotificationIcon = (type) => {
@@ -22,8 +34,24 @@ const priorityBadge = {
 };
 
 const NotificationsPage = () => {
+  const navigate = useNavigate();
   const { allNotifications, unreadCount, markAsRead, markAllAsRead, deleteNotification, isLoading, refetch } = useNotifications();
   const [filter, setFilter] = React.useState('all');
+
+  const handleNotificationClick = (n) => {
+    const id = n.id || n._id;
+    if (!n.isRead) markAsRead(id);
+
+    // Smart Redirection Logic
+    if (n.metadata?.taskId && n.metadata?.missionType) {
+      const { taskId, missionType, store } = n.metadata;
+      // Navigate to Log Visit with prefilled data
+      navigate(`/employee/visits/log?taskId=${taskId}&type=${missionType}&storeName=${encodeURIComponent(store || '')}`);
+    } else if (n.type === 'task') {
+      // Fallback for tasks without full metadata - go to task list
+      navigate('/employee/tasks');
+    }
+  };
 
   const filtered = allNotifications.filter(n => {
     if (filter === 'unread') return !n.isRead;
@@ -134,7 +162,7 @@ const NotificationsPage = () => {
             return (
               <div
                 key={n.id || n._id}
-                onClick={() => markAsRead(n.id || n._id)}
+                onClick={() => handleNotificationClick(n)}
                 className={`group relative overflow-hidden flex items-start sm:items-center gap-5 p-6 rounded-[2rem] cursor-pointer transition-all duration-300 
                   ${!n.isRead 
                     ? 'bg-white dark:bg-gray-900 border-2 border-indigo-100 dark:border-indigo-500/30 shadow-[0_8px_30px_rgb(0,0,0,0.08)] scale-[1.01]' 

@@ -1,12 +1,18 @@
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Store, Building2, Briefcase, ShieldCheck, Activity, Target } from 'lucide-react';
-import StoreVisitForm from './StoreVisitForm';
-import SupplierVisitForm from './SupplierVisitForm';
-import CollabVisitForm from './CollabVisitForm';
-import AppInstallForm from './AppInstallForm';
+import MissionForm from './MissionForm';
 
 const tabs = [
+  {
+    id: 'mission',
+    label: 'Mission',
+    icon: Target,
+    gradient: 'from-gray-900 to-indigo-900',
+    shadow: 'shadow-gray-500/20',
+    iconColor: 'text-gray-900 dark:text-gray-100',
+    bgColor: 'bg-gray-50 dark:bg-gray-800/10',
+  },
   {
     id: 'store',
     label: 'Store Visit',
@@ -46,17 +52,18 @@ const tabs = [
 ];
 
 const FORMS = {
-  store: <StoreVisitForm isEmbedded={true} />,
-  supplier: <SupplierVisitForm isEmbedded={true} />,
-  collab: <CollabVisitForm isEmbedded={true} />,
-  app: <AppInstallForm isEmbedded={true} />,
+  mission: <MissionForm type="mission" isEmbedded={true} />,
+  store: <MissionForm type="store" isEmbedded={true} />,
+  supplier: <MissionForm type="supplier" isEmbedded={true} />,
+  collab: <MissionForm type="collab" isEmbedded={true} />,
+  app: <MissionForm type="app" isEmbedded={true} />,
 };
 
 const LogVisit = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const queryParams = new URLSearchParams(location.search);
-  const defaultTab = queryParams.get('type') || 'store';
+  const defaultTab = queryParams.get('type') || 'mission';
   const [activeTab, setActiveTab] = useState(defaultTab);
 
   const handleTabChange = (id) => {
@@ -69,19 +76,21 @@ const LogVisit = () => {
   return (
     <div className="max-w-4xl mx-auto pb-24 animate-in fade-in duration-500">
       
-      {/* Premium Header */}
-      <div className="relative bg-white dark:bg-gray-900 rounded-b-[2.5rem] p-8 sm:p-10 border-b border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden mb-8">
-        <div className={`absolute top-0 right-0 w-64 h-64 rounded-full blur-3xl pointer-events-none -mr-16 -mt-16 opacity-20 bg-gradient-to-br ${activeTabData?.gradient}`} />
+      {/* Refined Compact Header */}
+      <div className="relative bg-white dark:bg-gray-950 rounded-3xl p-6 border border-gray-100 dark:border-gray-800 shadow-xl shadow-gray-200/20 overflow-hidden mb-10 mx-4 sm:mx-6 mt-6">
+        <div className={`absolute inset-0 opacity-5 bg-gradient-to-br ${activeTabData?.gradient} pointer-events-none`} />
         
-        <div className="flex items-center gap-5 relative z-10">
-          <div className={`w-14 h-14 rounded-[1.25rem] flex items-center justify-center bg-white dark:bg-gray-800 shadow-lg ${activeTabData?.shadow}`}>
-            <Target size={28} className={activeTabData?.iconColor} />
+        <div className="flex flex-col items-center text-center gap-4 relative z-10">
+          <div className={`w-14 h-14 rounded-2xl flex items-center justify-center bg-white dark:bg-gray-800 shadow-lg ${activeTabData?.shadow} transform hover:scale-105 transition-transform`}>
+            {activeTabData ? <activeTabData.icon size={28} className={activeTabData.iconColor} /> : <Target size={28} className="text-gray-400" />}
           </div>
           <div>
-            <h1 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">Mission Log</h1>
-            <p className="text-gray-500 font-medium mt-1 flex items-center gap-2">
-              <Activity size={14} /> Record your field activity
-            </p>
+            <h1 className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.4em] mb-1 text-center">Field Activity Entry</h1>
+            <h2 className="text-xl font-black text-gray-900 dark:text-white tracking-tighter uppercase text-center mb-2">Mission Log</h2>
+            <div className="flex items-center justify-center gap-2 px-3 py-1 bg-white dark:bg-gray-900 rounded-full mx-auto w-fit border border-gray-100 dark:border-gray-800 shadow-sm">
+              <Activity size={10} className="text-emerald-500 animate-pulse" />
+              <span className="text-[9px] font-black uppercase tracking-widest text-gray-400">Record your field activity accurately</span>
+            </div>
           </div>
         </div>
       </div>
