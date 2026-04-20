@@ -73,8 +73,8 @@ const corsOptions = {
   optionsSuccessStatus: 200
 };
 app.use(cors(corsOptions));
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ limit: '50mb', extended: true }));
+app.use(express.json({ limit: '200mb' }));
+app.use(express.urlencoded({ limit: '200mb', extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
   maxAge: '7d',
   immutable: true,
@@ -121,6 +121,7 @@ employeeRouter.use('/stats', require('./routes/employee/statsRoutes'));
 employeeRouter.use('/profile', require('./routes/employee/profileRoutes'));
 employeeRouter.use('/documents', require('./routes/employee/documentRoutes'));
 employeeRouter.use('/tasks', require('./routes/employee/taskRoutes'));
+employeeRouter.use('/follow-ups', require('./routes/employee/followUpRoutes'));
 employeeRouter.use('/', require('./routes/employee/employeeRoutes'));
 
 app.use('/reatchall/employee', employeeRouter);
@@ -137,6 +138,7 @@ managerRouter.use(apiLimiter);
 managerRouter.use('/inventory-orders', require('./routes/manager/inventoryOrderRoutes'));
 managerRouter.use('/activity', require('./routes/manager/activityRoutes'));
 managerRouter.use('/team', require('./routes/manager/teamRoutes'));
+managerRouter.use('/follow-ups', require('./routes/manager/followUpRoutes'));
 
 app.use('/reatchall/manager', managerRouter);
 

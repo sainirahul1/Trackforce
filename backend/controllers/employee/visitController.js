@@ -1,6 +1,7 @@
 const StoreVisit = require('../../models/employee/StoreVisit');
 const EmployeeLogVisit = require('../../models/employee/EmployeeLogVisit');
 const Task = require('../../models/employee/Task');
+const FollowUp = require('../../models/employee/FollowUp');
 const { logActivity } = require('../../utils/activityLogger');
 
 // @desc    Get all store visits for the tenant
@@ -135,6 +136,41 @@ exports.createVisit = async (req, res) => {
       status: visitStatus === 'completed' ? 'success' : 'info',
       metadata: { visitId: visit._id, store: visit.storeName }
     });
+
+    // AUTO-CREATE FOLLOW-UP if needed
+    if (visitStatus === 'follow_up' && FollowUp) {
+      try {
+        const nextDate = visitForm.followUpDate ? new Date(visitForm.followUpDate) : new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
+        await FollowUp.create({
+          visit: visit._id,
+          tenant: req.tenantId,
+          storeName: visit.storeName,
+          ownerName: visit.ownerName,
+          mobileNumber: visit.mobileNumber,
+          address: visit.address,
+          city: visit.city,
+          assignedTo: req.user._id,
+          assignedToName: req.user.name,
+          createdBy: req.user._id,
+          createdByName: req.user.name,
+          status: 'pending',
+          priority: 'medium',
+          nextFollowUpDate: nextDate,
+          reason: visitForm.notInterestedReason || visitForm.followUpNotes || 'Requires follow-up',
+          visitType: visit.visitType,
+          history: [{
+            action: 'created',
+            note: `System auto-generated from ${visit.visitType || 'mission'} report.`,
+            outcome: 'interested',
+            scheduledDate: nextDate,
+            performedBy: req.user._id,
+            performedByName: req.user.name,
+          }]
+        });
+      } catch (fuErr) {
+        console.error('[FOLLOWUP AUTO-CREATE ERROR]', fuErr);
+      }
+    }
 
     // REAL-TIME SYNC: Notify mangers about the new visit
     const io = req.app.get('io');

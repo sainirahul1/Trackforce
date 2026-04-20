@@ -10,6 +10,7 @@ import Button from '../components/ui/Button';
 import { useDialog } from '../context/DialogContext';
 import storage from '../utils/storage';
 import apiClient, { getApiBaseUrl } from '../services/apiClient';
+import { getVisits, createVisit } from '../services/visitService';
 
 // High-Fidelity Image Modal (Internal to main component)
 const ImageModal = ({ src, onClose }) => {
@@ -273,7 +274,37 @@ const MissionForm = ({ isEmbedded = false, type: initialType = 'mission' }) => {
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setFormData(prev => ({ ...prev, [assetId]: reader.result }));
+        // COMPRESS IMAGE TO PREVENT PAYLOAD/NETWORK CRASHES
+        const img = new Image();
+        img.src = reader.result;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 1200;
+          const MAX_HEIGHT = 1200;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height;
+              height = MAX_HEIGHT;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+
+          // Compress to WebP or JPEG heavily (0.6 is plenty for audit proof)
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.6);
+          setFormData(prev => ({ ...prev, [assetId]: compressedDataUrl }));
+        };
       };
       reader.readAsDataURL(file);
     }
@@ -407,7 +438,8 @@ const MissionForm = ({ isEmbedded = false, type: initialType = 'mission' }) => {
       showAlert('Success', 'Activity recorded successfully.', 'success');
       navigate('/employee/visits');
     } catch (err) {
-      showAlert('Error', 'Transmission failed.', 'error');
+      console.error('Submit Error:', err);
+      showAlert('Transmission Error', err?.response?.data?.message || 'Payload too large or network error. Please try uploading smaller images or fewer images.', 'error');
     } finally {
       setLoading(false);
     }
@@ -418,7 +450,7 @@ const MissionForm = ({ isEmbedded = false, type: initialType = 'mission' }) => {
   const sectionCls = `bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-[2.5rem] p-8 md:p-10 shadow-sm relative transition-all duration-500 hover:shadow-md`;
   const inputContainer = `flex flex-col gap-2.5`;
   const labelCls = `text-[11px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-[0.15em] ml-1`;
-  const inputFieldC = `w-full bg-gray-50/50 dark:bg-gray-900/50 border-2 border-gray-100 dark:border-gray-800 rounded-[1.25rem] px-6 py-4.5 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all outline-none text-gray-900 dark:text-white font-bold text-sm placeholder:text-gray-400 dark:placeholder:text-gray-600`;
+  const inputFieldC = `w-full bg-gray-50/50 dark:bg-gray-900/50 border-2 border-gray-100 dark:border-gray-800 rounded-[1.25rem] px-6 py-4 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all outline-none text-gray-900 dark:text-white font-bold text-sm placeholder:text-gray-400 dark:placeholder:text-gray-600`;
   const stepCircle = `w-10 h-10 rounded-full bg-gray-900 dark:bg-white text-white dark:text-gray-950 flex items-center justify-center font-black text-xs shadow-lg`;
 
   // Custom Selection Component
@@ -432,7 +464,7 @@ const MissionForm = ({ isEmbedded = false, type: initialType = 'mission' }) => {
         <button
           type="button"
           onClick={() => setIsOpen(!isOpen)}
-          className={`w-full flex items-center justify-between bg-gray-50/50 dark:bg-gray-900/50 border-2 border-gray-100 dark:border-gray-800 rounded-[1.25rem] px-6 py-4.5 transition-all outline-none
+          className={`w-full flex items-center justify-between bg-gray-50/50 dark:bg-gray-900/50 border-2 border-gray-100 dark:border-gray-800 rounded-[1.25rem] px-6 py-4 transition-all outline-none
             ${isOpen ? `ring-4 ring-${activeColor}-500/10 border-${activeColor}-500` : `hover:border-gray-200 dark:hover:border-gray-700`}`}
         >
           <div className="flex items-center gap-3">
@@ -571,7 +603,7 @@ const MissionForm = ({ isEmbedded = false, type: initialType = 'mission' }) => {
                     <User size={26} strokeWidth={1.5} />
                   </div>
                   <div>
-                    <h2 className="text-xl font-black text-gray-900 dark:text-white tracking-tight uppercase">01. Identity</h2>
+                    <h2 className="text-xl font-black text-gray-900 dark:text-white tracking-tight uppercase">Identity</h2>
                     <p className={`text-[10px] font-black text-indigo-500/60 uppercase tracking-widest`}>Core profile</p>
                   </div>
                 </div>
@@ -595,12 +627,10 @@ const MissionForm = ({ isEmbedded = false, type: initialType = 'mission' }) => {
                   </div>
                 </div>
                 
-                {activeType === 'store' && (
-                  <div className={`md:col-span-2 ${inputContainer}`}>
-                    <label className={labelCls}>GST Number (Optional)</label>
-                    <input type="text" name="gst" value={formData.gst} onChange={handleChange} className={inputFieldC} placeholder="22AAAAA0000A1Z5" />
-                  </div>
-                )}
+                <div className={`md:col-span-2 ${inputContainer}`}>
+                  <label className={labelCls}>GST Number (Optional)</label>
+                  <input type="text" name="gst" value={formData.gst} onChange={handleChange} className={inputFieldC} placeholder="22AAAAA0000A1Z5" />
+                </div>
                 {activeType === 'supplier' && (
                   <div className={`md:col-span-2 ${inputContainer}`}>
                     <label className={labelCls}>Product Category</label>
@@ -628,7 +658,7 @@ const MissionForm = ({ isEmbedded = false, type: initialType = 'mission' }) => {
                     <ShieldCheck size={26} strokeWidth={1.5} />
                   </div>
                   <div>
-                    <h2 className="text-xl font-black text-gray-900 dark:text-white tracking-tight uppercase">02. Verification</h2>
+                    <h2 className="text-xl font-black text-gray-900 dark:text-white tracking-tight uppercase">Verification</h2>
                     <p className={`text-[10px] font-black text-indigo-500/60 uppercase tracking-widest`}>Installation details</p>
                   </div>
                 </div>
@@ -685,7 +715,7 @@ const MissionForm = ({ isEmbedded = false, type: initialType = 'mission' }) => {
                     <CheckCircle2 size={26} strokeWidth={1.5} />
                   </div>
                   <div>
-                    <h2 className="text-xl font-black text-gray-900 dark:text-white tracking-tight uppercase">03. Milestones</h2>
+                    <h2 className="text-xl font-black text-gray-900 dark:text-white tracking-tight uppercase">Milestones</h2>
                     <p className={`text-[10px] font-black text-indigo-500/60 uppercase tracking-widest`}>Progress check</p>
                   </div>
                 </div>
@@ -693,51 +723,88 @@ const MissionForm = ({ isEmbedded = false, type: initialType = 'mission' }) => {
               </div>
 
               <div className="space-y-6">
-                {activeType === 'app' ? (
-                  <div className="space-y-8">
+                <PremiumSelect 
+                  label="App installation ?" 
+                  isRequired={true}
+                  options={['Yes', 'No']}
+                  value={formData.appInstallation.status}
+                  onChange={(val) => setFormData(prev => ({ ...prev, appInstallation: { ...prev.appInstallation, status: val } }))}
+                  icon={Smartphone}
+                />
+                
+                {formData.appInstallation.status === 'No' && (
+                  <div className="pl-6 border-l-2 border-dashed border-gray-200 dark:border-gray-800 space-y-4 animate-in slide-in-from-left-4">
                     <PremiumSelect 
-                      label="App installation ?" 
-                      isRequired={true}
-                      options={['Yes', 'No']}
-                      value={formData.appInstallation.status}
-                      onChange={(val) => setFormData(prev => ({ ...prev, appInstallation: { ...prev.appInstallation, status: val } }))}
-                      icon={Smartphone}
+                      label="Reason for not installing" 
+                      options={['Got error', 'Asked me to come again', 'Decision maker not available', 'Not using smart phone', 'Not interested in online purchase', 'I have credit in the wholesale market', 'Enter any other reason']} 
+                      value={formData.appInstallation.noReason} 
+                      onChange={(val) => setFormData(prev => ({ ...prev, appInstallation: { ...prev.appInstallation, noReason: val } }))} 
+                      icon={AlertCircle} 
                     />
+                    {formData.appInstallation.noReason === 'Enter any other reason' && (
+                       <div className={inputContainer}>
+                         <input type="text" value={formData.appInstallation.otherReason} onChange={e => setFormData(prev => ({ ...prev, appInstallation: { ...prev.appInstallation, otherReason: e.target.value } }))} className={inputFieldC} placeholder="Enter reason..." />
+                       </div>
+                    )}
                   </div>
-                ) : (
-                  [
-                    { id: 'appDownloaded', label: 'Initial Check', icon: Smartphone },
-                    { id: 'appTraining', label: 'Product Knowledge Shared', icon: Info },
-                    { id: 'orderPlaced', label: 'Commitment/Order Logged', icon: ShoppingBag, showRedirect: true }
-                  ].map((milestone) => (
-                    <div key={milestone.id} className="space-y-3">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (milestone.id === 'orderPlaced') {
-                            showAlert('Action Required', 'Log commercial record in Order Studio.', 'info');
-                            return;
-                          }
-                          setFormData(prev => ({ ...prev, [milestone.id]: !prev[milestone.id] }))
-                        }}
-                        className={`w-full flex items-center justify-between p-6 rounded-3xl border-2 transition-all group/item
-                          ${formData[milestone.id] 
-                            ? 'bg-indigo-600 border-indigo-600 text-white shadow-xl shadow-indigo-500/20' 
-                            : 'bg-gray-50 dark:bg-gray-900 border-gray-100 dark:border-gray-800 hover:border-indigo-500/50'}`}
-                      >
-                        <div className="flex items-center gap-5">
-                          <milestone.icon size={24} className={formData[milestone.id] ? 'text-white' : 'text-gray-400 group-hover/item:text-indigo-500'} />
-                          <span className={`text-base font-black uppercase tracking-tight ${formData[milestone.id] ? 'text-white' : 'text-gray-600 dark:text-gray-300'}`}>
-                            {milestone.label}
-                          </span>
-                        </div>
-                        <div className={`w-7 h-7 rounded-full border-3 flex items-center justify-center transition-all
-                          ${formData[milestone.id] ? 'bg-white border-white' : 'border-gray-200 dark:border-gray-700'}`}>
-                          {formData[milestone.id] && <Check size={18} className="text-indigo-600" strokeWidth={4} />}
-                        </div>
-                      </button>
-                    </div>
-                  ))
+                )}
+
+                {formData.appInstallation.status === 'Yes' && (
+                  <>
+                    <PremiumSelect 
+                      label="Registration completed ?" 
+                      options={['Yes', 'No']}
+                      value={formData.appInstallation.registration.status}
+                      onChange={(val) => setFormData(prev => ({ ...prev, appInstallation: { ...prev.appInstallation, registration: { ...prev.appInstallation.registration, status: val } } }))}
+                      icon={User}
+                    />
+                    {formData.appInstallation.registration.status === 'No' && (
+                      <div className="pl-6 border-l-2 border-dashed border-gray-200 dark:border-gray-800 animate-in slide-in-from-left-4">
+                        <input type="text" value={formData.appInstallation.registration.reason} onChange={e => setFormData(prev => ({ ...prev, appInstallation: { ...prev.appInstallation, registration: { ...prev.appInstallation.registration, reason: e.target.value } } }))} className={inputFieldC} placeholder="Reason for not registering" />
+                      </div>
+                    )}
+                    {formData.appInstallation.registration.status === 'Yes' && (
+                      <div className="pl-6 border-l-2 border-dashed border-gray-200 dark:border-gray-800 animate-in slide-in-from-left-4">
+                        <input type="text" value={formData.appInstallation.registration.feedback} onChange={e => setFormData(prev => ({ ...prev, appInstallation: { ...prev.appInstallation, registration: { ...prev.appInstallation.registration, feedback: e.target.value } } }))} className={inputFieldC} placeholder="Feedback on registration" />
+                      </div>
+                    )}
+
+                    <PremiumSelect 
+                      label="App training ?" 
+                      options={['Yes', 'No']}
+                      value={formData.appInstallation.training.status}
+                      onChange={(val) => setFormData(prev => ({ ...prev, appInstallation: { ...prev.appInstallation, training: { ...prev.appInstallation.training, status: val } } }))}
+                      icon={Info}
+                    />
+                    {formData.appInstallation.training.status === 'No' && (
+                      <div className="pl-6 border-l-2 border-dashed border-gray-200 dark:border-gray-800 animate-in slide-in-from-left-4">
+                        <input type="text" value={formData.appInstallation.training.reason} onChange={e => setFormData(prev => ({ ...prev, appInstallation: { ...prev.appInstallation, training: { ...prev.appInstallation.training, reason: e.target.value } } }))} className={inputFieldC} placeholder="Reason for not training" />
+                      </div>
+                    )}
+                    {formData.appInstallation.training.status === 'Yes' && (
+                      <div className="pl-6 border-l-2 border-dashed border-gray-200 dark:border-gray-800 animate-in slide-in-from-left-4">
+                        <input type="text" value={formData.appInstallation.training.feedback} onChange={e => setFormData(prev => ({ ...prev, appInstallation: { ...prev.appInstallation, training: { ...prev.appInstallation.training, feedback: e.target.value } } }))} className={inputFieldC} placeholder="Feedback on training" />
+                      </div>
+                    )}
+
+                    <PremiumSelect 
+                      label="First Order placed ?" 
+                      options={['Yes', 'No']}
+                      value={formData.appInstallation.firstOrder.status}
+                      onChange={(val) => setFormData(prev => ({ ...prev, appInstallation: { ...prev.appInstallation, firstOrder: { ...prev.appInstallation.firstOrder, status: val } } }))}
+                      icon={ShoppingBag}
+                    />
+                    {formData.appInstallation.firstOrder.status === 'No' && (
+                      <div className="pl-6 border-l-2 border-dashed border-gray-200 dark:border-gray-800 animate-in slide-in-from-left-4">
+                        <input type="text" value={formData.appInstallation.firstOrder.reason} onChange={e => setFormData(prev => ({ ...prev, appInstallation: { ...prev.appInstallation, firstOrder: { ...prev.appInstallation.firstOrder, reason: e.target.value } } }))} className={inputFieldC} placeholder="Reason for not ordering" />
+                      </div>
+                    )}
+                    {formData.appInstallation.firstOrder.status === 'Yes' && (
+                      <div className="pl-6 border-l-2 border-dashed border-gray-200 dark:border-gray-800 animate-in slide-in-from-left-4">
+                        <input type="text" value={formData.appInstallation.firstOrder.feedback} onChange={e => setFormData(prev => ({ ...prev, appInstallation: { ...prev.appInstallation, firstOrder: { ...prev.appInstallation.firstOrder, feedback: e.target.value } } }))} className={inputFieldC} placeholder="Feedback on first order" />
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             </section>
@@ -749,7 +816,7 @@ const MissionForm = ({ isEmbedded = false, type: initialType = 'mission' }) => {
                     <ShieldCheck size={26} strokeWidth={1.5} />
                   </div>
                   <div>
-                    <h2 className="text-xl font-black text-gray-900 dark:text-white tracking-tight uppercase">04. Audit Outcome</h2>
+                    <h2 className="text-xl font-black text-gray-900 dark:text-white tracking-tight uppercase">Audit Outcome</h2>
                     <p className={`text-[10px] font-black text-indigo-500/60 uppercase tracking-widest`}>Final intelligence</p>
                   </div>
                 </div>
@@ -762,7 +829,7 @@ const MissionForm = ({ isEmbedded = false, type: initialType = 'mission' }) => {
                 <PremiumSelect 
                   label="Final Status" 
                   isRequired={true}
-                  options={['Completed', 'Partially Completed', 'Interested', 'Need Follow-up', 'Rejected']}
+                  options={['Completed', 'Partially Completed (App installation is done)', 'Interested', 'Need Follow-up', 'Rejected']}
                   value={formData.status}
                   onChange={(val) => setFormData(prev => ({ ...prev, status: val }))}
                   icon={CheckCircle}
@@ -782,10 +849,10 @@ const MissionForm = ({ isEmbedded = false, type: initialType = 'mission' }) => {
 
                   <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
                     {[
-                      { id: 'storeFront', label: 'Store Front', icon: Store },
+                      { id: 'storeFront', label: 'Store Front', icon: Store, required: true },
                       { id: 'boardInfo', label: 'Signage', icon: ImageIcon },
                       { id: 'ownerPhoto', label: 'Presence', icon: User },
-                      { id: 'selfieCheck', label: 'Selfie', icon: Camera }
+                      { id: 'selfieCheck', label: 'Selfie', icon: Camera, required: true }
                     ].map((asset) => (
                       <div key={asset.id} className="relative group/asset">
                         <div
@@ -798,7 +865,10 @@ const MissionForm = ({ isEmbedded = false, type: initialType = 'mission' }) => {
                           ) : (
                             <>
                               <asset.icon size={28} className="text-gray-300" />
-                              <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">{asset.label}</span>
+                              <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest text-center">
+                                {asset.label}
+                                {asset.required && <span className="text-red-500 ml-0.5">*</span>}
+                              </span>
                             </>
                           )}
                         </div>

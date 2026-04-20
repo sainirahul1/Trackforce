@@ -10,6 +10,7 @@ import Home from '../pages/home/Home';
 import EmployeeDashboard from '../pages/Dashboard';
 import EmployeeProfile from '../pages/Profile';
 import EmployeeVisits from '../pages/Visits';
+import EmployeeFollowUps from '../pages/FollowUps';
 import EmployeeOrders from '../pages/Orders';
 import EmployeeActivity from '../pages/Activity';
 import EmployeeTasks from '../pages/Tasks';
@@ -38,7 +39,7 @@ const AppRouter = () => (
       <Route path="visits" element={<EmployeeVisits key="history" defaultFilter="All" pageTitle="Visit History" />} />
       <Route path="visits/log" element={<LogVisit />} />
       <Route path="orders" element={<EmployeeOrders />} />
-      <Route path="follow-ups" element={<EmployeeVisits key="followups" defaultFilter="Follow Up" pageTitle="Follow-ups Pipeline" />} />
+      <Route path="follow-ups" element={<EmployeeFollowUps />} />
       <Route path="activity" element={<EmployeeActivity />} />
       <Route path="analytics" element={<EmployeeAnalytics />} />
       <Route path="tasks" element={<EmployeeTasks />} />

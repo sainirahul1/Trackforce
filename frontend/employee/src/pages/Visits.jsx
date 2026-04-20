@@ -191,7 +191,7 @@ const EmployeeVisits = ({ defaultFilter = 'All', pageTitle = 'Visit History' }) 
 
         {/* Filters */}
         <div className="flex items-center gap-2 overflow-x-auto pb-4 no-scrollbar">
-          {['All', 'Completed', 'Partially Completed', 'Rejected', 'Follow Up'].map((stat) => (
+          {['All', 'Completed', 'Partially Completed', 'Rejected'].map((stat) => (
             <button
               key={stat}
               onClick={() => setFilterStatus(stat)}

@@ -12,6 +12,7 @@ import EmployeeDetails from '../pages/EmployeeDetails';
 import LiveTracking from '../pages/LiveTracking';
 import ManagerTasksBoard from '../pages/Tasks';
 import ManagerVisits from '../pages/Visits';
+import ManagerFollowUps from '../pages/FollowUps';
 import InventoryOrders from '../pages/InventoryOrders';
 import ManagerAnalytics from '../pages/Analytics';
 import ManagerActivityLog from '../pages/ActivityLog';
@@ -40,6 +41,7 @@ const AppRouter = () => (
       <Route path="live" element={<LiveTracking />} />
       <Route path="tasks" element={<ManagerTasksBoard />} />
       <Route path="visits" element={<ManagerVisits />} />
+      <Route path="follow-ups" element={<ManagerFollowUps />} />
       <Route path="inventory" element={<InventoryOrders />} />
       <Route path="analytics" element={<ManagerAnalytics />} />
       <Route path="activity" element={<ManagerActivityLog />} />
