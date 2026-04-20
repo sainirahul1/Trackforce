@@ -594,6 +594,11 @@ const EmployeeDashboard = () => {
           };
           console.log(`[GPS] Emitting telemetry: accuracy=${accuracy?.toFixed(1)}m speed=${speed?.toFixed(1)}m/s battery=${batteryRef.current}%`);
           currentSocket.emit('tracking:update', updateData);
+          
+          // Persistence for form reflection
+          localStorage.setItem('last_telemetry', JSON.stringify({
+            latitude, longitude, accuracy, battery: batteryRef.current, timestamp: new Date().toISOString()
+          }));
         } else {
           console.warn('Socket not ready for emission');
         }

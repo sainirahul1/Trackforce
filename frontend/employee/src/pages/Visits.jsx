@@ -4,7 +4,7 @@ import {
   MapPin, Navigation, Clock, CheckCircle2, ChevronRight, 
   Calendar, AlertCircle, Phone, Image as ImageIcon, 
   Camera, Map, X, Users, Store, FileText, MessageSquare,
-  Building2, Briefcase, ShieldCheck, Smartphone, Target
+  Building2, Briefcase, ShieldCheck, Smartphone, Target, RefreshCw
 } from 'lucide-react';
 import Button from '../components/ui/Button';
 
@@ -174,7 +174,7 @@ const EmployeeVisits = ({ defaultFilter = 'All', pageTitle = 'Visit History' }) 
                }}
                className="p-4 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl shadow-sm text-gray-400 hover:text-indigo-600 hover:border-indigo-100 transition-all active:scale-95"
              >
-                <RotateCcw size={20} />
+                <RefreshCw size={20} />
              </button>
              <div className="relative group">
                 <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-hover:text-indigo-500 transition-colors" size={18} />
@@ -191,7 +191,7 @@ const EmployeeVisits = ({ defaultFilter = 'All', pageTitle = 'Visit History' }) 
 
         {/* Filters */}
         <div className="flex items-center gap-2 overflow-x-auto pb-4 no-scrollbar">
-          {['All', 'Completed', 'Partial', 'Rejected', 'Follow-up'].map((stat) => (
+          {['All', 'Completed', 'Partially Completed', 'Rejected', 'Follow Up'].map((stat) => (
             <button
               key={stat}
               onClick={() => setFilterStatus(stat)}

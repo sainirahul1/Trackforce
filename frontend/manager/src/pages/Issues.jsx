@@ -497,7 +497,7 @@ const IssueDetails = ({ issue, onBack, onStatusUpdate, onUpdatePriority, onDelet
                 </button>
               </div>
             </div>
-          </div> */}
+          </div>
 
           <div className="bg-gradient-to-br from-indigo-600 to-indigo-700 rounded-[2rem] p-6 text-white relative overflow-hidden shadow-2xl shadow-indigo-500/20 ring-1 ring-white/10">
             <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
