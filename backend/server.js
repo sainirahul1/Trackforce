@@ -136,6 +136,7 @@ managerRouter.use(apiLimiter);
 managerRouter.use('/inventory-orders', require('./routes/manager/inventoryOrderRoutes'));
 managerRouter.use('/activity', require('./routes/manager/activityRoutes'));
 managerRouter.use('/team', require('./routes/manager/teamRoutes'));
+managerRouter.use('/targets', require('./routes/manager/targetRoutes'));
 
 app.use('/reatchall/manager', managerRouter);
 
