@@ -211,51 +211,64 @@ const EmployeeVisits = ({ defaultFilter = 'All', pageTitle = 'Visit History' }) 
             <p className="text-[10px] font-black uppercase tracking-[0.4em]">Decrypting Records...</p>
           </div>
         ) : filteredVisits.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in slide-in-from-bottom-8 duration-700">
+          <div className="space-y-6 animate-in slide-in-from-bottom-8 duration-700">
             {filteredVisits.map((visit) => (
               <div 
                 key={visit._id}
                 onClick={() => handleVisitClick(visit)}
-                className="group bg-white dark:bg-gray-900 p-8 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-2xl hover:border-indigo-100 dark:hover:border-indigo-500/30 transition-all cursor-pointer relative overflow-hidden"
+                className="group bg-white dark:bg-gray-900 px-8 py-10 rounded-[3rem] border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-2xl hover:border-indigo-100 dark:hover:border-indigo-500/30 transition-all cursor-pointer relative overflow-hidden flex flex-col md:flex-row md:items-center gap-8"
               >
-                <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/[0.03] rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-700"></div>
-                
-                <div className="flex items-center justify-between mb-8">
-                  <div className={`p-4 rounded-2xl shadow-sm
-                    ${visit.status === 'Completed' ? 'bg-emerald-50 text-emerald-600' : 
-                      visit.status === 'Rejected' ? 'bg-rose-50 text-rose-600' : 'bg-amber-50 text-amber-600'}`}>
-                    {visit.status === 'Completed' ? <CheckCircle2 size={24} /> : 
-                     visit.status === 'Rejected' ? <AlertCircle size={24} /> : <Clock size={24} />}
+                {/* 01. TIME & STATUS PULSE */}
+                <div className="flex flex-row md:flex-col items-center justify-between md:justify-center gap-4 md:w-32 md:border-r border-gray-50 dark:border-gray-800 pr-0 md:pr-8 shrink-0">
+                  <div className="flex flex-col items-start md:items-center">
+                    <p className="text-xl font-black text-gray-950 dark:text-white tracking-tighter leading-none mb-1">{visit.time}</p>
+                    <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Recorded</p>
                   </div>
-                  <div className="text-right">
-                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">{visit.time}</p>
-                    <p className={`text-[10px] font-black uppercase tracking-widest
-                      ${visit.status === 'Completed' ? 'text-emerald-500' : 
-                        visit.status === 'Rejected' ? 'text-rose-500' : 'text-amber-500'}`}>
+                  <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shadow-lg transition-transform duration-500 group-hover:scale-110
+                    ${visit.status === 'Completed' ? 'bg-emerald-500 text-white shadow-emerald-500/20' : 
+                      visit.status === 'Rejected' ? 'bg-rose-500 text-white shadow-rose-500/20' : 'bg-amber-500 text-white shadow-amber-500/20'}`}>
+                    {visit.status === 'Completed' ? <CheckCircle2 size={18} /> : 
+                     visit.status === 'Rejected' ? <AlertCircle size={18} /> : <Clock size={18} />}
+                  </div>
+                </div>
+
+                {/* 02. MISSION IDENTITY */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-3 mb-2">
+                    <span className={`text-[8px] font-black uppercase tracking-[0.2em] px-3 py-1 rounded-full border 
+                      ${visit.status === 'Completed' ? 'text-emerald-600 bg-emerald-50 border-emerald-100' : 
+                        visit.status === 'Rejected' ? 'text-rose-600 bg-rose-50 border-rose-100' : 'text-amber-600 bg-amber-50 border-amber-100'}`}>
                       {visit.status}
-                    </p>
+                    </span>
+                    <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest">• Mission ID: {visit._id.slice(-6).toUpperCase()}</span>
+                  </div>
+                  <h3 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight mb-2 uppercase italic group-hover:text-indigo-600 transition-colors">{visit.store}</h3>
+                  <div className="flex items-center gap-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest line-clamp-1">
+                     <MapPin size={12} className="text-indigo-400" /> {visit.address}
                   </div>
                 </div>
 
-                <h3 className="text-xl font-black text-gray-900 dark:text-white tracking-tight mb-2 uppercase italic">{visit.store}</h3>
-                <div className="flex items-center gap-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest line-clamp-1 mb-6">
-                   <MapPin size={12} className="text-indigo-400" /> {visit.address}
-                </div>
-
-                <div className="pt-6 border-t border-gray-50 dark:border-gray-800 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="flex -space-x-3">
-                      {visit.uploadedImages.slice(0, 3).map((img, i) => (
-                        <div key={i} className="w-8 h-8 rounded-lg border-2 border-white dark:border-gray-900 bg-gray-100 overflow-hidden shadow-sm hover:-translate-y-1 transition-all">
-                          <img src={img} alt="proof" className="w-full h-full object-cover" />
-                        </div>
-                      ))}
+                {/* 03. INTELLIGENCE PROOF GALLERY */}
+                <div className="flex flex-col md:flex-row items-center gap-6 md:w-auto shrink-0 border-t md:border-t-0 pt-6 md:pt-0 border-gray-50 dark:border-gray-800">
+                  <div className="flex flex-col items-center md:items-end gap-1 mb-2 md:mb-0">
+                    <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Visual Assets</p>
+                    <div className="flex items-center gap-2">
+                      <div className="flex -space-x-3">
+                        {visit.uploadedImages.slice(0, 3).map((img, i) => (
+                          <div key={i} className="w-12 h-12 rounded-2xl border-4 border-white dark:border-gray-900 bg-gray-100 overflow-hidden shadow-xl hover:-translate-y-2 transition-all relative group/img">
+                            <img src={img} alt="proof" className="w-full h-full object-cover" />
+                            <div className="absolute inset-0 bg-indigo-600/20 opacity-0 group-hover/img:opacity-100 transition-opacity" />
+                          </div>
+                        ))}
+                      </div>
+                      {visit.uploadedImages.length > 3 && (
+                        <span className="text-[10px] font-black text-indigo-500 bg-indigo-50 px-3 py-1.5 rounded-xl border border-indigo-100">+{visit.uploadedImages.length - 3}</span>
+                      )}
                     </div>
-                    {visit.uploadedImages.length > 3 && (
-                      <span className="text-[9px] font-black text-gray-400 tracking-widest">+{visit.uploadedImages.length - 3} MORE</span>
-                    )}
                   </div>
-                  <ChevronRight size={20} className="text-gray-300 group-hover:text-indigo-600 group-hover:translate-x-1 transition-all" />
+                  <div className="w-12 h-12 rounded-full border border-gray-100 dark:border-gray-800 flex items-center justify-center text-gray-400 group-hover:bg-indigo-600 group-hover:text-white group-hover:border-indigo-600 transition-all duration-500 shadow-sm group-hover:shadow-indigo-500/30">
+                    <ChevronRight size={20} className="group-hover:translate-x-1 transition-transform" />
+                  </div>
                 </div>
               </div>
             ))}

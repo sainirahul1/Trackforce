@@ -76,15 +76,14 @@ const EmployeeDetailCard = ({ employee, currentPos, onClose, onToggleMission, is
         <div className="flex gap-3">
            <div className="w-8 h-8 bg-blue-50 dark:bg-blue-900/20 rounded-xl flex items-center justify-center shrink-0"><MapPin size={18} className="text-[#3b82f6]" /></div>
             <div>
-              <p className="text-[8px] font-black text-blue-500 uppercase tracking-widest mb-0.5">LIVE COORDINATES</p>
-              <p className="text-[12px] font-black text-gray-900 dark:text-white leading-none">
-                {lat ? `${Number(lat).toFixed(6)}, ${Number(lng).toFixed(6)}` : 'Resolving GPS...'}
+              <p className="text-[8px] font-black text-[#3b82f6] uppercase tracking-[0.2em] mb-1">PRIMARY LOCATION INTEL</p>
+              <h3 className="text-[13px] font-black text-gray-900 dark:text-white leading-tight uppercase tracking-tight">
+                {employee.address ? employee.address : 'Resolving Intelligence...'}
+              </h3>
+              <p className="text-[9px] font-black text-gray-400 mt-1.5 uppercase tracking-widest flex items-center gap-1.5">
+                <Navigation size={10} className="text-gray-300" /> 
+                {lat ? `${Number(lat).toFixed(6)}, ${Number(lng).toFixed(6)}` : 'Wait for Fix...'}
               </p>
-              {employee.address && (
-                <p className="text-[9px] font-bold text-gray-400 mt-1 uppercase tracking-tight line-clamp-1">
-                  {employee.address}
-                </p>
-              )}
             </div>
         </div>
       </div>
@@ -511,10 +510,19 @@ const LiveTracking = () => {
                          <span className="text-[7px] font-black text-gray-400 uppercase tracking-widest">{emp.isTracking ? 'AGENT DISPATCHED' : 'OFFLINE'}</span>
                           {emp.isTracking && (
                             <div className="flex flex-col gap-0.5 max-w-[140px]">
-                              <span className="text-[9px] font-black text-blue-600 dark:text-blue-400 tracking-tight leading-none italic">
-                                { (emp.lat || animatedPositions[emp.id]?.lat) ? `${Number(emp.lat || animatedPositions[emp.id]?.lat).toFixed(6)}, ${Number(emp.lng || animatedPositions[emp.id]?.lng).toFixed(6)}` : 'Resolving GPS...'}
-                              </span>
-                              {emp.address && <span className="text-[7px] font-bold text-gray-500 line-clamp-1 truncate uppercase tracking-tighter">{emp.address}</span>}
+
+                                 { (emp.lat || animatedPositions[emp.id]?.lat) ? (
+                                  <div className="flex flex-col gap-1">
+                                    <span className="text-[10px] font-black text-gray-900 dark:text-white leading-tight uppercase tracking-tight line-clamp-1">
+                                      {emp.address || 'Resolving Address...'}
+                                    </span>
+                                    <div className="flex items-center gap-2">
+                                       <span className="text-[7px] font-black text-blue-600 dark:text-blue-400 tracking-widest leading-none italic">
+                                         {Number(emp.lat || animatedPositions[emp.id]?.lat).toFixed(6)}, {Number(emp.lng || animatedPositions[emp.id]?.lng).toFixed(6)}
+                                       </span>
+                                    </div>
+                                  </div>
+                                ) : 'Resolving GPS...'}
                               {/* Telemetry row */}
                               <div className="flex items-center gap-2 mt-1">
                                 <span className="text-[7px] font-black text-emerald-600">{(emp.speed ?? 0).toFixed(0)} km/h</span>

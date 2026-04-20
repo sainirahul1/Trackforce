@@ -49,6 +49,28 @@ const employeeLogVisitSchema = new mongoose.Schema({
   photos: [String],
   notes: String,
   
+  // App Installation Details (New)
+  appInstallation: {
+    status: { type: String, enum: ['Yes', 'No'], default: null },
+    noReason: String,
+    registration: {
+      status: { type: String, enum: ['Yes', 'No'], default: null },
+      reason: String,
+      feedback: String
+    },
+    training: {
+      status: { type: String, enum: ['Yes', 'No'], default: null },
+      reason: String,
+      feedback: String
+    },
+    firstOrder: {
+      status: { type: String, enum: ['Yes', 'No'], default: null },
+      reason: String,
+      feedback: String
+    }
+  },
+  visitForm: mongoose.Schema.Types.Mixed,
+  
   // Metadata
   visitType: {
     type: String,

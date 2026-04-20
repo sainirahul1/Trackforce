@@ -2,6 +2,7 @@ const User = require('../../models/tenant/User');
 const TrackingSession = require('../../models/employee/TrackingSession');
 const ActivityLog = require('../../models/employee/ActivityLog');
 const { logActivity } = require('../../utils/activityLogger');
+const { reverseGeocode } = require('../../utils/geocoder');
 
 // Start tracking (On Duty)
 exports.startTracking = async (req, res) => {
@@ -182,6 +183,154 @@ exports.getTrackingStatus = async (req, res) => {
       }
     });
   } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// Real-Time Tracking Ping (Requirement 8, 9)
+exports.ping = async (req, res) => {
+  try {
+    const { 
+      latitude: lat, 
+      longitude: lng, 
+      accuracy, 
+      battery, 
+      deviceId, 
+      timestamp, 
+      status: workStatus 
+    } = req.body;
+
+    if (!lat || !lng) {
+      return res.status(400).json({ message: 'GPS coordinates required' });
+    }
+
+    const userId = req.user._id;
+    const now = new Date(timestamp || Date.now());
+
+    // 1. SESSION RECOVERY: Find active session or resume logically
+    let session = await TrackingSession.findOne({ user: userId, status: 'active' }).sort({ startTime: -1 });
+
+    if (!session) {
+      // Implicit Session Recovery
+      const user = await User.findById(userId);
+      if (!user) return res.status(404).json({ message: 'User not found' });
+
+      session = await TrackingSession.create({
+        user: userId,
+        employeeName: user.name,
+        manager: user.manager,
+        tenant: req.tenantId,
+        startTime: new Date(),
+        status: 'active'
+      });
+
+      // Maintain consistency
+      user.isTracking = true;
+      await user.save();
+    }
+
+    // 2. TELEMETRY CALCULATIONS
+    let distanceIncrement = 0;
+    let computedSpeedKmh = 0;
+    const lastPoint = session.route && session.route.length > 0 ? session.route[session.route.length - 1] : null;
+
+    if (lastPoint) {
+      const R = 6371; // km
+      const dLat = (lat - lastPoint.lat) * (Math.PI / 180);
+      const dLng = (lng - lastPoint.lng) * (Math.PI / 180);
+      const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lastPoint.lat * (Math.PI / 180)) * Math.cos(lat * (Math.PI / 180)) *
+        Math.sin(dLng / 2) * Math.sin(dLng / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      distanceIncrement = R * c;
+
+      const timeDiffSec = lastPoint.timestamp ? (now - new Date(lastPoint.timestamp)) / 1000 : 0;
+      if (timeDiffSec > 0) {
+        computedSpeedKmh = (distanceIncrement / timeDiffSec) * 3600;
+      }
+    }
+
+    // ACTIVITY STATE
+    const currentSummary = session.activitySummary || {};
+    const prevState = currentSummary.activityState || 'idle';
+    let newState = computedSpeedKmh >= 0.5 ? 'moving' : 'idle';
+
+    if (newState === 'idle' && prevState === 'idle') {
+      const lastStateChange = currentSummary.lastStateChange ? new Date(currentSummary.lastStateChange) : session.startTime;
+      if ((now - lastStateChange) / 1000 > 180) {
+        newState = 'visiting';
+      }
+    }
+
+    // 3. REVERSE GEOCODING (Proxy to avoid client-side API restrictions)
+    let resolvedAddress = session.currentAddress || `Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}`;
+    let city = session.currentCity || '';
+
+    try {
+      const needsGeocode = !session.currentAddress || (distanceIncrement > 0.05); // Only geocode if moved > 50m
+
+      if (needsGeocode) {
+        const geoResult = await reverseGeocode(lat, lng);
+        resolvedAddress = geoResult.address;
+        city = geoResult.city;
+      }
+    } catch (err) {
+      console.warn('[GEOCODE] REST Ping lookup failed:', err.message);
+    }
+
+    // 4. PERSISTENCE
+    const updatedSession = await TrackingSession.findByIdAndUpdate(session._id, {
+      $push: {
+        route: {
+          lat, lng,
+          timestamp: now,
+          accuracy: accuracy || -1,
+          battery: battery || -1,
+          deviceId: deviceId || 'unknown'
+        }
+      },
+      $set: {
+        currentAddress: resolvedAddress,
+        currentCity: city,
+        'activitySummary.activityState': newState,
+        'activitySummary.lastBattery': battery,
+        'activitySummary.lastAccuracy': accuracy,
+        updatedAt: now
+      },
+      $inc: {
+        distanceTravelled: isNaN(distanceIncrement) ? 0 : distanceIncrement
+      }
+    }, { new: true });
+
+    // 5. REAL-TIME BROADCAST TO MANAGERS
+    const io = req.app.get('io');
+    if (io) {
+      const liveData = {
+        employeeId: userId,
+        employeeName: req.user.name,
+        lat, lng,
+        accuracy, battery,
+        deviceId,
+        address: resolvedAddress,
+        city,
+        activityState: newState,
+        distanceTravelled: updatedSession.distanceTravelled,
+        timestamp: now
+      };
+      
+      const tenantStr = req.tenantId.toString();
+      io.to(`tenant:${tenantStr}`).emit('tracking:live', liveData);
+      io.to(`tenant:${tenantStr}:role:manager`).emit('tracking:live', liveData);
+    }
+
+    res.status(200).json({ 
+      success: true, 
+      address: resolvedAddress,
+      state: newState 
+    });
+
+  } catch (err) {
+    console.error('[TRACKING] Ping processing error:', err);
     res.status(500).json({ message: err.message });
   }
 };

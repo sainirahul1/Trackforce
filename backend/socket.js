@@ -1,5 +1,6 @@
 const { Server } = require('socket.io');
 const TrackingSession = require('./models/employee/TrackingSession');
+const { reverseGeocode } = require('./utils/geocoder');
 
 const initSocket = (server) => {
   const io = new Server(server, {
@@ -226,28 +227,20 @@ const initSocket = (server) => {
         let resolvedCity = session.currentCity || '';
 
         try {
-          const fetch = require('node-fetch');
-          const apiKey = process.env.VITE_GOOGLE_MAPS_API_KEY;
-          const needsGeocode = !session.currentAddress || (distanceIncrement > 0.05);
+          const isRawCoordinate = session.currentAddress && session.currentAddress.startsWith('Lat:');
+          const needsGeocode = !session.currentAddress || isRawCoordinate || (distanceIncrement > 0.05);
 
-          if (apiKey && location.lat && location.lng && needsGeocode) {
-            const geoResponse = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${location.lat},${location.lng}&key=${apiKey}`);
-            const geoData = await geoResponse.json();
-            if (geoData.status === 'OK' && geoData.results?.[0]) {
-              resolvedAddress = geoData.results[0].formatted_address;
-              const locality = geoData.results[0].address_components.find(c => c.types.includes('locality'));
-              if (locality) resolvedCity = locality.long_name;
+          if (needsGeocode) {
+            const geoResult = await reverseGeocode(location.lat, location.lng);
+            resolvedAddress = geoResult.address;
+            resolvedCity = geoResult.city;
 
-              const enrichedData = { ...liveData, address: resolvedAddress, city: resolvedCity };
-              if (tenantRoom) io.to(tenantRoom).emit('tracking:live', enrichedData);
-              if (managerRoom && managerRoom !== tenantRoom) io.to(managerRoom).emit('tracking:live', enrichedData);
-            }
-          } else {
-            resolvedAddress = session.currentAddress || initialAddress;
-            resolvedCity = session.currentCity || '';
+            const enrichedData = { ...liveData, address: resolvedAddress, city: resolvedCity };
+            if (tenantRoom) io.to(tenantRoom).emit('tracking:live', enrichedData);
+            if (managerRoom && managerRoom !== tenantRoom) io.to(managerRoom).emit('tracking:live', enrichedData);
           }
         } catch (geoErr) {
-          console.error('[GEOCODE] Error:', geoErr);
+          console.error('[GEOCODE] Error in socket loop:', geoErr);
         }
 
         // 9. Persist to database
@@ -278,9 +271,12 @@ const initSocket = (server) => {
           { returnDocument: 'after' }
         );
 
-        // Final enriched broadcast with persisted distance
-        if (tenantRoom) io.to(tenantRoom).emit('tracking:live', { ...liveData, distanceTravelled: updatedSession.distanceTravelled });
-        console.log(`[DATABASE] Point saved for ${data.employeeName}. Distance: ${updatedSession.distanceTravelled.toFixed(2)} km | Activity: ${newState}`);
+        // Final enriched broadcast with persisted distance and resolved address
+        const finalData = { ...liveData, address: resolvedAddress, city: resolvedCity, distanceTravelled: updatedSession.distanceTravelled };
+        if (tenantRoom) io.to(tenantRoom).emit('tracking:live', finalData);
+        if (managerRoom && managerRoom !== tenantRoom) io.to(managerRoom).emit('tracking:live', finalData);
+        if (managerRoleRoom) io.to(managerRoleRoom).emit('tracking:live', finalData);
+        console.log(`[DATABASE] Point saved for ${data.employeeName}. Address: ${resolvedAddress} | Distance: ${updatedSession.distanceTravelled.toFixed(2)} km | Activity: ${newState}`);
 
       } catch (err) {
         console.error('[DATABASE] Persistence Error:', err);

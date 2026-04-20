@@ -98,6 +98,7 @@ app.get('/', (req, res) => {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 // ─── Public Routes (No Auth) ─────────────────────────────────────────────────
+app.use('/reatchall/public/geocoding', require('./routes/core/geocodingRoutes'));
 app.use('/reatchall/public', publicLimiter, require('./routes/core/publicRoutes'));
 
 // ─── Auth Routes (Rate-Limited) ──────────────────────────────────────────────

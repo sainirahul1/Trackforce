@@ -56,6 +56,7 @@ exports.createVisit = async (req, res) => {
     status, visitType, gps, notes, 
     address, city, state, pinCode,
     classification, milestones,
+    appInstallation,
     photos, taskId, taskTitle, taskType, checklist, 
     missionId, missionType, missionScore, ...rest 
   } = req.body;
@@ -105,6 +106,8 @@ exports.createVisit = async (req, res) => {
         knowledgeShared: rest.appTraining || false,
         orderLogged: rest.orderPlaced || false,
       },
+      appInstallation: appInstallation || null,
+      visitForm: visitForm,
       photos: photos || [],
       timestamp: new Date()
     });
