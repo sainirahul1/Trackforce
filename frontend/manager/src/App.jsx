@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { lazy } from 'react';
 import { BrowserRouter } from 'react-router-dom';
 import AppRouter from './router/AppRouter';
 import { ThemeProvider } from './context/ThemeContext';
@@ -8,6 +8,12 @@ import { NotificationProvider } from './context/NotificationContext';
 import { GoogleMapsProvider } from './context/GoogleMapsContext';
 import { DialogProvider } from './context/DialogContext';
 import './index.css';
+
+const LiveTracking = lazy(() => import('./pages/LiveTracking'));
+const InventoryOrders = lazy(() => import('./pages/InventoryOrders'));
+const Team = lazy(() => import('./pages/Team'));
+const Targets = lazy(() => import('./pages/Targets'));
+const SupportIssues = lazy(() => import('./pages/Issues'));
 
 function App() {
   return (

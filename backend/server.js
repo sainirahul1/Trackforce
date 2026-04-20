@@ -43,8 +43,8 @@ const corsOptions = {
     // Allow if no origin (mobile, curl, etc.)
     if (!origin) return callback(null, true);
 
-    const envOrigins = process.env.ALLOWED_ORIGINS 
-      ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim()) 
+    const envOrigins = process.env.ALLOWED_ORIGINS
+      ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
       : [];
 
     const localhostOrigins = [
@@ -138,7 +138,7 @@ managerRouter.use(apiLimiter);
 managerRouter.use('/inventory-orders', require('./routes/manager/inventoryOrderRoutes'));
 managerRouter.use('/activity', require('./routes/manager/activityRoutes'));
 managerRouter.use('/team', require('./routes/manager/teamRoutes'));
-managerRouter.use('/follow-ups', require('./routes/manager/followUpRoutes'));
+managerRouter.use('/targets', require('./routes/manager/targetRoutes'));
 
 app.use('/reatchall/manager', managerRouter);
 
@@ -247,14 +247,14 @@ const connectDB = async () => {
     const conn = await mongoose.connect(process.env.MONGO_URI, options);
     console.log(`[DATABASE] MongoDB Connected: ${conn.connection.host}`);
     isConnecting = false;
-    
+
     // Start server if not already started
     if (!isStarted) {
       server.listen(PORT, () => {
         console.log(`[SERVER] Protocol: HTTP/Socket.io | Port: ${PORT}`);
         console.log(`[SERVER] Environment: ${process.env.NODE_ENV || 'production'}`);
         console.log(`[SERVER] Portal Routes: /reatchall/{employee,manager,tenant,superadmin,admin}/*`);
-        
+
         // --- Initialize Maintenance Tasks ---
         // Run once on startup to clean up any sessions from previous runs
         cleanupStaleSessions(io);
@@ -275,7 +275,7 @@ const connectDB = async () => {
 // Monitor Connection Events
 mongoose.connection.on('disconnected', () => {
   console.warn('[DATABASE WARNING] MongoDB disconnected. Attempting to reconnect...');
-  connectDB().catch(() => {});
+  connectDB().catch(() => { });
 });
 
 mongoose.connection.on('error', (err) => {

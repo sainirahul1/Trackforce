@@ -32,3 +32,10 @@ export const getTrackingStatus = async () => {
   const response = await apiClient.get(`${API_URL}/tracking/status`);
   return response.data;
 };
+
+export const getTargetHistory = async (force = false) => {
+  return fetchDataWithCache('target_history', async () => {
+    const response = await apiClient.get(`${API_URL}/targets/history`);
+    return response.data;
+  }, force);
+};

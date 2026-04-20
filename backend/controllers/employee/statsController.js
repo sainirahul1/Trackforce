@@ -2,6 +2,9 @@ const StoreVisit = require('../../models/employee/StoreVisit');
 const Order = require('../../models/employee/Order');
 const Task = require('../../models/employee/Task');
 const ActivityLog = require('../../models/employee/ActivityLog');
+const Target = require('../../models/employee/Target');
+const EmployeeLogVisit = require('../../models/employee/EmployeeLogVisit');
+const User = require('../../models/tenant/User');
 
 // @desc    Get dashboard stats for employee
 // @route   GET /api/stats/dashboard
@@ -12,7 +15,7 @@ exports.getDashboardStats = async (req, res) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const [visits, orders, tasks] = await Promise.all([
+    const [visits, orders, tasks, target, visitsCount, freshUser] = await Promise.all([
       StoreVisit.find({ 
         employee: userId, 
         createdAt: { $gte: today } 
@@ -24,8 +27,20 @@ exports.getDashboardStats = async (req, res) => {
       Task.find({ 
         employee: userId, 
         createdAt: { $gte: today } 
-      })
+      }),
+      Target.findOne({
+        employee: userId,
+        date: { $gte: today, $lte: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999) }
+      }),
+      EmployeeLogVisit.countDocuments({
+        employee: userId,
+        timestamp: { $gte: today }
+      }),
+      User.findById(userId).select('-password').lean()
     ]);
+
+    const currentTarget = target ? target.monthlyTarget : 0;
+    const monthlyVisits = visitsCount;
 
     const totalVisitsToday = visits.length;
     const visitsCompleted = visits.filter(v => v.status === 'completed').length;
@@ -102,7 +117,10 @@ exports.getDashboardStats = async (req, res) => {
         priority: nextTask.priority,
         travelTime: 'Est. 25m',
         distance: '4.2 km'
-      } : null
+      } : null,
+      monthlyTarget: currentTarget,
+      monthlyVisits: monthlyVisits,
+      user: freshUser
     });
   } catch (error) {
     console.error('[STATS ERROR]', error.message);

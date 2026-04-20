@@ -18,6 +18,8 @@ import ManagerAnalytics from '../pages/Analytics';
 import ManagerActivityLog from '../pages/ActivityLog';
 import ManagerProfile from '../pages/Profile';
 import ManagerIssues from '../pages/Issues';
+import ManagerTargets from '../pages/Targets';
+import EmployeeTargetDetail from '../pages/EmployeeTargetDetail';
 import NotificationsPage from '../pages/shared/NotificationsPage';
 
 const AppRouter = () => (
@@ -46,6 +48,8 @@ const AppRouter = () => (
       <Route path="analytics" element={<ManagerAnalytics />} />
       <Route path="activity" element={<ManagerActivityLog />} />
       <Route path="profile" element={<ManagerProfile />} />
+      <Route path="targets" element={<ManagerTargets />} />
+      <Route path="targets/:id" element={<EmployeeTargetDetail />} />
       <Route path="issues" element={<ManagerIssues />} />
       <Route path="notifications" element={<NotificationsPage />} />
       <Route index element={<Navigate to="analytics" replace />} />

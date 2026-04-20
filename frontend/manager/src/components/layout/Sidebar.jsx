@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, Building2, ClipboardList, Map, Settings, LogOut, ShieldCheck, Bell, ShoppingBag, Camera, Clock, AlertCircle, ChevronLeft, ChevronRight, Menu, Activity, User, Lock, CreditCard, Send, RotateCcw } from 'lucide-react';
+import { LayoutDashboard, Users, Building2, ClipboardList, Map, Settings, LogOut, ShieldCheck, Bell, ShoppingBag, Camera, Clock, AlertCircle, ChevronLeft, ChevronRight, Menu, Activity, User, Lock, CreditCard, Send, Target, RotateCcw } from 'lucide-react';
 import ThemeToggle from '../ui/ThemeToggle';
 import { useAuth } from '../../context/AuthContext';
 import { getApiBaseUrl } from '../../services/apiClient';
@@ -41,6 +41,7 @@ const Sidebar = ({ role, user, isCollapsed, onToggle }) => {
       { name: 'Inventory/Orders', icon: ShoppingBag, path: '/manager/inventory' },
       // { name: 'Analytics', icon: Activity, path: '/manager/analytics' },
       { name: 'Team', icon: Users, path: '/manager/team' },
+      { name: 'Targets', icon: Target, path: '/manager/targets' },
       { name: 'Support Issues', icon: AlertCircle, path: '/manager/issues' },
       { name: 'Activity Log', icon: Clock, path: '/manager/activity' },
       { name: 'Profile', icon: User, path: '/manager/profile' },
@@ -59,7 +60,7 @@ const Sidebar = ({ role, user, isCollapsed, onToggle }) => {
   const currentMenu = menuItems[role] || [];
 
   const getPortalInfo = () => {
-    switch(role) {
+    switch (role) {
       case 'superadmin': return { label: 'Admin', color: 'bg-rose-600', text: 'text-rose-600' };
       case 'tenant': return { label: 'Org', color: 'bg-indigo-600', text: 'text-indigo-600' };
       case 'manager': return { label: 'Manager', color: 'bg-indigo-600', text: 'text-indigo-600' };
@@ -116,13 +117,13 @@ const Sidebar = ({ role, user, isCollapsed, onToggle }) => {
           <div className={`flex items-center ${isCollapsed ? 'flex-col text-center' : 'space-x-3'} overflow-hidden`}>
             <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center text-indigo-600 font-bold shrink-0 overflow-hidden relative">
               {user?.profile?.profileImage ? (
-                <img 
+                <img
                   src={user.profile.profileImage.startsWith('data:') ? user.profile.profileImage : (() => {
                     const base = getApiBaseUrl();
                     return `${base}${user.profile.profileImage.startsWith('/') ? '' : '/'}${user.profile.profileImage}`;
-                  })()} 
-                  alt="DP" 
-                  className="w-full h-full object-cover" 
+                  })()}
+                  alt="DP"
+                  className="w-full h-full object-cover"
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 font-bold">
