@@ -5,14 +5,14 @@ import { useDialog } from '../context/DialogContext';
 import { useSocket } from '../context/SocketContext';
 import apiClient from '../services/apiClient';
 import storage from '../utils/storage';
-import { getDashboardStats, startTracking, stopTracking, getTrackingStatus } from '../services/trackingService';
+import { getDashboardStats, startTracking, stopTracking, getTrackingStatus, getTargetHistory } from '../services/trackingService';
 import { getActivities } from '../services/activityService';
 import { getTasks } from '../services/taskService';
 import { useNotifications } from '../context/NotificationContext';
 import {
   MapPin, Calendar, TrendingUp, Clock, ClipboardList,
   Map as MapIcon, ShoppingBag, ChevronRight, Activity,
-  CheckCircle2, Navigation2, Bell, IndianRupee, Smartphone, GraduationCap, PackageCheck
+  CheckCircle2, Navigation2, Bell, IndianRupee, Smartphone, GraduationCap, PackageCheck, Target
 } from 'lucide-react';
 import {
   Chart as ChartJS, CategoryScale, LinearScale, PointElement,
@@ -490,7 +490,7 @@ const MOTIVATIONAL_QUOTES = [
 
 const EmployeeDashboard = () => {
   // --- Auth Context ---
-  const { user } = useAuth();
+  const { user, setUser } = useAuth();
   const { unreadCount } = useNotifications();
   const { setPageLoading } = useOutletContext();
   const { showAlert } = useDialog();
@@ -603,7 +603,14 @@ const EmployeeDashboard = () => {
           console.warn('Socket not ready for emission');
         }
       },
-      (error) => console.error('Error getting location:', error),
+      (error) => {
+        // Suppress repeated spam for denied permissions or common timeouts
+        if (error.code === 1 || error.code === 3) { // PERMISSION_DENIED or TIMEOUT
+          console.warn('[GPS] Geolocation suppressed:', error.message);
+        } else {
+          console.error('[GPS] Geolocation Error:', error);
+        }
+      },
       { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
     );
     setWatchId(id);
@@ -635,6 +642,17 @@ const EmployeeDashboard = () => {
         getTasks(isBackground)
       ]);
       setStatsData(stats);
+      
+      // Real-time synchronization of user details from tenant.users
+      if (stats.user) {
+        setUser(prev => {
+          const updated = { ...prev, ...stats.user };
+          // Persist to storage to avoid flicker on reload
+          storage.setItem('user', JSON.stringify(updated));
+          return updated;
+        });
+      }
+
       setActivities(logs.map(log => {
         const logDate = new Date(log.timestamp || log.createdAt);
         const isValidDate = !isNaN(logDate.getTime());
@@ -870,6 +888,63 @@ const EmployeeDashboard = () => {
           </div>
         </div>
       </header>
+
+      {/* Daily Progress Section */}
+      <section className="bg-white dark:bg-gray-900 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 shadow-xl shadow-gray-100/50 dark:shadow-none overflow-hidden group">
+        <div className="grid grid-cols-1 md:grid-cols-4 divide-y md:divide-y-0 md:divide-x divide-gray-100 dark:divide-gray-800">
+          <div className="p-8 space-y-4 md:col-span-1 bg-gradient-to-br from-indigo-50/50 to-transparent dark:from-indigo-900/10">
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-indigo-600 rounded-2xl text-white shadow-lg rotate-3 group-hover:rotate-6 transition-transform">
+                <Target size={24} />
+              </div>
+              <div>
+                <h3 className="text-lg font-black text-gray-900 dark:text-white tracking-tight">Daily Mission</h3>
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mt-1">Today's Quota</p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="p-8 md:col-span-3 flex flex-col md:flex-row items-center gap-8">
+            <div className="flex-1 w-full space-y-3">
+              <div className="flex justify-between items-end">
+                <div>
+                  <span className="text-4xl font-black text-gray-900 dark:text-white tracking-tighter">
+                    {loading ? '---' : statsData?.visitsCompleted || 0}
+                  </span>
+                  <span className="text-sm font-black text-gray-400 ml-1">/ {loading ? '---' : statsData?.monthlyTarget || 0} Visits</span>
+                </div>
+                <span className={`text-sm font-black uppercase tracking-widest ${loading ? 'text-gray-300' : (statsData?.visitsCompleted >= statsData?.monthlyTarget ? 'text-emerald-500' : 'text-indigo-500')}`}>
+                  {loading ? 'Calculating...' : (statsData?.monthlyTarget > 0 ? Math.round((statsData.visitsCompleted / statsData.monthlyTarget) * 100) : 0)}% Complete
+                </span>
+              </div>
+              <div className="w-full h-4 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden p-1 shadow-inner">
+                <div 
+                  className={`h-full rounded-full transition-all duration-1000 shadow-lg ${statsData?.visitsCompleted >= statsData?.monthlyTarget ? 'bg-gradient-to-r from-emerald-500 to-teal-400' : 'bg-gradient-to-r from-indigo-500 to-blue-500'}`}
+                  style={{ width: `${loading ? 0 : Math.min(100, Math.round((statsData?.visitsCompleted / (statsData?.monthlyTarget || 1)) * 100))}%` }}
+                />
+              </div>
+              <div className="flex justify-between text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] pt-1">
+                <span>Shift Start ({new Date().toLocaleDateString('default', { day: 'numeric', month: 'short' })})</span>
+                <span>Quota Milestone ({statsData?.monthlyTarget || 0})</span>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-4 shrink-0 px-8 py-4 bg-gray-50/50 dark:bg-gray-800/50 rounded-3xl border border-gray-100 dark:border-gray-800 group-hover:scale-105 transition-transform">
+              <div className="text-right">
+                <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Duty Status</p>
+                <p className={`font-black uppercase tracking-tighter ${statsData?.visitsCompleted >= statsData?.monthlyTarget ? 'text-emerald-600' : 'text-indigo-600'}`}>
+                  {loading ? 'Scanning' : (statsData?.visitsCompleted >= statsData?.monthlyTarget ? 'Quota Met' : 'In Progress')}
+                </p>
+              </div>
+              <div className={`p-2.5 rounded-xl ${statsData?.visitsCompleted >= statsData?.monthlyTarget ? 'bg-emerald-100 text-emerald-600' : 'bg-indigo-100 text-indigo-600'}`}>
+                {statsData?.visitsCompleted >= statsData?.monthlyTarget ? <CheckCircle2 size={20} /> : <Activity size={20} className="animate-pulse" />}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+
 
       {/* 2. Metrics Row: 3 compact horizontal stat cards */}
       <section className="grid grid-cols-1 md:grid-cols-3 gap-5">

@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, Building2, ClipboardList, Map, Settings, LogOut, ShieldCheck, Bell, ShoppingBag, Camera, Clock, AlertCircle, ChevronLeft, ChevronRight, Menu, Activity, User, Lock, CreditCard, Send } from 'lucide-react';
+import { LayoutDashboard, Users, Building2, ClipboardList, Map, Settings, LogOut, ShieldCheck, Bell, ShoppingBag, Camera, Clock, AlertCircle, ChevronLeft, ChevronRight, Menu, Activity, User, Lock, CreditCard, Send, Target } from 'lucide-react';
 import ThemeToggle from '../ui/ThemeToggle';
 import { useAuth } from '../../context/AuthContext';
 import { getApiBaseUrl } from '../../services/apiClient';
@@ -40,6 +40,7 @@ const Sidebar = ({ role, user, isCollapsed, onToggle }) => {
       { name: 'Inventory/Orders', icon: ShoppingBag, path: '/manager/inventory' },
       // { name: 'Analytics', icon: Activity, path: '/manager/analytics' },
       { name: 'Team', icon: Users, path: '/manager/team' },
+      { name: 'Targets', icon: Target, path: '/manager/targets' },
       { name: 'Support Issues', icon: AlertCircle, path: '/manager/issues' },
       { name: 'Activity Log', icon: Clock, path: '/manager/activity' },
       { name: 'Profile', icon: User, path: '/manager/profile' },
