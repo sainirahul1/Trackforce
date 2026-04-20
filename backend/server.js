@@ -130,8 +130,8 @@ app.use('/reatchall/employee', employeeRouter);
 // Middleware stack: auth → role(manager) → portal(manager) → tenant scoping
 const managerRouter = express.Router();
 managerRouter.use(protect);
-managerRouter.use(validateRole('manager'));
-managerRouter.use(validatePortal('manager'));
+managerRouter.use(validateRole('manager', 'tenant'));
+managerRouter.use(validatePortal('manager', 'tenant'));
 managerRouter.use(tenantMiddleware);
 managerRouter.use(apiLimiter);
 
@@ -139,6 +139,7 @@ managerRouter.use('/inventory-orders', require('./routes/manager/inventoryOrderR
 managerRouter.use('/activity', require('./routes/manager/activityRoutes'));
 managerRouter.use('/team', require('./routes/manager/teamRoutes'));
 managerRouter.use('/targets', require('./routes/manager/targetRoutes'));
+managerRouter.use('/follow-ups', require('./routes/manager/followUpRoutes'));
 
 app.use('/reatchall/manager', managerRouter);
 

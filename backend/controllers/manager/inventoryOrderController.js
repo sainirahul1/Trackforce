@@ -7,7 +7,7 @@ const inventoryOrderService = require('../../services/inventoryOrderService');
  */
 exports.getDashboardStats = async (req, res) => {
   try {
-    const result = await inventoryOrderService.getDashboardStats(req.tenantId, req.user._id);
+    const result = await inventoryOrderService.getDashboardStats(req.tenantId, req.user._id, req.user.role);
     res.status(200).json(result);
   } catch (error) {
     console.error('getDashboardStats Error:', error);
@@ -22,7 +22,7 @@ exports.getDashboardStats = async (req, res) => {
  */
 exports.getRevenueChartData = async (req, res) => {
   try {
-    const result = await inventoryOrderService.getRevenueChartData(req.tenantId, req.user._id);
+    const result = await inventoryOrderService.getRevenueChartData(req.tenantId, req.user._id, req.user.role);
     res.status(200).json(result);
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -37,7 +37,7 @@ exports.getRevenueChartData = async (req, res) => {
 exports.getRecentOrders = async (req, res) => {
   try {
     const { search, page = 1, limit = 5 } = req.query;
-    const result = await inventoryOrderService.getRecentOrders(req.tenantId, req.user._id, search, page, limit);
+    const result = await inventoryOrderService.getRecentOrders(req.tenantId, req.user._id, req.user.role, search, page, limit);
     res.status(200).json(result);
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -50,7 +50,7 @@ exports.getRecentOrders = async (req, res) => {
  */
 exports.exportLedger = async (req, res) => {
   try {
-    const csv = await inventoryOrderService.getExportLedgerData(req.tenantId, req.user._id);
+    const csv = await inventoryOrderService.getExportLedgerData(req.tenantId, req.user._id, req.user.role);
     if (!csv) {
       return res.status(404).json({ success: false, message: 'No orders found for export' });
     }

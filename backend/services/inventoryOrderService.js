@@ -19,25 +19,30 @@ class InventoryOrderService {
     return employees.map(emp => emp._id);
   }
 
-  async getDashboardStats(tenantId, managerId) {
+  async getDashboardStats(tenantId, managerId, userRole) {
     if (!tenantId) throw new Error('Tenant isolation missing');
 
-    const teamEmployeeIds = await this.getTeamEmployeeIds(managerId, tenantId);
+    // Managers and Admins both see the "Big Picture" in this dashboard
+    const hasFullVisibility = ['tenant', 'manager', 'superadmin'].includes(userRole?.toLowerCase());
+    const teamEmployeeIds = hasFullVisibility ? null : await this.getTeamEmployeeIds(managerId, tenantId);
 
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
     const fourteenDaysAgo = new Date();
     fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
 
+    const matchQuery = {
+      tenant: new mongoose.Types.ObjectId(tenantId),
+      createdAt: { $gte: sevenDaysAgo },
+      status: { $ne: 'canceled' }
+    };
+
+    if (!hasFullVisibility) {
+      matchQuery.employee = { $in: teamEmployeeIds };
+    }
+
     const stats = await Order.aggregate([
-      {
-        $match: {
-          tenant: new mongoose.Types.ObjectId(tenantId),
-          employee: { $in: teamEmployeeIds },
-          timestamp: { $gte: sevenDaysAgo },
-          status: { $ne: 'canceled' } // Only count active/valid orders
-        }
-      },
+      { $match: matchQuery },
       {
         $group: {
           _id: null,
@@ -48,15 +53,18 @@ class InventoryOrderService {
       }
     ]);
 
+    const prevMatchQuery = {
+      tenant: new mongoose.Types.ObjectId(tenantId),
+      createdAt: { $gte: fourteenDaysAgo, $lt: sevenDaysAgo },
+      status: { $ne: 'canceled' }
+    };
+
+    if (!hasFullVisibility) {
+      prevMatchQuery.employee = { $in: teamEmployeeIds };
+    }
+
     const prevStats = await Order.aggregate([
-      {
-        $match: {
-          tenant: new mongoose.Types.ObjectId(tenantId),
-          employee: { $in: teamEmployeeIds },
-          timestamp: { $gte: fourteenDaysAgo, $lt: sevenDaysAgo },
-          status: { $ne: 'canceled' }
-        }
-      },
+      { $match: prevMatchQuery },
       {
         $group: {
           _id: null,
@@ -70,11 +78,16 @@ class InventoryOrderService {
     const result = stats.length > 0 ? stats[0] : { weeklyRevenue: 0, ordersCollected: 0, avgTicketSize: 0 };
     const prevResult = prevStats.length > 0 ? prevStats[0] : { weeklyRevenue: 0, ordersCollected: 0, avgTicketSize: 0 };
 
-    const pendingApprovalCount = await Order.countDocuments({
+    const pendingQuery = {
       tenant: tenantId,
-      employee: { $in: teamEmployeeIds },
       status: { $in: ['pending', 'processing'] }
-    });
+    };
+
+    if (!hasFullVisibility) {
+      pendingQuery.employee = { $in: teamEmployeeIds };
+    }
+
+    const pendingApprovalCount = await Order.countDocuments(pendingQuery);
 
     const calculateTrend = (curr, prev) => {
       if (!prev || prev === 0) return curr > 0 ? '+100%' : '+0%';
@@ -96,29 +109,32 @@ class InventoryOrderService {
     };
   }
 
-  async getRevenueChartData(tenantId, managerId) {
+  async getRevenueChartData(tenantId, managerId, userRole) {
     if (!tenantId) throw new Error('Tenant isolation missing');
 
     const tId = new mongoose.Types.ObjectId(tenantId);
-    const mId = new mongoose.Types.ObjectId(managerId);
-    const teamEmployeeIds = await this.getTeamEmployeeIds(mId, tId);
+    const hasFullVisibility = ['tenant', 'manager', 'superadmin'].includes(userRole?.toLowerCase());
 
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
     sevenDaysAgo.setHours(0, 0, 0, 0);
 
+    const matchQuery = {
+      tenant: tId,
+      createdAt: { $gte: sevenDaysAgo },
+      status: { $ne: 'canceled' }
+    };
+
+    if (!hasFullVisibility) {
+      const teamEmployeeIds = await this.getTeamEmployeeIds(managerId, tenantId);
+      matchQuery.employee = { $in: teamEmployeeIds };
+    }
+
     const chartData = await Order.aggregate([
-      {
-        $match: {
-          tenant: tId,
-          employee: { $in: teamEmployeeIds },
-          timestamp: { $gte: sevenDaysAgo },
-          status: { $ne: 'canceled' }
-        }
-      },
+      { $match: matchQuery },
       {
         $group: {
-          _id: { $dateToString: { format: "%Y-%m-%d", date: "$timestamp" } },
+          _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
           revenue: { $sum: "$totalAmount" }
         }
       },
@@ -146,34 +162,43 @@ class InventoryOrderService {
     };
   }
 
-  async getRecentOrders(tenantId, managerId, search, page = 1, limit = 5) {
+  async getRecentOrders(tenantId, managerId, userRole, search, page = 1, limit = 5) {
     if (!tenantId) throw new Error('Tenant isolation missing');
 
     const tId = new mongoose.Types.ObjectId(tenantId);
-    const mId = new mongoose.Types.ObjectId(managerId);
-    const teamEmployeeIds = [mId, ...(await this.getTeamEmployeeIds(mId, tId))];
+    const hasFullVisibility = ['tenant', 'manager', 'superadmin'].includes(userRole?.toLowerCase());
 
     const pageNum = parseInt(page);
     const limitNum = parseInt(limit);
     const skip = (pageNum - 1) * limitNum;
 
-    let query = { 
-      tenant: tId, 
-      employee: { $in: teamEmployeeIds }
-    };
+    let query = { tenant: tId };
+
+    let teamEmployeeIds = [];
+    if (!hasFullVisibility) {
+      const mId = new mongoose.Types.ObjectId(managerId);
+      teamEmployeeIds = await this.getTeamEmployeeIds(mId, tId);
+      query.employee = { $in: teamEmployeeIds };
+    }
 
     if (search) {
-      const matchingEmployees = await User.find({
-        _id: { $in: teamEmployeeIds },
-        name: { $regex: search, $options: 'i' }
-      }, '_id').lean();
-      const matchingEmployeeIds = matchingEmployees.map(e => e._id);
-
-      query.$or = [
+      const searchTerms = [
         { storeName: { $regex: search, $options: 'i' } },
-        { status: { $regex: search, $options: 'i' } },
-        { employee: { $in: matchingEmployeeIds } }
+        { status: { $regex: search, $options: 'i' } }
       ];
+
+      // Only search by employee name if we have the list or are admin
+      const userSearchQuery = { name: { $regex: search, $options: 'i' }, tenant: tId };
+      if (!hasFullVisibility) {
+        userSearchQuery._id = { $in: teamEmployeeIds };
+      }
+
+      const matchingEmployees = await User.find(userSearchQuery, '_id').lean();
+      if (matchingEmployees.length > 0) {
+        searchTerms.push({ employee: { $in: matchingEmployees.map(e => e._id) } });
+      }
+
+      query.$or = searchTerms;
     }
 
     const totalOrders = await Order.countDocuments(query);
@@ -206,14 +231,18 @@ class InventoryOrderService {
     };
   }
 
-  async getExportLedgerData(tenantId, managerId) {
+  async getExportLedgerData(tenantId, managerId, userRole) {
     if (!tenantId) throw new Error('Tenant isolation missing');
-    const teamEmployeeIds = await this.getTeamEmployeeIds(managerId, tenantId);
+    
+    const hasFullVisibility = ['tenant', 'manager', 'superadmin'].includes(userRole?.toLowerCase());
+    const query = { tenant: tenantId };
 
-    const orders = await Order.find({
-      tenant: tenantId,
-      employee: { $in: teamEmployeeIds }
-    }).populate('employee', 'name');
+    if (!hasFullVisibility) {
+      const teamEmployeeIds = await this.getTeamEmployeeIds(managerId, tenantId);
+      query.employee = { $in: teamEmployeeIds };
+    }
+
+    const orders = await Order.find(query).populate('employee', 'name');
 
     if (orders.length === 0) {
       return null;
