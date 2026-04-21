@@ -213,19 +213,22 @@ const FollowUps = () => {
 
             {/* Right Column: Embedded History Timeline */}
             <div className="w-full lg:w-[60%] flex flex-col gap-6 h-[80vh]">
-              {/* Add New History Card */}
-              <div className="bg-gradient-to-br from-violet-600 to-indigo-700 p-8 rounded-[2.5rem] shadow-xl shrink-0 text-white">
-                <h3 className="text-[12px] font-black uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
-                  <Plus size={16} /> Log Observation / Interaction
+              {/* Log Observation / Interaction Form Redesign (White Theme) */}
+              <div className="bg-white dark:bg-gray-900 p-8 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 shadow-xl shadow-indigo-500/5 shrink-0 relative overflow-hidden group/form">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 blur-3xl -mr-16 -mt-16 rounded-full group-hover/form:bg-indigo-500/10 transition-colors duration-700" />
+                
+                <h3 className="text-[12px] font-black uppercase tracking-[0.2em] mb-8 flex items-center gap-3 text-gray-900 dark:text-white relative z-10">
+                  <Plus size={18} className="text-indigo-600" /> Log Observation / Interaction
                 </h3>
-                <form onSubmit={handleAddHistory} className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-[9px] font-black uppercase tracking-[0.2em] text-violet-200 mb-2 block">Action Taken</label>
+
+                <form onSubmit={handleAddHistory} className="space-y-6 relative z-10">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-[0.25em] text-gray-400 ml-1">Action Taken</label>
                       <select 
                         value={newAction} 
                         onChange={e => setNewAction(e.target.value)}
-                        className="w-full bg-white/10 border border-white/20 rounded-2xl px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-white/50 text-white [&>option]:text-gray-900"
+                        className="w-full bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus:border-indigo-500/20 rounded-2xl px-5 py-3.5 text-sm font-bold shadow-sm outline-none transition-all text-gray-900 dark:text-white appearance-none"
                       >
                         <option value="called">Phone Call</option>
                         <option value="visited">Field Visit</option>
@@ -233,12 +236,12 @@ const FollowUps = () => {
                         <option value="created">Created manually</option>
                       </select>
                     </div>
-                    <div>
-                      <label className="text-[9px] font-black uppercase tracking-[0.2em] text-violet-200 mb-2 block">Response / Outcome</label>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-[0.25em] text-gray-400 ml-1">Response / Outcome</label>
                       <select 
                         value={newOutcome} 
                         onChange={e => setNewOutcome(e.target.value)}
-                        className="w-full bg-white/10 border border-white/20 rounded-2xl px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-white/50 text-white [&>option]:text-gray-900"
+                        className="w-full bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus:border-indigo-500/20 rounded-2xl px-5 py-3.5 text-sm font-bold shadow-sm outline-none transition-all text-gray-900 dark:text-white appearance-none"
                       >
                         <option value="interested">Positive / Interested</option>
                         <option value="not_reachable">Not Reachable</option>
@@ -247,33 +250,33 @@ const FollowUps = () => {
                     </div>
                   </div>
                   
-                  <div>
-                    <label className="text-[9px] font-black uppercase tracking-[0.2em] text-violet-200 mb-2 block">Interaction Notes</label>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-[0.25em] text-gray-400 ml-1">Interaction Notes</label>
                     <textarea 
                       value={newNote}
                       onChange={e => setNewNote(e.target.value)}
                       placeholder="What was discussed?"
-                      className="w-full bg-white/10 border border-white/20 rounded-2xl px-4 py-3 text-sm font-medium outline-none focus:ring-2 focus:ring-white/50 text-white placeholder:text-violet-300 resize-none h-24 custom-scrollbar"
+                      className="w-full bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus:border-indigo-500/20 rounded-2xl px-5 py-4 text-sm font-medium shadow-sm outline-none transition-all text-gray-900 dark:text-white placeholder:text-gray-400 resize-none h-28 custom-scrollbar"
                       required
                     />
                   </div>
 
-                  <div className="flex items-end justify-between gap-4 pt-2">
-                    <div className="flex-1">
-                      <label className="text-[9px] font-black uppercase tracking-[0.2em] text-violet-200 mb-2 block">Schedule Next Follow-up (Optional)</label>
+                  <div className="flex flex-col sm:flex-row items-end justify-between gap-6 pt-2">
+                    <div className="w-full sm:flex-1 space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-[0.25em] text-gray-400 ml-1">Schedule Next Follow-up (Optional)</label>
                       <input 
                         type="date" 
                         value={newSchedule}
                         onChange={e => setNewSchedule(e.target.value)}
-                        className="w-full bg-white/10 border border-white/20 rounded-2xl px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-white/50 text-white [&::-webkit-calendar-picker-indicator]:invert"
+                        className="w-full bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus:border-indigo-500/20 rounded-2xl px-5 py-3.5 text-sm font-bold shadow-sm outline-none transition-all text-gray-900 dark:text-white"
                       />
                     </div>
                     <button 
                       type="submit" 
                       disabled={submitting}
-                      className="px-6 py-3 bg-white text-violet-700 hover:bg-violet-50 rounded-2xl font-black text-sm uppercase tracking-widest transition-all shrink-0 shadow-lg disabled:opacity-70"
+                      className="w-full sm:w-auto px-10 py-4 bg-indigo-600 text-white hover:bg-indigo-700 rounded-2xl font-black text-xs uppercase tracking-[0.2em] transition-all shadow-xl shadow-indigo-500/20 disabled:opacity-70 active:scale-95"
                     >
-                      {submitting ? 'Saving...' : 'Log Entry'}
+                      {submitting ? 'Saving Intelligence...' : 'Log Entry'}
                     </button>
                   </div>
                 </form>

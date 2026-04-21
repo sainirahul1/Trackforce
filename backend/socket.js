@@ -222,13 +222,13 @@ const initSocket = (server) => {
 
         console.log(`[SOCKET] Telemetry: ${data.employeeName} | State: ${newState} | Speed: ${effectiveSpeedKmh.toFixed(1)} km/h | Battery: ${battery}% | Accuracy: ${accuracy}m`);
 
-        // 8. Background geocoding (only if moved > 50m)
+        // 8. Background geocoding (only if moved > 20m)
         let resolvedAddress = session.currentAddress || initialAddress;
         let resolvedCity = session.currentCity || '';
 
         try {
           const isRawCoordinate = session.currentAddress && session.currentAddress.startsWith('Lat:');
-          const needsGeocode = !session.currentAddress || isRawCoordinate || (distanceIncrement > 0.05);
+          const needsGeocode = !session.currentAddress || isRawCoordinate || (distanceIncrement > 0.02);
 
           if (needsGeocode) {
             const geoResult = await reverseGeocode(location.lat, location.lng);

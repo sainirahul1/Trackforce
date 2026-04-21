@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const User = require('../models/tenant/User');
 const StoreVisit = require('../models/employee/StoreVisit');
+const inventoryOrderService = require('./inventoryOrderService');
 
 class TeamPerformanceService {
   async getTeamPerformance(managerId, tenantId) {
@@ -9,13 +10,13 @@ class TeamPerformanceService {
     const mId = new mongoose.Types.ObjectId(managerId);
     const tId = new mongoose.Types.ObjectId(tenantId);
 
-    // 1. Identify team members (Fetch ALL employees of the tenant to ensure consistency across portal)
+    // 1. Identify team members
     const teamMembers = await User.find({ 
       $or: [
         { role: 'employee', tenant: tId }, 
         { _id: mId }
       ]
-    }, '_id name email status profile createdAt').lean();
+    }, '_id name email status designation profile createdAt').lean();
     
     const teamMemberIds = teamMembers.map(m => m._id);
 
@@ -29,38 +30,43 @@ class TeamPerformanceService {
       timestamp: { $gte: today }
     }).select('employee timestamp status').lean();
 
-    // 3. Aggregate stats
-    const activeCount = teamMembers.filter(m => m.status === 'On Duty' || m.status === 'Active').length;
-    const totalVisitsCount = visits.length;
-    
-    // Performance per member
-    const memberPerformance = teamMembers.map(member => {
-      const memberVisits = visits.filter(v => v.employee.toString() === member._id.toString()).length;
+    // 3. Fetch Revenue Data
+    let revenueByEmployee = {};
+    try {
+      const orderStats = await inventoryOrderService.getDashboardStats(tenantId, managerId, 'manager');
+      if (orderStats.success) {
+        revenueByEmployee = orderStats.data.revenueByEmployee || {};
+      }
+    } catch (err) {
+      console.error('Failed to fetch revenue for team performance:', err);
+    }
+
+    // 4. Map Performance Metrics
+    const memberPerformance = teamMembers.map(m => {
+      const memberVisits = visits.filter(v => v.employee.toString() === m._id.toString());
       return {
-        id: member._id,
-        name: member.name,
-        email: member.email,
-        visitsToday: memberVisits,
-        status: member.status,
-        zone: member.profile?.zone || member.profile?.team || 'Unassigned',
-        designation: member.profile?.designation || 'Employee',
-        phone: member.profile?.phone || '+91 98765 43210',
-        location: member.profile?.location || 'Unknown',
-        joinDate: new Date(member.createdAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }),
-        address: member.profile?.address || 'No address provided',
-        skills: member.profile?.skills || [],
-        dob: member.profile?.dob || 'N/A',
-        gender: member.profile?.gender || 'N/A',
-        bloodGroup: member.profile?.bloodGroup || 'N/A',
-        emergencyContact: member.profile?.emergencyContact || 'N/A',
-        target: 8
+        ...m,
+        visitsToday: memberVisits.length,
+        revenueToday: revenueByEmployee[m._id.toString()] || 0
       };
     });
 
-    const targetVisits = 8 * teamMembers.length;
+    // 5. Identify field personnel vs management for accurate stats
+    const fieldPersonnel = memberPerformance.filter(m => {
+      const des = (m.designation || '').toLowerCase();
+      // Exclude management roles from field-force KPIs
+      return !des.includes('manager') && !des.includes('admin') && !des.includes('supervisor');
+    });
+
+    const managementCount = teamMembers.length - fieldPersonnel.length;
+    const activeCount = teamMembers.filter(m => m.status === 'On Duty' || m.status === 'Active').length;
+    const totalVisitsCount = visits.length;
+    
+    // Performance stats based ONLY on field personnel to avoid management skewing
+    const targetVisits = 8 * fieldPersonnel.length; // Standard mission quota
     const targetPercent = targetVisits > 0 ? Math.round((totalVisitsCount / targetVisits) * 100) : 0;
-    const avgVisits = teamMembers.length > 0 ? (totalVisitsCount / teamMembers.length).toFixed(1) : '0.0';
-    const lowPerformers = memberPerformance.filter(m => m.visitsToday < 4).length;
+    const avgVisits = fieldPersonnel.length > 0 ? (totalVisitsCount / fieldPersonnel.length).toFixed(1) : '0.0';
+    const lowPerformers = fieldPersonnel.filter(m => m.visitsToday < 4).length;
 
     return {
       success: true,
@@ -68,6 +74,8 @@ class TeamPerformanceService {
         activeMembers: `${activeCount}/${teamMembers.length}`,
         activeCount,
         totalMembers: teamMembers.length,
+        fieldPersonnelCount: fieldPersonnel.length,
+        managementCount,
         targetAchievement: `${targetPercent}%`,
         targetPercent,
         avgVisits,

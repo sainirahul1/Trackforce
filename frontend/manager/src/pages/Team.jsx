@@ -144,7 +144,7 @@ const TeamPrintLayout = ({ stats, members }) => (
                       </div>
                     </td>
                     <td className={`px-5 py-3 text-right font-black text-sm ${scoreColor}`}>
-                      {pct >= 80 ? 'A' : pct >= 60 ? 'B' : pct >= 40 ? 'C' : 'D'}
+                      {member.designation?.toLowerCase().includes('manager') || member.designation?.toLowerCase().includes('admin') || member.designation?.toLowerCase().includes('supervisor') ? 'N/A' : (pct >= 80 ? 'A' : pct >= 60 ? 'B' : pct >= 40 ? 'C' : 'D')}
                     </td>
                   </tr>
                 );
@@ -361,8 +361,10 @@ const ManagerTeam = () => {
       zone: member.zone,
       designation: member.designation,
       target: member.target || 8,
+      efficiency: member.efficiency || 0,
+      revenue: member.revenue || 0,
       avatar: `https://i.pravatar.cc/150?u=${member.id}`,
-      employeeId: `EMP-${member.id.substring(0, 6).toUpperCase()}`,
+      employeeId: `EMP-${(member.id?.substring(0, 6) || 'UNKNWN').toUpperCase()}`,
       phone: member.phone,
       location: member.location,
       joinDate: member.joinDate,
@@ -948,8 +950,7 @@ const ManagerTeam = () => {
               </Button>
             </div>
           </div>
-          <div className="p-4">
-            {(() => {
+          <div className="p-4">            {(() => {
               const filteredData = teamMembers.filter(m =>
                 (m.status === 'On Duty' || m.status === 'Active') && (
                   m.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -962,33 +963,121 @@ const ManagerTeam = () => {
               const paginatedData = filteredData.slice(startIndex, startIndex + itemsPerPage);
 
               return (
-                <>
-                  <DataTable
-                    columns={columns}
-                    data={paginatedData}
-                    onRowClick={(row) => setSelectedEmployee(row)}
-                  />
+                <div className="space-y-10">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    {paginatedData.map(member => {
+                      const isManager = member.designation?.toLowerCase().includes('manager') || 
+                                        member.designation?.toLowerCase().includes('admin') || 
+                                        member.designation?.toLowerCase().includes('supervisor') ||
+                                        member.name?.toLowerCase().includes('manager');
+                      
+                      return (
+                      <div 
+                        key={member.id}
+                        onClick={() => setSelectedEmployee(member)}
+                        className={`group relative bg-white dark:bg-gray-900 rounded-[2.5rem] border ${isManager ? 'border-indigo-500/30' : 'border-gray-100 dark:border-gray-800'} p-8 shadow-sm hover:shadow-2xl hover:shadow-indigo-500/5 transition-all duration-500 hover:-translate-y-1.5 cursor-pointer overflow-hidden`}
+                      >
+                         <div className={`absolute top-0 right-0 w-32 h-32 ${isManager ? 'bg-indigo-600/10' : 'bg-indigo-500/5'} blur-3xl -mr-16 -mt-16 rounded-full group-hover:scale-125 transition-transform duration-700`} />
+                         
+                         <div className="flex items-center gap-6 mb-8 relative z-10">
+                            <div className="relative">
+                               <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br from-gray-50 to-white dark:from-gray-800 dark:to-gray-950 border ${isManager ? 'border-indigo-200 dark:border-indigo-800' : 'border-gray-100 dark:border-gray-700'} flex items-center justify-center text-xl font-black ${isManager ? 'text-indigo-700 dark:text-indigo-300' : 'text-indigo-600 dark:text-indigo-400'} shadow-sm transition-transform group-hover:rotate-6`}>
+                                  {isManager ? <Shield size={28} /> : member.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                                </div>
+                               <div className={`absolute -bottom-1.5 -right-1.5 w-6 h-6 rounded-full border-[3px] border-white dark:border-gray-900 flex items-center justify-center shadow-lg ${member.status === 'On Duty' || member.status === 'Active' ? (isManager ? 'bg-indigo-500' : 'bg-emerald-500') : 'bg-gray-400'}`}>
+                                  {(member.status === 'On Duty' || member.status === 'Active') && <div className="w-2 h-2 bg-white rounded-full animate-pulse" />}
+                               </div>
+                            </div>
+                            
+                            <div className="min-w-0">
+                               <h4 className={`text-xl font-black ${isManager ? 'text-indigo-950 dark:text-white' : 'text-gray-900 dark:text-white'} truncate pr-2 uppercase tracking-tight group-hover:text-indigo-600 transition-colors`}>{member.name}</h4>
+                               <div className="flex items-center gap-2 mt-1">
+                                  {isManager && <span className="px-2 py-0.5 bg-indigo-600 text-white text-[8px] font-black uppercase tracking-widest rounded-md">Management</span>}
+                                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{member.designation}</p>
+                               </div>
+                            </div>
+                         </div>
+
+                         <div className="grid grid-cols-3 gap-4 mb-8 relative z-10">
+                            <div className="flex flex-col gap-1">
+                               <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest leading-none">{isManager ? 'Control' : 'Visits'}</span>
+                               <span className="text-lg font-black text-gray-900 dark:text-white uppercase leading-none">{isManager ? 'CORE' : (member.visitsToday || 0)}</span>
+                            </div>
+                            <div className="flex flex-col gap-1">
+                               <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest leading-none">{isManager ? 'Authority' : 'Efficiency'}</span>
+                               <span className={`text-lg font-black leading-none ${isManager ? 'text-indigo-600' : 'text-emerald-600'}`}>{isManager ? 'FULL' : `${member.efficiency || 0}%`}</span>
+                            </div>
+                            <div className="flex flex-col gap-1">
+                               <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest leading-none">Net Impact</span>
+                               <span className="text-lg font-black text-indigo-600 leading-none">₹{member.revenue?.toLocaleString() || 0}</span>
+                            </div>
+                         </div>
+
+                         <div className="space-y-4 mb-8 relative z-10">
+                            {!isManager ? (
+                               <div className="w-full h-1.5 bg-gray-50 dark:bg-gray-800 rounded-full overflow-hidden">
+                                  <div 
+                                    className="h-full bg-emerald-500 rounded-full transition-all duration-1000"
+                                    style={{ width: `${member.efficiency || 0}%` }}
+                                  />
+                               </div>
+                            ) : (
+                               <div className="w-full h-1.5 bg-indigo-50 dark:bg-indigo-900/20 rounded-full flex gap-1">
+                                  <div className="flex-1 h-full bg-indigo-500/20 rounded-full" />
+                                  <div className="flex-1 h-full bg-indigo-500/40 rounded-full" />
+                                  <div className="flex-1 h-full bg-indigo-500/60 rounded-full" />
+                                  <div className="flex-1 h-full bg-indigo-500 rounded-full" />
+                               </div>
+                            )}
+                            <div className="flex items-center justify-between">
+                               <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-1.5">
+                                  <MapPin size={10} className="text-indigo-500" />
+                                  {member.zone} Zone
+                               </p>
+                               <span className={`text-[10px] font-black uppercase tracking-widest ${member.status === 'On Duty' || member.status === 'Active' ? 'text-emerald-500' : 'text-gray-400'}`}>
+                                  {isManager ? (member.status === 'On Duty' || member.status === 'Active' ? 'Admin Online' : 'Command Offline') : (member.status === 'On Duty' || member.status === 'Active' ? 'Online Now' : 'Offline Now')}
+                               </span>
+                            </div>
+                         </div>
+
+                         <div className="flex items-center gap-3 relative z-10">
+                            <button 
+                              onClick={(e) => { e.stopPropagation(); setSelectedEmployee(member); }}
+                              className="flex-1 py-3.5 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-sm hover:bg-gray-900 hover:text-white dark:hover:bg-white dark:hover:text-gray-900 transition-all active:scale-95 border border-gray-100 dark:border-gray-700"
+                            >
+                               Profile
+                            </button>
+                            <div className="flex items-center gap-2">
+                               <button 
+                                 onClick={(e) => { e.stopPropagation(); setEditingEmployee(member); setIsEditModalOpen(true); }}
+                                 className="w-11 h-11 flex items-center justify-center bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-2xl hover:bg-indigo-600 hover:text-white transition-all shadow-sm border border-indigo-100/50 dark:border-indigo-800/50"
+                               >
+                                  <Edit size={16} />
+                               </button>
+                            </div>
+                         </div>
+                      </div>
+                      );
+                    })}
+                  </div>
 
                   {/* Pagination Footer */}
                   {totalPages > 1 && (
-                    <div className="flex items-center justify-center gap-2 mt-8 pb-4">
+                    <div className="flex items-center justify-center gap-4 pt-4 pb-4">
                       <button
-                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                        onClick={(e) => { e.stopPropagation(); setCurrentPage(prev => Math.max(prev - 1, 1)); }}
                         disabled={currentPage === 1}
-                        className="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest bg-white dark:bg-gray-800 border border-slate-200 dark:border-slate-800 text-slate-400 disabled:opacity-30 hover:text-blue-500 transition-all font-sans"
+                        className="px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest bg-gray-50 dark:bg-gray-800 text-gray-400 disabled:opacity-30 hover:bg-indigo-600 hover:text-white transition-all"
                       >
-                        Prev
+                        Previous
                       </button>
 
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-2">
                         {[...Array(totalPages)].map((_, i) => (
                           <button
                             key={i + 1}
-                            onClick={() => setCurrentPage(i + 1)}
-                            className={`w-8 h-8 rounded-lg text-[10px] font-black transition-all ${currentPage === i + 1
-                              ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30'
-                              : 'bg-white dark:bg-gray-800 text-slate-400 hover:text-blue-500 border border-slate-200 dark:border-slate-800'
-                              }`}
+                            onClick={(e) => { e.stopPropagation(); setCurrentPage(i + 1); }}
+                            className={`w-10 h-10 rounded-xl text-[10px] font-black transition-all ${currentPage === i + 1 ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-500/30' : 'bg-gray-50 dark:bg-gray-800 text-gray-400 hover:text-indigo-600'}`}
                           >
                             {i + 1}
                           </button>
@@ -996,15 +1085,15 @@ const ManagerTeam = () => {
                       </div>
 
                       <button
-                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                        onClick={(e) => { e.stopPropagation(); setCurrentPage(prev => Math.min(prev + 1, totalPages)); }}
                         disabled={currentPage === totalPages}
-                        className="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest bg-white dark:bg-gray-800 border border-slate-200 dark:border-slate-800 text-slate-400 disabled:opacity-30 hover:text-blue-500 transition-all font-sans"
+                        className="px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest bg-gray-50 dark:bg-gray-800 text-gray-400 disabled:opacity-30 hover:bg-indigo-600 hover:text-white transition-all"
                       >
                         Next
                       </button>
                     </div>
                   )}
-                </>
+                </div>
               );
             })()}
           </div>
@@ -1061,6 +1150,9 @@ const ManagerTeam = () => {
                     <option value="Employee">Employee</option>
                     <option value="Field Executive">Field Executive</option>
                     <option value="Senior Associate">Senior Associate</option>
+                    <option value="Manager">Manager</option>
+                    <option value="Supervisor">Supervisor</option>
+                    <option value="Administrator">Administrator</option>
                   </select>
                 </div>
                 <div>
@@ -1120,6 +1212,9 @@ const ManagerTeam = () => {
                     <option value="Employee">Employee</option>
                     <option value="Field Executive">Field Executive</option>
                     <option value="Senior Associate">Senior Associate</option>
+                    <option value="Manager">Manager</option>
+                    <option value="Supervisor">Supervisor</option>
+                    <option value="Administrator">Administrator</option>
                   </select>
                 </div>
                 <div>

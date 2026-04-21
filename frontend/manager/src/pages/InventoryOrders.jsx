@@ -87,12 +87,10 @@ const InventoryOrders = () => {
       if (!isBackground && (!hasFetched || !search)) setLoading(true);
       if (isRefreshing) setLoading(false); 
 
-      const force = isRefreshing || isBackground; // Force refresh if manual refresh OR background sync
-
       const [statsRes, chartRes, ordersRes] = await Promise.all([
-        getManagerStats(force),
-        getRevenueChartData(force),
-        getRecentOrders(search, page, 5, force)
+        getManagerStats(),
+        getRevenueChartData(),
+        getRecentOrders(search, page)
       ]);
 
       processInventoryData(statsRes, chartRes, ordersRes);
@@ -259,14 +257,13 @@ const InventoryOrders = () => {
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-4">
                <h3 className="text-xl font-black text-gray-900 dark:text-white tracking-tight">Order Collection</h3>
-             <button 
-                  onClick={() => { setIsRefreshing(true); fetchData(searchTerm, pagination.currentPage); }}
-                  className={`p-1.5 bg-gray-50 dark:bg-gray-800 rounded-lg text-gray-400 hover:text-indigo-600 transition-all ${isRefreshing || loading ? 'animate-spin text-indigo-600' : ''}`}
-                  title="Refresh Data"
-                  disabled={isRefreshing || loading}
-                >
-                  <RotateCw size={16} />
-                </button>
+               <button 
+                 onClick={() => { setIsRefreshing(true); fetchData(searchTerm, pagination.currentPage); }}
+                 className={`p-1.5 bg-gray-50 dark:bg-gray-800 rounded-lg text-gray-400 hover:text-indigo-600 transition-all ${isRefreshing ? 'animate-spin text-indigo-600' : ''}`}
+                 title="Refresh Data"
+               >
+                 <RotateCw size={16} />
+               </button>
             </div>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={14} />

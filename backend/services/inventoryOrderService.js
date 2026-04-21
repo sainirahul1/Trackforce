@@ -53,6 +53,16 @@ class InventoryOrderService {
       }
     ]);
 
+    const revenueByEmployee = await Order.aggregate([
+      { $match: matchQuery },
+      {
+        $group: {
+          _id: '$employee',
+          totalRevenue: { $sum: '$totalAmount' }
+        }
+      }
+    ]);
+
     const prevMatchQuery = {
       tenant: new mongoose.Types.ObjectId(tenantId),
       createdAt: { $gte: fourteenDaysAgo, $lt: sevenDaysAgo },
@@ -105,6 +115,10 @@ class InventoryOrderService {
         revenueTrend: calculateTrend(result.weeklyRevenue || 0, prevResult.weeklyRevenue || 0),
         ordersTrend: calculateTrend(result.ordersCollected || 0, prevResult.ordersCollected || 0),
         ticketTrend: calculateTrend(result.avgTicketSize || 0, prevResult.avgTicketSize || 0),
+        revenueByEmployee: revenueByEmployee.reduce((acc, curr) => {
+          if (curr._id) acc[curr._id.toString()] = curr.totalRevenue;
+          return acc;
+        }, {})
       }
     };
   }

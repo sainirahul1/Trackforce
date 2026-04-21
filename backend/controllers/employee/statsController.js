@@ -42,12 +42,41 @@ exports.getDashboardStats = async (req, res) => {
     const currentTarget = target ? target.monthlyTarget : 0;
     const monthlyVisits = visitsCount;
 
-    const totalVisitsToday = visits.length;
-    const visitsCompleted = visits.filter(v => v.status === 'completed').length;
+    // 1. Calculate Today's Milestones (From the NEW EmployeeLogVisit collection)
+    const todayVisits = await EmployeeLogVisit.find({
+      employee: userId,
+      timestamp: { $gte: today }
+    });
+
+    let appInstalled = 0;
+    let trainingCompleted = 0;
+    let firstOrderPlaced = 0;
+
+    todayVisits.forEach(v => {
+      // Check both nested appInstallation object and top-level milestones
+      if (v.milestones?.initialCheck || v.appInstallation?.status === 'Yes') appInstalled++;
+      if (v.milestones?.knowledgeShared || v.appInstallation?.training?.status === 'Yes') trainingCompleted++;
+      if (v.milestones?.orderLogged || v.appInstallation?.firstOrder?.status === 'Yes') firstOrderPlaced++;
+    });
+
+    const totalVisitsToday = todayVisits.length;
+    const visitsCompleted = todayVisits.filter(v => v.status === 'completed').length;
     const totalTasksToday = tasks.length;
     const tasksCompleted = tasks.filter(t => t.status === 'completed').length;
 
-    // Calculate Weekly Revenue (Last 7 days)
+    // 2. REVENUE CALCULATIONS (Daily & Monthly)
+    const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+    
+    const [todayOrders, monthOrders] = await Promise.all([
+      Order.find({ employee: userId, createdAt: { $gte: today } }),
+      Order.find({ employee: userId, createdAt: { $gte: monthStart } })
+    ]);
+
+    const dailyRevenue = todayOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+    const monthlyRevenue = monthOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+    const conversionRate = totalVisitsToday > 0 ? Math.round((todayOrders.length / totalVisitsToday) * 100) : 0;
+
+    // 3. Weekly Revenue Graph
     const last7Days = [];
     for (let i = 6; i >= 0; i--) {
         const d = new Date();
@@ -71,7 +100,7 @@ exports.getDashboardStats = async (req, res) => {
 
     const totalWeekly = weeklyData.reduce((sum, v) => sum + v, 0);
 
-    // Calculate DYNAMIC capabilities (Last 30 days history)
+    // 4. DYNAMIC CAPABILITIES (Last 30 days)
     const monthAgo = new Date();
     monthAgo.setDate(monthAgo.getDate() - 30);
     
@@ -87,14 +116,13 @@ exports.getDashboardStats = async (req, res) => {
     const logEngagement = Math.min(100, Math.round((historicalLogs / 50) * 100)); // Target 50 logs/month
 
     const capabilities = [
-        taskSuccessRate, // Efficiency
-        Math.min(100, Math.round(visitsCompleted / (totalVisitsToday || 1) * 100)) || 85, // Reliability (today's pace)
-        90, // Speed (Mocked for now)
-        95, // Accuracy (Mocked for now)
-        logEngagement // Engagement
+        taskSuccessRate, 
+        Math.min(100, Math.round(visitsCompleted / (totalVisitsToday || 1) * 100)) || 85,
+        90, 95,
+        logEngagement
     ];
 
-    // Find next target (highest priority pending task)
+    // Find next target
     const nextTask = await Task.findOne({
         employee: userId,
         status: { $in: ['pending', 'in-progress'] }
@@ -102,13 +130,19 @@ exports.getDashboardStats = async (req, res) => {
 
     res.json({
       visitsToday: totalVisitsToday,
-      ordersToday: orders,
+      ordersToday: todayOrders.length,
       tasksToday: totalTasksToday,
       visitsCompleted,
       tasksCompleted,
+      appInstalled,
+      trainingCompleted,
+      firstOrderPlaced,
       revenueData: { 
         weeklyData, 
-        totalWeekly 
+        totalWeekly,
+        dailyRevenue,
+        monthlyRevenue,
+        conversionRate
       },
       capabilities,
       nextTarget: nextTask ? {

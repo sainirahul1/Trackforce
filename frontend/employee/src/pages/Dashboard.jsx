@@ -8,11 +8,11 @@ import storage from '../utils/storage';
 import { getDashboardStats, startTracking, stopTracking, getTrackingStatus, getTargetHistory } from '../services/trackingService';
 import { getActivities } from '../services/activityService';
 import { getTasks } from '../services/taskService';
-import { useNotifications } from '../context/NotificationContext';
+
 import {
   MapPin, Calendar, TrendingUp, Clock, ClipboardList,
   Map as MapIcon, ShoppingBag, ChevronRight, Activity,
-  CheckCircle2, Navigation2, Bell, IndianRupee, Smartphone, GraduationCap, PackageCheck, Target
+  CheckCircle2, Navigation2, IndianRupee, Smartphone, GraduationCap, PackageCheck, Target
 } from 'lucide-react';
 import {
   Chart as ChartJS, CategoryScale, LinearScale, PointElement,
@@ -491,7 +491,6 @@ const MOTIVATIONAL_QUOTES = [
 const EmployeeDashboard = () => {
   // --- Auth Context ---
   const { user, setUser } = useAuth();
-  const { unreadCount } = useNotifications();
   const { setPageLoading } = useOutletContext();
   const { showAlert } = useDialog();
   // --- State Hooks ---
@@ -510,6 +509,7 @@ const EmployeeDashboard = () => {
   const socket = useSocket();
   const socketRef = React.useRef(socket);
   const watchIdRef = React.useRef(null);
+  const heartbeatRef = React.useRef(null);
   const [watchId, setWatchId] = useState(null); // Keep for UI indicators if needed
 
   useEffect(() => {
@@ -521,6 +521,9 @@ const EmployeeDashboard = () => {
     return () => {
       if (watchIdRef.current) {
         navigator.geolocation.clearWatch(watchIdRef.current);
+      }
+      if (heartbeatRef.current) {
+        clearInterval(heartbeatRef.current);
       }
     };
   }, []);
@@ -552,70 +555,77 @@ const EmployeeDashboard = () => {
     }
   }, []);
 
-  const startGeoTracking = React.useCallback(() => {
+  const emitPosition = React.useCallback((position) => {
+    // ENFORCE 10-SECOND MINIMUM INTERVAL between emissions to avoid flooding
+    const now = Date.now();
+    if (now - lastEmitRef.current < 10000) return;
+    lastEmitRef.current = now;
+
+    const { latitude, longitude, accuracy, speed, heading } = position.coords;
+    const currentSocket = socketRef.current;
     const currentUser = storage.getUser() || {};
 
+    if (currentSocket && currentSocket.connected) {
+      const updateData = {
+        employeeId: currentUser._id,
+        employeeName: currentUser.name,
+        managerId: currentUser.manager,
+        tenantId: currentUser.tenant,
+        role: currentUser.role,
+        location: { lat: latitude, lng: longitude },
+        timestamp: new Date().toISOString(),
+        // Device Telemetry
+        accuracy: accuracy || -1,
+        speed: speed != null ? speed : -1,        // m/s from device
+        heading: heading != null ? heading : -1,   // degrees
+        battery: batteryRef.current,
+        deviceId: deviceIdRef.current,
+      };
+      console.log(`[GPS] Emitting telemetry (${accuracy?.toFixed(1)}m, ${speed?.toFixed(1)}m/s)`);
+      currentSocket.emit('tracking:update', updateData);
+      
+      // Persistence for form reflection
+      localStorage.setItem('last_telemetry', JSON.stringify({
+        latitude, longitude, accuracy, battery: batteryRef.current, timestamp: new Date().toISOString()
+      }));
+    } else {
+      console.warn('Socket not ready for emission');
+    }
+  }, []);
+
+  const startGeoTracking = React.useCallback(() => {
     if (!navigator.geolocation) {
       showAlert('Error', 'Geolocation is not supported by your browser', 'error');
       return;
     }
 
-    // Clear existing watch if any
-    if (watchIdRef.current) {
-      navigator.geolocation.clearWatch(watchIdRef.current);
-    }
+    // Clear existing watch/heartbeat if any
+    if (watchIdRef.current) navigator.geolocation.clearWatch(watchIdRef.current);
+    if (heartbeatRef.current) clearInterval(heartbeatRef.current);
 
+    // 1. DYNAMIC WATCH: OS-triggered updates for movement (responsive)
     const id = navigator.geolocation.watchPosition(
-      (position) => {
-        // ENFORCE 10-SECOND MINIMUM INTERVAL between emissions
-        const now = Date.now();
-        if (now - lastEmitRef.current < 10000) return;
-        lastEmitRef.current = now;
-
-        const { latitude, longitude, accuracy, speed, heading } = position.coords;
-        const currentSocket = socketRef.current;
-        const currentUser = storage.getUser() || {};
-
-        if (currentSocket && currentSocket.connected) {
-          const updateData = {
-            employeeId: currentUser._id,
-            employeeName: currentUser.name,
-            managerId: currentUser.manager,
-            tenantId: currentUser.tenant,
-            role: currentUser.role,
-            location: { lat: latitude, lng: longitude },
-            timestamp: new Date().toISOString(),
-            // Device Telemetry
-            accuracy: accuracy || -1,
-            speed: speed != null ? speed : -1,        // m/s from device
-            heading: heading != null ? heading : -1,   // degrees
-            battery: batteryRef.current,
-            deviceId: deviceIdRef.current,
-          };
-          console.log(`[GPS] Emitting telemetry: accuracy=${accuracy?.toFixed(1)}m speed=${speed?.toFixed(1)}m/s battery=${batteryRef.current}%`);
-          currentSocket.emit('tracking:update', updateData);
-          
-          // Persistence for form reflection
-          localStorage.setItem('last_telemetry', JSON.stringify({
-            latitude, longitude, accuracy, battery: batteryRef.current, timestamp: new Date().toISOString()
-          }));
-        } else {
-          console.warn('Socket not ready for emission');
-        }
-      },
+      (pos) => emitPosition(pos),
       (error) => {
-        // Suppress repeated spam for denied permissions or common timeouts
-        if (error.code === 1 || error.code === 3) { // PERMISSION_DENIED or TIMEOUT
-          console.warn('[GPS] Geolocation suppressed:', error.message);
-        } else {
-          console.error('[GPS] Geolocation Error:', error);
-        }
+        if (error.code !== 1 && error.code !== 3) console.error('[GPS] Watch Error:', error);
       },
-      { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
+      { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 }
     );
-    setWatchId(id);
     watchIdRef.current = id;
-  }, []);
+    setWatchId(id);
+
+    // 2. RIGID HEARTBEAT: Periodic scan every 15s (as per user request 10-20s) 
+    // to ensure dynamic reflection even if the OS doesn't trigger watchPosition.
+    heartbeatRef.current = setInterval(() => {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => emitPosition(pos),
+        (err) => console.warn('[GPS] Heartbeat scan failed:', err.message),
+        { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 }
+      );
+    }, 15000); 
+
+    console.log('[GPS] Tracking started with Watch + 15s Heartbeat');
+  }, [emitPosition, showAlert]);
 
   // Handle starting/stopping tracking when duty status changes
   useEffect(() => {
@@ -656,12 +666,14 @@ const EmployeeDashboard = () => {
       setActivities(logs.map(log => {
         const logDate = new Date(log.timestamp || log.createdAt);
         const isValidDate = !isNaN(logDate.getTime());
+        const type = log.type || '';
 
         return {
-          title: log.type.replace('_', ' ').toUpperCase(),
-          desc: log.details,
+          title: log.title || type.replace(/_/g, ' ').toUpperCase(),
+          desc: log.details || '',
           time: isValidDate ? logDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '---',
-          type: log.type.includes('start') ? 'success' : 'default'
+          type: (type.includes('start') || type.includes('placed') || type.includes('completed') || type.includes('success')) ? 'success' : 
+                (type.includes('end') || type.includes('stop') || type.includes('rejected') || type.includes('cancel')) ? 'warning' : 'default'
         };
       }));
 
@@ -715,6 +727,27 @@ const EmployeeDashboard = () => {
       fetchData();
     }
   }, []);
+  
+  // --- REAL-TIME SYNCHRONIZATION ---
+  useEffect(() => {
+    if (!socket) return;
+    
+    // Function to silently refresh data when real-time events occur
+    const handleSync = () => {
+      console.log('[DASHBOARD] Real-time activity/visit detected. Syncing metrics...');
+      fetchData(true); // Silent background refresh
+    };
+
+    socket.on('activity:new', handleSync);
+    socket.on('visit:new', handleSync);
+    socket.on('order:new', handleSync);
+
+    return () => {
+      socket.off('activity:new', handleSync);
+      socket.off('visit:new', handleSync);
+      socket.off('order:new', handleSync);
+    };
+  }, [socket]);
 
   const handleToggleShift = async () => {
     // Re-read user from localStorage to get the auto-healed manager/tenant data
@@ -741,6 +774,10 @@ const EmployeeDashboard = () => {
           navigator.geolocation.clearWatch(watchIdRef.current);
           watchIdRef.current = null;
           setWatchId(null);
+        }
+        if (heartbeatRef.current) {
+          clearInterval(heartbeatRef.current);
+          heartbeatRef.current = null;
         }
       } else {
         try {
@@ -826,15 +863,6 @@ const EmployeeDashboard = () => {
             </div>
           </div>
 
-          {/* Notification Bell */}
-          <Link to="/employee/notifications" className="relative p-3 rounded-2xl bg-white/10 hover:bg-white/20 transition-all">
-            <Bell size={20} className="text-white" />
-            {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 w-5 h-5 bg-rose-500 text-white text-[9px] font-black rounded-full flex items-center justify-center animate-bounce">
-                {unreadCount > 9 ? '9+' : unreadCount}
-              </span>
-            )}
-          </Link>
 
           {/* Header Controls (Stats Grid with Integrated Shift Toggle) */}
           <div className="flex flex-col items-end gap-6 w-full lg:w-auto">
