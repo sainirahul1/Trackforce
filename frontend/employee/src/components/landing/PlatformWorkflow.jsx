@@ -28,27 +28,27 @@ const PlatformWorkflow = () => {
   const steps = [
     {
       number: 1,
-      icon: Building2,
-      title: "Organization Setup",
-      description: "Companies register on the platform and configure their operational zones and rules."
+      icon: Users,
+      title: "Receive Tasks",
+      description: "Start your day by reviewing tasks and store visits assigned securely by your manager."
     },
     {
       number: 2,
-      icon: Users,
-      title: "Team Assignment",
-      description: "Managers assign field executives to specific teams and target store clusters."
+      icon: MapPin,
+      title: "Navigate & Track",
+      description: "Activate your shift. We will guide you efficiently to your destination while sharing live ETA."
     },
     {
       number: 3,
-      icon: MapPin,
-      title: "Field Operations",
-      description: "Executives track visits, check-ins, and orders live through the mobile-first portal."
+      icon: Building2,
+      title: "Execute Visit",
+      description: "Check into the location, snap evidence, log your interactions and submit any new orders."
     },
     {
       number: 4,
       icon: BarChart3,
-      title: "Performance Analysis",
-      description: "Managers analyze real-time data to optimize routes and improve team outcomes."
+      title: "Review Metrics",
+      description: "Check your personal dashboard to see how your day's work boosts your performance stats."
     }
   ];
 
@@ -56,12 +56,12 @@ const PlatformWorkflow = () => {
     <section id="workflow" className="py-24 lg:py-32 bg-gray-50/50 dark:bg-gray-950/50 relative overflow-hidden">
       <div className="max-w-7xl mx-auto px-6">
         <div className="text-center max-w-2xl mx-auto mb-20 space-y-4">
-          <h2 className="text-xs font-black text-primary-main uppercase tracking-[0.2em]">How it Works</h2>
+          <h2 className="text-xs font-black text-primary-main uppercase tracking-[0.2em]">Your Shift Journey</h2>
           <h3 className="text-4xl font-black text-gray-900 dark:text-white tracking-tight">
-            Seamless Lifecycle Management
+            How Your Day Works
           </h3>
           <p className="text-lg text-gray-500 dark:text-gray-400 font-medium">
-            TrackForce simplifies the entire field operation workflow from onboarding to final analysis.
+            TrackForce simplifies your daily field routines, ensuring you can focus entirely on achieving targets.
           </p>
         </div>
 

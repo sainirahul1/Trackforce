@@ -764,7 +764,8 @@ const EmployeeDashboard = () => {
         try {
           await stopTracking();
         } catch (err) {
-          if (err.message.includes('not active')) {
+          const backendMsg = err.response?.data?.message || err.message || '';
+          if (backendMsg.includes('not active')) {
             console.log('Tracking not active on backend, syncing UI...');
           } else {
             throw err;
@@ -784,8 +785,11 @@ const EmployeeDashboard = () => {
           await startTracking();
         } catch (err) {
           // If already active on backend, just proceed (sync issue)
-          if (err.message.includes('already active')) {
+          const backendMsg = err.response?.data?.message || err.message || '';
+          if (backendMsg.includes('already active')) {
             console.log('Tracking already active on backend, syncing UI...');
+          } else {
+            throw err;
           }
         }
         startGeoTracking();

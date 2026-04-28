@@ -29,26 +29,26 @@ const PlatformWorkflow = () => {
     {
       number: 1,
       icon: Building2,
-      title: "Organization Setup",
-      description: "Companies register on the platform and configure their operational zones and rules."
+      title: "Set Targets",
+      description: "Define daily key performance indicators and assign store clusters to your field reps."
     },
     {
       number: 2,
       icon: Users,
-      title: "Team Assignment",
-      description: "Managers assign field executives to specific teams and target store clusters."
+      title: "Deploy Team",
+      description: "Dispatch your executives and watch as they sync their schedules on the mobile app."
     },
     {
       number: 3,
       icon: MapPin,
-      title: "Field Operations",
-      description: "Executives track visits, check-ins, and orders live through the mobile-first portal."
+      title: "Monitor Live",
+      description: "Use the live map to track their real-time movements and verify check-ins instantly."
     },
     {
       number: 4,
       icon: BarChart3,
-      title: "Performance Analysis",
-      description: "Managers analyze real-time data to optimize routes and improve team outcomes."
+      title: "Analyze & Optimize",
+      description: "Review daily closing reports, revenue generated, and optimize routes for tomorrow."
     }
   ];
 
@@ -56,12 +56,12 @@ const PlatformWorkflow = () => {
     <section id="workflow" className="py-24 lg:py-32 bg-gray-50/50 dark:bg-gray-950/50 relative overflow-hidden">
       <div className="max-w-7xl mx-auto px-6">
         <div className="text-center max-w-2xl mx-auto mb-20 space-y-4">
-          <h2 className="text-xs font-black text-primary-main uppercase tracking-[0.2em]">How it Works</h2>
+          <h2 className="text-xs font-black text-primary-main uppercase tracking-[0.2em]">Operational Workflow</h2>
           <h3 className="text-4xl font-black text-gray-900 dark:text-white tracking-tight">
-            Seamless Lifecycle Management
+            Seamless Team Oversight
           </h3>
           <p className="text-lg text-gray-500 dark:text-gray-400 font-medium">
-            TrackForce simplifies the entire field operation workflow from onboarding to final analysis.
+            From allocating sectors to driving conversions, TrackForce puts the control completely in your hands.
           </p>
         </div>
 

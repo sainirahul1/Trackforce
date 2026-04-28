@@ -127,6 +127,7 @@ exports.getTargetsOverview = async (req, res) => {
         designation: emp.profile?.designation || 'Employee',
         zone: emp.profile?.zone || emp.profile?.team || 'Unassigned',
         currentDailyTarget: target ? target.monthlyTarget : 0,
+        targetId: target ? target._id : null,
         achieved: visitsCount,
       };
     }));
@@ -135,5 +136,24 @@ exports.getTargetsOverview = async (req, res) => {
   } catch (error) {
     console.error('[GET_OVERVIEW_ERROR]', error.message);
     res.status(500).json({ message: 'Failed to fetch targets overview' });
+  }
+};
+
+// @desc    Delete a target
+// @route   DELETE /api/manager/targets/:targetId
+// @access  Private (Manager)
+exports.deleteTarget = async (req, res) => {
+  try {
+    const { targetId } = req.params;
+    
+    await Target.findOneAndDelete({
+      _id: targetId,
+      tenant: req.tenantId
+    });
+
+    res.json({ success: true, message: 'Mission aborted successfully' });
+  } catch (error) {
+    console.error('[DELETE_TARGET_ERROR]', error.message);
+    res.status(500).json({ message: 'Failed to abort mission' });
   }
 };

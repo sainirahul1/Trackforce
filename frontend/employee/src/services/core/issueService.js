@@ -9,11 +9,11 @@ export const createIssue = async (issueData) => {
   return response.data;
 };
 
-export const getIssues = async () => {
+export const getIssues = async (forceRefresh = false) => {
   return fetchDataWithCache('issues', async () => {
     const response = await apiClient.get(API_URL);
     return response.data;
-  });
+  }, forceRefresh);
 };
 
 export const getIssueById = async (id) => {

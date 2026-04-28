@@ -2,7 +2,6 @@ import React from 'react';
 import LandingNavbar from '../../components/landing/Navbar';
 import HeroSection from '../../components/landing/HeroSection';
 import FeaturesSection from '../../components/landing/FeaturesSection';
-import PortalsSection from '../../components/landing/PortalsSection';
 import PlatformWorkflow from '../../components/landing/PlatformWorkflow';
 import CTASection from '../../components/landing/CTASection';
 import Footer from '../../components/landing/Footer';
@@ -14,7 +13,6 @@ const Home = () => {
       <main>
         <HeroSection />
         <FeaturesSection />
-        <PortalsSection />
         <PlatformWorkflow />
         
         {/* Dashboard Preview Section (Internal Component) */}
@@ -23,14 +21,13 @@ const Home = () => {
             <div className="text-center max-w-3xl mx-auto mb-20 space-y-4">
               <h2 className="text-xs font-black text-primary-main uppercase tracking-[0.2em]">Data Intelligence</h2>
               <h3 className="text-4xl md:text-5xl font-black text-gray-900 dark:text-white tracking-tight">
-                Powerful Dashboards <br />
+                Enterprise Analytics <br />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-main to-indigo-500">
-                  Built for Speed
+                  Built for Leaders
                 </span>
               </h3>
               <p className="text-lg text-gray-500 dark:text-gray-400 font-medium leading-relaxed">
-                Experience the clarity of enterprise data. Monitor every visit, order, and route 
-                with intuitive visualizations and real-time updates.
+                Experience the clarity of live data. Monitor field team execution, revenue collection, and route compliance instantly.
               </p>
             </div>
 

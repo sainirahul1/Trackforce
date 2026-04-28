@@ -39,8 +39,8 @@ const CreateIssueModal = ({ onClose, onCreate }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-300">
-      <div className="bg-white dark:bg-gray-900 w-full max-w-2xl rounded-[3rem] p-10 shadow-2xl border border-gray-100 dark:border-gray-800 animate-in zoom-in-95 duration-300 relative overflow-hidden text-left">
+    <div className="fixed inset-0 z-[200] flex items-start md:items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-300 overflow-y-auto">
+      <div className="bg-white dark:bg-gray-900 w-full max-w-2xl rounded-[3rem] p-8 md:p-10 shadow-2xl border border-gray-100 dark:border-gray-800 animate-in zoom-in-95 duration-300 relative overflow-hidden text-left my-auto">
         <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/5 blur-3xl rounded-full -mr-32 -mt-32"></div>
         
         <button 

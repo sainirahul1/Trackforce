@@ -2,7 +2,6 @@ import React from 'react';
 import LandingNavbar from '../../components/landing/Navbar';
 import HeroSection from '../../components/landing/HeroSection';
 import FeaturesSection from '../../components/landing/FeaturesSection';
-import PortalsSection from '../../components/landing/PortalsSection';
 import PlatformWorkflow from '../../components/landing/PlatformWorkflow';
 import CTASection from '../../components/landing/CTASection';
 import Footer from '../../components/landing/Footer';
@@ -14,23 +13,21 @@ const Home = () => {
       <main>
         <HeroSection />
         <FeaturesSection />
-        <PortalsSection />
         <PlatformWorkflow />
         
         {/* Dashboard Preview Section (Internal Component) */}
         <section className="py-24 lg:py-32 relative overflow-hidden">
           <div className="max-w-7xl mx-auto px-6">
             <div className="text-center max-w-3xl mx-auto mb-20 space-y-4">
-              <h2 className="text-xs font-black text-primary-main uppercase tracking-[0.2em]">Data Intelligence</h2>
+              <h2 className="text-xs font-black text-primary-main uppercase tracking-[0.2em]">Your Performance Data</h2>
               <h3 className="text-4xl md:text-5xl font-black text-gray-900 dark:text-white tracking-tight">
-                Powerful Dashboards <br />
+                Clear Metrics <br />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-main to-indigo-500">
-                  Built for Speed
+                  Built for Growth
                 </span>
               </h3>
               <p className="text-lg text-gray-500 dark:text-gray-400 font-medium leading-relaxed">
-                Experience the clarity of enterprise data. Monitor every visit, order, and route 
-                with intuitive visualizations and real-time updates.
+                Experience the clarity of direct feedback. Monitor your visits, target completion, and daily success rates in real-time.
               </p>
             </div>
 
@@ -53,7 +50,7 @@ const Home = () => {
 
               {/* Analytics Card 2 */}
               <div className="bg-white dark:bg-gray-900 p-8 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 shadow-xl shadow-gray-200/20 dark:shadow-none hover:shadow-2xl transition-all duration-500 scale-105 z-10">
-                <p className="text-xs font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-4">Total Revenue Collected</p>
+                <p className="text-xs font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-4">Daily Targets Met</p>
                 <div className="flex flex-col space-y-4">
                   <div className="w-full h-4 bg-gray-50 dark:bg-gray-800 rounded-full overflow-hidden">
                     <div className="w-[85%] h-full bg-gradient-to-r from-emerald-500 to-emerald-400" />
@@ -66,8 +63,8 @@ const Home = () => {
                   </div>
                 </div>
                 <div className="mt-10 flex items-center justify-between">
-                  <span className="text-3xl font-black text-gray-900 dark:text-white">$84,290</span>
-                  <span className="text-xs font-bold text-emerald-500">Live Target</span>
+                  <span className="text-3xl font-black text-gray-900 dark:text-white">12/15</span>
+                  <span className="text-xs font-bold text-emerald-500">Excellent</span>
                 </div>
               </div>
 

@@ -15,10 +15,19 @@ const EmployeeIssues = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showToast, setShowToast] = useState({ show: false, message: '', type: 'success' });
 
+  useEffect(() => {
+    if (showCreateModal) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => { document.body.style.overflow = 'unset'; };
+  }, [showCreateModal]);
+
   const fetchIssues = async (showLoading = true) => {
     if (showLoading) setLoading(true);
     try {
-      const data = await getIssues();
+      const data = await getIssues(true); // Force API fetch
       setIssues(data);
     } catch (err) {
       console.error('Error fetching issues:', err);

@@ -4,7 +4,7 @@ import {
   Target, Search, Loader2, ArrowRight, ArrowLeft, History, Calendar, 
   CheckCircle2, TrendingUp, ChevronRight, Activity, Clock, 
   Users, BarChart3, UserPlus, Filter, Grid, List as ListIcon,
-  Zap, MapPin, ExternalLink
+  Zap, MapPin, ExternalLink, Edit2, Trash2
 } from 'lucide-react';
 import { useNavigate, useOutletContext } from 'react-router-dom';
 import apiClient from '../services/apiClient';
@@ -21,8 +21,7 @@ const Targets = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [viewMode, setViewMode] = useState('grid');
     
-    // Quick Assign Modal State
-    const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+    // Mission Deployment State
     const [selectedForAssign, setSelectedForAssign] = useState(null);
     const [quickTarget, setQuickTarget] = useState({
         dailyTarget: '',
@@ -30,6 +29,7 @@ const Targets = () => {
         note: ''
     });
     const [isSaving, setIsSaving] = useState(false);
+    const [recentTransmissions, setRecentTransmissions] = useState([]);
 
     useEffect(() => {
         fetchEmployees();
@@ -41,7 +41,20 @@ const Targets = () => {
             if (setPageLoading) setPageLoading(true);
             const response = await apiClient.get('/reatchall/manager/targets/employees');
             if (response.data.success) {
-                setEmployees(response.data.data);
+                const data = response.data.data;
+                setEmployees(data);
+                
+                // Populate recent transmissions with anyone who has a target today
+                const activeTargets = data
+                    .filter(emp => emp.currentDailyTarget > 0)
+                    .map(emp => ({
+                        id: `T-${emp.id.slice(-4)}`,
+                        name: emp.name,
+                        target: emp.currentDailyTarget,
+                        timestamp: 'Active Today',
+                        status: 'Transmitted'
+                    }));
+                setRecentTransmissions(activeTargets.slice(0, 5));
             }
         } catch (error) {
             console.error('Failed to fetch employees:', error);
@@ -53,7 +66,12 @@ const Targets = () => {
     };
 
     const handleQuickAssign = async (e) => {
-        e.preventDefault();
+        if (e) e.preventDefault();
+        if (!selectedForAssign || !quickTarget.dailyTarget) {
+            showAlert('Wait', 'Please select an operative and define a target', 'warning');
+            return;
+        }
+
         try {
             setIsSaving(true);
             const response = await apiClient.post('/reatchall/manager/targets', {
@@ -62,13 +80,45 @@ const Targets = () => {
             });
             if (response.data.success) {
                 showAlert('Success', `Daily mission assigned to ${selectedForAssign.name}`, 'success');
-                setIsAssignModalOpen(false);
+                
+                // Reset form
+                setSelectedForAssign(null);
+                setQuickTarget(prev => ({ ...prev, dailyTarget: '' }));
+                
                 fetchEmployees();
             }
         } catch (error) {
             showAlert('Error', 'Failed to synchronize mission parameters', 'error');
         } finally {
             setIsSaving(false);
+        }
+    };
+
+    const handleDeleteTarget = async (targetId, empName) => {
+        if (!window.confirm(`Are you sure you want to abort the mission for ${empName}?`)) return;
+        
+        try {
+            const response = await apiClient.delete(`/reatchall/manager/targets/${targetId}`);
+            if (response.data.success) {
+                showAlert('Mission Aborted', `Target for ${empName} has been retracted.`, 'success');
+                fetchEmployees();
+            }
+        } catch (error) {
+            showAlert('Error', 'Failed to retract mission', 'error');
+        }
+    };
+
+    const handleEditTarget = (log) => {
+        const emp = employees.find(e => e.id === log.empId);
+        if (emp) {
+            setSelectedForAssign(emp);
+            setQuickTarget({
+                dailyTarget: log.target,
+                date: new Date().toISOString().split('T')[0],
+                note: ''
+            });
+            // Smooth scroll to form
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     };
 
@@ -88,287 +138,249 @@ const Targets = () => {
     }
 
     return (
-        <div className="max-w-7xl mx-auto space-y-10 animate-in fade-in duration-700">
-            {/* Command Header */}
-            <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8">
-                <div className="space-y-4">
-                    <div className="flex items-center gap-4">
-                        <div className="p-4 bg-indigo-600 rounded-[1.5rem] text-white shadow-2xl shadow-indigo-200 rotate-3 animate-in zoom-in-50 duration-500">
-                            <Target size={32} />
+        <div className="max-w-[1600px] mx-auto animate-in fade-in duration-700">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                
+                {/* LEFT: STRATEGIC MONITORING HUB (8 Columns) */}
+                <div className="lg:col-span-8 space-y-8">
+                    {/* Header */}
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                            <div className="p-3 bg-indigo-600 rounded-2xl text-white shadow-xl shadow-indigo-500/20">
+                                <Target size={24} />
+                            </div>
+                            <div>
+                                <h1 className="text-3xl font-black text-gray-900 dark:text-white tracking-tighter uppercase leading-none">Target Command</h1>
+                                <p className="text-[9px] font-black text-gray-400 uppercase tracking-[0.4em] mt-1">Tactical Mission Distribution Hub</p>
+                            </div>
                         </div>
-                        <div>
-                            <h1 className="text-4xl font-black text-gray-900 dark:text-white tracking-tighter uppercase leading-none">Target Command</h1>
-                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.4em] mt-2">Tactical Mission Distribution Hub</p>
+
+                        <div className="flex items-center gap-3">
+                            <div className="relative group w-64">
+                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-indigo-600 transition-colors" size={14} />
+                                <input 
+                                    type="text"
+                                    placeholder="Filter fleet..."
+                                    className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl text-[10px] font-black uppercase tracking-widest outline-none transition-all focus:ring-2 ring-indigo-500/10"
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                />
+                            </div>
+                            <div className="flex items-center gap-1 p-1 bg-gray-100 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
+                                <button onClick={() => setViewMode('grid')} className={`p-2 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-white dark:bg-gray-700 text-indigo-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}><Grid size={14} /></button>
+                                <button onClick={() => setViewMode('list')} className={`p-2 rounded-lg transition-all ${viewMode === 'list' ? 'bg-white dark:bg-gray-700 text-indigo-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}><ListIcon size={14} /></button>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <div className="flex flex-col sm:flex-row items-center gap-4 grow lg:max-w-3xl">
-                    <div className="relative group grow w-full">
-                        <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-indigo-600 transition-colors" size={20} />
-                        <input 
-                            type="text"
-                            placeholder="Filter by Name, Zone, or Email..."
-                            className="w-full pl-14 pr-6 py-5 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-[2rem] shadow-xl shadow-gray-200/20 dark:shadow-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none font-bold text-sm transition-all"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                        />
+                    {/* Performance Overview Cards */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        {[
+                            { label: 'Total Fleet', value: employees.length, icon: Users, color: 'text-indigo-500', bg: 'bg-indigo-50 dark:bg-indigo-500/10' },
+                            { label: 'Active Missions', value: employees.filter(e => e.currentDailyTarget > 0).length, icon: Activity, color: 'text-emerald-500', bg: 'bg-emerald-50 dark:bg-emerald-500/10' },
+                            { label: 'Fleet Efficiency', value: `${employees.length > 0 ? Math.round((employees.reduce((acc, curr) => acc + (curr.achieved/Math.max(1, curr.currentDailyTarget)), 0) / employees.length) * 100) : 0}%`, icon: TrendingUp, color: 'text-amber-500', bg: 'bg-amber-50 dark:bg-amber-500/10' }
+                        ].map((stat, i) => (
+                            <div key={i} className="p-5 bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 flex items-center gap-4 group hover:border-indigo-500/30 transition-all cursor-default">
+                                <div className={`w-12 h-12 rounded-2xl ${stat.bg} flex items-center justify-center ${stat.color} group-hover:scale-110 transition-transform`}><stat.icon size={20} /></div>
+                                <div>
+                                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">{stat.label}</p>
+                                    <h3 className="text-xl font-black text-gray-950 dark:text-white tracking-tighter">{stat.value}</h3>
+                                </div>
+                            </div>
+                        ))}
                     </div>
-                    <Button 
-                        variant="primary" 
-                        className="rounded-[1.5rem] px-8 py-5 font-black uppercase text-xs tracking-widest shadow-xl shadow-indigo-200 dark:shadow-none bg-indigo-600 hover:bg-indigo-700 whitespace-nowrap"
-                        onClick={() => {
-                            setSelectedForAssign(null);
-                            setQuickTarget({
-                                dailyTarget: '',
-                                date: new Date().toISOString().split('T')[0],
-                                note: ''
-                            });
-                            setIsAssignModalOpen(true);
-                        }}
-                    >
-                        <UserPlus size={18} className="mr-2" />
-                        Generate Target
-                    </Button>
-                    <div className="flex items-center gap-2 p-1.5 bg-gray-100 dark:bg-gray-800 rounded-[1.5rem] border border-gray-100 dark:border-gray-700 shrink-0">
-                        <button 
-                            onClick={() => setViewMode('grid')}
-                            className={`p-3 rounded-xl transition-all ${viewMode === 'grid' ? 'bg-white dark:bg-gray-700 text-indigo-600 shadow-md' : 'text-gray-400 hover:text-gray-600'}`}
-                        >
-                            <Grid size={18} />
-                        </button>
-                        <button 
-                            onClick={() => setViewMode('list')}
-                            className={`p-3 rounded-xl transition-all ${viewMode === 'list' ? 'bg-white dark:bg-gray-700 text-indigo-600 shadow-md' : 'text-gray-400 hover:text-gray-600'}`}
-                        >
-                            <ListIcon size={18} />
-                        </button>
-                    </div>
-                </div>
-            </div>
 
-            {/* Tactical Grid */}
-            {filteredEmployees.length > 0 ? (
-                <div className={viewMode === 'grid' ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" : "space-y-2"}>
-                    {filteredEmployees.map((emp, idx) => (
-                        <div 
-                            key={emp.id}
-                            className={`group relative bg-white dark:bg-gray-900 ${viewMode === 'grid' ? 'rounded-[2rem]' : 'rounded-2xl'} border border-gray-100 dark:border-gray-800 transition-all duration-500 hover:shadow-2xl hover:shadow-indigo-500/10 overflow-hidden animate-in slide-in-from-bottom-8 duration-500 ${viewMode === 'list' ? 'hover:-translate-x-1' : 'hover:-translate-y-2'}`}
-                            style={{ animationDelay: `${idx * 50}ms` }}
-                        >
-                            {/* Card Content */}
-                            <div className={`relative z-10 ${viewMode === 'grid' ? 'p-6 space-y-6' : 'p-3 flex items-center justify-between gap-4'}`}>
-                                {/* User Info */}
-                                <div 
-                                    className={`flex items-center gap-3 cursor-pointer group/header ${viewMode === 'list' ? 'min-w-[200px]' : ''}`}
-                                    onClick={() => navigate(`/manager/targets/${emp.id}`)}
-                                >
+                    {/* Fleet Grid/List */}
+                    <div className={viewMode === 'grid' ? "grid grid-cols-1 md:grid-cols-2 gap-4" : "space-y-3"}>
+                        {filteredEmployees.map((emp, idx) => (
+                            <div 
+                                key={emp.id}
+                                onClick={() => setSelectedForAssign(emp)}
+                                className={`group relative bg-white dark:bg-gray-900 ${viewMode === 'grid' ? 'rounded-[2rem] p-5' : 'rounded-2xl p-3 flex items-center justify-between'} border ${selectedForAssign?.id === emp.id ? 'border-indigo-500 ring-2 ring-indigo-500/10' : 'border-gray-100 dark:border-gray-800'} transition-all duration-300 hover:shadow-xl hover:shadow-indigo-500/5 cursor-pointer`}
+                            >
+                                <div className="flex items-center gap-4">
                                     <div className="relative">
-                                        <div className={`${viewMode === 'grid' ? 'w-12 h-12 rounded-[1.2rem]' : 'w-9 h-9 rounded-lg'} overflow-hidden border-2 border-white dark:border-gray-800 shadow-lg group-hover/header:rotate-3 transition-transform duration-500`}>
+                                        <div className="w-10 h-10 rounded-xl overflow-hidden border border-gray-100 dark:border-gray-800">
                                             <img src={`https://i.pravatar.cc/150?u=${emp.id}`} alt={emp.name} className="w-full h-full object-cover" />
                                         </div>
-                                        <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-md bg-emerald-500 border-2 border-white dark:border-gray-900 flex items-center justify-center text-white scale-0 group-hover/header:scale-100 transition-transform duration-500 shadow-md">
-                                            <Zap size={6} strokeWidth={3} />
-                                        </div>
+                                        {emp.currentDailyTarget > 0 && (
+                                            <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-emerald-500 border-2 border-white dark:border-gray-900 animate-pulse" />
+                                        )}
                                     </div>
                                     <div>
-                                        <h4 className={`font-black text-gray-900 dark:text-white tracking-tight leading-none mb-1 group-hover/header:text-indigo-600 transition-colors uppercase ${viewMode === 'grid' ? 'text-base' : 'text-xs'}`}>{emp.name}</h4>
-                                        <div className="flex items-center gap-2 text-[8px] font-black text-gray-400 uppercase tracking-widest">
-                                            <MapPin size={8} className="text-gray-300" />
-                                            {emp.zone}
+                                        <h4 className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-tight">{emp.name}</h4>
+                                        <div className="flex items-center gap-2 text-[8px] font-bold text-gray-400 uppercase tracking-widest">
+                                            <MapPin size={8} /> {emp.zone}
                                         </div>
                                     </div>
                                 </div>
 
-                                {/* Performance Section */}
-                                <div className={`cursor-pointer ${viewMode === 'grid' ? 'space-y-3' : 'flex-grow px-4 max-w-md'}`} onClick={() => navigate(`/manager/targets/${emp.id}`)}>
-                                    <div className={`flex items-end justify-between px-1 ${viewMode === 'grid' ? 'mb-1.5' : 'mb-1'}`}>
-                                        <div className={viewMode === 'list' ? 'flex items-baseline gap-2' : ''}>
-                                            {viewMode === 'grid' ? <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Today</p> : null}
-                                            <div className="flex items-baseline gap-1">
-                                                <span className={`${viewMode === 'grid' ? 'text-2xl' : 'text-sm'} font-black text-gray-900 dark:text-white tracking-tighter`}>{emp.achieved}</span>
-                                                <span className="text-[9px] font-black text-gray-400">/ {emp.currentDailyTarget || 0}</span>
-                                            </div>
+                                <div className={viewMode === 'grid' ? "mt-4 space-y-2" : "flex-grow px-8"}>
+                                    <div className="flex items-end justify-between">
+                                        <div className="flex items-baseline gap-1">
+                                            <span className="text-lg font-black text-gray-900 dark:text-white">{emp.achieved}</span>
+                                            <span className="text-[9px] font-bold text-gray-400">/ {emp.currentDailyTarget || 0}</span>
                                         </div>
-                                        <div className="text-right">
-                                            <p className={`font-black tracking-tight ${viewMode === 'grid' ? 'text-base' : 'text-xs'} ${emp.achieved >= emp.currentDailyTarget && emp.currentDailyTarget > 0 ? 'text-emerald-500' : 'text-indigo-600'}`}>
-                                                {emp.currentDailyTarget > 0 ? Math.round((emp.achieved / emp.currentDailyTarget) * 100) : 0}%
-                                            </p>
-                                        </div>
+                                        <span className={`text-[10px] font-black ${emp.achieved >= emp.currentDailyTarget && emp.currentDailyTarget > 0 ? 'text-emerald-500' : 'text-indigo-600'}`}>
+                                            {emp.currentDailyTarget > 0 ? Math.round((emp.achieved / emp.currentDailyTarget) * 100) : 0}%
+                                        </span>
                                     </div>
-                                    <div className={`w-full ${viewMode === 'grid' ? 'h-1.5' : 'h-1'} bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden shadow-inner`}>
+                                    <div className="w-full h-1 bg-gray-50 dark:bg-gray-800 rounded-full overflow-hidden">
                                         <div 
-                                            className={`h-full rounded-full transition-all duration-1000 ${emp.achieved >= emp.currentDailyTarget && emp.currentDailyTarget > 0 ? 'bg-gradient-to-r from-emerald-500 to-teal-400' : 'bg-gradient-to-r from-indigo-500 to-blue-500'}`}
+                                            className={`h-full rounded-full transition-all duration-1000 ${emp.achieved >= emp.currentDailyTarget && emp.currentDailyTarget > 0 ? 'bg-emerald-500' : 'bg-indigo-500'}`}
                                             style={{ width: `${Math.min(100, (emp.currentDailyTarget > 0 ? (emp.achieved/emp.currentDailyTarget)*100 : 0))}%` }}
                                         />
                                     </div>
                                 </div>
 
-                                {/* Actions */}
-                                <div className={`flex items-center gap-2 ${viewMode === 'grid' ? 'pt-4 border-t border-gray-50 dark:border-gray-800 justify-between' : 'shrink-0'}`}>
-                                    {viewMode === 'grid' ? <span className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em]">{emp.designation}</span> : null}
-                                    <div className="flex items-center gap-1.5">
-                                        <button 
-                                            className={`${viewMode === 'grid' ? 'p-2.5' : 'p-2'} bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 rounded-lg hover:bg-indigo-600 hover:text-white transition-all shadow-sm`}
-                                            title="Generate Target"
-                                            onClick={() => {
-                                                setSelectedForAssign(emp);
-                                                setQuickTarget(prev => ({ ...prev, dailyTarget: emp.currentDailyTarget || '' }));
-                                                setIsAssignModalOpen(true);
-                                            }}
-                                        >
-                                            <UserPlus size={viewMode === 'grid' ? 16 : 14} />
-                                        </button>
-                                        <button 
-                                            className={`${viewMode === 'grid' ? 'p-2.5' : 'p-2'} bg-gray-50 dark:bg-gray-800 text-gray-400 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-all`}
-                                            title="View History"
-                                            onClick={() => navigate(`/manager/targets/${emp.id}`)}
-                                        >
-                                            <BarChart3 size={viewMode === 'grid' ? 16 : 14} />
-                                        </button>
-                                        {viewMode === 'list' ? (
-                                            <button 
-                                                className="p-2 bg-gray-50 dark:bg-gray-800 rounded-lg text-gray-400 hover:text-indigo-600 transition-all"
-                                                onClick={() => navigate(`/manager/targets/${emp.id}`)}
-                                            >
-                                                <ChevronRight size={14} />
-                                            </button>
-                                        ) : null}
-                                    </div>
-                                </div>
+                                {viewMode === 'list' && (
+                                    <button 
+                                        onClick={(e) => { e.stopPropagation(); navigate(`/manager/targets/${emp.id}`); }}
+                                        className="p-2 text-gray-300 hover:text-indigo-500 transition-colors"
+                                    >
+                                        <ExternalLink size={14} />
+                                    </button>
+                                )}
                             </div>
-                        </div>
-                    ))}
-                </div>
-            ) : (
-                <div className="py-40 text-center space-y-6 bg-white/50 dark:bg-gray-900/50 rounded-[4rem] border-2 border-dashed border-gray-200 dark:border-gray-800 animate-in fade-in zoom-in-95 duration-700">
-                    <div className="w-24 h-24 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto text-gray-300">
-                        <Users size={48} />
+                        ))}
                     </div>
-                    <div>
-                        <h3 className="text-xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">No Fleet Signals Detected</h3>
-                        <p className="text-gray-400 font-bold mt-2">Adjust your filters to scan broader sector frequencies.</p>
-                    </div>
-                    <Button onClick={() => setSearchTerm('')} variant="outline" className="rounded-2xl px-8">Reset Intelligence Filters</Button>
                 </div>
-            )}
 
-            {/* Quick Assign Modal - Portalized for 100% Screen Coverage */}
-            {isAssignModalOpen && createPortal(
-                <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 sm:p-6 md:p-8">
-                    {/* Unified Solid Opaque Backdrop */}
-                    <div 
-                        className="absolute inset-0 bg-black animate-in fade-in duration-500" 
-                        onClick={() => setIsAssignModalOpen(false)} 
-                    />
+                {/* RIGHT: TACTICAL DEPLOYMENT SIDEBAR (4 Columns) */}
+                <div className="lg:col-span-4 space-y-6">
                     
-                    {/* Professional Command Center Modal Container - Reduced Size */}
-                    <div className="relative w-full max-w-md bg-gray-950 rounded-[2.5rem] shadow-2xl border border-white/10 overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-10 duration-700">
-                        {/* Header: Tactical Alert Blue - Extra Compact */}
-                        <div className="p-5 bg-indigo-600 text-white relative">
-                            <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full blur-2xl -mr-12 -mt-12 pointer-events-none" />
-                            
-                            <div className="flex items-center justify-between mb-3 relative z-10">
-                                <button 
-                                    onClick={() => setIsAssignModalOpen(false)} 
-                                    className="flex items-center gap-2 px-3 py-1.5 hover:bg-white/20 rounded-xl transition-all -ml-2 text-[9px] font-black uppercase tracking-widest border border-white/10 bg-white/5"
-                                >
-                                    <ArrowLeft size={12} />
-                                    <span>Abort</span>
-                                </button>
-                                <div className="p-1.5 bg-white/10 rounded-full">
-                                    <Target size={16} className="animate-pulse" />
-                                </div>
-                            </div>
-                            
-                            <div className="flex items-center gap-4 mt-2 relative z-10">
-                                <div className="w-12 h-12 bg-white/10 backdrop-blur-md rounded-xl flex items-center justify-center shrink-0 border border-white/10 shadow-inner">
-                                    <TrendingUp size={24} className="text-white" />
-                                </div>
-                                <div className="space-y-0.5">
-                                    <h2 className="text-xl font-black uppercase tracking-tighter leading-none">Mission Parameters</h2>
-                                    <p className="text-[9px] font-black text-indigo-100 uppercase tracking-[0.2em] opacity-60">
-                                        {selectedForAssign ? `Operative: ${selectedForAssign.name}` : `Strategic Deployment Sector`}
-                                    </p>
-                                </div>
-                            </div>
+                    {/* Assignment Panel */}
+                    <div className="bg-gradient-to-br from-indigo-900 via-gray-950 to-black rounded-[2.5rem] p-8 text-white shadow-2xl relative overflow-hidden group/assign border border-indigo-500/20">
+                        <div className="absolute top-0 right-0 p-12 opacity-10 pointer-events-none group-hover/assign:scale-125 transition-transform duration-1000">
+                            <Zap size={150} className="text-indigo-400" />
                         </div>
                         
-                        {/* Body: High-Fidelity Tactical Inputs - Extra Condensed */}
-                        <form onSubmit={handleQuickAssign} className="p-6 space-y-5 bg-gray-950">
-                            {!selectedForAssign && (
+                        <div className="relative z-10 space-y-8">
+                            <div className="flex items-center justify-between">
+                                <div className="p-2.5 bg-indigo-500/20 rounded-xl border border-indigo-500/30 text-indigo-400">
+                                    <UserPlus size={20} />
+                                </div>
+                                <div className="text-right">
+                                    <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Target Deployment</p>
+                                    <p className="text-[12px] font-black uppercase tracking-tighter">Mission Assigner</p>
+                                </div>
+                            </div>
+
+                            <form onSubmit={handleQuickAssign} className="space-y-6">
                                 <div className="space-y-2">
-                                    <label className="text-[9px] font-black text-indigo-400 uppercase tracking-[0.3em] ml-6">Target Operative</label>
+                                    <label className="text-[9px] font-black text-gray-500 uppercase tracking-[0.3em] ml-2">Select Operative</label>
                                     <select 
-                                        required
-                                        className="w-full px-6 py-4 bg-gray-900 border border-white/5 rounded-[1.5rem] outline-none font-bold text-xs text-gray-100 focus:ring-4 focus:ring-indigo-500/30 focus:border-indigo-500/50 transition-all cursor-pointer appearance-none shadow-inner"
+                                        className="w-full px-5 py-4 bg-gray-900 border border-white/5 rounded-2xl outline-none font-bold text-xs text-white focus:ring-2 ring-indigo-500/50 transition-all cursor-pointer appearance-none shadow-inner"
+                                        value={selectedForAssign?.id || ''}
                                         onChange={(e) => setSelectedForAssign(employees.find(emp => emp.id === e.target.value))}
                                     >
-                                        <option value="">Awaiting selection...</option>
+                                        <option value="" className="text-gray-500">Awaiting selection...</option>
                                         {employees.map(emp => (
-                                            <option key={emp.id} value={emp.id} className="bg-gray-900">{emp.name} — {emp.zone}</option>
+                                            <option key={emp.id} value={emp.id}>{emp.name}</option>
                                         ))}
                                     </select>
                                 </div>
-                            )}
 
-                            <div className="grid grid-cols-1 gap-6">
-                                <div className="space-y-2">
-                                    <label className="text-[9px] font-black text-indigo-400 uppercase tracking-[0.3em] ml-6">Deployment Window</label>
-                                    <div className="relative">
-                                        <Calendar className="absolute left-6 top-1/2 -translate-y-1/2 text-indigo-500" size={16} />
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <label className="text-[9px] font-black text-gray-500 uppercase tracking-[0.3em] ml-2">Target Quota</label>
+                                        <input 
+                                            type="number"
+                                            required
+                                            min="1"
+                                            placeholder="00"
+                                            className="w-full px-5 py-4 bg-gray-900 border border-white/5 rounded-2xl outline-none font-black text-lg text-indigo-400 focus:ring-2 ring-indigo-500/50 transition-all shadow-inner"
+                                            value={quickTarget.dailyTarget}
+                                            onChange={(e) => setQuickTarget({...quickTarget, dailyTarget: e.target.value})}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[9px] font-black text-gray-500 uppercase tracking-[0.3em] ml-2">Mission Date</label>
                                         <input 
                                             type="date"
                                             required
-                                            className="w-full pl-14 pr-6 py-4 bg-gray-900 border border-white/5 rounded-[1.5rem] outline-none font-bold text-xs text-gray-100 focus:ring-4 focus:ring-indigo-500/30 focus:border-indigo-500/50 transition-all shadow-inner [color-scheme:dark]"
+                                            className="w-full px-5 py-4 bg-gray-900 border border-white/5 rounded-2xl outline-none font-bold text-xs text-white focus:ring-2 ring-indigo-500/50 transition-all [color-scheme:dark]"
                                             value={quickTarget.date}
                                             onChange={(e) => setQuickTarget({...quickTarget, date: e.target.value})}
                                         />
                                     </div>
                                 </div>
 
-                                <div className="space-y-2">
-                                    <label className="text-[9px] font-black text-indigo-400 uppercase tracking-[0.3em] ml-6">Objective Quota</label>
-                                    <div className="relative">
-                                        <Activity className="absolute left-6 top-1/2 -translate-y-1/2 text-indigo-500" size={16} />
-                                        <input 
-                                            type="number"
-                                            required
-                                            min="1"
-                                            placeholder="Target count"
-                                            className="w-full pl-14 pr-6 py-4 bg-gray-900 border border-white/5 rounded-[1.5rem] outline-none font-black text-lg text-indigo-400 placeholder:text-gray-700 focus:ring-4 focus:ring-indigo-500/30 focus:border-indigo-500/50 transition-all shadow-inner"
-                                            value={quickTarget.dailyTarget}
-                                            onChange={(e) => setQuickTarget({...quickTarget, dailyTarget: e.target.value})}
-                                        />
+                                <button 
+                                    type="submit"
+                                    disabled={isSaving}
+                                    className="w-full py-4 bg-indigo-600 rounded-[1.5rem] font-black uppercase text-[10px] tracking-[0.2em] shadow-lg shadow-indigo-500/20 hover:bg-indigo-700 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                                >
+                                    {isSaving ? (
+                                        <Loader2 size={16} className="animate-spin" />
+                                    ) : (
+                                        <>Deploy Mission <ArrowRight size={16} /></>
+                                    )}
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    {/* History Ledger */}
+                    <div className="bg-white dark:bg-gray-900 rounded-[2.5rem] p-8 border border-gray-100 dark:border-gray-800 flex flex-col min-h-[300px]">
+                        <div className="flex items-center justify-between mb-6">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-gray-50 dark:bg-gray-800 rounded-xl text-gray-400"><History size={16} /></div>
+                                <h3 className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-widest">Recent Transmissions</h3>
+                            </div>
+                            <span className="px-2 py-1 bg-indigo-50 dark:bg-indigo-500/10 rounded-lg text-[8px] font-black text-indigo-600 uppercase tracking-widest">Global Log</span>
+                        </div>
+
+                        <div className="space-y-4 flex-1">
+                            {employees.filter(e => e.currentDailyTarget > 0).length > 0 ? employees.filter(e => e.currentDailyTarget > 0).map((log, i) => (
+                                <div key={i} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-transparent hover:border-gray-200 dark:hover:border-gray-700 transition-all group">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 rounded-lg bg-white dark:bg-gray-900 flex items-center justify-center text-[10px] font-black text-indigo-500 shadow-sm">{log.name.charAt(0)}</div>
+                                        <div>
+                                            <p className="text-[10px] font-black text-gray-900 dark:text-white uppercase leading-none mb-1">{log.name}</p>
+                                            <p className="text-[8px] font-bold text-gray-400 uppercase tracking-widest">Active Today</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-4">
+                                        <div className="text-right">
+                                            <p className="text-[11px] font-black text-indigo-600">{log.currentDailyTarget} <span className="text-[8px] text-gray-400">UNITS</span></p>
+                                            <p className="text-[7px] font-black text-emerald-500 uppercase tracking-tighter opacity-0 group-hover:opacity-100 transition-opacity">Transmitted</p>
+                                        </div>
+                                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all translate-x-2 group-hover:translate-x-0">
+                                            <button 
+                                                onClick={() => handleEditTarget({ empId: log.id, target: log.currentDailyTarget })}
+                                                className="p-1.5 bg-white dark:bg-gray-800 text-gray-400 hover:text-indigo-600 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 transition-all"
+                                                title="Edit Mission"
+                                            >
+                                                <Edit2 size={12} />
+                                            </button>
+                                            <button 
+                                                onClick={() => handleDeleteTarget(log.targetId, log.name)}
+                                                className="p-1.5 bg-white dark:bg-gray-800 text-gray-400 hover:text-rose-500 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 transition-all"
+                                                title="Abort Mission"
+                                            >
+                                                <Trash2 size={12} />
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-
-                            <button 
-                                type="submit" 
-                                disabled={isSaving || (!selectedForAssign && !quickTarget.employeeId)}
-                                className="group relative w-full py-4 rounded-[2rem] bg-indigo-600 overflow-hidden transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50"
-                            >
-                                <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 to-indigo-700 transition-transform group-hover:scale-105" />
-                                <div className="relative flex items-center justify-center gap-3">
-                                    {isSaving ? (
-                                        <>
-                                            <Loader2 size={18} className="animate-spin text-white" />
-                                            <span className="text-[11px] font-black uppercase tracking-[0.2em] text-white">Transmitting Mission...</span>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <span className="text-[11px] font-black uppercase tracking-[0.2em] text-white">Authorize Mission Deployment</span>
-                                            <ArrowRight size={18} className="text-white group-hover:translate-x-1 transition-transform" />
-                                        </>
-                                    )}
+                            )) : (
+                                <div className="flex-1 flex flex-col items-center justify-center text-center py-10 opacity-30">
+                                    <Zap size={32} className="mb-3" />
+                                    <p className="text-[9px] font-black uppercase tracking-widest">No Recent Signals</p>
                                 </div>
-                            </button>
-                        </form>
+                            )}
+                        </div>
+
+                        <button 
+                            onClick={() => employees.length > 0 && navigate(`/manager/targets/${employees[0].id}`)}
+                            className="mt-6 w-full py-3 border border-dashed border-gray-200 dark:border-gray-800 rounded-2xl text-[9px] font-black text-gray-400 uppercase tracking-widest hover:border-indigo-500/50 hover:text-indigo-500 transition-all"
+                        >
+                            View Comprehensive Logs
+                        </button>
                     </div>
-                </div>,
-                document.body
-            )}
+                </div>
+            </div>
         </div>
     );
 };

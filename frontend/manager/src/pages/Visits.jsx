@@ -19,7 +19,7 @@ import {
   Search, Filter, Calendar, ArrowRight, XCircle, RotateCcw,
   Check, X, MessageSquare, MoreHorizontal, Mail, Phone, ArrowLeft,
   ChevronDown, History, Radio, Activity, Navigation, Users, ArrowUpRight,
-  Building2
+  Building2, ClipboardList
 } from 'lucide-react';
 import { getVisits, getVisitById, updateVisit } from '../services/visitService';
 import { getActiveTrackingSessions } from '../services/trackingService';
@@ -98,6 +98,26 @@ const VisitRow = ({ visit, onReview, isLive }) => {
                 <Store size={10} /> Store Visit
               </span>
             )}
+            {visit.visitType === 'mission' && (
+              <span className="px-2.5 py-1 rounded-lg bg-purple-50 dark:bg-purple-500/10 text-purple-600 border border-purple-100 dark:border-purple-500/20 text-[8px] font-black uppercase tracking-wider flex items-center gap-1.5">
+                <ClipboardList size={10} /> Mission
+              </span>
+            )}
+            {visit.visitType === 'collab' && (
+              <span className="px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-500/10 text-amber-600 border border-amber-100 dark:border-amber-500/20 text-[8px] font-black uppercase tracking-wider flex items-center gap-1.5">
+                <Users size={10} /> Collab
+              </span>
+            )}
+            {visit.visitType === 'app' && (
+              <span className="px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 border border-emerald-100 dark:border-emerald-500/20 text-[8px] font-black uppercase tracking-wider flex items-center gap-1.5">
+                <ShieldCheck size={10} /> App Install
+              </span>
+            )}
+            {visit.visitType === 'LogVisit' && (
+              <span className="px-2.5 py-1 rounded-lg bg-rose-50 dark:bg-rose-500/10 text-rose-600 border border-rose-100 dark:border-rose-500/20 text-[8px] font-black uppercase tracking-wider flex items-center gap-1.5">
+                <Activity size={10} /> Generic Log
+              </span>
+            )}
             <div className="flex items-center gap-1.5 text-gray-400 text-[10px] font-bold tabular-nums ml-2">
               <Clock size={12} className="text-gray-300" /> {visit.time}
             </div>
@@ -158,13 +178,6 @@ const getMarkerColor = (employeeId) => {
 
 
 
-const categoryContent = {
-  'General Overview': "The store inventory was mostly organized, however, some discrepancies were noted in the inward goods section. Client was cooperative and provided all necessary documentation for the audit trail. No major issues faced during the field protocol execution.",
-  'Inventory Compliance': "Stock levels for premium SKUs are maintained at 85%. End-cap displays are correctly positioned as per the planogram. Inward goods documentation is complete and verified.",
-  'Staff Performance': "Executive demonstrated excellent product knowledge and client engagement. Store manager noted the promptness and professionalism of the field officer during the audit.",
-  'Client Feedback': "Client expressed satisfaction with the real-time reporting capabilities. Requested a follow-up on the promotional display efficacy by next week's visit.",
-  'Protocol Variance': "Minor variance noted in the geo-tagging at the entrance. Site-path protocols were strictly followed otherwise, with all checkpoints covered accurately."
-};
 
 /**
  * ManagerVisits Main Component
@@ -178,7 +191,6 @@ const ManagerVisits = () => {
   const [isRejecting, setIsRejecting] = React.useState(false);           // Controls the showing of the rejection remark textarea
   const [rejectionReasonInput, setRejectionReasonInput] = React.useState(''); // Buffer for user-entered rejection text
   const [activePhoto, setActivePhoto] = React.useState(null);           // Holds the photo object for the Portal-based Lightbox
-  const [observationCategory, setObservationCategory] = React.useState('General Overview'); // Active category for observation notes
   const [liveEmployees, setLiveEmployees] = React.useState({});         // Map of employeeId -> latest location data
   const { user } = useAuth();
   const { setPageLoading } = useOutletContext() || {};
@@ -202,6 +214,11 @@ const ManagerVisits = () => {
     !isNaN(Number(activeLocation.location.lat)) &&
     !isNaN(Number(activeLocation.location.lng));
   const isLive = !!activeLocation;
+
+  const visitGps = selectedVisit?.gps;
+  const hasVisitGps = visitGps && !isNaN(Number(visitGps.lat)) && !isNaN(Number(visitGps.lng));
+  const centerLat = hasVisitGps ? Number(visitGps.lat) : (isValidCenter ? Number(activeLocation.location.lat) : 12.9716);
+  const centerLng = hasVisitGps ? Number(visitGps.lng) : (isValidCenter ? Number(activeLocation.location.lng) : 77.5946);
 
   // --- Socket Integration ---
   React.useEffect(() => {
@@ -672,11 +689,30 @@ const ManagerVisits = () => {
                       {isLoaded ? (
                         <GoogleMap
                           mapContainerStyle={{ width: '100%', height: '100%' }}
-                          center={isValidCenter ? { lat: Number(activeLocation.location.lat), lng: Number(activeLocation.location.lng) } : { lat: 12.9716, lng: 77.5946 }}
+                          center={{ lat: centerLat, lng: centerLng }}
                           zoom={13}
                           onLoad={onLoad}
                           options={{ disableDefaultUI: true, zoomControl: true, styles: [/* standard subtle styles */] }}
                         >
+                          {/* Marker for Visit Upload Location */}
+                          {hasVisitGps && (
+                            <Marker
+                              position={{ lat: Number(visitGps.lat), lng: Number(visitGps.lng) }}
+                              title="Upload Location"
+                              label={{ text: 'V', color: 'white', fontSize: '10px', fontWeight: 'black' }}
+                              icon={{
+                                path: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z",
+                                fillColor: "#10b981", // Emerald green for the uploaded visit location
+                                fillOpacity: 1,
+                                strokeWeight: 3,
+                                strokeColor: "#ffffff",
+                                scale: 1.4
+                              }}
+                              zIndex={10}
+                            />
+                          )}
+
+                          {/* Markers for Live Fleet */}
                           {Object.values(liveEmployees).map((emp) => (
                             emp.location && (
                               <Marker
@@ -698,6 +734,7 @@ const ManagerVisits = () => {
                                   strokeColor: emp.employeeId === selectedVisit.employee?._id ? "#4f46e5" : "#ffffff",
                                   scale: emp.employeeId === selectedVisit.employee?._id ? 1.4 : 1.1
                                 }}
+                                zIndex={emp.employeeId === selectedVisit.employee?._id ? 5 : 1}
                               />
                             )
                           ))}
@@ -711,6 +748,10 @@ const ManagerVisits = () => {
                       {/* Floating Legend */}
                       <div className="absolute top-4 left-4 p-2.5 bg-white/90 dark:bg-gray-950/90 backdrop-blur-md rounded-xl shadow-lg border border-white/20 z-10">
                         <div className="flex flex-col gap-1.5">
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                            <span className="text-[8px] font-black uppercase text-gray-950 dark:text-white">Upload Location</span>
+                          </div>
                           <div className="flex items-center gap-2">
                             <div className="w-2 h-2 rounded-full bg-indigo-600 animate-pulse" />
                             <span className="text-[8px] font-black uppercase text-gray-950 dark:text-white">Active Executive</span>
@@ -760,6 +801,7 @@ const ManagerVisits = () => {
                     </div>
                   )}
 
+
                 </div>
 
               </div>
@@ -767,6 +809,120 @@ const ManagerVisits = () => {
               {/* RIGHT COLUMN: Visual Evidence Discovery 
                   Interactive image gallery for physical proof validation. */}
               <div className="p-6 lg:p-10 overflow-y-auto custom-scrollbar flex flex-col h-full bg-white dark:bg-gray-950">
+                
+                {/* Observation Intel & Notes */}
+                <div className="mb-12 animate-in slide-in-from-bottom-4 duration-500">
+                  <div className="flex items-center justify-between mb-6">
+                    <h5 className="text-[11px] font-black text-gray-400 uppercase tracking-[0.3em]">Observation Intelligence</h5>
+                  </div>
+
+                  <div className="p-10 bg-gradient-to-br from-gray-900 to-black dark:from-black dark:to-gray-950 rounded-[3rem] shadow-2xl shadow-gray-900/20 relative overflow-hidden group/insight border border-gray-800">
+                    <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover/insight:scale-125 group-hover/insight:rotate-6 transition-all duration-1000">
+                        <MessageSquare size={120} className="text-white" />
+                    </div>
+                    
+                    <div className="flex items-center justify-between mb-8 relative z-10">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-2xl bg-white/5 backdrop-blur-xl flex items-center justify-center border border-white/10 shadow-inner">
+                           <span className="text-sm font-black text-white">{selectedVisit.avatar}</span>
+                        </div>
+                        <div>
+                          <h5 className="text-[12px] font-black text-white uppercase tracking-[0.2em]">Executive Insight</h5>
+                          <p className="text-[8px] font-bold text-gray-400 uppercase tracking-widest">Primary Operational Log</p>
+                        </div>
+                      </div>
+                      <div className="px-4 py-1.5 bg-white/5 backdrop-blur-xl rounded-full text-[9px] font-black text-emerald-400 uppercase tracking-widest border border-white/10 shadow-sm">
+                         Protocol Case ID: #A-{selectedVisit.id?.slice(-4)}
+                      </div>
+                    </div>
+
+                    <div className="relative z-10">
+                      <p className="text-[16px] font-medium text-gray-200 italic leading-relaxed">
+                        {selectedVisit.notes ? `"${selectedVisit.notes}"` : <span className="text-gray-500 font-normal">No intelligence notes provided.</span>}
+                      </p>
+                      
+                      <div className="mt-8 flex items-center justify-between">
+                         <div className="flex -space-x-2">
+                            <div className="w-8 h-8 rounded-full border-2 border-gray-900 bg-emerald-500 flex items-center justify-center text-[10px] text-white shadow-lg"><Check size={14} /></div>
+                            <div className="w-8 h-8 rounded-full border-2 border-gray-900 bg-indigo-500 flex items-center justify-center text-[10px] text-white shadow-lg"><Activity size={12} /></div>
+                         </div>
+                         <div className="text-[9px] font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
+                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                            Authenticated by Field Engine
+                         </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Dynamic Form Intelligence */}
+                {selectedVisit.visitForm && Object.keys(selectedVisit.visitForm).filter(k => !['notInterestedReason', 'followUpDate', 'followUpNotes'].includes(k)).length > 0 && (
+                  <div className="mb-12 animate-in slide-in-from-bottom-4 duration-500">
+                    <div className="bg-sky-50 dark:bg-sky-500/5 p-6 rounded-[2rem] border border-sky-100 dark:border-sky-500/20 shadow-sm">
+                      <h5 className="text-[10px] font-black text-sky-600 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
+                        <Activity size={14} /> Collected Field Data Intelligence
+                      </h5>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {Object.entries(selectedVisit.visitForm)
+                          .filter(([k, v]) => !['notInterestedReason', 'followUpDate', 'followUpNotes'].includes(k) && v !== '' && v !== null && v !== undefined)
+                          .map(([key, value]) => (
+                            <div key={key} className="flex flex-col p-4 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:border-sky-200 dark:hover:border-sky-500/30 transition-colors h-full">
+                              <p className="text-[9px] font-black text-sky-500 uppercase tracking-widest mb-2 border-b border-sky-50 dark:border-sky-500/10 pb-2">
+                                {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()).trim()}
+                              </p>
+                              <div className="mt-auto pt-1">
+                                {typeof value === 'boolean' ? (
+                                  <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${value ? 'bg-emerald-50 text-emerald-600 border border-emerald-200 dark:bg-emerald-500/10 dark:border-emerald-500/20' : 'bg-rose-50 text-rose-600 border border-rose-200 dark:bg-rose-500/10 dark:border-rose-500/20'}`}>
+                                    {value ? 'Yes' : 'No'}
+                                  </span>
+                                ) : (
+                                  <span className="text-sm font-bold text-gray-900 dark:text-gray-100 break-words">{String(value)}</span>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* App Installation Intelligence */}
+                {selectedVisit.appInstallation && Object.keys(selectedVisit.appInstallation).length > 0 && (
+                  <div className="mb-12 animate-in slide-in-from-bottom-4 duration-500">
+                    <div className="bg-indigo-50 dark:bg-indigo-500/5 p-6 rounded-[2rem] border border-indigo-100 dark:border-indigo-500/20 shadow-sm">
+                      <h5 className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
+                        <Activity size={14} /> App Installation Metrics
+                      </h5>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {selectedVisit.appInstallation.status && (
+                          <div className="p-4 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
+                            <p className="text-[9px] font-black text-indigo-500 uppercase tracking-widest mb-1.5">App Downloaded</p>
+                            <p className="text-sm font-bold text-gray-900 dark:text-gray-100">{selectedVisit.appInstallation.status}</p>
+                          </div>
+                        )}
+                        {selectedVisit.appInstallation.registration?.status && (
+                          <div className="p-4 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
+                            <p className="text-[9px] font-black text-indigo-500 uppercase tracking-widest mb-1.5">Registration Status</p>
+                            <p className="text-sm font-bold text-gray-900 dark:text-gray-100">{selectedVisit.appInstallation.registration.status}</p>
+                          </div>
+                        )}
+                        {selectedVisit.appInstallation.training?.status && (
+                          <div className="p-4 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
+                            <p className="text-[9px] font-black text-indigo-500 uppercase tracking-widest mb-1.5">Training Completed</p>
+                            <p className="text-sm font-bold text-gray-900 dark:text-gray-100">{selectedVisit.appInstallation.training.status}</p>
+                          </div>
+                        )}
+                        {selectedVisit.appInstallation.firstOrder?.status && (
+                          <div className="p-4 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-[0_4px_20_rgba(0,0,0,0.03)]">
+                            <p className="text-[9px] font-black text-indigo-500 uppercase tracking-widest mb-1.5">First Order Placed</p>
+                            <p className="text-sm font-bold text-gray-900 dark:text-gray-100">{selectedVisit.appInstallation.firstOrder.status}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <div className="flex items-center justify-between mb-4 shrink-0">
                   <div className="flex items-center gap-4">
                     <div className="w-1.5 h-6 bg-indigo-500 rounded-full shadow-lg shadow-indigo-500/20" />
@@ -816,66 +972,6 @@ const ManagerVisits = () => {
                   )}
                 </div>
 
-                {/* Observation Intel & Notes */}
-                <div className="mt-12 pt-10 border-t border-gray-100 dark:border-gray-800 space-y-8 animate-in slide-in-from-bottom-5 duration-700">
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <h5 className="text-[11px] font-black text-gray-400 uppercase tracking-[0.3em]">Observation Intelligence</h5>
-                      <div className="px-3 py-1 bg-indigo-50 dark:bg-indigo-500/10 rounded-lg text-[8px] font-black text-indigo-600 uppercase tracking-widest border border-indigo-100 dark:border-indigo-500/20">Configurable</div>
-                    </div>
-                    <div className="relative group">
-                      <select
-                        value={observationCategory}
-                        onChange={(e) => setObservationCategory(e.target.value)}
-                        className="w-full bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-800 rounded-2xl px-6 py-4 text-xs font-black uppercase tracking-widest focus:ring-2 focus:ring-indigo-500 transition-all outline-none appearance-none cursor-pointer hover:border-indigo-200 dark:hover:border-indigo-500/30"
-                      >
-                        <option>General Overview</option>
-                        <option>Inventory Compliance</option>
-                        <option>Staff Performance</option>
-                        <option>Client Feedback</option>
-                        <option>Protocol Variance</option>
-                      </select>
-                      <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 group-hover:text-indigo-500 transition-colors">
-                        <ChevronDown size={18} />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="p-10 bg-gradient-to-br from-indigo-600 to-indigo-700 rounded-[3rem] shadow-2xl shadow-indigo-500/20 relative overflow-hidden group/insight">
-                    <div className="absolute top-0 right-0 p-8 opacity-10 group-hover/insight:scale-125 transition-transform duration-1000">
-                        <MessageSquare size={120} className="text-white" />
-                    </div>
-                    
-                    <div className="flex items-center justify-between mb-8 relative z-10">
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-xl flex items-center justify-center border border-white/20">
-                           <span className="text-sm font-black text-white">{selectedVisit.avatar}</span>
-                        </div>
-                        <div>
-                          <h5 className="text-[12px] font-black text-white uppercase tracking-[0.2em]">Executive Insight</h5>
-                          <p className="text-[8px] font-bold text-indigo-200 uppercase tracking-widest">Primary Operational Log</p>
-                        </div>
-                      </div>
-                      <div className="px-4 py-1.5 bg-white/10 backdrop-blur-xl rounded-full text-[9px] font-black text-white uppercase tracking-widest border border-white/20 shadow-sm">
-                         Protocol Case ID: #A-{selectedVisit.id?.slice(-4)}
-                      </div>
-                    </div>
-
-                    <div className="relative z-10">
-                      <p className="text-[16px] font-medium text-white italic leading-relaxed">
-                        "{selectedVisit.notes || categoryContent[observationCategory]}"
-                      </p>
-                      
-                      <div className="mt-8 flex items-center justify-between">
-                         <div className="flex -space-x-2">
-                            <div className="w-8 h-8 rounded-full border-2 border-indigo-700 bg-emerald-500 flex items-center justify-center text-[10px] text-white shadow-lg"><Check size={14} /></div>
-                            <div className="w-8 h-8 rounded-full border-2 border-indigo-700 bg-blue-500 flex items-center justify-center text-[10px] text-white shadow-lg"><Activity size={12} /></div>
-                         </div>
-                         <div className="text-[9px] font-black text-indigo-300 uppercase tracking-widest">Authenticated by Field Engine</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
               </div>
             </div>
           </div>

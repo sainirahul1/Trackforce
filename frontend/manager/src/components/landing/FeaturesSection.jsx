@@ -29,50 +29,50 @@ const FeaturesSection = () => {
   const features = [
     {
       icon: MapPin,
-      title: "Real-Time GPS Tracking",
-      description: "Track field executives live on the map with sub-meter accuracy and status updates.",
+      title: "Live Command Center",
+      description: "Watch your entire team move across the map in real-time with sub-meter accuracy.",
       delay: 0
     },
     {
-      icon: ClipboardList,
-      title: "Store Visit Monitoring",
-      description: "Monitor visits, outcomes, and follow-ups with automated check-ins and photo proofs.",
+      icon: Navigation,
+      title: "Route Compliance",
+      description: "Verify that daily routes are optimized and executives are tracking their kilometers honestly.",
       delay: 100
     },
     {
-      icon: Navigation,
-      title: "Route Tracking & Analytics",
-      description: "Analyze employee movement, optimized paths, and daily travel distance efficiency.",
+      icon: BarChart3,
+      title: "Revenue Intelligence",
+      description: "Monitor live order collections, conversions, and revenue generation from the field.",
       delay: 200
     },
     {
-      icon: ShoppingCart,
-      title: "Order Collection System",
-      description: "Allow executives to collect digital orders directly from stores with inventory sync.",
+      icon: Building2,
+      title: "Territory Allocation",
+      description: "Draw maps and assign specific sectors or store clusters directly to your team members.",
       delay: 300
     },
     {
-      icon: Building2,
-      title: "Multi-Tenant Architecture",
-      description: "Enterprise-grade isolation allowing multiple companies to use the platform independently.",
+      icon: ClipboardList,
+      title: "Automated Approvals",
+      description: "Review geo-fenced check-ins and photo proofs directly from the dashboard.",
       delay: 400
     },
     {
-      icon: BarChart3,
-      title: "Advanced Reports",
-      description: "Get daily, weekly, and monthly performance insights with automated email reports.",
+      icon: ShoppingCart,
+      title: "Inventory Oversight",
+      description: "Track inventory orders submitted by field reps and synchronize with the warehouse.",
       delay: 500
     },
     {
       icon: Bell,
-      title: "Notification System",
-      description: "Real-time alerts for managers and employees regarding tasks, targets, and alerts.",
+      title: "Smart Alerts",
+      description: "Get instantly notified when targets are met, routes deviate, or missions are completed.",
       delay: 600
     },
     {
       icon: Layers,
-      title: "Modular Portals",
-      description: "Dedicated interfaces for Super Admins, Tenants, Managers, and Field Executives.",
+      title: "Advanced Reports",
+      description: "Generate deep-dive analytics on employee efficiency and historical performance.",
       delay: 700
     }
   ];
@@ -81,16 +81,15 @@ const FeaturesSection = () => {
     <section id="features" className="py-24 lg:py-32 bg-gray-50/50 dark:bg-gray-950/50 relative overflow-hidden">
       <div className="max-w-7xl mx-auto px-6">
         <div className="text-center max-w-3xl mx-auto mb-20 space-y-4">
-          <h2 className="text-xs font-black text-primary-main uppercase tracking-[0.2em]">Platform Capabilities</h2>
+          <h2 className="text-xs font-black text-primary-main uppercase tracking-[0.2em]">Management Toolkit</h2>
           <h3 className="text-4xl md:text-5xl font-black text-gray-900 dark:text-white tracking-tight leading-tight">
-            Everything you need to manage your <br className="hidden md:block" />
+            Total Visibility into <br className="hidden md:block" />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-main to-indigo-500">
-              field force at scale
+              Your Operartions
             </span>
           </h3>
           <p className="text-lg text-gray-500 dark:text-gray-400 font-medium leading-relaxed pt-2">
-            TrackForce provides a comprehensive suite of tools designed to optimize field operations, 
-            increase transparency, and drive better business outcomes.
+            The Manager Command Center gives you the tools to monitor team movement, verify execution, and analyze revenue effortlessly.
           </p>
         </div>
 

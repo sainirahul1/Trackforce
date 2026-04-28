@@ -19,20 +19,19 @@ const HeroSection = () => {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-main opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-primary-main"></span>
               </span>
-              <span className="text-[10px] font-black text-primary-main uppercase tracking-widest">v2.4 is now live</span>
+              <span className="text-[10px] font-black text-primary-main uppercase tracking-widest">Manager Portal v2.4</span>
             </div>
 
             <h1 className="text-5xl md:text-6xl lg:text-7xl font-black text-gray-900 dark:text-white leading-[1.1] tracking-tight">
-              Track Your <br />
+              Command Your <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-main to-indigo-500">
-                Field Workforce
+                Field Operations
               </span> <br />
               in Real-Time
             </h1>
 
             <p className="max-w-xl mx-auto lg:mx-0 text-lg md:text-xl text-gray-500 dark:text-gray-400 font-medium leading-relaxed">
-              A powerful SaaS platform for managing field executives, tracking visits, 
-              monitoring routes, and analyzing team performance with enterprise-grade security.
+              The ultimate command center designed for managers. Track your entire team live on the map, monitor route efficiency, review orders, and drive performance.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start space-y-4 sm:space-y-0 sm:space-x-4 pt-4">
@@ -40,7 +39,7 @@ const HeroSection = () => {
                 to="/login" 
                 className="w-full sm:w-auto px-8 py-4 bg-primary-main text-white rounded-2xl font-black shadow-xl shadow-primary-main/25 hover:scale-105 active:scale-95 transition-all flex items-center justify-center group"
               >
-                Get Started Free
+                Enter Command Center
                 <ChevronRight className="ml-2 group-hover:translate-x-1 transition-transform" size={20} />
               </Link>
               <button className="w-full sm:w-auto px-8 py-4 bg-white dark:bg-gray-900 text-gray-900 dark:text-white border border-gray-100 dark:border-gray-800 rounded-2xl font-black hover:bg-gray-50 dark:hover:bg-gray-800 transition-all flex items-center justify-center">
@@ -51,18 +50,18 @@ const HeroSection = () => {
 
             <div className="pt-8 flex items-center justify-center lg:justify-start space-x-8">
               <div className="text-center lg:text-left">
-                <p className="text-2xl font-black text-gray-900 dark:text-white">15k+</p>
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Active Users</p>
+                <p className="text-2xl font-black text-gray-900 dark:text-white">Live</p>
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Map Tracking</p>
               </div>
               <div className="w-px h-10 bg-gray-100 dark:bg-gray-800" />
               <div className="text-center lg:text-left">
-                <p className="text-2xl font-black text-gray-900 dark:text-white">120+</p>
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Global Companies</p>
+                <p className="text-2xl font-black text-gray-900 dark:text-white">Smart</p>
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Analytics</p>
               </div>
               <div className="w-px h-10 bg-gray-100 dark:bg-gray-800" />
               <div className="text-center lg:text-left">
-                <p className="text-2xl font-black text-gray-900 dark:text-white">99.9%</p>
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Uptime</p>
+                <p className="text-2xl font-black text-gray-900 dark:text-white">100%</p>
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Visibility</p>
               </div>
             </div>
           </div>

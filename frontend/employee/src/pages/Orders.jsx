@@ -594,7 +594,11 @@ const EmployeeOrders = () => {
             )}
             <tbody className="divide-y divide-gray-50 dark:divide-gray-800/50">
               {filteredOrders.length > 0 ? filteredOrders.map((o, idx) => (
-                <tr key={o.id} className="group hover:bg-gray-50/50 dark:hover:bg-gray-800/20 transition-colors duration-300">
+                <tr 
+                  key={o.id} 
+                  onClick={() => viewOrder(o)}
+                  className="group hover:bg-gray-50/50 dark:hover:bg-gray-800/20 transition-colors duration-300 cursor-pointer"
+                >
                   <td className="px-8 py-6">
                     <div className="flex items-center gap-4">
                        <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center text-indigo-600 dark:text-indigo-400 text-lg font-black">{o.store.charAt(0)}</div>
@@ -617,9 +621,21 @@ const EmployeeOrders = () => {
                     </span>
                   </td>
                   <td className="px-8 py-6 text-right">
-                    <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button onClick={() => viewOrder(o)} className="p-3 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 rounded-xl hover:bg-indigo-600 hover:text-white transition-all"><Eye size={16} /></button>
-                      <button onClick={() => editOrder(o)} className="p-3 bg-amber-50 dark:bg-amber-500/10 text-amber-600 rounded-xl hover:bg-amber-600 hover:text-white transition-all"><Edit size={16} /></button>
+                    <div className="flex justify-end gap-2">
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); viewOrder(o); }} 
+                        className="p-3 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 rounded-xl hover:bg-indigo-600 hover:text-white transition-all shadow-sm"
+                        title="View Details"
+                      >
+                        <Eye size={16} />
+                      </button>
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); editOrder(o); }} 
+                        className="p-3 bg-amber-50 dark:bg-amber-500/10 text-amber-600 rounded-xl hover:bg-amber-600 hover:text-white transition-all shadow-sm"
+                        title="Edit Order"
+                      >
+                        <Edit size={16} />
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -637,6 +653,109 @@ const EmployeeOrders = () => {
 
       {/* SUCCESS/ERROR TOASTS - ALREADY IMPLEMENTED IN THE ORIGINAL FILE */}
       </div>
+
+      {/* ORDER DETAIL LEDGER MODAL */}
+      {viewOrderModal && selectedOrder && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-8 animate-in fade-in duration-300">
+          <div className="absolute inset-0 bg-gray-950/90 backdrop-blur-xl" onClick={() => setViewOrderModal(false)} />
+          <div className="relative w-full max-w-4xl bg-white dark:bg-gray-900 rounded-[2.5rem] border border-white/10 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            {/* Modal Header */}
+            <div className="p-6 sm:p-10 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-white/5 flex items-center justify-between">
+              <div className="flex items-center gap-6">
+                <div className="w-16 h-16 rounded-2xl bg-indigo-600 flex items-center justify-center text-white shadow-xl">
+                  <ShoppingBag size={32} />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tight">Order Ledger</h3>
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mt-1">Transaction ID: #{selectedOrder.id.slice(-8).toUpperCase()}</p>
+                </div>
+              </div>
+              <button onClick={() => setViewOrderModal(false)} className="w-12 h-12 rounded-2xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 text-gray-400 hover:text-rose-500 transition-all flex items-center justify-center">
+                <X size={24} />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="flex-1 overflow-y-auto p-6 sm:p-10">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                {/* Left Column: Core Intelligence */}
+                <div className="space-y-10">
+                  <div>
+                    <h5 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Operational Status</h5>
+                    <div className="flex items-center gap-4">
+                      <span className={`px-5 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest border ${
+                        selectedOrder.status === 'Completed' ? 'bg-emerald-50 text-emerald-600 border-emerald-100 dark:bg-emerald-500/10 dark:border-emerald-500/20' : 'bg-amber-50 text-amber-600 border-amber-100 dark:bg-amber-500/10 dark:border-amber-500/20'
+                      }`}>
+                        {selectedOrder.status}
+                      </span>
+                      <div className="flex items-center gap-2 text-xs font-bold text-gray-500">
+                        <Clock size={14} className="text-indigo-500" />
+                        {selectedOrder.date}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h5 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Outlet Information</h5>
+                    <div className="p-6 bg-gray-50 dark:bg-gray-800/50 rounded-[1.5rem] border border-gray-100 dark:border-gray-700">
+                      <h4 className="text-xl font-black text-gray-900 dark:text-white mb-2">{selectedOrder.store}</h4>
+                      <div className="flex items-center gap-2 text-xs font-bold text-gray-500 uppercase tracking-wider">
+                        <IndianRupee size={14} className="text-emerald-500" />
+                        Payment via {selectedOrder.paymentMethod || 'CASH'}
+                      </div>
+                    </div>
+                  </div>
+
+                  {selectedOrder.notes && (
+                    <div>
+                      <h5 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Field Notes</h5>
+                      <p className="text-sm font-bold text-gray-600 dark:text-gray-400 italic leading-relaxed bg-indigo-50/30 dark:bg-indigo-500/5 p-5 rounded-2xl border border-indigo-100/50 dark:border-indigo-500/10">
+                        "{selectedOrder.notes}"
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Right Column: Financial Breakdown */}
+                <div className="bg-gray-50 dark:bg-gray-800/30 rounded-[2rem] border border-gray-100 dark:border-gray-800 p-8 flex flex-col h-full">
+                  <h5 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-8">SKU Consumption Ledger</h5>
+                  
+                  <div className="flex-1 space-y-6">
+                     <div className="flex justify-between items-center pb-4 border-b border-gray-100 dark:border-gray-800">
+                        <div className="flex items-center gap-3">
+                           <div className="w-10 h-10 rounded-lg bg-white dark:bg-gray-800 flex items-center justify-center text-indigo-500 shadow-sm font-black">1</div>
+                           <div>
+                              <p className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-tight">Bulk Order Consignment</p>
+                              <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">{selectedOrder.items} Individual Units</p>
+                           </div>
+                        </div>
+                        <p className="text-sm font-black text-gray-900 dark:text-white tracking-tighter">₹{selectedOrder.value.toLocaleString()}</p>
+                     </div>
+                  </div>
+
+                  <div className="mt-auto pt-8 border-t border-gray-200 dark:border-gray-700">
+                     <div className="flex justify-between items-center mb-1">
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Total Financial Impact</p>
+                        <p className="text-3xl font-black text-gray-900 dark:text-white tracking-tighter">₹{selectedOrder.value.toLocaleString()}</p>
+                     </div>
+                     <p className="text-[8px] font-bold text-emerald-500 uppercase tracking-[0.25em] text-right">Tax Inclusive Portfolio</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-8 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-white/5 flex justify-end">
+              <button 
+                onClick={() => setViewOrderModal(false)}
+                className="px-10 py-4 bg-indigo-600 text-white rounded-2xl text-xs font-black uppercase tracking-[0.2em] shadow-lg shadow-indigo-500/20 hover:bg-indigo-700 active:scale-95 transition-all"
+              >
+                Close Ledger
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
